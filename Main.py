@@ -9,27 +9,22 @@ conn = sqlite3.connect(db_path)
 
 # Create a table to store the document records
 cur = conn.cursor()
+# Define the SQL statement to delete the table
 
 cur.execute('''CREATE TABLE IF NOT EXISTS pre_doc_table 
                 (id INTEGER PRIMARY KEY, 
                 doc_created_date TEXT, 
                 doc_expire_date TEXT, 
                 doc_updated_date TEXT,
+                AT_SHOP TEXT,
                 user_id TEXT, 
                 customer_id TEXT, 
                 type TEXT, 
-                discount REAL, 
-                CODE TEXT,
-                BARCODE TEXT,
-                ITEM_Name TEXT,
-                AT_SHOP TEXT,
-                COLOR TEXT,
-                SIZE TEXT,
-                QTY TEXT,
-                PRICE TEXT,
-                Item_Disc TEXT,
-                TAX TEXT,
-                States TEXT'
+                ITEM TEXT,
+                PRICE REAL,
+                Disc REAL,
+                TAX REAL,
+                States TEXT
                 )''')
 
 

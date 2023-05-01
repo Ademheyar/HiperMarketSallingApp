@@ -1,6 +1,11 @@
 import tkinter as tk
 from tkinter import ttk
 import sqlite3
+import os
+import sys
+current_dir = os.path.abspath(os.path.dirname(__file__))
+MAIN_dir = os.path.join(current_dir, '..')
+sys.path.append(MAIN_dir)
 from D.Peymentsplit import PaymentForm
 from D.GetVALUE import GetvalueForm
 

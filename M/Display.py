@@ -1,6 +1,11 @@
 import tkinter as tk
 from tkinter import ttk
 import sqlite3
+import os
+import sys
+current_dir = os.path.abspath(os.path.dirname(__file__))
+MAIN_dir = os.path.join(current_dir, '..')
+sys.path.append(MAIN_dir)
 from D.searchbox import search_entry
 from D.Peymentsplit import PaymentForm
 from D.GetVALUE import GetvalueForm
@@ -8,7 +13,6 @@ from D.ApprovedDisplay import ApproveFrame
 from M.Product import ProductForm
 from D.iteminfo import *
 
-import os
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
 conn = sqlite3.connect(db_path)
@@ -148,6 +152,7 @@ class DisplayFrame(tk.Frame):
         self.payment_button.grid(row=2, column=3, sticky="nsew")
         self.creat_payment_buttons()
         self.update_info()
+        self.update_list_items()
 
     def call_manager(self):
         self.master.show_frame("ManageFrame")
@@ -163,7 +168,7 @@ class DisplayFrame(tk.Frame):
         else:
             PaymentForm(self)
     
-    def add_chart(self):
+    def update_chart(self):
         doc_created_date = "doc_created_date"
         doc_expire_date = "doc_expire_date"
         doc_updated_date = "doc_updated_date"
@@ -171,16 +176,12 @@ class DisplayFrame(tk.Frame):
         user_id = "user_id"
         customer_id = "customer_id"
         type = "type"
-        CODE = "CODE"
         ITEM = ""
         PRICE = 0
         Disc = 0
         TAX = 0
-        States = "States"        
+        States = "States"
         
-        price = 0
-        disc = 0
-        tax = 0
         items = 0
         for a in self.list_items.get_children():
             items += 1
@@ -213,14 +214,66 @@ class DisplayFrame(tk.Frame):
             else:
                 ITEM += "|)"
 
-        print(str([doc_created_date, doc_expire_date, doc_updated_date, user_id, customer_id, type, discount_REAL, CODE, BARCODE, ITEM_Name, AT_SHOP, COLOR, SIZE, QTY, PRICE, Item_Disc, TAX, States]))
-        # Insert the new product into the database
-        cursor.execute('UPDATE product SET doc_created_date=? doc_expire_date=? doc_updated_date=? user_id=? customer_id=? type=? discount_REAL=? CODE=? BARCODE=? ITEM=? AT_SHOP=? COLOR=? SIZE=? QTY=? PRICE=? Item_Disc=? TAX=? States=? WHERE id=?', (doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States, self.onchart))
+        if items > 0:
+            # Define the query to check if the ID exists in the table
+            query = f"SELECT id FROM pre_doc_table WHERE id = {self.onchart}"
 
-        # Commit the changes to the database
-        conn.commit()
-        
-        print(str(["doc_barcode", "extension_barcode", "user_id", "customer_id", "type", ITEM, disc, tax, "doc_created_date", "doc_expire_date", "doc_updated_date"]))
+            # Execute the query and fetch the results
+            cursor.execute(query)
+            result = cursor.fetchone()
+
+            # Check if the query returned a result
+            if result is not None:
+                print(str([doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States]))
+                # Insert the new product into the database
+                cursor.execute('UPDATE product SET doc_created_date=? doc_expire_date=? doc_updated_date=? user_id=? customer_id=? type=? discount_REAL=? CODE=? BARCODE=? ITEM=? AT_SHOP=? COLOR=? SIZE=? QTY=? PRICE=? Item_Disc=? TAX=? States=? WHERE id=?', (doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States, self.onchart))
+
+                print(str(["doc_barcode", "extension_barcode", "user_id", "customer_id", "type", ITEM, Disc, TAX, "doc_created_date", "doc_expire_date", "doc_updated_date"]))
+                # Commit the changes to the database
+                conn.commit()
+                print(f"Record with ID {self.onchart} has been inserted into the table")                
+            else:
+                print(f"Record with ID {self.onchart} does not exist in the table")
+                print(str([doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States]))
+                # Insert the new product into the database
+                cursor.execute('''INSERT INTO pre_doc_table (doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States))
+
+                print(str(["doc_barcode", "extension_barcode", "user_id", "customer_id", "type", ITEM, Disc, TAX, "doc_created_date", "doc_expire_date", "doc_updated_date"]))
+                # Commit the changes to the database
+                conn.commit()
+                cursor.execute("SELECT * FROM pre_doc_table WHERE id=?", (self.onchart,))
+                results = cursor.fetchall()
+                print("update_list_items" + str(results))
+                
+                
+    def update_list_items(self):
+        # Define the SQL query to fetch the product information based on doc_created_date
+        # Execute the query and fetch the results
+        cursor.execute("SELECT * FROM pre_doc_table WHERE id=?", (self.onchart,))
+        results = cursor.fetchall()
+
+        # Clear the existing items in the list
+        self.list_items.delete(*self.list_items.get_children())
+        print("on update_list_items")
+        # Loop through the results and add each product to the list
+        for result in results:
+            # Extract the item information from the database record
+            code = result[7]
+            name = result[8]
+            shop = result[9]
+            color = result[10]
+            size = result[11]
+            qty = result[12]
+            price = result[13]
+            disc = result[14]
+            tax = result[15]
+
+            # Add the item to the list
+            print(str([code, "", name, shop, color, size, qty, price, disc, tax]))
+            self.list_items.insert("", "end", values=(code, "", name, shop, color, size, qty, price, disc, tax))
+
+        # Update the totals in the GUI
+        #self.update_totals()
         
     def get_chart(self):
         cursor.execute("SELECT * FROM pre_doc_table WHERE id=?", (self.onchart,))
