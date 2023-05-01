@@ -3,11 +3,14 @@ from tkinter import ttk
 import sqlite3
 
 # Connect to the database or create it if it does not exist
-conn = sqlite3.connect('my_database.db')
+
+import os
+data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
+db_path = os.path.join(data_dir, 'my_database.db')
+conn = sqlite3.connect(db_path)
 cur = conn.cursor()
 
 conn.commit()
-import tkinter as tk
 
 class UserForm(tk.Frame):
     def __init__(self, parent):

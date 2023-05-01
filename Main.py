@@ -1,9 +1,12 @@
 import tkinter as tk
 import sqlite3
+import os
+
 
 # Create a connection to the SQLite database
-conn = sqlite3.connect('my_database.db')
-
+data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data'))
+db_path = os.path.join(data_dir, 'my_database.db')
+conn = sqlite3.connect(db_path)
 
 # Create a table to store the document records
 cur = conn.cursor()

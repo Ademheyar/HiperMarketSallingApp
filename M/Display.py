@@ -8,7 +8,10 @@ from D.ApprovedDisplay import ApproveFrame
 from M.Product import ProductForm
 from D.iteminfo import *
 
-conn = sqlite3.connect("my_database.db")
+import os
+data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
+db_path = os.path.join(data_dir, 'my_database.db')
+conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
 class DisplayFrame(tk.Frame):

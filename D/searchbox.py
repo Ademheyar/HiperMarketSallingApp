@@ -2,6 +2,11 @@ import tkinter as tk
 import sqlite3
 from D.ItemSelector import ItemSelectorWidget
 from tkinter import ttk
+import os
+
+data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
+db_path = os.path.join(data_dir, 'my_database.db')
+conn = sqlite3.connect(db_path)
 
 class search_entry(ttk.Entry):
     def __init__(self, *args, **kwargs):
@@ -14,8 +19,7 @@ class search_entry(ttk.Entry):
         self.bind("<Escape>", lambda _: self.var.set(''))
 
         # Connect to database
-        self.conn = sqlite3.connect('my_database.db')
-        self.cursor = self.conn.cursor()
+        self.cursor = conn.cursor()
         
         # Initialize search type
         self.search_type = "name"

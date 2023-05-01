@@ -2,7 +2,11 @@ import tkinter as tk
 from tkinter import ttk
 import sqlite3
 
-conn = sqlite3.connect("my_database.db")
+
+import os
+data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data'))
+db_path = os.path.join(data_dir, 'my_database.db')
+conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
 cursor.execute("SELECT * FROM USERS WHERE name=? AND password=?", ('adem', '123'))
