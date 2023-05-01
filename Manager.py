@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from Info import InfoForm
 from Doc import DocForm
-from Product import ProductForm
+from Manager.Product import ProductForm
 from Users import UserForm
 from Tools import ToolForm
 
