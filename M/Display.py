@@ -163,24 +163,19 @@ class DisplayFrame(tk.Frame):
         else:
             PaymentForm(self)
     
-    def update_chart(self):
+    def add_chart(self):
         doc_created_date = "doc_created_date"
         doc_expire_date = "doc_expire_date"
         doc_updated_date = "doc_updated_date"
+        AT_SHOP = "AT_SHOP"
         user_id = "user_id"
         customer_id = "customer_id"
         type = "type"
-        discount_REAL = "discount REAL"
         CODE = "CODE"
-        BARCODE = "BARCODE"
         ITEM = ""
-        AT_SHOP = "AT_SHOP"
-        COLOR = "COLOR"
-        SIZE = "SIZE"
-        QTY = "QTY"
-        PRICE = "PRICE"
-        Item_Disc = "Item_Disc"
-        TAX = "TAX"
+        PRICE = 0
+        Disc = 0
+        TAX = 0
         States = "States"        
         
         price = 0
@@ -192,8 +187,6 @@ class DisplayFrame(tk.Frame):
             print(str(self.list_items.item(a)))
             i = self.list_items.item(a)
             iv = i['values']
-            cursor.execute("SELECT * FROM product WHERE code=?", (iv[0],))
-            it = cursor.fetchone()
             ITEM += "(|"
             ITEM += str(iv[0]) # code
             ITEM += "|,|"
@@ -208,73 +201,26 @@ class DisplayFrame(tk.Frame):
             ITEM += str(iv[6]) # qty
             ITEM += "|,|"
             ITEM += str(iv[7])  # price
-            price += float(iv[6])*float(iv[7])
+            PRICE += float(iv[6])*float(iv[7])
             ITEM += "|,|"
             ITEM += str(iv[8])  # disc
-            disc += float(iv[8])
+            Disc += float(iv[8])
             ITEM += "|,|"
             ITEM += str(iv[9])  # tax
-            tax += float(iv[9])
+            TAX += float(iv[9])
             if items+1 <= len(self.list_items.get_children()):
                 ITEM += "|),"
             else:
                 ITEM += "|)"
 
-        
-        
-        self.pid = 0
-        self.price = 0
-        item_dic = 0
-        item_count = 0
-        for a in self.list_items.get_children():
-            ITEM = self.list_items.item(a)['values']
-            print("in update item: " + str(ITEM))
-            item_count += float(ITEM[6])
-            item_dic += float(ITEM[8]) 
-            self.price += float(ITEM[7])
-        print("Amount Pide : " + str(self.price))
-        self.total_items_label.config(text="Total Items : " + str(item_count))
-        self.total_tax_label.config(text="Total Tax : " + str(self.tax))
-        self.total_discount_label.config(text="Item Discount : " + str(item_dic))
-        self.total_tdiscount_label.config(text="Total Discount : " + str(self.disc))
-        self.total_price_label.config(text="Price Befor : " + str(self.price))
-        self.total_label.config(text="Price After: " + str((self.price - item_dic) - self.disc))
-
         print(str([doc_created_date, doc_expire_date, doc_updated_date, user_id, customer_id, type, discount_REAL, CODE, BARCODE, ITEM_Name, AT_SHOP, COLOR, SIZE, QTY, PRICE, Item_Disc, TAX, States]))
         # Insert the new product into the database
-        cursor.execute('UPDATE product SET doc_created_date=? doc_expire_date=? doc_updated_date=? user_id=? customer_id=? type=? discount_REAL=? CODE=? BARCODE=? ITEM=? AT_SHOP=? COLOR=? SIZE=? QTY=? PRICE=? Item_Disc=? TAX=? States=? WHERE id=?', (doc_created_date, doc_expire_date, doc_updated_date, user_id, customer_id, type, discount_REAL, CODE, BARCODE, ITEM, AT_SHOP, COLOR, SIZE, QTY, PRICE, Item_Disc, TAX, States, self.onchart))
+        cursor.execute('UPDATE product SET doc_created_date=? doc_expire_date=? doc_updated_date=? user_id=? customer_id=? type=? discount_REAL=? CODE=? BARCODE=? ITEM=? AT_SHOP=? COLOR=? SIZE=? QTY=? PRICE=? Item_Disc=? TAX=? States=? WHERE id=?', (doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States, self.onchart))
 
         # Commit the changes to the database
         conn.commit()
         
         print(str(["doc_barcode", "extension_barcode", "user_id", "customer_id", "type", ITEM, disc, tax, "doc_created_date", "doc_expire_date", "doc_updated_date"]))
-        
-    def add_chart(self):
-        doc_created_date = "doc_created_date"
-        doc_expire_date = "doc_expire_date"
-        doc_updated_date = "doc_updated_date"
-        user_id = "user_id"
-        customer_id = "customer_id"
-        type = "type"
-        discount_REAL = "discount REAL"
-        CODE = "CODE"
-        BARCODE = "BARCODE"
-        ITEM_Name = "ITEM"
-        AT_SHOP = "AT_SHOP"
-        COLOR = "COLOR"
-        SIZE = "SIZE"
-        QTY = "QTY"
-        PRICE = "PRICE"
-        Item_Disc = "Item_Disc"
-        TAX = "TAX"
-        States = "States"        
-        
-        print(str([doc_created_date, doc_expire_date, doc_updated_date, user_id, customer_id, type, discount_REAL, CODE, BARCODE, ITEM_Name, AT_SHOP, COLOR, SIZE, QTY, PRICE, Item_Disc, TAX, States]))
-        # Insert the new product into the database
-        cursor.execute('INSERT INTO pre_doc_table (doc_created_date, doc_expire_date, doc_updated_date, user_id, customer_id, type, discount_REAL, CODE, BARCODE, ITEM_Name, AT_SHOP, COLOR, SIZE, QTY, PRICE, Item_Disc, TAX, States) VALUES ((?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (doc_created_date, doc_expire_date, doc_updated_date, user_id, customer_id, type, discount_REAL, CODE, BARCODE, ITEM_Name, AT_SHOP, COLOR, SIZE, QTY, PRICE, Item_Disc, TAX, States))
-
-        # Commit the changes to the database
-        conn.commit()
         
     def get_chart(self):
         cursor.execute("SELECT * FROM pre_doc_table WHERE id=?", (self.onchart,))
