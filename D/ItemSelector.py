@@ -188,8 +188,8 @@ root = tk.Tk()
 
 # Define the shop, color, and size lists
 list = "\"{shop1,(<color11,[|size,4,4,4,,|]>, <color11,[|3,4,4,4,,|]>)}, {shop2,(<color,[|size,4,4,4,,|]>)}\""
-# Create the ItemSelectorWidget and add it to the root window
-item_selector = ItemSelectorWidget(root, list)
+# Create the D.ItemSelectorWidget and add it to the root window
+item_selector = D.ItemSelectorWidget(root, list)
 item_selector.pack()
 
 root.mainloop()

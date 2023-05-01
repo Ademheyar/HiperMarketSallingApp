@@ -1,6 +1,6 @@
 import tkinter as tk
 import sqlite3
-from ItemSelector import ItemSelectorWidget
+from D.ItemSelector import ItemSelectorWidget
 from tkinter import ttk
 
 class search_entry(ttk.Entry):

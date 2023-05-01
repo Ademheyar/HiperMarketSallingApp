@@ -1,12 +1,12 @@
 import tkinter as tk
 from tkinter import ttk
 import sqlite3
-from searchbox import search_entry
-from Peymentsplit import PaymentForm
-from GetVALUE import GetvalueForm
-from ApprovedDisplay import ApproveFrame
-from Manager.Product import ProductForm
-from iteminfo import *
+from D.searchbox import search_entry
+from D.Peymentsplit import PaymentForm
+from D.GetVALUE import GetvalueForm
+from D.ApprovedDisplay import ApproveFrame
+from M.Product import ProductForm
+from D.iteminfo import *
 
 conn = sqlite3.connect("my_database.db")
 cursor = conn.cursor()

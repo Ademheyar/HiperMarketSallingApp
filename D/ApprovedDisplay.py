@@ -1,8 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 import sqlite3
-from Peymentsplit import PaymentForm
-from GetVALUE import GetvalueForm
+from D.Peymentsplit import PaymentForm
+from D.GetVALUE import GetvalueForm
 
 conn = sqlite3.connect("my_database.db")
 cursor = conn.cursor()

@@ -100,7 +100,7 @@ cur.execute('''CREATE TABLE IF NOT EXISTS tools
 conn.commit()
 conn.close()
 
-from Display import DisplayFrame
+from M.Display import DisplayFrame
 from Manager import ManageForm
 from Login import Loging_Frame
 
