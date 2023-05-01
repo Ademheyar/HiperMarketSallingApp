@@ -162,7 +162,64 @@ class DisplayFrame(tk.Frame):
             print("no list")
         else:
             PaymentForm(self)
-    def add_chart(self):
+    
+    def update_chart(self):
+        doc_created_date = "doc_created_date"
+        doc_expire_date = "doc_expire_date"
+        doc_updated_date = "doc_updated_date"
+        user_id = "user_id"
+        customer_id = "customer_id"
+        type = "type"
+        discount_REAL = "discount REAL"
+        CODE = "CODE"
+        BARCODE = "BARCODE"
+        ITEM = ""
+        AT_SHOP = "AT_SHOP"
+        COLOR = "COLOR"
+        SIZE = "SIZE"
+        QTY = "QTY"
+        PRICE = "PRICE"
+        Item_Disc = "Item_Disc"
+        TAX = "TAX"
+        States = "States"        
+        
+        price = 0
+        disc = 0
+        tax = 0
+        items = 0
+        for a in self.list_items.get_children():
+            items += 1
+            print(str(self.list_items.item(a)))
+            i = self.list_items.item(a)
+            iv = i['values']
+            cursor.execute("SELECT * FROM product WHERE code=?", (iv[0],))
+            it = cursor.fetchone()
+            ITEM += "(|"
+            ITEM += str(iv[0]) # code
+            ITEM += "|,|"
+            ITEM += str(iv[2]) # name
+            ITEM += "|,|"
+            ITEM += str(iv[3]) # shop
+            ITEM += "|,|"
+            ITEM += str(iv[4]) # color
+            ITEM += "|,|"
+            ITEM += str(iv[5]) # size
+            ITEM += "|,|"
+            ITEM += str(iv[6]) # qty
+            ITEM += "|,|"
+            ITEM += str(iv[7])  # price
+            price += float(iv[6])*float(iv[7])
+            ITEM += "|,|"
+            ITEM += str(iv[8])  # disc
+            disc += float(iv[8])
+            ITEM += "|,|"
+            ITEM += str(iv[9])  # tax
+            tax += float(iv[9])
+            if items+1 <= len(self.list_items.get_children()):
+                ITEM += "|),"
+            else:
+                ITEM += "|)"
+
         
         
         self.pid = 0
@@ -170,11 +227,11 @@ class DisplayFrame(tk.Frame):
         item_dic = 0
         item_count = 0
         for a in self.list_items.get_children():
-            item = self.list_items.item(a)['values']
-            print("in update item: " + str(item))
-            item_count += float(item[6])
-            item_dic += float(item[8]) 
-            self.price += float(item[7])
+            ITEM = self.list_items.item(a)['values']
+            print("in update item: " + str(ITEM))
+            item_count += float(ITEM[6])
+            item_dic += float(ITEM[8]) 
+            self.price += float(ITEM[7])
         print("Amount Pide : " + str(self.price))
         self.total_items_label.config(text="Total Items : " + str(item_count))
         self.total_tax_label.config(text="Total Tax : " + str(self.tax))
@@ -183,6 +240,16 @@ class DisplayFrame(tk.Frame):
         self.total_price_label.config(text="Price Befor : " + str(self.price))
         self.total_label.config(text="Price After: " + str((self.price - item_dic) - self.disc))
 
+        print(str([doc_created_date, doc_expire_date, doc_updated_date, user_id, customer_id, type, discount_REAL, CODE, BARCODE, ITEM_Name, AT_SHOP, COLOR, SIZE, QTY, PRICE, Item_Disc, TAX, States]))
+        # Insert the new product into the database
+        cursor.execute('UPDATE product SET doc_created_date=? doc_expire_date=? doc_updated_date=? user_id=? customer_id=? type=? discount_REAL=? CODE=? BARCODE=? ITEM=? AT_SHOP=? COLOR=? SIZE=? QTY=? PRICE=? Item_Disc=? TAX=? States=? WHERE id=?', (doc_created_date, doc_expire_date, doc_updated_date, user_id, customer_id, type, discount_REAL, CODE, BARCODE, ITEM, AT_SHOP, COLOR, SIZE, QTY, PRICE, Item_Disc, TAX, States, self.onchart))
+
+        # Commit the changes to the database
+        conn.commit()
+        
+        print(str(["doc_barcode", "extension_barcode", "user_id", "customer_id", "type", ITEM, disc, tax, "doc_created_date", "doc_expire_date", "doc_updated_date"]))
+        
+    def add_chart(self):
         doc_created_date = "doc_created_date"
         doc_expire_date = "doc_expire_date"
         doc_updated_date = "doc_updated_date"
@@ -251,6 +318,7 @@ class DisplayFrame(tk.Frame):
         self.total_tdiscount_label.config(text="Total Discount : " + str(self.disc))
         self.total_price_label.config(text="Price Befor : " + str(self.price))
         self.total_label.config(text="Price After: " + str((self.price - item_dic) - self.disc))
+        self.update_chart()
 
     def void_items(self):
         for a in self.list_items.get_children():
