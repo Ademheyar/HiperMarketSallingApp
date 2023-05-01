@@ -2,7 +2,6 @@ import tkinter as tk
 import sqlite3
 import os
 
-
 # Create a connection to the SQLite database
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
