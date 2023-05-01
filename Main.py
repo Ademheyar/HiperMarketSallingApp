@@ -29,7 +29,7 @@ cur.execute('''CREATE TABLE IF NOT EXISTS pre_doc_table
                 PRICE TEXT,
                 Item_Disc TEXT,
                 TAX TEXT,
-                States TEXT
+                States TEXT'
                 )''')
 
 
