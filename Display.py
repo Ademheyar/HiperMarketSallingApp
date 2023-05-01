@@ -5,8 +5,8 @@ from searchbox import search_entry
 from Peymentsplit import PaymentForm
 from GetVALUE import GetvalueForm
 from ApprovedDisplay import ApproveFrame
-from Manger.Product import ProductForm
-from Manger.iteminfo import *
+from Product import ProductForm
+from iteminfo import *
 
 conn = sqlite3.connect("my_database.db")
 cursor = conn.cursor()

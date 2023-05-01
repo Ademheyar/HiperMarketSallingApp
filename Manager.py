@@ -1,10 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
-from Manger.Info import InfoForm
-from Manger.Doc import DocForm
-from Manger.Product import ProductForm
-from Manger.Users import UserForm
-from Manger.Tools import ToolForm
+from Info import InfoForm
+from Doc import DocForm
+from Product import ProductForm
+from Users import UserForm
+from Tools import ToolForm
 
 class ManageForm(tk.Frame):
     def __init__(self, master=None):
