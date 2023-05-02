@@ -9,6 +9,7 @@ sys.path.append(MAIN_dir)
 from D.searchbox import search_entry
 from D.Peymentsplit import PaymentForm
 from D.GetVALUE import GetvalueForm
+from D.Showchartlists import ShowchartForm
 from D.ApprovedDisplay import ApproveFrame
 from M.Product import ProductForm
 from D.iteminfo import *
@@ -23,7 +24,7 @@ class DisplayFrame(tk.Frame):
         tk.Frame.__init__(self, master)
         self.user = ""
         self.custemr = ""
-        self.onchart = 0
+        self.chart_index = 0
         self.price = 0
         self.pid = 0
         self.pid_peyment = []
@@ -136,16 +137,16 @@ class DisplayFrame(tk.Frame):
         self.mang_button.grid(row=0, column=3, sticky="nsew")
         self.prevlist_button = tk.Button(self.buttons_frame, text="Prev", bg="red", fg="white", font=("Arial", 12))
         self.prevlist_button.grid(row=1, column=0, sticky="nsew")
+        self.activets_button = tk.Button(self.buttons_frame, text="Activets", bg="red", fg="white", font=("Arial", 12), command=self.call_chartForm)
+        self.activets_button.grid(row=1, column=1, sticky="nsew")
         self.newlist_button = tk.Button(self.buttons_frame, text="New", bg="red", fg="white", font=("Arial", 12))
-        self.newlist_button.grid(row=1, column=1, sticky="nsew")
+        self.newlist_button.grid(row=1, column=2, sticky="nsew")
         self.discount_button = tk.Button(self.buttons_frame, text="Discount", bg="red", fg="white", font=("Arial", 12), command=self.make_dicount)
-        self.discount_button.grid(row=1, column=2, sticky="nsew")
+        self.discount_button.grid(row=1, column=3, sticky="nsew")
         self.userinfo_button = tk.Button(self.buttons_frame, text="Userinfo", bg="red", fg="white", font=("Arial", 12))
-        self.userinfo_button.grid(row=1, column=3, sticky="nsew")
+        self.userinfo_button.grid(row=2, column=0, sticky="nsew")
         self.endday_button = tk.Button(self.buttons_frame, text="Endday", bg="red", fg="white", font=("Arial", 12))
-        self.endday_button.grid(row=2, column=0, sticky="nsew")
-        self.activets_button = tk.Button(self.buttons_frame, text="Activets", bg="red", fg="white", font=("Arial", 12))
-        self.activets_button.grid(row=2, column=1, sticky="nsew")
+        self.endday_button.grid(row=2, column=1, sticky="nsew")
         self.logout_button = tk.Button(self.buttons_frame, text="Logout", bg="red", fg="white", font=("Arial", 12), command=self.call_loging)
         self.logout_button.grid(row=2, column=2, sticky="nsew")
         self.payment_button = tk.Button(self.buttons_frame, text="Payment", bg="red", fg="white", font=("Arial", 12), command=self.call_splitpayment)
@@ -216,41 +217,38 @@ class DisplayFrame(tk.Frame):
 
         if items > 0:
             # Define the query to check if the ID exists in the table
-            query = f"SELECT id FROM pre_doc_table WHERE id = {self.onchart}"
+            query = f"SELECT id FROM pre_doc_table WHERE id = {self.chart_index}"
 
             # Execute the query and fetch the results
             cursor.execute(query)
             result = cursor.fetchone()
-
             # Check if the query returned a result
             if result is not None:
                 print(str([doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States]))
                 # Insert the new product into the database
-                cursor.execute('UPDATE product SET doc_created_date=? doc_expire_date=? doc_updated_date=? user_id=? customer_id=? type=? discount_REAL=? CODE=? BARCODE=? ITEM=? AT_SHOP=? COLOR=? SIZE=? QTY=? PRICE=? Item_Disc=? TAX=? States=? WHERE id=?', (doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States, self.onchart))
+                cursor.execute('UPDATE pre_doc_table SET doc_created_date=?, doc_expire_date=?, doc_updated_date=?, AT_SHOP=?, user_id=?, customer_id=?, type=?, ITEM=?, PRICE=?, Disc=?, TAX=?, States=? WHERE id=?', (doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States, self.chart_index))
 
-                print(str(["doc_barcode", "extension_barcode", "user_id", "customer_id", "type", ITEM, Disc, TAX, "doc_created_date", "doc_expire_date", "doc_updated_date"]))
                 # Commit the changes to the database
                 conn.commit()
-                print(f"Record with ID {self.onchart} has been inserted into the table")                
+                print(f"Record with ID {self.chart_index} has been inserted into the table")                
+                print(str([doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States, self.chart_index]))
             else:
-                print(f"Record with ID {self.onchart} does not exist in the table")
+                print(f"Record with ID {self.chart_index} does not exist in the table")
                 print(str([doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States]))
                 # Insert the new product into the database
-                cursor.execute('''INSERT INTO pre_doc_table (doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States))
+                cursor.execute('INSERT INTO pre_doc_table (id, doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (self.chart_index, doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States))
 
                 print(str(["doc_barcode", "extension_barcode", "user_id", "customer_id", "type", ITEM, Disc, TAX, "doc_created_date", "doc_expire_date", "doc_updated_date"]))
                 # Commit the changes to the database
                 conn.commit()
-                cursor.execute("SELECT * FROM pre_doc_table WHERE id=?", (self.onchart,))
-                results = cursor.fetchall()
-                print("update_list_items" + str(results))
                 
                 
     def update_list_items(self):
         # Define the SQL query to fetch the product information based on doc_created_date
         # Execute the query and fetch the results
-        cursor.execute("SELECT * FROM pre_doc_table WHERE id=?", (self.onchart,))
+        cursor.execute("SELECT * FROM pre_doc_table WHERE id=?", (self.chart_index,))
         results = cursor.fetchall()
+        print("update_list_items" + str(results))
 
         # Clear the existing items in the list
         self.list_items.delete(*self.list_items.get_children())
@@ -258,25 +256,72 @@ class DisplayFrame(tk.Frame):
         # Loop through the results and add each product to the list
         for result in results:
             # Extract the item information from the database record
-            code = result[7]
-            name = result[8]
-            shop = result[9]
-            color = result[10]
-            size = result[11]
-            qty = result[12]
-            price = result[13]
-            disc = result[14]
-            tax = result[15]
-
-            # Add the item to the list
-            print(str([code, "", name, shop, color, size, qty, price, disc, tax]))
-            self.list_items.insert("", "end", values=(code, "", name, shop, color, size, qty, price, disc, tax))
-
+            self.chart_index = result[0]
+            doc_created_date = result[1]
+            doc_expire_date = result[2]
+            doc_updated_date = result[3]
+            AT_SHOP = result[4]
+            user_id = result[5]
+            customer_id = result[6]
+            type = result[7]
+            ITEM = result[8]
+            PRICE = result[9]
+            Disc = result[10]
+            TAX = result[11]
+            States = result[12]
+            
+            if States != "States":
+                self.chart_index += 1
+                if self.chart_index == len(results) or self.chart_index < 0:
+                    return
+                else:
+                    self.update_list_items()
+            
+            # Create a new item using the product information
+            # from founded ITEM value fill this info
+            items_lists = ITEM.split("|),")
+            for items in items_lists:
+                item = items.split("|,|")
+                #for each items
+                code = item[0].replace("(|", "")
+                name = item[1]
+                # if item shop and sold shop not same
+                shop = item[2]
+                color = item[3]
+                size = item[4]
+                qty = item[5]
+                price = item[6]
+                total_price = float(qty)*float(price)
+                PRICE += total_price
+                disc = item[7]
+                Disc += float(disc)
+                tax = item[8].replace("|)", "")
+                TAX += float(tax)
+                # Add the item to the list
+                print(str([code, "", name, shop, color, size, qty, price, disc, tax, total_price]))
+                self.list_items.insert("", "end", values=(code, "", name, shop, color, size, qty, price, disc, tax, total_price))
         # Update the totals in the GUI
         #self.update_totals()
         
+    def next_prev_chart(self, towhere):
+        cursor.execute("SELECT * FROM pre_doc_table")
+        results = cursor.fetchall()
+        if towhere == "next":
+            self.chart_index += 1
+            if self.chart_index == len(results):
+                self.chart_index = 0
+        else:
+            self.chart_index -= 1
+            if self.chart_index < 0:
+                self.chart_index = 0
+        self.update_list_items()
+            
+    def call_chartForm(self):
+        ShowchartForm(self)
+        self.update_list_items()
+
     def get_chart(self):
-        cursor.execute("SELECT * FROM pre_doc_table WHERE id=?", (self.onchart,))
+        cursor.execute("SELECT * FROM pre_doc_table WHERE id=?", (self.chart_index,))
         result = self.cursor.fetchone()
 
         self.pid = 0
