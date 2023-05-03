@@ -98,7 +98,6 @@ conn.commit()
 conn.close()
 
 from M.Display import DisplayFrame
-from Manager import ManageForm
 from Login import Loging_Frame
 
 
@@ -122,10 +121,6 @@ class MainApplication(tk.Tk):
         display_frame.grid(row=0, column=0, sticky="nsew")
         self.frames["DisplayFrame"] = display_frame
         
-        # create the second frame and add it to the container
-        manage_form = ManageForm(self)
-        manage_form.grid(row=0, column=0, sticky="nsew")
-        self.frames["ManageFrame"] = manage_form
 
         # create the second frame and add it to the container
         lofing_frame = Loging_Frame(self)

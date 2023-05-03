@@ -14,6 +14,9 @@ from D.ApprovedDisplay import ApproveFrame
 from M.Product import ProductForm
 from D.iteminfo import *
 
+
+from Manager import ManageForm
+
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
 conn = sqlite3.connect(db_path)
@@ -35,8 +38,34 @@ class DisplayFrame(tk.Frame):
         self.total = 0
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
-        self.main_frame = tk.Frame(self, bg="black")
+        self.main_Notebook = ttk.Notebook(self)
+        self.main_Notebook.pack(side="top", fill="both", expand=True)
+
+        '''
+        # Create tabs
+        tab1 = ttk.Frame(self.main_Notebook)
+        tab2 = ttk.Frame(self.main_Notebook)
+
+        # Add tabs to the self.main_Notebook
+        self.main_Notebook.add(tab1, text='Tab 1')
+        self.main_Notebook.add(tab2, text='Tab 2')
+
+        # Add widgets to the tabs
+        ttk.Label(tab1, text='This is tab 1').pack()
+        ttk.Label(tab2, text='This is tab 2').pack()
+        '''
+
+        self.main_frame = tk.Frame(self.main_Notebook, bg="black")
         self.main_frame.pack(side="top", fill="both", expand=True)
+        self.main_Notebook.add(self.main_frame, text='HOME')
+
+        # create the second frame and add it to the container
+        self.manage_form = ManageForm(self.main_Notebook)
+        self.manage_form.pack(side="top", fill="both", expand=True)
+        self.main_Notebook.add(self.manage_form, text='MANAGE')
+        #self.manage_form.grid(row=0, column=0, sticky="nsew")
+
+        #self.frames["ManageFrame"] = manage_form
 
         # New frame at the top of the main frame
         self.top_frame = tk.Frame(self.main_frame, bg="red", height=screen_height * 0.10, width=screen_width)
@@ -133,30 +162,30 @@ class DisplayFrame(tk.Frame):
         self.voidlist_button.grid(row=0, column=1, sticky="nsew")
         self.qty_button = tk.Button(self.buttons_frame, text="Qty", bg="red", fg="white", font=("Arial", 12), command=self.make_qty)
         self.qty_button.grid(row=0, column=2, sticky="nsew")
-        self.mang_button = tk.Button(self.buttons_frame, text="Manger", bg="red", fg="white", font=("Arial", 12), command=self.call_manager)
-        self.mang_button.grid(row=0, column=3, sticky="nsew")
-        self.prevlist_button = tk.Button(self.buttons_frame, text="Prev", bg="red", fg="white", font=("Arial", 12))
+        self.discount_button = tk.Button(self.buttons_frame, text="Discount", bg="red", fg="white", font=("Arial", 12), command=self.make_dicount)
+        self.discount_button.grid(row=0, column=3, sticky="nsew")
+        self.prevlist_button = tk.Button(self.buttons_frame, text="Prev", bg="red", fg="white", font=("Arial", 12), command=self.next_prev_chart("prev"))
         self.prevlist_button.grid(row=1, column=0, sticky="nsew")
+        self.prevlist_button.config(state=tk.DISABLED)
         self.activets_button = tk.Button(self.buttons_frame, text="Activets", bg="red", fg="white", font=("Arial", 12), command=self.call_chartForm)
         self.activets_button.grid(row=1, column=1, sticky="nsew")
-        self.newlist_button = tk.Button(self.buttons_frame, text="New", bg="red", fg="white", font=("Arial", 12))
+        self.newlist_button = tk.Button(self.buttons_frame, text="New", bg="red", fg="white", font=("Arial", 12), command=self.new_chart)
         self.newlist_button.grid(row=1, column=2, sticky="nsew")
-        self.discount_button = tk.Button(self.buttons_frame, text="Discount", bg="red", fg="white", font=("Arial", 12), command=self.make_dicount)
-        self.discount_button.grid(row=1, column=3, sticky="nsew")
+        self.endday_button = tk.Button(self.buttons_frame, text="Endday", bg="red", fg="white", font=("Arial", 12))
+        self.endday_button.grid(row=1, column=3, sticky="nsew")
         self.userinfo_button = tk.Button(self.buttons_frame, text="Userinfo", bg="red", fg="white", font=("Arial", 12))
         self.userinfo_button.grid(row=2, column=0, sticky="nsew")
-        self.endday_button = tk.Button(self.buttons_frame, text="Endday", bg="red", fg="white", font=("Arial", 12))
-        self.endday_button.grid(row=2, column=1, sticky="nsew")
         self.logout_button = tk.Button(self.buttons_frame, text="Logout", bg="red", fg="white", font=("Arial", 12), command=self.call_loging)
-        self.logout_button.grid(row=2, column=2, sticky="nsew")
+        self.logout_button.grid(row=2, column=1, sticky="nsew")
         self.payment_button = tk.Button(self.buttons_frame, text="Payment", bg="red", fg="white", font=("Arial", 12), command=self.call_splitpayment)
-        self.payment_button.grid(row=2, column=3, sticky="nsew")
+        self.payment_button.grid(row=2, column=2, sticky="nsew")
         self.creat_payment_buttons()
         self.update_info()
         self.update_list_items()
 
     def call_manager(self):
         self.master.show_frame("ManageFrame")
+
     def call_loging(self):
         self.master.show_frame("LogingFrame")
     
@@ -168,7 +197,14 @@ class DisplayFrame(tk.Frame):
             print("no list")
         else:
             PaymentForm(self)
-    
+    def new_chart(self):
+        self.update_info()
+        if len(self.list_items.get_children()) > 0:
+            cursor.execute("SELECT * FROM pre_doc_table")
+            res = cursor.fetchall()
+            self.chart_index = len(res)
+            self.void_items()
+
     def update_chart(self):
         doc_created_date = "doc_created_date"
         doc_expire_date = "doc_expire_date"
@@ -246,10 +282,15 @@ class DisplayFrame(tk.Frame):
     def update_list_items(self):
         # Define the SQL query to fetch the product information based on doc_created_date
         # Execute the query and fetch the results
+        cursor.execute("SELECT * FROM pre_doc_table")
+        res = cursor.fetchall()
+        if len(res) > 1 and hasattr(self, 'prevlist_button'):
+            self.prevlist_button.config(state=tk.NORMAL)
+            
         cursor.execute("SELECT * FROM pre_doc_table WHERE id=?", (self.chart_index,))
         results = cursor.fetchall()
         print("update_list_items" + str(results))
-
+        
         # Clear the existing items in the list
         self.list_items.delete(*self.list_items.get_children())
         print("on update_list_items")
@@ -269,7 +310,7 @@ class DisplayFrame(tk.Frame):
             Disc = result[10]
             TAX = result[11]
             States = result[12]
-            
+
             if States != "States":
                 self.chart_index += 1
                 if self.chart_index == len(results) or self.chart_index < 0:
@@ -302,8 +343,10 @@ class DisplayFrame(tk.Frame):
                 self.list_items.insert("", "end", values=(code, "", name, shop, color, size, qty, price, disc, tax, total_price))
         # Update the totals in the GUI
         #self.update_totals()
+        self.update_info()
         
     def next_prev_chart(self, towhere):
+        print("in prev\n\n")
         cursor.execute("SELECT * FROM pre_doc_table")
         results = cursor.fetchall()
         if towhere == "next":
@@ -314,10 +357,12 @@ class DisplayFrame(tk.Frame):
             self.chart_index -= 1
             if self.chart_index < 0:
                 self.chart_index = 0
-        self.update_list_items()
+        #self.update_list_items()
             
     def call_chartForm(self):
-        ShowchartForm(self)
+        v = ShowchartForm(self)
+        self.chart_index = v.value
+        print("selected chart : "+ str(v.value))
         self.update_list_items()
 
     def get_chart(self):
@@ -432,6 +477,7 @@ class DisplayFrame(tk.Frame):
                     button_exists = True
                     break
                 b+=1
+            a += 1
             # Create a new button if it doesn't exist
             if not button_exists:
                 if b == 3: 

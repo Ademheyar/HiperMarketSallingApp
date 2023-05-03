@@ -31,7 +31,7 @@ class ToolForm(tk.Frame):
         # Create the list box
         self.list_box = ttk.Treeview(self)
         self.list_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.list_box.bind('<<ListboxSelect>>', self.on_select)
+        self.list_box.bind('<<TreeviewSelect>>', self.on_select)
 
         # Create the frame for the product details
         self.details_frame = tk.Frame(self.list_box)
@@ -132,16 +132,24 @@ class ToolForm(tk.Frame):
         
         # clear the current items in the list box
         self.list_box.delete(*self.list_box.get_children())
-        self.list_box['columns'] = ('Name', 'Code', 'Type', 'Price')
+        self.list_box['columns'] = ("name", "code", "type", "short_key", "acsess", "enabel", "quick_pay", "customer_required", "printslip", "change_allowed", "markpad", "open_drower")
         self.list_box.heading("#0", text="ID")
-        self.list_box.heading("#1", text="Name")
-        self.list_box.heading("#2", text="Code")
-        self.list_box.heading("#3", text="Type")
-        self.list_box.heading("#4", text="Price")
+        self.list_box.heading("#1", text="name")
+        self.list_box.heading("#2", text="code")
+        self.list_box.heading("#3", text="type")
+        self.list_box.heading("#4", text="short_key")
+        self.list_box.heading("#5", text="acsess")
+        self.list_box.heading("#6", text="enabel")
+        self.list_box.heading("#7", text="quick_pay")
+        self.list_box.heading("#8", text="customer_required")
+        self.list_box.heading("#9", text="printslip")
+        self.list_box.heading("#10", text="change_allowed")
+        self.list_box.heading("#11", text="markpad")
+        self.list_box.heading("#12", text="open_drower")
 
         # Add the products to the product listbox
-        for product in products:
-            self.list_box.insert('', 'end', text=product[0], values=(product[1], product[2], product[3], product[9]))
+        for product in results:
+            self.list_box.insert('', 'end', text=product[0], values=(product[1], product[2], product[3], product[4], product[5], product[6], product[7], product[8], product[9], product[10], product[11], product[12]))
         
     def clear_tool_details_widget(self):
         # Clear the product details widgets
@@ -163,14 +171,15 @@ class ToolForm(tk.Frame):
         self.details_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
     def hide_add_forme(self):
         self.details_frame.forget()
-        self.clear_details_widget()
 
     # Create the "Change" button
     def show_change_forme(self):
         self.details_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
 
+
     def on_select(self, event):
-        if len(event.widget.curselection()) > 0:
+        print("onselect")
+        if len(event.widget.selection()) > 0:
             self.change_button.config(state=tk.NORMAL)
             self.delete_button.config(state=tk.NORMAL)
         else:
@@ -199,12 +208,20 @@ class ToolForm(tk.Frame):
         # Get the products from the database
         cur.execute('SELECT * FROM tools')
         products = cur.fetchall()
-        self.list_box['columns'] = ('Name', 'Code', 'Type', 'Price')
+        self.list_box['columns'] = ("name", "code", "type", "short_key", "acsess", "enabel", "quick_pay", "customer_required", "printslip", "change_allowed", "markpad", "open_drower")
         self.list_box.heading("#0", text="ID")
-        self.list_box.heading("#1", text="Name")
-        self.list_box.heading("#2", text="Code")
-        self.list_box.heading("#3", text="Type")
-        self.list_box.heading("#4", text="Price")
+        self.list_box.heading("#1", text="name")
+        self.list_box.heading("#2", text="code")
+        self.list_box.heading("#3", text="type")
+        self.list_box.heading("#4", text="short_key")
+        self.list_box.heading("#5", text="acsess")
+        self.list_box.heading("#6", text="enabel")
+        self.list_box.heading("#7", text="quick_pay")
+        self.list_box.heading("#8", text="customer_required")
+        self.list_box.heading("#9", text="printslip")
+        self.list_box.heading("#10", text="change_allowed")
+        self.list_box.heading("#11", text="markpad")
+        self.list_box.heading("#12", text="open_drower")
 
         # Add the products to the product listbox
         for product in products:

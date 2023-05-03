@@ -9,7 +9,7 @@ cursor = conn.cursor()
 class ShowchartForm(tk.Tk):
     def __init__(self, master):
         self.master = master
-
+        
         # create a Toplevel window for the chart list form
         self.chart_list_form = tk.Toplevel(self.master)
         self.chart_list_form.title("Chart List Form")
@@ -55,10 +55,11 @@ class ShowchartForm(tk.Tk):
         # retrieve the selected chart name from the Listbox
         selection = self.chart_list.curselection()
         if selection:
-            chart_name = self.chart_list.get(selection[0])
+            self.value = selection[0]
             # do something with the selected chart name, e.g. pass it to another function or update a variable
             
-            print("Selected chart:", chart_name)
+            print("Selected chart:", str(self.value))
+            self.chart_list_form.destroy()
         else:
             print("No chart selected.")
 

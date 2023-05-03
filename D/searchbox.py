@@ -74,16 +74,16 @@ class search_entry(ttk.Entry):
         result = self.cursor.fetchone()
 
         if result:
-            a = ItemSelectorWidget(self, result[12], result[16], self.master.master.master.qty)
+            a = ItemSelectorWidget(self, result[12], result[16], self.master.master.master.master.qty)
             print("ret : " + str([a.selected_shop.get(), a.selected_color.get(), a.selected_size.get(), a.selected_qty.get()]))
             print("info : " + str(result))
-            self.master.master.master.list_items.insert("", "end", text=result[0], values=(result[2], a.selected_barcode.get(), result[1], a.selected_shop.get(), a.selected_color.get(), a.selected_size.get(), a.selected_qty.get(), result[9], self.master.master.master.disc, result[10],float(a.selected_qty.get())*float(result[9])))
+            self.master.master.master.master.list_items.insert("", "end", text=result[0], values=(result[2], a.selected_barcode.get(), result[1], a.selected_shop.get(), a.selected_color.get(), a.selected_size.get(), a.selected_qty.get(), result[9], self.master.master.master.master.disc, result[10],float(a.selected_qty.get())*float(result[9])))
             #column_name = tree.column("#1", "heading")
-            for a in self.master.master.master.list_items.get_children():
-                self.master.master.master.list_items.item(a)['values'][2] = "000"
-                print("item : " + str(self.master.master.master.list_items.item(a)))
-            self.master.master.master.qty = 0
-            self.master.master.master.update_info()
+            for a in self.master.master.master.master.list_items.get_children():
+                self.master.master.master.master.list_items.item(a)['values'][2] = "000"
+                print("item : " + str(self.master.master.master.master.list_items.item(a)))
+            self.master.master.master.master.qty = 0
+            self.master.master.master.master.update_info()
 
     def comparison(self):
         query = self.var.get()
