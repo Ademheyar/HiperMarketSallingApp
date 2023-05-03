@@ -1,50 +1,83 @@
 import tkinter as tk
 from tkinter import ttk
-import sqlite3
+import sqlite3, os
 
-conn = sqlite3.connect("my_database.db")
+data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
+db_path = os.path.join(data_dir, 'my_database.db')
+conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
-
 class ShowchartForm(tk.Tk):
     def __init__(self, master):
         self.master = master
-        
-        
-        # create a Toplevel window for the payment form
-        self.Showchart_form = tk.Toplevel(self.master)
-        self.Showchart_form.title("Chart List Form")
+
+        # create a Toplevel window for the chart list form
+        self.chart_list_form = tk.Toplevel(self.master)
+        self.chart_list_form.title("Chart List Form")
 
         # calculate the center coordinates of the screen
         screen_width = self.master.winfo_screenwidth()
         screen_height = self.master.winfo_screenheight()
-        x = (screen_width / 2) - (300 / 2)  # 500 is the width of the Payment Form window
-        y = (screen_height / 2) - (300 / 2)  # 500 is the height of the Payment Form window
+        x = (screen_width / 2) - (300 / 2)  # 300 is the width of the chart list form window
+        y = (screen_height / 2) - (400 / 2)  # 400 is the height of the chart list form window
 
-        # set the position of the Payment Form window to center
-        self.getvalue_form.geometry(f"300x400+{int(x)}+{int(y)}")
-        self.getvalue_form.grid_rowconfigure(0, weight=1)
-        self.getvalue_form.grid_rowconfigure(1, weight=1)
-        self.getvalue_form.grid_rowconfigure(2, weight=1)
-        self.getvalue_form.grid_rowconfigure(3, weight=1)
-        self.getvalue_form.grid_rowconfigure(4, weight=1)
-        self.getvalue_form.grid_columnconfigure(0, weight=1)
-        self.getvalue_form.grid_columnconfigure(1, weight=1)
-        self.getvalue_form.grid_columnconfigure(2, weight=1)
-        self.getvalue_form.grid_columnconfigure(3, weight=1)
+        # set the position of the chart list form window to center
+        self.chart_list_form.geometry(f"600x400+{int(x)}+{int(y)}")
+        self.chart_list_form.grid_rowconfigure(0, weight=1)
+        self.chart_list_form.grid_columnconfigure(0, weight=1)
 
         self.include_var = tk.StringVar()
-        self.get_amount_entry = tk.Listbox(self.getvalue_form, textvariable=self.include_var, width=15, font=("Arial", 12))
-        self.get_amount_entry.grid(row=0, column=0, sticky="nsew", columnspan=4)
+        self.chart_list = tk.Listbox(self.chart_list_form, listvariable=self.include_var, width=25, font=("Arial", 12))
+        self.chart_list.grid(row=0, column=0, sticky="nsew")
 
-        self.button15 = tk.Button(self.getvalue_form, text="Select", fg="white", font=("Arial", 12), command= lambda: self.add_num("enter"))
-        self.button15.grid(row=4, column=2, sticky="nsew")
-        self.close_btn = tk.Button(self.getvalue_form, text="Close", command= lambda: self.getvalue_form.destroy())
-        self.close_btn.grid(row=4, column=3, sticky="nsew")
+        # retrieve chart data from the database
+        chart_data = cursor.execute("SELECT * FROM pre_doc_table").fetchall()
+        for chart in chart_data:
+            self.chart_list.insert("end", chart[8])  # assuming chart name is stored in second column
 
-        # show the Payment Form window
-        self.getvalue_form.transient(self.master)
-        self.getvalue_form.grab_set()
-        self.master.wait_window(self.getvalue_form)
+        self.select_button = tk.Button(self.chart_list_form, text="Select", font=("Arial", 12), command=self.select_chart)
+        self.select_button.grid(row=1, column=0, sticky="nsew")
 
-    def selecte_chart(self):
-        pass
+        self.delete_selected_button = tk.Button(self.chart_list_form, text="Delete Selected", font=("Arial", 12), command=self.delete_selected)
+        self.delete_selected_button.grid(row=2, column=0, sticky="nsew")
+
+        self.delete_all_button = tk.Button(self.chart_list_form, text="Delete All", font=("Arial", 12), command=self.delete_all)
+        self.delete_all_button.grid(row=3, column=0, sticky="nsew")
+
+        self.close_button = tk.Button(self.chart_list_form, text="Close", font=("Arial", 12), command=self.chart_list_form.destroy)
+        self.close_button.grid(row=4, column=0, sticky="nsew")
+
+        # show the chart list form window
+        self.chart_list_form.transient(self.master)
+        self.chart_list_form.grab_set()
+        self.master.wait_window(self.chart_list_form)
+
+    def select_chart(self):
+        # retrieve the selected chart name from the Listbox
+        selection = self.chart_list.curselection()
+        if selection:
+            chart_name = self.chart_list.get(selection[0])
+            # do something with the selected chart name, e.g. pass it to another function or update a variable
+            
+            print("Selected chart:", chart_name)
+        else:
+            print("No chart selected.")
+
+    def delete_selected(self):
+        # retrieve the selected chart name from the Listbox
+        selection = self.chart_list.curselection()
+        if selection:
+            chart_name = self.chart_list.get(selection[0])
+            # delete the selected chart from the Listbox
+            self.chart_list.delete(selection[0])
+            # delete the selected chart from the database
+            cursor.execute("DELETE FROM pre_doc_table WHERE ITEM = ?", (chart_name,))
+            conn.commit()  # commit the changes to the database
+        else:
+            print("No chart selected.")
+
+    def delete_all(self):
+        # delete all charts from the Listbox
+        self.chart_list.delete(0, "end")
+        # delete all charts from the database
+        cursor.execute("DELETE FROM pre_doc_table")
+        conn.commit()  # commit the changes to the database

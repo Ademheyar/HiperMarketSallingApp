@@ -1,8 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
-import sqlite3
+import sqlite3, os
 
-conn = sqlite3.connect("my_database.db")
+data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
+db_path = os.path.join(data_dir, 'my_database.db')
+conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
 class GetvalueForm(tk.Tk):
