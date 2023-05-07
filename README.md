@@ -1,38 +1,63 @@
-#Selling App
+ Sale Application
 
-This project is a Python-based selling application that includes a database called my_database. The database includes the following tables: pre_doc_table, doc_table, product, USERS, and tools. The application uses these tables to sell products and document the sales process, which are then recorded in the pre_doc_table and uploaded to the website.
-Getting Started
+This is a Point of Sale (POS) application designed to help businesses manage sales, inventory, and customer data. The application provides a user-friendly interface and a range of features to streamline retail operations and enhance the overall shopping experience.
 
-To get started with the application, follow these steps:
+## Features
 
-    Clone the repository to your local machine
-    Install Python on your machine if it is not already installed
-    Install the required dependencies using pip install -r requirements.txt
-    Create a config.py file that includes the necessary database credentials and configuration. An example file is included as config.example.py.
-    Run the application using python app.py.
+- **Sales Management**: Process sales transactions, create invoices, and generate receipts. Support various payment methods including cash, credit/debit cards, and mobile payments.
 
-Application Structure
+- **Inventory Management**: Track and manage inventory levels, including stock tracking, barcode scanning, product variations, and low stock alerts.
 
-The application is structured as follows:
+- **Customer Relationship Management (CRM)**: Store and manage customer data, including contact information, purchase history, loyalty programs, and customer analytics.
 
-    app.py: This file contains the main application code and handles the routing and logic for the application.
-    templates/: This directory contains the HTML templates for the application.
-    static/: This directory contains the static files (e.g., CSS, JavaScript) for the application.
-    database/: This directory contains the necessary database schema and migration files.
+- **Reporting and Analytics**: Generate reports and gain insights into sales performance, inventory turnover, popular products, and other business metrics to make informed decisions.
 
-Database Structure
+- **Integration Capabilities**: Integrate with other software and hardware systems such as payment gateways, accounting systems, barcode scanners, and receipt printers for a comprehensive retail management solution.
 
-The my_database database includes the following tables:
+## Getting Started
 
-    pre_doc_table: This table includes documentation of pre-sales processes.
-    doc_table: This table includes documentation of post-sales processes.
-    product: This table includes details about the products available for sale.
-    USERS: This table includes user information such as usernames, passwords, and email addresses.
-    tools: This table includes tools used by the application.
+To get started with the Point of Sale application, follow these steps:
 
-Contributing
+1. **Installation**: Clone the repository to your local machine and install the necessary dependencies as outlined in the installation instructions.
 
-If you wish to contribute to the application, please create a pull request and describe the changes you made. Any contribution is greatly appreciated.
-License
+2. **Configuration**: Set up the application by configuring the database connection, payment gateway integration, and other required settings.
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+3. **Database Setup**: Create the necessary database tables and seed initial data if applicable.
+
+4. **User Interface**: Design and develop the user interface components to provide an intuitive and user-friendly experience for managing sales, inventory, and customer data.
+
+5. **Backend Development**: Implement the backend logic and functionality for processing sales transactions, managing inventory, and handling customer data.
+
+6. **Integration**: Integrate the application with external systems such as payment gateways, barcode scanners, and receipt printers to enable seamless operations.
+
+7. **Testing**: Develop and execute test cases to ensure the application functions as expected and handles edge cases effectively.
+
+8. **Deployment**: Deploy the application to a production environment, considering scalability, security, and performance requirements.
+
+## Contributing
+
+Contributions to the Point of Sale application are welcome. If you would like to contribute, please follow these steps:
+
+1. Fork the repository and create a new branch for your feature or bug fix.
+
+2. Make your changes and ensure they are well-tested.
+
+3. Submit a pull request detailing your changes, the problem they solve, and any additional information relevant to the review process.
+
+4. Participate in the review process by addressing any feedback or questions raised during the review.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE.md).
+
+## Acknowledgements
+
+We would like to thank the developers and contributors of Aronium for inspiring this project.
+
+## Contact
+
+For any questions, issues, or inquiries, please contact [@AdemHeyar](mailto:ademheyar@gmail.com).
+
+Feel free to customize this README file to suit your specific project needs. Provide information about any additional features, installation instructions, or usage guidelines as necessary.
+
+Good luck with your Point of Sale application development!
