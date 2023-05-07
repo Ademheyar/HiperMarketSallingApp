@@ -40,31 +40,31 @@ class ManageForm(tk.Frame):
 
         # create buttons in manage_menus form
         self.info_btn = tk.Button(self.left_pane, text="Info", command=InfoForm(self.manage_form).show_info_form)
-        self.info_btn.pack()
+        self.info_btn.pack(side="top", fill="both", expand=True)
 
         self.doc_btn = tk.Button(self.left_pane, text="Doc", command=DocForm(self.manage_form).show_doc_form)
-        self.doc_btn.pack()
+        self.doc_btn.pack(side="top", fill="both", expand=True)
 
         self.product_btn = tk.Button(self.left_pane, text="Product", command=ProductForm(self.manage_form).show_product_form)
-        self.product_btn.pack()
+        self.product_btn.pack(side="top", fill="both", expand=True)
 
         #self.report_btn = tk.Button(self.left_pane, text="Report", command=self.show_report_form)
-        #self.report_btn.pack()
+        #self.report_btn.pack(side="top", fill="both", expand=True)
 
         self.user_btn = tk.Button(self.left_pane, text="User", command=UserForm(self.manage_form).show_user_form)
-        self.user_btn.pack()
+        self.user_btn.pack(side="top", fill="both", expand=True)
 
         self.tools_btn = tk.Button(self.left_pane, text="Tools", command=ToolForm(self.manage_form).show_tools_form)
-        self.tools_btn.pack()
+        self.tools_btn.pack(side="top", fill="both", expand=True)
 
         self.setting_btn = tk.Button(self.left_pane, text="Setting", command=self.show_setting_form)
-        self.setting_btn.pack()
+        self.setting_btn.pack(side="top", fill="both", expand=True)
 
         self.about_btn = tk.Button(self.left_pane, text="About", command=self.show_about_form)
-        self.about_btn.pack()
+        self.about_btn.pack(side="top", fill="both", expand=True)
 
         self.close_btn = tk.Button(self.left_pane, text="Close", command=self.hide_all_manager)
-        self.close_btn.pack()
+        self.close_btn.pack(side="top", fill="both", expand=True)
 
         # create frames for each form
 

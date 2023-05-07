@@ -13,7 +13,8 @@ from D.Showchartlists import ShowchartForm
 from D.ApprovedDisplay import ApproveFrame
 from M.Product import ProductForm
 from D.iteminfo import *
-
+from D.endday import EnddayForm
+from D.user_info import UserInfoForm
 
 from Manager import ManageForm
 
@@ -164,16 +165,16 @@ class DisplayFrame(tk.Frame):
         self.qty_button.grid(row=0, column=2, sticky="nsew")
         self.discount_button = tk.Button(self.buttons_frame, text="Discount", bg="red", fg="white", font=("Arial", 12), command=self.make_dicount)
         self.discount_button.grid(row=0, column=3, sticky="nsew")
-        self.prevlist_button = tk.Button(self.buttons_frame, text="Prev", bg="red", fg="white", font=("Arial", 12), command=self.next_prev_chart("prev"))
+        self.prevlist_button = tk.Button(self.buttons_frame, text="Prev", bg="red", fg="white", font=("Arial", 12), command=lambda: self.next_prev_chart("prev"))
         self.prevlist_button.grid(row=1, column=0, sticky="nsew")
         self.prevlist_button.config(state=tk.DISABLED)
         self.activets_button = tk.Button(self.buttons_frame, text="Activets", bg="red", fg="white", font=("Arial", 12), command=self.call_chartForm)
         self.activets_button.grid(row=1, column=1, sticky="nsew")
         self.newlist_button = tk.Button(self.buttons_frame, text="New", bg="red", fg="white", font=("Arial", 12), command=self.new_chart)
         self.newlist_button.grid(row=1, column=2, sticky="nsew")
-        self.endday_button = tk.Button(self.buttons_frame, text="Endday", bg="red", fg="white", font=("Arial", 12))
+        self.endday_button = tk.Button(self.buttons_frame, text="Endday", bg="red", fg="white", font=("Arial", 12), command=lambda: EnddayForm(self))
         self.endday_button.grid(row=1, column=3, sticky="nsew")
-        self.userinfo_button = tk.Button(self.buttons_frame, text="Userinfo", bg="red", fg="white", font=("Arial", 12))
+        self.userinfo_button = tk.Button(self.buttons_frame, text="Userinfo", bg="red", fg="white", font=("Arial", 12), command=lambda: UserInfoForm(self))
         self.userinfo_button.grid(row=2, column=0, sticky="nsew")
         self.logout_button = tk.Button(self.buttons_frame, text="Logout", bg="red", fg="white", font=("Arial", 12), command=self.call_loging)
         self.logout_button.grid(row=2, column=1, sticky="nsew")
@@ -346,7 +347,7 @@ class DisplayFrame(tk.Frame):
         self.update_info()
         
     def next_prev_chart(self, towhere):
-        print("in prev\n\n")
+        print("in prev func with" + towhere +"\n\n")
         cursor.execute("SELECT * FROM pre_doc_table")
         results = cursor.fetchall()
         if towhere == "next":
@@ -356,8 +357,9 @@ class DisplayFrame(tk.Frame):
         else:
             self.chart_index -= 1
             if self.chart_index < 0:
-                self.chart_index = 0
-        #self.update_list_items()
+                self.chart_index = len(results)-1
+        print("index : \n" + str(self.chart_index))
+        self.update_list_items()
             
     def call_chartForm(self):
         v = ShowchartForm(self)

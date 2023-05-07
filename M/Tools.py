@@ -21,12 +21,13 @@ class ToolForm(tk.Frame):
         self.search_frame.pack(side=tk.TOP, padx=5, pady=5)
 
         # create a StringVar to represent the search box
-        search_var = tk.StringVar()
-        self.search_entry = tk.Entry(self.search_frame, textvariable=search_var)
+        self.search_var = tk.StringVar()
+        self.search_entry = tk.Entry(self.search_frame, textvariable=self.search_var)
+        self.search_entry.bind('<KeyRelease>', self.update_search_results)
         self.search_entry.pack(side=tk.LEFT, padx=5, pady=5)
             
         # bind the update_search_results function to the search box
-        search_var.trace("w", self.update_search_results)
+        self.search_var.trace("w", self.update_search_results)
 
         # Create the list box
         self.list_box = ttk.Treeview(self)
@@ -36,10 +37,11 @@ class ToolForm(tk.Frame):
         # Create the frame for the product details
         self.details_frame = tk.Frame(self.list_box)
         self.details_frame.pack_forget()
-
+        self.main_name = ""
         # Create the widgets for the product details
         self.name_label = tk.Label(self.details_frame, text='Name:')
         self.name_entry = tk.Entry(self.details_frame)
+        self.name_entry.bind('<KeyRelease>', lambda: self.on_name_entry)
         self.code_label = tk.Label(self.details_frame, text='Code:')
         self.code_entry = tk.Entry(self.details_frame)
         self.type_label = tk.Label(self.details_frame, text='Type:')
@@ -107,13 +109,23 @@ class ToolForm(tk.Frame):
         self.cancle_button.grid(row=12, column=1, padx=5, pady=5, sticky=tk.W)
         self.update_tool_listbox()
 
+    def on_name_entry(self, event):
+        cur.execute('SELECT * FROM tools')
+        products = cur.fetchall()
+        for product in products:
+            if product[1] == self.name_entry.get():
+                self.add_button.config(text="Update")    
+                return
+        if self.main_name == self.name_entry.get() and not self.main_name == "":
+            self.add_button.config(text="Update")
+        else:
+            self.add_button.config(text="New")
 
     def show_tools_form(self):
         # call the function in the main file to show the first frame
         self.master.master.show_frame("ToolForm")
         
-    def search_products(search_text):
-        
+    def search_products(self, search_text):        
         # Search for the entered text in the code, name, short_key, and type fields of the product table
         cur.execute("SELECT * FROM tools WHERE code LIKE ? OR name LIKE ? OR short_key LIKE ? OR type LIKE ?", 
                     ('%' + search_text + '%', '%' + search_text + '%', '%' + search_text + '%', '%' + search_text + '%'))
@@ -123,13 +135,13 @@ class ToolForm(tk.Frame):
         
 
     # create a function to update the search results whenever the search box changes
-    def update_search_results(*args):
+    def update_search_results(self, *args):
         # get the search string from the search box
         search_str = self.search_var.get()
         
         # search for products based on the search string
-        results = search_products(search_str)
-        
+        results = self.search_products(search_str)
+        print("update_search :"+str(results))
         # clear the current items in the list box
         self.list_box.delete(*self.list_box.get_children())
         self.list_box['columns'] = ("name", "code", "type", "short_key", "acsess", "enabel", "quick_pay", "customer_required", "printslip", "change_allowed", "markpad", "open_drower")
@@ -168,13 +180,53 @@ class ToolForm(tk.Frame):
         
     # Create the "Add New" button
     def show_add_forme(self):
+        self.clear_tool_details_widget()
+        self.on_name_entry(None)
         self.details_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
+        
     def hide_add_forme(self):
+        self.clear_tool_details_widget()
         self.details_frame.forget()
 
     # Create the "Change" button
     def show_change_forme(self):
-        self.details_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
+        selected_product = self.list_box.selection()
+        if selected_product:
+            # Get the ID of the selected product
+            product_id = self.list_box.item(selected_product)['values'][1]
+
+            # Delete the product from the database
+            cur.execute('SELECT * FROM tools WHERE code=?', (product_id,))
+            products = cur.fetchall()
+
+            print("code : " + str(products))
+            id, name, code, typ, short_key, acsess, enable, \
+                quick_pay, customer_required, print_slip, change_allowed, \
+                    open_drower, markaspad = products[0]
+            # Clear the current text
+            # than add new one
+            self.name_entry.delete(0, "end")
+            self.name_entry.insert(0, name)
+            self.main_name = name
+            self.code_entry.delete(0, "end")
+            self.code_entry.insert(0, code)
+            self.type_entry.delete(0, "end")
+            self.type_entry.insert(0, typ)
+            self.short_key_entry.delete(0, "end")
+            self.short_key_entry.insert(0, short_key)
+            self.acsess_entry.delete(0, "end")
+            self.acsess_entry.insert(0, acsess)
+            self.enable_label.set(int(enable))
+            self.quick_pay_label.set(int(quick_pay))
+            self.customer_required_label.set(int(customer_required))
+            self.print_slip_label.set(int(print_slip))
+            self.change_allowed_label.set(int(change_allowed))
+            self.open_drower_label.set(int(open_drower))
+            self.markaspad_label.set(int(markaspad))
+            self.add_button.config(text="Update")
+            # Commit the changes to the database
+            conn.commit()
+            self.details_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
 
 
     def on_select(self, event):
@@ -190,15 +242,6 @@ class ToolForm(tk.Frame):
     def delete_product():
         # TODO: Implement the code to delete a product
         pass
-
-    # Define the function for hiding the product details frame
-    def hide_product_details_frame(self):
-        pass
-        # Hide the product details frame
-        #product_details_frame.grid_remove()
-
-        # Show the add product button
-        #add_product_button.grid()
 
     # Define the function for updating the product listbox
     def update_tool_listbox(self):
@@ -228,7 +271,7 @@ class ToolForm(tk.Frame):
             self.list_box.insert('', 'end', text=product[0], values=(product[1], product[2], product[3], product[9]))
 
         # Hide the product details frame
-        self.hide_product_details_frame()
+        self.hide_add_forme()
         self.change_button.config(state=tk.DISABLED)
 
     # Define the function for adding a new product
@@ -247,104 +290,37 @@ class ToolForm(tk.Frame):
         open_drower = self.open_drower_label.get()
         markaspad = self.markaspad_label.get()
 
-        # Insert the new product into the database
-        cur.execute('INSERT INTO tools (name, code, type, short_key, acsess, enabel, quick_pay, customer_required, printslip, change_allowed, markpad, open_drower) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (name, code, typ, short_key, acsess, enable, quick_pay , customer_required, print_slip, change_allowed, markaspad, open_drower))
-        
+        if self.add_button.cget("text") == "New":        
+            # Insert the new product into the database
+            cur.execute('INSERT INTO tools (name, code, type, short_key, acsess, enabel, quick_pay, customer_required, printslip, change_allowed, markpad, open_drower) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (name, code, typ, short_key, acsess, enable, quick_pay , customer_required, print_slip, change_allowed, markaspad, open_drower))
+        else:
+            # UPDATE the new product into the database
+            cur.execute('UPDATE tools SET name=?, code=?, type=?, short_key=?, acsess=?, enabel=?, quick_pay=?, customer_required=?, printslip=?, change_allowed=?, markpad=?, open_drower=? WHERE name=?', (name, code, typ, short_key, acsess, enable, quick_pay , customer_required, print_slip, change_allowed, markaspad, open_drower, name))
         # Commit the changes to the database
         conn.commit()
 
-        # Clear the product details widgets
-        self.clear_tool_details_widget()
-        
         # Update the product listbox
         self.update_tool_listbox()
-
-    # Define the function for changing an existing product
-    def change_product():
-        # Get the selected product from the listbox
-        selected_product = product_listbox.curselection()
+        # Hide the product details frame
+        self.hide_add_forme()
         
-        if selected_product:
-            # Get the values from the product details widgets
-            name = self.name_entry.get()
-            code = self.code_entry.get()
-            type = self.type_entry.get()
-            short_key = self.short_key_entry.get()
-            acsess = self.acsess_entry.get()
-            enable = self.enable_label.get()
-            open_drower = self.open_drower_label.get()
-            print_slip = self.print_slip_label.get()
-            markaspad = self.markaspad_label.get()
-
-
-            # Get the ID of the selected product
-            product_id = product_listbox.get(selected_product)[0]
-
-            # Update the product in the database
-            cur.execute('UPDATE tools SET name=?, code=?, type=?, short_key=?, acsess=?, enable=?, open_drower=?, print_slip=?, markaspad=?, include_print_slip=?, markaspad_change=?, more_info=?, images=?, description=?, service=?, default_enable=?, active=? WHERE id=?', (name, code, type, short_key, acsess, enable, open_drower, print_slip, markaspad, include_print_slip, markaspad_change, more_info, images, description, service, default_enable, active, product_id))
-
-            # Commit the changes to the database
-            conn.commit()
-
-            # Clear the product details widgets
-            clear_tool_details_widget()
-            # Update the product listbox
-            update_tool_listbox()
-
     # Define the function for deleting a product
-    def delete_tool():
+    def delete_tool(self):
         # Get the selected product from the listbox
-        selected_product = product_listbox.curselection()
+        selected_product = self.list_box.selection()
         
         if selected_product:
             # Get the ID of the selected product
-            product_id = product_listbox.get(selected_product)[0]
+            product_id = self.list_box.item(selected_product)['values'][0]
 
             # Delete the product from the database
-            cur.execute('DELETE FROM tools WHERE id=?', (product_id,))
+            cur.execute('DELETE FROM tools WHERE name=?', (product_id,))
 
             # Commit the changes to the database
             conn.commit()
 
             # Clear the product details widgets
-            clear_tool_details_widget()
+            self.clear_tool_details_widget()
 
             # Update the product listbox
-            update_tool_listbox()
-
-    # Define the function for showing the product details frame
-    def show_product_details_frame():
-        # Show the product details frame
-        product_details_frame.grid(row=0, column=1, sticky='nsew')
-
-        # Hide the add product button
-        add_product_button.grid_remove()
-
-        # Clear the product details widgets
-        clear_tool_details_widget()
-
-    # Define the function for updating an existing product
-    def update_product():
-        # Get the values from the product details widgets
-        name = self.name_entry.get()
-        code = self.code_entry.get()
-        type = self.type_entry.get()
-        short_key = self.short_key_entry.get()
-        acsess = self.acsess_entry.get()
-        enable = self.enable_label.get()
-        open_drower = self.open_drower_label.get()
-        print_slip = self.print_slip_label.get()
-        
-
-        # Update the product in the database
-        cur.execute('UPDATE tools SET name=?, code=?, type=?, short_key=?, acsess=?, enable=?, open_drower=?, print_slip=?, markaspad=?, include_print_slip=?, markaspad_change=?, more_info=?, images=?, description=?, service=?, default_enable=?, active=? WHERE id=?', (name, code, type, short_key, acsess, enable, open_drower, print_slip, markaspad, include_print_slip, markaspad_change, more_info, images, description, service, default_enable, active, selected_product_id))
-        conn.commit()
-
-        # Clear the product details widgets
-        self.clear_tool_details_widgets()
-
-        # Update the product listbox
-        self.update_tool_listbox()
-
-        # Hide the product details frame
-        self.hide_product_details_frame()
+            self.update_tool_listbox()

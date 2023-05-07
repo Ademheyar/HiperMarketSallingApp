@@ -67,16 +67,18 @@ cur.execute('''CREATE TABLE IF NOT EXISTS product
               service TEXT,
               default_quantity INTEGER,
               active INTEGER)''')
+#query = f"DROP TABLE IF EXISTS USERS"
+#cur.execute(query)
 
 cur.execute('''CREATE TABLE IF NOT EXISTS USERS
              (id INTEGER PRIMARY KEY AUTOINCREMENT,
               name TEXT,
-              type TEXT,
-              phone_num TEXT,
-              password TEXT,
+              addres TEXT,
               id_num TEXT,
+              phone_num TEXT,
               email TEXT,
-              address TEXT,
+              type TEXT,
+              password TEXT,
               acsess TEXT)''')
 
 cur.execute('''CREATE TABLE IF NOT EXISTS tools

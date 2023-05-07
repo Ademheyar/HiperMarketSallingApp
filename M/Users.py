@@ -24,6 +24,7 @@ class UserForm(tk.Frame):
         # create a StringVar to represent the search box
         search_var = tk.StringVar()
         self.search_entry = tk.Entry(self.search_frame, textvariable=search_var)
+        self.search_entry.bind('<KeyRelease>', self.update_search_results)
         self.search_entry.pack(side=tk.LEFT, padx=5, pady=5)
             
         # bind the update_search_results function to the search box
@@ -33,15 +34,17 @@ class UserForm(tk.Frame):
         # Create the list box
         self.list_box = ttk.Treeview(self)
         self.list_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.list_box.bind('<<ListboxSelect>>', self.on_select)
+        self.list_box.bind('<<TreeviewSelect>>', self.on_select)
 
-        # Create the frame for the product details
+        # Create the frame for the user details
         self.details_frame = tk.Frame(self.list_box)
         self.details_frame.pack_forget()
 
-        # Create the widgets for the product details
+        # Create the widgets for the user details
         self.name_label = tk.Label(self.details_frame, text='Name:')
         self.name_entry = tk.Entry(self.details_frame)
+        self.main_name = ""
+        self.name_entry.bind('<KeyRelease>', lambda: self.on_name_entry)
         self.type_label = tk.Label(self.details_frame, text='TYPE:')
         self.type_entry = tk.Entry(self.details_frame)
         self.phone_num_label = tk.Label(self.details_frame, text='PHONE NUMBER:')
@@ -56,22 +59,23 @@ class UserForm(tk.Frame):
         self.acsess_entry = tk.Entry(self.details_frame)
 
 
-        self.add_button = tk.Button(self.details_frame, text='Add', command=self.add_product)
-        self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=self.hide_add_product_forme)
+        self.add_button = tk.Button(self.details_frame, text='Add', command=self.add_user)
+        self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=self.hide_user_details_frame)
 
 
-        self.add_searchbutton = tk.Button(self.search_frame, text='Add New user', command=self.show_add_product_forme)
+        self.add_searchbutton = tk.Button(self.search_frame, text='Add New user', command=self.show_user_details_frame)
         self.add_searchbutton.pack(side=tk.LEFT, padx=5, pady=5)
 
-        self.change_button = tk.Button(self.search_frame, text='Change', command=self.show_change_product_forme)
+        self.change_button = tk.Button(self.search_frame, text='Change', command=self.show_change_forme)
         self.change_button.pack(side=tk.LEFT, padx=5, pady=5)
         self.change_button.config(state=tk.DISABLED)
 
-        self.delete_button = tk.Button(self.search_frame, text='Delete', command=self.delete_product)
+        self.delete_button = tk.Button(self.search_frame, text='Delete', command=self.delete_user)
         self.delete_button.pack(side=tk.LEFT, padx=5, pady=5)
+        self.delete_button.config(state=tk.DISABLED)
 
 
-        # Pack the widgets for the product details
+        # Pack the widgets for the user details
         self.name_label.grid(row=0, column=0, padx=5, pady=5, sticky=tk.E)
         self.name_entry.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
         self.type_label.grid(row=5, column=0, padx=5, pady=5, sticky=tk.E)
@@ -89,29 +93,40 @@ class UserForm(tk.Frame):
 
         self.add_button.grid(row=17, column=0, padx=5, pady=5, sticky=tk.W)
         self.cancle_button.grid(row=17, column=1, padx=5, pady=5, sticky=tk.W)
-        self.update_product_listbox()
+        self.update_user_listbox()
+
+    def on_name_entry(self, event):
+        cur.execute('SELECT * FROM USERS')
+        users = cur.fetchall()
+        for user in users:
+            print("on_name_entry\n"+str(user[1]))
+            if user[1] == self.name_entry.get():
+                self.add_button.config(text="Update")    
+                return
+        if self.main_name == self.name_entry.get() and not self.main_name == "":
+            self.add_button.config(text="Update")
+        else:
+            self.add_button.config(text="New")
 
     def show_user_form(self):
         # call the function in the main file to show the first frame
         self.master.master.show_frame("UserForm")
         
-    def search_products(search_text):
-        
-        # Search for the entered text in the addres, name, phone_num, and type fields of the product table
-        cur.execute("SELECT * FROM product WHERE addres LIKE ? OR name LIKE ? OR phone_num LIKE ? OR type LIKE ?", 
+    def search_users(self, search_text):        
+        # Search for the entered text in the code, name, short_key, and type fields of the user table
+        cur.execute("SELECT * FROM USERS WHERE code LIKE ? OR name LIKE ? OR short_key LIKE ? OR type LIKE ?", 
                     ('%' + search_text + '%', '%' + search_text + '%', '%' + search_text + '%', '%' + search_text + '%'))
         results = cur.fetchall()
         
         return results
-        
-
+    
     # create a function to update the search results whenever the search box changes
-    def update_search_results(*args):
+    def update_search_results(self, *args):
         # get the search string from the search box
-        search_str = search_var.get()
+        search_str = self.search_var.get()
         
-        # search for products based on the search string
-        results = search_products(search_str)
+        # search for users based on the search string
+        users = self.search_users(search_str)
         
         # clear the current items in the list box
         self.list_box.delete(*self.list_box.get_children())
@@ -122,12 +137,12 @@ class UserForm(tk.Frame):
         self.list_box.heading("#3", text="Type")
         self.list_box.heading("#4", text="Price")
 
-        # Add the products to the product listbox
-        for product in products:
-            self.list_box.insert('', 'end', text=product[0], values=(product[1], product[2], product[3], product[9]))
-        
-    def clear_product_details_widget():
-        # Clear the product details widgets
+        # Add the users to the user listbox
+        for user in users:
+            self.list_box.insert('', 'end', text=user[0], values=(user[1], user[2], user[3], user[9]))
+
+    def clear_user_details_widget(self):
+        # Clear the user details widgets
         self.name_entry.delete(0, tk.END)
         self.type_entry.delete(0, tk.END)
         self.phone_num_entry.delete(0, tk.END)
@@ -135,48 +150,72 @@ class UserForm(tk.Frame):
         self.id_num_entry.delete(0, tk.END)
         self.addres_entry.delete(0, tk.END)
         self.acsess_entry.delete(0, tk.END)
-        active_var.set(0)
-        
-    # Create the "Add New" button
-    def show_add_product_forme(self):
-        self.details_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
+        #self.active_var.set(0)
 
-    def hide_add_product_forme(self):
+    # Create the "Add New" button
+    def show_user_details_frame(self):
+        self.clear_user_details_widget()
+        self.on_name_entry(None)
+        self.details_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
+        
+    def hide_user_details_frame(self):
+        self.clear_user_details_widget()
         self.details_frame.forget()
-        self.clear_product_details_widget()
 
     # Create the "Change" button
-    def show_change_product_forme():
-        self.details_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
+    def show_change_forme(self):
+        selected_user = self.list_box.selection()
+        if selected_user:
+            # Get the ID of the selected user
+            user_id = self.list_box.item(selected_user)['values'][0]
 
-    def on_select(self,event):
-        if len(event.widget.curselection()) > 0:
+            # Delete the user from the database
+            cur.execute('SELECT * FROM USERS WHERE name=?', (user_id,))
+            users = cur.fetchall()
+
+            print("name : " + str(users))
+            id, name, addres, id_num, phone_num, email, \
+                type, password, acsess = users[0]
+            # Clear the current text
+            # than add new one
+            self.name_entry.delete(0, "end")
+            self.name_entry.insert(0, name)
+            self.main_name = name
+            self.addres_entry.delete(0, "end")
+            self.addres_entry.insert(0, addres)
+            self.id_num_entry.delete(0, "end")
+            self.id_num_entry.insert(0, id_num)
+            self.phone_num_entry.delete(0, "end")
+            self.phone_num_entry.insert(0, phone_num)
+            self.email_entry.delete(0, "end")
+            self.email_entry.insert(0, email)
+            self.type_entry.delete(0, "end")
+            self.type_entry.insert(0, type)
+            #password
+            self.acsess_entry.delete(0, "end")
+            self.acsess_entry.insert(0, acsess)
+
+            self.add_button.config(text="Update")
+            # Commit the changes to the database
+            conn.commit()
+            self.details_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
+
+    def on_select(self, event):
+        if len(event.widget.selection()) > 0:
             self.change_button.config(state=tk.NORMAL)
+            self.delete_button.config(state=tk.NORMAL)
         else:
             self.change_button.config(state=tk.DISABLED)
+            self.delete_button.config(state=tk.DISABLED)
 
-    # Create the "Delete" button
-    def delete_product():
-        # TODO: Implement the addres to delete a product
-        pass
-
-    # Define the function for hiding the product details frame
-    def hide_product_details_frame(self):
-        pass
-        # Hide the product details frame
-        #product_details_frame.grid_remove()
-
-        # Show the add product button
-        #add_product_button.grid()
-
-    # Define the function for updating the product listbox
-    def update_product_listbox(self):
-        # Clear the product listbox
+    # Define the function for updating the user listbox
+    def update_user_listbox(self):
+        # Clear the user listbox
         self.list_box.delete(*self.list_box.get_children())
 
-        # Get the products from the database
+        # Get the users from the database
         cur.execute('SELECT * FROM USERS')
-        products = cur.fetchall()
+        users = cur.fetchall()
         self.list_box['columns'] = ('Name', 'Type', 'Phone_Number', 'Id_Number', 'Email', 'Adress')
         self.list_box.heading("#0", text="ID")
         self.list_box.heading("#1", text="Name")
@@ -186,17 +225,17 @@ class UserForm(tk.Frame):
         self.list_box.heading("#4", text="Email")
         self.list_box.heading("#4", text="Adress")
 
-        # Add the products to the product listbox
-        for product in products:
-            self.list_box.insert('', 'end', text=product[0], values=(product[1], product[2], product[3], product[4], product[5], product[6]))
+        # Add the users to the user listbox
+        for user in users:
+            self.list_box.insert('', 'end', text=user[0], values=(user[1], user[2], user[3], user[4], user[5], user[6]))
 
-        # Hide the product details frame
-        self.hide_product_details_frame()
+        # Hide the user details frame
+        self.hide_user_details_frame()
         self.change_button.config(state=tk.DISABLED)
 
-    # Define the function for adding a new product
-    def add_product():
-        # Get the values from the product details widgets
+    # Define the function for adding a new user
+    def add_user(self):
+        # Get the values from the user details widgets
         name = self.name_entry.get()
         typ = self.type_entry.get()
         email = self.email_entry.get()
@@ -204,101 +243,36 @@ class UserForm(tk.Frame):
         id_num = self.id_num_entry.get()
         addres = self.addres_entry.get()
         acsess = self.acsess_entry.get()
+        password = ""
 
-        # Insert the new product into the database
-        cur.execute('INSERT INTO USERS (name, type, addres, email, phone_num, id_num, adress, acsess) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', (name, type, addres, email, phone_num, id_num, adress, acsess))
-        
+        if self.add_button.cget("text") == "New":        
+            # Insert the new user into the database
+            cur.execute('INSERT INTO USERS (name, addres, id_num, phone_num, email, type, password, acsess) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', (name, addres, id_num, phone_num, email, typ, password, acsess))
+        else:
+            # UPDATE the new user into the database
+            cur.execute('UPDATE USERS SET name=?, addres=?, id_num=?, phone_num=?, email=?, type=?, password=?, acsess=? WHERE name=?', (name, addres, id_num, phone_num, email, typ, password, acsess, name))
         # Commit the changes to the database
         conn.commit()
-        
-        # Clear the product details widgets
-        clear_product_details_widget()
-        
-        # Update the product listbox
-        update_product_listbox()
 
-    # Define the function for changing an existing product
-    def change_product():
-        # Get the selected product from the listbox
-        selected_product = product_listbox.curselection()
+        # Clear the user details widgets
+        self.clear_user_details_widget()
         
-        if selected_product:
-            # Get the values from the product details widgets
-            name = self.name_entry.get()
-            typ = self.type_entry.get()
-            email = self.email_entry.get()
-            phone_num = self.phone_num_entry.get()
-            id_num = self.id_num_entry.get()
-            addres = self.addres_entry.get()
-            acsess = self.acsess_entry.get()
+        # Update the user listbox
+        self.update_user_listbox()
 
-            # Get the ID of the selected product
-            user_id = self.product_listbox.get(selected_product)[0]
+    # Define the function for deleting a user
+    def delete_user(self):
+        # Get the selected user from the listbox
+        selected_user = self.list_box.selection()
 
-            # Update the product in the database
-            cur.execute('UPDATE USERS SET name=?, type=?, addres=?, email=?, phone_num=?, id_num=?, adress=?, acsess=?) WHERE id=?', (name, type, addres, email, phone_num, id_num, adress, acsess, user_id))
+        if selected_user:
+            # Get the ID of the selected user
+            user_id = self.list_box.item(selected_user)['values'][0]
+        
+            # Delete the user from the database
+            cur.execute('DELETE FROM USERS WHERE name=?', (user_id,))
 
             # Commit the changes to the database
             conn.commit()
-
-            # Clear the product details widgets
-            clear_product_details_widget()
-            # Update the product listbox
-            update_product_listbox()
-
-    # Define the function for deleting a product
-    def delete_product():
-        # Get the selected product from the listbox
-        selected_product = self.product_listbox.curselection()
-        
-        if selected_product:
-            # Get the ID of the selected product
-            product_id = self.product_listbox.get(selected_product)[0]
-
-            # Delete the product from the database
-            cur.execute('DELETE FROM USERS WHERE id=?', (product_id,))
-
-            # Commit the changes to the database
-            conn.commit()
-
-            # Clear the product details widgets
-            clear_product_details_widget()
-
-            # Update the product listbox
-            update_product_listbox()
-
-    # Define the function for showing the product details frame
-    def show_product_details_frame():
-        # Show the product details frame
-        product_details_frame.grid(row=0, column=1, sticky='nsew')
-
-        # Hide the add product button
-        add_product_button.grid_remove()
-
-        # Clear the product details widgets
-        clear_product_details_widget()
-
-    # Define the function for updating an existing product
-    def update_product():
-        # Get the values from the product details widgets
-        name = self.name_entry.get()
-        typ = self.type_entry.get()
-        email = self.email_entry.get()
-        phone_num = self.phone_num_entry.get()
-        id_num = self.id_num_entry.get()
-        addres = self.addres_entry.get()
-        acsess = self.acsess_entry.get()
-
-        # Update the product in the database
-        cur.execute('UPDATE USERS SET name=?, type=?, addres=?, email=?, phone_num=?, id_num=?, adress=?, acsess=?) WHERE id=?', (name, type, addres, email, phone_num, id_num, adress, acsess, user_id))
-
-        conn.commit()
-
-        # Clear the product details widgets
-        clear_product_details_widgets()
-
-        # Update the product listbox
-        update_product_listbox()
-
-        # Hide the product details frame
-        hide_product_details_frame()
+            # Update the user listbox
+            self.update_user_listbox()
