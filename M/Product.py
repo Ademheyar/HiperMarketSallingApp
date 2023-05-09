@@ -482,24 +482,7 @@ class ProductForm(tk.Frame):
         
 
         
-    # Create the "Add New" button
-    def show_add_product_forme(self):
-        self.notebook_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
-
-    def hide_add_product_forme(self):
-        self.notebook_frame.pack_forget()
-        self.clear_product_details_widget()
-
-    # Create the "Change" button
-    def show_change_product_forme(self):
-        self.notebook_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
-
-    def on_select(self, event):
-        if len(event.widget.curselection()) > 0:
-            self.change_button.config(state=tk.NORMAL)
-        else:
-            self.change_button.config(state=tk.DISABLED)
-
+    
     # Create the "Delete" button
     
     # Define the function for deleting a product
@@ -552,18 +535,6 @@ class ProductForm(tk.Frame):
         self.hide_product_details_frame()
         self.change_button.config(state=tk.DISABLED)
 
-    def on_name_entry(self, event):
-        cur.execute('SELECT * FROM product')
-        products = cur.fetchall()
-        for product in products:
-            print("on_name_entry\n"+str(product[1]))
-            if product[1] == self.name_entry.get():
-                self.add_button.config(text="Update")    
-                return
-        if self.main_name == self.name_entry.get() and not self.main_name == "":
-            self.add_button.config(text="Update")
-        else:
-            self.add_button.config(text="New")
 
     def show_product_form(self):
         # call the function in the main file to show the first frame
@@ -598,85 +569,8 @@ class ProductForm(tk.Frame):
         # Add the products to the product listbox
         for product in products:
             self.list_box.insert('', 'end', text=product[0], values=(product[1], product[2], product[3], product[9]))
-            
-    def clear_product_details_widget(self):
-        # Clear the product details widgets
-        self.name_entry.delete(0, tk.END)
-        self.code_entry.delete(0, tk.END)
-        self.type_entry.delete(0, tk.END)
-        #self.barcode_entry.delete(0, tk.END)
-        #self.at_shop_entry.delete(0, tk.END)
-        #self.quantity_entry.delete(0, tk.END)
-        self.cost_entry.delete(0, tk.END)
-        self.tax_entry.delete(0, tk.END)
-        self.price_entry.delete(0, tk.END)
-        self.include_tax_var.set(0)
-        self.price_change_var.set(0)
-        self.more_info_label['text'] = ""
-        self.images_entry.delete(0, tk.END)
-        self.description_entry.delete(0, tk.END)
-        self.service_change_var.set(0)
-        self.default_quantity_change_var.set(0)
-        self.active_var.set(0)
         
-    # Define the function for showing the product details frame
-    def show_product_details_frame(self):
-        self.clear_product_details_widget()
-        self.on_name_entry(None)
-        # Show the product details frame
-        self.details_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
 
-    def hide_product_details_frame(self):
-        self.clear_product_details_widget()
-        # Hide the add product button
-        self.details_frame.forget()
-
-
-    # Create the "Change" button
-    def show_change_forme(self):
-        selected_product = self.list_box.selection()
-        if selected_product:
-            # Get the ID of the selected product
-            product_id = self.list_box.item(selected_product)['values'][0]
-
-            # Delete the product from the database
-            cur.execute('SELECT * FROM product WHERE name=?', (product_id,))
-            products = cur.fetchall()
-
-            print("name : " + str(products))
-            id, name, addres, id_num, phone_num, email, \
-                type, password, acsess = products[0]
-            # Clear the current text
-            # than add new one
-            self.name_entry.delete(0, "end")
-            self.name_entry.insert(0, name)
-            self.main_name = name
-            self.addres_entry.delete(0, "end")
-            self.addres_entry.insert(0, addres)
-            self.id_num_entry.delete(0, "end")
-            self.id_num_entry.insert(0, id_num)
-            self.phone_num_entry.delete(0, "end")
-            self.phone_num_entry.insert(0, phone_num)
-            self.email_entry.delete(0, "end")
-            self.email_entry.insert(0, email)
-            self.type_entry.delete(0, "end")
-            self.type_entry.insert(0, type)
-            #password
-            self.acsess_entry.delete(0, "end")
-            self.acsess_entry.insert(0, acsess)
-
-            self.add_button.config(text="Update")
-            # Commit the changes to the database
-            conn.commit()
-            self.details_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
-
-    def on_select(self, event):
-        if len(event.widget.selection()) > 0:
-            self.change_button.config(state=tk.NORMAL)
-            self.delete_button.config(state=tk.NORMAL)
-        else:
-            self.change_button.config(state=tk.DISABLED)
-            self.delete_button.config(state=tk.DISABLED)
 
     # Define the function for updating the product listbox
     def update_product_listbox(self):
@@ -700,52 +594,126 @@ class ProductForm(tk.Frame):
             self.list_box.insert('', 'end', text=product[0], values=(product[1], product[2], product[3], product[4], product[5], product[6]))
 
         # Hide the product details frame
-        self.hide_product_details_frame()
+        self.hide_add_product_forme()
         self.change_button.config(state=tk.DISABLED)
 
-    # Define the function for adding a new product
-    def add_product(self):
-        # Get the values from the product details widgets
-        # Get the values from the product details widgets
-        name = self.name_entry.get()
-        code = self.code_entry.get()
-        typ = self.type_entry.get()
-        barcode = 0
-        #self.barcode_entry.get()
-        at_shop = 0
-        # self.at_shop_entry.get()
-        quantity = 0
-        # self.quantity_entry.get()
-        cost = self.cost_entry.get()
-        tax = self.tax_entry.get()
-        price = self.price_entry.get()
-        include_tax = self.include_tax_var.get()
-        price_change = self.price_change_var.get()
-        more_info = self.more_info_label['text']
-        images = self.images_entry.get()
-        description = self.description_entry.get()
-        service = self.service_change_var.get()
-        default_quantity = self.default_quantity_change_var.get()
-        active = self.active_var.get()
 
-        print(str([name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active]))
-        
-        if self.add_button.cget("text") == "New":        
-            # Insert the new product into the database
-            cur.execute('INSERT INTO product (name, code, type, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active))
+
+
+
+
+
+
+
+
+
+
+    def on_select(self, event):
+        if len(event.widget.selection()) > 0:
+            self.change_button.config(state=tk.NORMAL)
+            self.delete_button.config(state=tk.NORMAL)
         else:
-            product_id = self.product_listbox.get(self.list_box.selection())['values'][0]
+            self.change_button.config(state=tk.DISABLED)
+            self.delete_button.config(state=tk.DISABLED)
 
-            # Update the product in the database
-            cur.execute('UPDATE product SET name=?, code=?, type=?, barcode=?, at_shop=?, quantity=?, cost=?, tax=?, price=?, include_tax=?, price_change=?, more_info=?, images=?, description=?, service=?, default_quantity=?, active=? WHERE id=?', (name, code, type, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active, product_id))
-        # Commit the changes to the database
-        conn.commit()
+    def on_name_entry(self, event):
+        cur.execute('SELECT * FROM product')
+        products = cur.fetchall()
+        for product in products:
+            print("on_name_entry\n"+str(product[1]))
+            if product[1] == self.name_entry.get():
+                self.add_button.config(text="Update")    
+                return
+        if self.main_name == self.name_entry.get() and not self.main_name == "":
+            self.add_button.config(text="Update")
+        else:
+            self.add_button.config(text="New")
 
+    def clear_product_details_widget(self):
         # Clear the product details widgets
+        self.name_entry.delete(0, tk.END)
+        self.code_entry.delete(0, tk.END)
+        self.type_entry.delete(0, tk.END)
+        #self.barcode_entry.delete(0, tk.END)
+        #self.at_shop_entry.delete(0, tk.END)
+        #self.quantity_entry.delete(0, tk.END)
+        self.cost_entry.delete(0, tk.END)
+        self.tax_entry.delete(0, tk.END)
+        self.price_entry.delete(0, tk.END)
+        self.include_tax_var.set(0)
+        self.price_change_var.set(0)
+        self.more_info_label['text'] = ""
+        self.images_entry.delete(0, tk.END)
+        self.description_entry.delete(0, tk.END)
+        self.service_change_var.set(0)
+        self.default_quantity_change_var.set(0)
+        self.active_var.set(0)
+
+    # Create the "Add New" button
+    # Define the function for showing the product details frame
+    def show_add_product_forme(self):
         self.clear_product_details_widget()
-        
-        # Update the product listbox
-        self.update_product_listbox()
+        self.on_name_entry(None)
+        # Show the product details frame
+        self.notebook_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
+
+    def hide_add_product_forme(self):
+        self.clear_product_details_widget()
+        # Hide the add product button
+        self.notebook_frame.pack_forget()
+
+    # Create the "Change" button
+    def show_change_product_forme(self):
+        selected_product = self.list_box.selection()
+        if selected_product:
+            # Get the ID of the selected product
+            product_id = self.list_box.item(selected_product)['values'][0]
+
+            # Delete the product from the database
+            cur.execute('SELECT * FROM product WHERE name=?', (product_id,))
+            products = cur.fetchall()
+
+            print("name : " + str(products))
+            id, name, code, type, barcode, at_shop, quantity, cost, \
+              tax, price, include_tax, price_change, more_info , images, \
+                description , service , default_quantity, active = products[0]
+            # Clear the current text
+            # than add new one
+            self.name_entry.delete(0, tk.END)
+            self.name_entry.insert(0, name)
+            self.on_name_entry(name)
+            self.code_entry.delete(0, tk.END)
+            self.code_entry.insert(0, code)
+            self.type_entry.delete(0, tk.END)
+            self.type_entry.insert(0, type)
+            #self.barcode_entry.delete(0, tk.END)
+            #self.barcode_entry.insert(0, barcode)
+            #self.at_shop_entry.delete(0, tk.END)
+            #self.at_shop_entry.insert(0, at_shop)
+            #self.quantity_entry.delete(0, tk.END)
+            #self.quantity_entry.insert(0, quantity)
+            self.cost_entry.delete(0, tk.END)
+            self.cost_entry.insert(0, cost)
+            self.tax_entry.delete(0, tk.END)
+            self.tax_entry.insert(0, tax)
+            self.price_entry.delete(0, tk.END)
+            self.price_entry.insert(0, price)
+            self.include_tax_var.set(int(include_tax))
+            self.price_change_var.set(int(price_change))
+            self.more_info_label['text'] = more_info
+            self.images_entry.delete(0, tk.END)
+            self.images_entry.insert(0, images)
+            self.description_entry.delete(0, tk.END)
+            self.description_entry.insert(0, description)
+            self.service_change_var.set(int(service))
+            self.default_quantity_change_var.set(int(default_quantity))
+            self.active_var.set(int(active))
+            
+            self.add_button.config(text="Update")
+            # Commit the changes to the database
+            conn.commit()
+            #self.details_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
+            self.notebook_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
 
     # Define the function for deleting a product
     def delete_product(self):
@@ -763,3 +731,47 @@ class ProductForm(tk.Frame):
             conn.commit()
             # Update the product listbox
             self.update_product_listbox()
+
+    # Define the function for adding a new product
+    def add_product(self):
+        # Get the values from the product details widgets
+        # Get the values from the product details widgets
+        name = self.name_entry.get()
+        code = self.code_entry.get()
+        typ = self.type_entry.get()
+        barcode = ""
+        #self.barcode_entry.get()
+        at_shop = ""
+        # self.at_shop_entry.get()
+        quantity = 0
+        # self.quantity_entry.get()
+        cost = float(self.cost_entry.get())
+        tax = float(self.tax_entry.get())
+        price = float(self.price_entry.get())
+        include_tax = int(self.include_tax_var.get())
+        price_change = int(self.price_change_var.get())
+        more_info = self.more_info_label['text']
+        images = self.images_entry.get()
+        description = self.description_entry.get()
+        service = self.service_change_var.get()
+        default_quantity = int(self.default_quantity_change_var.get())
+        active = int(self.active_var.get())
+            
+        print(str([name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active]))
+        
+        if self.add_button.cget("text") == "New":        
+            # Insert the new product into the database
+            cur.execute('INSERT INTO product (name, code, type, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active))
+        else:
+            product_id = int(self.list_box.item(self.list_box.selection())['text'])
+            print("product_id : " + str(product_id))
+            # Update the product in the database
+            cur.execute('UPDATE product SET name=?, code=?, type=?, barcode=?, at_shop=?, quantity=?, cost=?, tax=?, price=?, include_tax=?, price_change=?, more_info=?, images=?, description=?, service=?, default_quantity=?, active=? WHERE id=?', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active, product_id))
+        # Commit the changes to the database
+        conn.commit()
+
+        # Clear the product details widgets
+        self.clear_product_details_widget()
+        
+        # Update the product listbox
+        self.update_product_listbox()

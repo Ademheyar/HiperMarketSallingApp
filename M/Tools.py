@@ -294,8 +294,10 @@ class ToolForm(tk.Frame):
             # Insert the new product into the database
             cur.execute('INSERT INTO tools (name, code, type, short_key, acsess, enabel, quick_pay, customer_required, printslip, change_allowed, markpad, open_drower) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (name, code, typ, short_key, acsess, enable, quick_pay , customer_required, print_slip, change_allowed, markaspad, open_drower))
         else:
+            item_id = int(self.list_box.item(self.list_box.selection())['text'])
+            print("item_id : " + str(item_id))
             # UPDATE the new product into the database
-            cur.execute('UPDATE tools SET name=?, code=?, type=?, short_key=?, acsess=?, enabel=?, quick_pay=?, customer_required=?, printslip=?, change_allowed=?, markpad=?, open_drower=? WHERE name=?', (name, code, typ, short_key, acsess, enable, quick_pay , customer_required, print_slip, change_allowed, markaspad, open_drower, name))
+            cur.execute('UPDATE tools SET name=?, code=?, type=?, short_key=?, acsess=?, enabel=?, quick_pay=?, customer_required=?, printslip=?, change_allowed=?, markpad=?, open_drower=? WHERE id=?', (name, code, typ, short_key, acsess, enable, quick_pay , customer_required, print_slip, change_allowed, markaspad, open_drower, item_id))
         # Commit the changes to the database
         conn.commit()
 

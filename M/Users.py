@@ -249,8 +249,10 @@ class UserForm(tk.Frame):
             # Insert the new user into the database
             cur.execute('INSERT INTO USERS (name, addres, id_num, phone_num, email, type, password, acsess) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', (name, addres, id_num, phone_num, email, typ, password, acsess))
         else:
+            item_id = int(self.list_box.item(self.list_box.selection())['text'])
+            print("item_id : " + str(item_id))
             # UPDATE the new user into the database
-            cur.execute('UPDATE USERS SET name=?, addres=?, id_num=?, phone_num=?, email=?, type=?, password=?, acsess=? WHERE name=?', (name, addres, id_num, phone_num, email, typ, password, acsess, name))
+            cur.execute('UPDATE USERS SET name=?, addres=?, id_num=?, phone_num=?, email=?, type=?, password=?, acsess=? WHERE id=?', (name, addres, id_num, phone_num, email, typ, password, acsess, item_id))
         # Commit the changes to the database
         conn.commit()
 
