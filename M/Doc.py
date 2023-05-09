@@ -2,11 +2,11 @@ import sqlite3
 import tkinter as tk
 from tkinter import ttk
 
-import sys
+import os, sys
 current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(current_dir, '..')
 sys.path.append(MAIN_dir)
-from D.docediterform import search_entry
+from D.docediterform import DocEditForm
 import os
 # Create a connection to the SQLite database
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
@@ -63,10 +63,19 @@ class DocForm(tk.Frame):
         # Notebook widget - CENTER_NOTEBOK
         self.center_notebook = ttk.Notebook(self)
         self.center_notebook.pack()
+
+        
         self.home_tab = ttk.Frame(self.center_notebook)
 
         # Add tabs to the self.center_notebook
         self.center_notebook.add(self.home_tab, text='Documents')
+
+        self.test_tab = ttk.Frame(self.center_notebook)
+
+        # Add tabs to the self.center_notebook
+        self.center_notebook.add(self.test_tab, text='test')
+        doc_edit_form = DocEditForm(self.test_tab)
+        doc_edit_form.pack(fill="both", expand=True)
 
         self.home_tab.grid_columnconfigure(0, weight=5)
         self.home_tab.grid_columnconfigure(1, weight=5)
@@ -84,7 +93,6 @@ class DocForm(tk.Frame):
         self.listbox.grid_propagate(False)
 
         # Set the size of the self.listbox widget
-
         self.listbox.pack(side="left", fill="both", expand=True)
         self.get_columen()
 
@@ -231,6 +239,6 @@ class DocForm(tk.Frame):
                             sold_item_info, discount, tax, doc_created_date, doc_expire_date, doc_updated_date)
         print("df : " + str(df))
         self.listbox.delete(*self.listbox.get_children())
-        self.get_columen()
+        #self.get_columen()
         for index in df:
             self.listbox.insert('', 'end', text=index[0], values=(index[1], index[2], index[3], index[4], index[5], index[6], index[7], index[8], index[9], index[10], index[11], index[12]))

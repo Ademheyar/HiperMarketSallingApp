@@ -100,13 +100,3 @@ class DocEditForm(tk.Frame):
         # Tab 2 - Payment
         payment_tab = tk.Frame(center_notebook)
         center_notebook.add(payment_tab, text="Payment")
-
-# Create the root window
-root = tk.Tk()
-
-# Create an instance of the DocEditForm and display it in the root window
-doc_edit_form = DocEditForm(root)
-doc_edit_form.pack(fill="both", expand=True)
-
-# Start the Tkinter event loop
-root.mainloop()
