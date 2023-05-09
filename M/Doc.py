@@ -17,6 +17,8 @@ cur = conn.cursor()
 
 conn.commit()
 
+tab_titles = []
+
 # Function to search for documents in the doc_table SQLite database table
 def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_barcode=None, 
                     item=None, user_id=None, customer_id=None, sold_item_info=None, discount=None, 
@@ -64,18 +66,11 @@ class DocForm(tk.Frame):
         self.center_notebook = ttk.Notebook(self)
         self.center_notebook.pack()
 
-        
+
         self.home_tab = ttk.Frame(self.center_notebook)
 
         # Add tabs to the self.center_notebook
         self.center_notebook.add(self.home_tab, text='Documents')
-
-        self.test_tab = ttk.Frame(self.center_notebook)
-
-        # Add tabs to the self.center_notebook
-        self.center_notebook.add(self.test_tab, text='test')
-        doc_edit_form = DocEditForm(self.test_tab)
-        doc_edit_form.pack(fill="both", expand=True)
 
         self.home_tab.grid_columnconfigure(0, weight=5)
         self.home_tab.grid_columnconfigure(1, weight=5)
@@ -89,12 +84,15 @@ class DocForm(tk.Frame):
         self.home_tab.grid_rowconfigure(2, weight=5)
         
         # Create the listbox to display search results
-        self.listbox = ttk.Treeview(self.home_tab)
+        self.listbox = ttk.Treeview(self.home_tab)        
+        self.listbox.bind('<<TreeviewSelect>>', self.on_select)
+        self.listbox.bind("<Button-1>", self.on_treeview_double_click)
         self.listbox.grid_propagate(False)
 
         # Set the size of the self.listbox widget
         self.listbox.pack(side="left", fill="both", expand=True)
         self.get_columen()
+        self.listbox.insert('', 'end', text="1", values=("1", "2", "3", "4","5", "6", "7", "8"))
 
         self.details_frame = tk.Frame(self.home_tab)
         self.details_frame.pack(side="right", fill="both", expand=True)
@@ -216,6 +214,35 @@ class DocForm(tk.Frame):
         #self.listbox.heading("#0", text="CODE", anchor=tk.W)
         #self.listbox.heading("#1", text="BARCODE", anchor=tk.W)
         #self.listbox.column("#1", stretch=tk.NO, minwidth=25, width=100)   
+    def on_treeview_double_click(self, event):
+        item = self.listbox.focus()  # Get the item that was clicked
+        print("in dubleclicked")
+        item_text = self.listbox.item(item, "values")  # Get the text values of the item
+
+        if item:
+            # Detect double-click
+            print("Double-clicked item:", item_text)
+
+            # Add tabs to the self.center_notebook
+            if item_text[1]:
+                if item_text[1] not in tab_titles:
+                    tab_titles.append(item_text[1])
+                    test_tab = ttk.Frame(self.center_notebook)
+                    self.center_notebook.add(test_tab, text=item_text[1])
+                    doc_edit_form = DocEditForm(test_tab)
+                    doc_edit_form.pack(fill="both", expand=True)
+                    # Create a close button and position it at the top next to the tab title
+                    close_button1 = tk.Button(test_tab, text="X")
+                    close_button1.pack(side="top", anchor="ne", padx=5, pady=2)
+                    close_button1.bind("<Button-1>", lambda event: self.close_tab(event, test_tab))
+                else:
+                    print("Tab already exists!")
+
+    def close_tab(self, tab_id):
+        self.center_notebook.forget(tab_id)
+
+    def on_select(self, event):
+        pass
 
     # Function to perform the search and display the results in the listbox
     def perform_search(self):
