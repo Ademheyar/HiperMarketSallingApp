@@ -2,9 +2,9 @@ import tkinter as tk
 from tkinter import ttk
 
 class DocEditForm(tk.Frame):
-    def __init__(self, master):
+    def __init__(self, master, items):
         tk.Frame.__init__(self, master)
-
+        print("items:"+str(items))
         # Child frame 1 - TOP_FORM
         top_form = tk.Frame(self)
         top_form.grid(row=0, column=0, columnspan=3, sticky="nsew")
@@ -24,12 +24,14 @@ class DocEditForm(tk.Frame):
         label_number = tk.Label(top_form, text="Number")
         label_number.grid(row=0, column=0)
         entry_number = tk.Entry(top_form)
+        entry_number.insert(0, items[1])
         entry_number.grid(row=0, column=1)
 
         # Label "Data" and Entry
         label_data = tk.Label(top_form, text="Data")
         label_data.grid(row=0, column=4)
         entry_data = tk.Entry(top_form)
+        entry_data.insert(0, items[2])
         entry_data.grid(row=0, column=5)
 
         # Checkbox "Paid"
@@ -40,18 +42,21 @@ class DocEditForm(tk.Frame):
         label_external_doc = tk.Label(top_form, text="External Document")
         label_external_doc.grid(row=1, column=0)
         entry_external_doc = tk.Entry(top_form)
+        entry_external_doc.insert(0, items[3])
         entry_external_doc.grid(row=1, column=1)
 
         # Label "Due Date" and Entry
         label_due_date = tk.Label(top_form, text="Due Date")
         label_due_date.grid(row=1, column=4)
         entry_due_date = tk.Entry(top_form)
+        entry_due_date.insert(0, items[4])
         entry_due_date.grid(row=1, column=5)
 
         # Label "Customer" and Entry
         label_customer = tk.Label(top_form, text="Customer")
         label_customer.grid(row=2, column=0)
         entry_customer = tk.Entry(top_form)
+        entry_customer.insert(0, items[5])
         entry_customer.grid(row=2, column=1)
 
         # Button
@@ -62,6 +67,7 @@ class DocEditForm(tk.Frame):
         label_stock_date = tk.Label(top_form, text="Stock Date")
         label_stock_date.grid(row=2, column=5)
         entry_stock_date = tk.Entry(top_form)
+        entry_stock_date.insert(0, items[6])
         entry_stock_date.grid(row=2, column=6)
 
 

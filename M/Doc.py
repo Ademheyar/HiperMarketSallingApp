@@ -229,7 +229,7 @@ class DocForm(tk.Frame):
                     tab_titles.append(item_text[1])
                     test_tab = ttk.Frame(self.center_notebook)
                     self.center_notebook.add(test_tab, text=item_text[1])
-                    doc_edit_form = DocEditForm(test_tab)
+                    doc_edit_form = DocEditForm(test_tab, item_text)
                     doc_edit_form.pack(fill="both", expand=True)
                     # Create a close button and position it at the top next to the tab title
                     close_button1 = tk.Button(test_tab, text="X")
