@@ -50,10 +50,6 @@ Contributions to the Point of Sale application are welcome. If you would like to
 
 This project is licensed under the [MIT License](LICENSE.md).
 
-## Acknowledgements
-
-We would like to thank the developers and contributors of Aronium for inspiring this project.
-
 ## Contact
 
 For any questions, issues, or inquiries, please contact [@AdemHeyar](mailto:ademheyar@gmail.com).
