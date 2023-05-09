@@ -54,6 +54,7 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
 class DocForm(tk.Frame):
     def __init__(self, master):
         tk.Frame.__init__(self, master)
+        
         self.create_widgets()
 
     def show_doc_form(self):
