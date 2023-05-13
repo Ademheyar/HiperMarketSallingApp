@@ -27,6 +27,8 @@ cur.execute('''CREATE TABLE IF NOT EXISTS pre_doc_table
                 States TEXT
                 )''')
 
+#query = f"DROP TABLE IF EXISTS doc_table"
+#cur.execute(query)
 
 cur.execute('''CREATE TABLE IF NOT EXISTS doc_table 
                 (id INTEGER PRIMARY KEY, 
@@ -40,6 +42,7 @@ cur.execute('''CREATE TABLE IF NOT EXISTS doc_table
                 price REAL, 
                 discount REAL, 
                 tax REAL, 
+                payments TEXT, 
                 doc_created_date TEXT, 
                 doc_expire_date TEXT, 
                 doc_updated_date TEXT)''')
@@ -119,7 +122,7 @@ class MainApplication(tk.Tk):
         # create the first frame and add it to the container
         self.frames = {}
 
-        display_frame = DisplayFrame(self)
+        display_frame = DisplayFrame(self, "")
         display_frame.grid(row=0, column=0, sticky="nsew")
         self.frames["DisplayFrame"] = display_frame
         

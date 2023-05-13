@@ -24,9 +24,9 @@ conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
 class DisplayFrame(tk.Frame):
-    def __init__(self, master):
+    def __init__(self, master, user):
         tk.Frame.__init__(self, master)
-        self.user = ""
+        self.user = user
         self.custemr = ""
         self.chart_index = 0
         self.price = 0
@@ -497,6 +497,7 @@ class DisplayFrame(tk.Frame):
             print("no list")
         else:
             payment_name = []
+            payments_ = ""
             payment_enable = 0
             payment_quick_pay = 0
             payment_customer_required = 0
@@ -525,13 +526,14 @@ class DisplayFrame(tk.Frame):
                     payment_mark_pad = 1
                 if rows[0][12] == 1 and payment_open_drower == 0: # chack if enabled
                     payment_open_drower = 1
+                payments_ += str(rows[0][1]) + " = " + str(p[1])
                 payment_name.append([str(rows[0][1]), str(p[1])])
                 break
 
             if payment_enable == 0:
                 print("no pyment")
             else:
-                print("pyment:"+str(payment_enable))
+                print("pyment "+str(payment_enable) + ":" + str(payments_))
                 #add to doc table
                 #create doc_id
                 # 
@@ -588,12 +590,12 @@ class DisplayFrame(tk.Frame):
                     conn.commit()
 
 
-                cursor.execute('INSERT INTO doc_table (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("doc_barcode", "extension_barcode", "user_id", "customer_id", "type", item, float(items), price, disc, tax, "doc_created_date", "doc_expire_date", "doc_updated_date"))
+                cursor.execute('INSERT INTO doc_table (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("doc_barcode", "extension_barcode", self.user, self.custemr, "type", item, float(items), price, disc, tax, payments_, "doc_created_date", "doc_expire_date", "doc_updated_date"))
                 
                 # Commit the changes to the database
                 conn.commit()
                 
-                print(str(["doc_barcode", "extension_barcode", "user_id", "customer_id", "type", item, disc, tax, "doc_created_date", "doc_expire_date", "doc_updated_date"]))
+                print(str(["doc_barcode", "extension_barcode", self.user, "customer_id", "type", item, disc, tax, payments_, "doc_created_date", "doc_expire_date", "doc_updated_date"]))
                 
                 print("pyment sitting equal :" + str([payment_name, payment_quick_pay, payment_customer_required, payment_print_slip, 
                                                       payment_change_allowed, payment_mark_pad, payment_open_drower]))

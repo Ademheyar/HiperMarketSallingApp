@@ -224,11 +224,11 @@ class DocForm(tk.Frame):
             print("Double-clicked item:", item_text)
 
             # Add tabs to the self.center_notebook
-            if item_text[1]:
-                if item_text[1] not in tab_titles:
-                    tab_titles.append(item_text[1])
+            if item_text[0]:
+                if item_text[0] not in tab_titles:
+                    tab_titles.append(item_text[0])
                     test_tab = ttk.Frame(self.center_notebook)
-                    self.center_notebook.add(test_tab, text=item_text[1])
+                    self.center_notebook.add(test_tab, text=item_text[0])
                     doc_edit_form = DocEditForm(test_tab, item_text)
                     doc_edit_form.pack(fill="both", expand=True)
                     # Create a close button and position it at the top next to the tab title

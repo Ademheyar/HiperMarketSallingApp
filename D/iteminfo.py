@@ -38,7 +38,7 @@ def reduc_qty(item_info, item_shop_name, item_color, item_size, item_qty_):
                         size_txt = s_v.replace("|", "")
                     if j == 4:
                          if shop_name == item_shop_name and item_color == color_txt and item_size == size_txt:
-                              new_qty = int(s_v.replace("|", ""))-int(item_qty_)
+                              new_qty = float(s_v.replace("|", ""))-float(item_qty_)
                               vs_info += str(new_qty)
                     else:
                         vs_info += s_v.replace("|", "")
