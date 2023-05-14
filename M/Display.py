@@ -414,7 +414,8 @@ class DisplayFrame(tk.Frame):
     def void_items(self):
         for a in self.list_items.get_children():
             self.list_items.delete(a)
-        self.update_info()
+        # self.update_info() will be called in next_prev_chart 
+        self.next_prev_chart("prev")
 
     def remove_item(self):
         for a in self.list_items.selection():
@@ -609,4 +610,6 @@ class DisplayFrame(tk.Frame):
                 
                 for child in self.list_items.get_children():
                     print("pymrnt!!!!!", str(child))
+                # call void         
+                self.void_items()
         
