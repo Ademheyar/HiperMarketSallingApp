@@ -90,126 +90,132 @@ class DocForm(tk.Frame):
         self.listbox.grid_propagate(False)
 
         # Set the size of the self.listbox widget
-        self.listbox.pack(side="left", fill="both", expand=True)
+        self.listbox.grid(row=1, column=0)
         self.get_columen()
         self.listbox.insert('', 'end', text="1", values=("1", "2", "3", "4","5", "6", "7", "8"))
 
         self.details_frame = tk.Frame(self.home_tab)
-        self.details_frame.pack(side="right", fill="both", expand=True)
+        self.details_frame.grid(row=0, column=0)
 
         # Create the label and entry for the document ID search
         self.doc_id_label = tk.Label(self.details_frame, text="Document ID:")
-        self.doc_id_label.pack()
+        self.doc_id_label.grid(row=0, column=0)
         self.doc_id_entry = tk.Entry(self.details_frame)
-        self.doc_id_entry.pack()
+        self.doc_id_entry.grid(row=1, column=0)
 
         # Create the label and entry for the document type search
         self.doc_type_label = tk.Label(self.details_frame, text="Document Type:")
-        self.doc_type_label.pack()
+        self.doc_type_label.grid(row=0, column=1)
         self.doc_type_entry = tk.Entry(self.details_frame)
-        self.doc_type_entry.pack()
+        self.doc_type_entry.grid(row=1, column=1)
 
         # Create the label and entry for the document barcode search
         self.doc_barcode_label = tk.Label(self.details_frame, text="Document Barcode:")
-        self.doc_barcode_label.pack()
+        self.doc_barcode_label.grid(row=0, column=2)
         self.doc_barcode_entry = tk.Entry(self.details_frame)
-        self.doc_barcode_entry.pack()
+        self.doc_barcode_entry.grid(row=1, column=2)
 
         # Create the label and entry for the extension barcode search
         self.extension_barcode_label = tk.Label(self.details_frame, text="Extension Barcode:")
-        self.extension_barcode_label.pack()
+        self.extension_barcode_label.grid(row=0, column=3)
         self.extension_barcode_entry = tk.Entry(self.details_frame)
-        self.extension_barcode_entry.pack()
+        self.extension_barcode_entry.grid(row=1, column=3)
 
         # Create the label and entry for the item search
         self.item_label = tk.Label(self.details_frame, text="Item:")
-        self.item_label.pack()
+        self.item_label.grid(row=0, column=4)
         self.item_entry = tk.Entry(self.details_frame)
-        self.item_entry.pack()
+        self.item_entry.grid(row=1, column=4)
 
         # Create the label and entry for the user ID search
         self.user_id_label = tk.Label(self.details_frame, text="User ID:")
-        self.user_id_label.pack()
+        self.user_id_label.grid(row=0, column=5)
         self.user_id_entry = tk.Entry(self.details_frame)
-        self.user_id_entry.pack()
+        self.user_id_entry.grid(row=1, column=5)
 
         # Create the label and entry for the customer ID search
         self.customer_id_label = tk.Label(self.details_frame, text="Customer ID:")
-        self.customer_id_label.pack()
+        self.customer_id_label.grid(row=0, column=6)
         self.customer_id_entry = tk.Entry(self.details_frame)
-        self.customer_id_entry.pack()
+        self.customer_id_entry.grid(row=1, column=6)
 
         # Create the label and entry for the sold item info search
         self.sold_item_info_label = tk.Label(self.details_frame, text="Sold Item Info:")
-        self.sold_item_info_label.pack()
+        self.sold_item_info_label.grid(row=2, column=0)
         self.sold_item_info_entry = tk.Entry(self.details_frame)
-        self.sold_item_info_entry.pack()
+        self.sold_item_info_entry.grid(row=3, column=0)
 
         # Create the label and entry for the discount search
         self.discount_label = tk.Label(self.details_frame, text="Discount:")
-        self.discount_label.pack()
+        self.discount_label.grid(row=2, column=1)
         self.discount_entry = tk.Entry(self.details_frame)
-        self.discount_entry.pack()
+        self.discount_entry.grid(row=3, column=1)
 
         # Create the label and entry for the tax search
         self.tax_label = tk.Label(self.details_frame, text="Tax:")
-        self.tax_label.pack()
+        self.tax_label.grid(row=2, column=2)
         self.tax_entry = tk.Entry(self.details_frame)
-        self.tax_entry.pack()
+        self.tax_entry.grid(row=3, column=2)
 
         # Create the label and entry for the document created date search
         self.doc_created_date_label = tk.Label(self.details_frame, text="Document Created Date:")
-        self.doc_created_date_label.pack()
+        self.doc_created_date_label.grid(row=2, column=3)
         self.doc_created_date_entry = tk.Entry(self.details_frame)
-        self.doc_created_date_entry.pack()
+        self.doc_created_date_entry.grid(row=3, column=3)
 
         # Create the label and entry for the document expire date search
         self.doc_expire_date_label = tk.Label(self.details_frame, text="Document Expire Date:")
-        self.doc_expire_date_label.pack()
+        self.doc_expire_date_label.grid(row=2, column=4)
         self.doc_expire_date_entry = tk.Entry(self.details_frame)
+        self.doc_expire_date_entry.grid(row=3, column=4)
        
 
         # Create the label and entry for the document expire date search
         self.doc_updated_date_entry = tk.Label(self.details_frame, text="Document Updated Date:")
-        self.doc_updated_date_entry.pack()
+        self.doc_updated_date_entry.grid(row=2, column=5)
         self.doc_updated_date_entry = tk.Entry(self.details_frame)
+        self.doc_updated_date_entry.grid(row=3, column=5)
 
         # Create the search button
         self.search_button = tk.Button(self.details_frame, text="Search", command=self.perform_search)
-        self.search_button.pack()
+        self.search_button.grid(row=3, column=6)
 
     def show_doc_form(self):
         # call the function in the main file to show the first frame
         self.master.master.show_frame("DocForm")
         
     def get_columen(self):
-        self.listbox['columns'] = ('Type', 'doc_barcode', 'extension_barcode', 'Itmes', 'user_id', 'customer_id', 'price', 'disc', 'tax', 'doc_created_date', 'doc_expire_date', 'doc_updated_date')
+        self.listbox['columns'] = ('doc_barcode', 'extension_barcode', 'user_id', 'customer_id', 'Type', 'Itmes', 'Qty', 'Paymen', 'price', 'disc', 'tax', 'doc_created_date', 'doc_expire_date', 'doc_updated_date')
         self.listbox.heading("#0", text="ID")
         self.listbox.column("#0", stretch=tk.NO, minwidth=25, width=50) 
-        self.listbox.heading("#1", text="Type")
-        self.listbox.column("#1", stretch=tk.NO, minwidth=25, width=80) 
-        self.listbox.heading("#2", text="doc_barcode")
+        self.listbox.heading("#1", text="doc_barcode")
+        self.listbox.column("#1", stretch=tk.NO, minwidth=25, width=100) 
+        self.listbox.heading("#2", text="extension_barcode")
         self.listbox.column("#2", stretch=tk.NO, minwidth=25, width=100) 
-        self.listbox.heading("#3", text="extension_barcode")
+        self.listbox.heading("#3", text="user_id")
         self.listbox.column("#3", stretch=tk.NO, minwidth=25, width=100) 
-        self.listbox.heading("#4", text="Itmes")
+        self.listbox.heading("#4", text="customer_id")
         self.listbox.column("#4", stretch=tk.NO, minwidth=25, width=100) 
-        self.listbox.heading("#5", text="user_id")
-        self.listbox.column("#5", stretch=tk.NO, minwidth=25, width=100) 
-        self.listbox.heading("#6", text="customer_id")
+        self.listbox.heading("#5", text="Type")
+        self.listbox.column("#5", stretch=tk.NO, minwidth=25, width=80) 
+        self.listbox.heading("#6", text="Itmes")
         self.listbox.column("#6", stretch=tk.NO, minwidth=25, width=100) 
-        self.listbox.heading("#7", text="price")
-        self.listbox.column("#7", stretch=tk.NO, minwidth=25, width=50) 
-        self.listbox.heading("#8", text="disc")
+        self.listbox.heading("#7", text="Qty")
+        self.listbox.column("#7", stretch=tk.NO, minwidth=25, width=100) 
+        self.listbox.heading("#8", text="price")
         self.listbox.column("#8", stretch=tk.NO, minwidth=25, width=50) 
-        self.listbox.heading("#9", text="tax")
+        self.listbox.heading("#9", text="disc")
         self.listbox.column("#9", stretch=tk.NO, minwidth=25, width=50) 
-        self.listbox.heading("#10", text="doc_created_date")
-        self.listbox.column("#10", stretch=tk.NO, minwidth=25, width=100) 
-        self.listbox.heading("#11", text="doc_expire_date")
+        self.listbox.heading("#10", text="tax")
+        self.listbox.column("#10", stretch=tk.NO, minwidth=25, width=50) 
+        self.listbox.heading("#11", text="Payment")
         self.listbox.column("#11", stretch=tk.NO, minwidth=25, width=100) 
-        self.listbox.heading("#12", text="doc_updated_date")
+        self.listbox.heading("#12", text="doc_created_date")
         self.listbox.column("#12", stretch=tk.NO, minwidth=25, width=100) 
+        self.listbox.heading("#13", text="doc_expire_date")
+        self.listbox.column("#13", stretch=tk.NO, minwidth=25, width=100) 
+        self.listbox.heading("#14", text="doc_updated_date")
+        self.listbox.column("#14", stretch=tk.NO, minwidth=25, width=100) 
 
         #self.listbox.heading("#0", text="CODE", anchor=tk.W)
         #self.listbox.heading("#1", text="BARCODE", anchor=tk.W)
