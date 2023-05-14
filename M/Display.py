@@ -414,6 +414,10 @@ class DisplayFrame(tk.Frame):
     def void_items(self):
         for a in self.list_items.get_children():
             self.list_items.delete(a)
+        # delete this list on db
+        cursor.execute("DELETE FROM pre_doc_table WHERE id=?", (self.chart_index,))
+        # Commit the changes to the database
+        conn.commit()
         # self.update_info() will be called in next_prev_chart 
         self.next_prev_chart("prev")
 

@@ -494,8 +494,6 @@ class ProductForm(tk.Frame):
             # Delete the product from the database
             cur.execute('DELETE FROM product WHERE id=?', (int(product_id),))
 
-            # Commit the changes to the database
-            conn.commit()
 
             # Clear the product details widgets
             self.clear_product_details_widget()
