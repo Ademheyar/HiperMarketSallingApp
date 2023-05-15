@@ -11,33 +11,6 @@ class App:
 
         self.db_paths = []
 
-        # Create buttons to add source and destination database paths
-        self.source_button = tk.Button(master, text="Add Source DB", command=self.add_source)
-        self.destination_button = tk.Button(master, text="Add Destination DB", command=self.add_destination)
-
-        # Create a Treeview to show source database information
-        self.source_treeview = ttk.Treeview(master, columns=("table", "column"))
-        self.source_treeview.heading("#0", text="Database")
-        self.source_treeview.heading("table", text="Table")
-        self.source_treeview.heading("column", text="Column")
-
-        # Create a Treeview to show destination database information
-        self.destination_treeview = ttk.Treeview(master, columns=("table", "column"))
-        self.destination_treeview.heading("#0", text="Database")
-        self.destination_treeview.heading("table", text="Table")
-        self.destination_treeview.heading("column", text="Column")
-
-        # Create a Treeview to show copying information
-        self.copy_treeview = ttk.Treeview(master, columns=("source_db", "source_table", "source_column", "destination_db", "destination_table", "destination_column"))
-        
-        self.copy_treeview.heading("#0", text="Copy")
-        self.copy_treeview.heading("source_db", text="Source DB")
-        self.copy_treeview.heading("source_table", text="Source Table")
-        self.copy_treeview.heading("source_column", text="Source Column")
-        self.copy_treeview.heading("destination_db", text="Destination DB")
-        self.copy_treeview.heading("destination_table", text="Destination Table")
-        self.copy_treeview.heading("destination_column", text="Destination Column")
-
         # Create labels and entry boxes for copying information
         self.source_db_label = tk.Label(master, text="Source Database:")
         self.source_db_entry = tk.Entry(master)
@@ -48,6 +21,10 @@ class App:
         self.source_column_label = tk.Label(master, text="Source Column:")
         self.source_column_entry = tk.Entry(master)
         self.source_column_entry.insert(0, "source_column")
+        self.source_id_label = tk.Label(master, text="Source id:")
+        self.source_id_entry = tk.Entry(master)
+        self.source_id_entry.insert(0, "id")
+        
         self.destination_db_label = tk.Label(master, text="Destination Database:")
         self.destination_db_entry = tk.Entry(master)
         self.destination_db_entry.insert(0, "destination.db")
@@ -57,31 +34,60 @@ class App:
         self.destination_column_label = tk.Label(master, text="Destination Column:")
         self.destination_column_entry = tk.Entry(master)
         self.destination_column_entry.insert(0, "destination_column")
+        self.destination_id_label = tk.Label(master, text="Destination id:")
+        self.destination_id_entry = tk.Entry(master)
+        self.destination_id_entry.insert(0, "id")
+
+        # Create a Treeview to show source database information
+        self.source_treeview = ttk.Treeview(master, columns=("table", "column"))
+        self.source_treeview.heading("#0", text="Database")
+        self.source_treeview.heading("table", text="Table")
+
+        # Create a Treeview to show destination database information
+        self.destination_treeview = ttk.Treeview(master, columns=("table", "column"))
+        self.destination_treeview.heading("#0", text="Database")
+        self.destination_treeview.heading("table", text="Table")
+
+        # Create a Treeview to show copying information
+        self.copy_treeview = ttk.Treeview(master, columns=("source_db", "source_table"))
+        
+        self.copy_treeview.heading("#0", text="Copy")
+        self.copy_treeview.heading("source_db", text="Source DB")
+        self.copy_treeview.heading("source_table", text="Source Table")
+
 
         # Create a button to start copying
         self.copy_button = tk.Button(master, text="Copy", command=self.copy_)
+        # Create buttons to add source and destination database paths
+        self.source_button = tk.Button(master, text="Add Source DB", command=self.add_source)
+        self.destination_button = tk.Button(master, text="Add Destination DB", command=self.add_destination)
 
                 # Grid layout for widgets
-        self.source_db_label.grid(row=3, column=0, sticky="W")
-        self.source_db_entry.grid(row=3, column=1, padx=5, pady=5)
-        self.source_button.grid(row=3, column=2, padx=5, pady=5)
-        self.source_table_label.grid(row=4, column=0, sticky="W")
-        self.source_table_entry.grid(row=4, column=1, padx=5, pady=5)
-        self.source_column_label.grid(row=5, column=0, sticky="W")
-        self.source_column_entry.grid(row=5, column=1, padx=5, pady=5)
-        self.destination_db_label.grid(row=6, column=0, sticky="W")
-        self.destination_db_entry.grid(row=6, column=1, padx=5, pady=5)
-        self.destination_button.grid(row=6, column=2, padx=5, pady=5)
-        self.destination_table_label.grid(row=7, column=0, sticky="W")
-        self.destination_table_entry.grid(row=7, column=1, padx=5, pady=5)
-        self.destination_column_label.grid(row=8, column=0, sticky="W")
-        self.destination_column_entry.grid(row=8, column=1, padx=5, pady=5)
-        self.copy_button.grid(row=9, column=0, columnspan=2, padx=5, pady=5)
+        self.source_db_label.grid(row=0, column=0, sticky="W")
+        self.source_db_entry.grid(row=0, column=1, padx=5, pady=5)
+        self.source_table_label.grid(row=1, column=0, sticky="W")
+        self.source_table_entry.grid(row=1, column=1, padx=5, pady=5)
+        self.source_column_label.grid(row=2, column=0, sticky="W")
+        self.source_column_entry.grid(row=2, column=1, padx=5, pady=5)
+        self.source_id_label.grid(row=3, column=0, sticky="W")
+        self.source_id_entry.grid(row=3, column=1, padx=5, pady=5)
+        self.destination_db_label.grid(row=0, column=2, sticky="W")
+        self.destination_db_entry.grid(row=0, column=3, padx=5, pady=5)
+        self.destination_table_label.grid(row=1, column=2, sticky="W")
+        self.destination_table_entry.grid(row=1, column=3, padx=5, pady=5)
+        self.destination_column_label.grid(row=2, column=2, sticky="W")
+        self.destination_column_entry.grid(row=2, column=3, padx=5, pady=5)
+        self.destination_id_label.grid(row=3, column=2, sticky="W")
+        self.destination_id_entry.grid(row=3, column=3, padx=5, pady=5)
 
-        self.copy_treeview.grid(row=11, column=0, columnspan=4, padx=5, pady=5)
-        self.source_treeview.grid(row=14, column=0, columnspan=2, padx=5, pady=5)
-        self.destination_treeview.grid(row=14, column=2, columnspan=2, padx=5, pady=5)
+        self.copy_treeview.grid(row=4, column=0, columnspan=4, padx=5, pady=5)
+        
+        self.source_treeview.grid(row=7, column=0, columnspan=2, padx=5, pady=5)
+        self.destination_treeview.grid(row=7, column=2, columnspan=2, padx=5, pady=5)
 
+        self.source_button.grid(row=4, column=4, padx=5, pady=5)
+        self.destination_button.grid(row=5, column=4, padx=5, pady=5)
+        self.copy_button.grid(row=6, column=4, columnspan=2, padx=5, pady=5)
     def add_source(self):
         db_path = self.source_db_entry.get()
         if db_path:

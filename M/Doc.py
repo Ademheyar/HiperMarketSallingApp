@@ -90,7 +90,7 @@ class DocForm(tk.Frame):
         self.listbox.grid_propagate(False)
 
         # Set the size of the self.listbox widget
-        self.listbox.grid(row=1, column=0)
+        self.listbox.grid(row=1, column=0, rowspan=2)
         self.get_columen()
         self.listbox.insert('', 'end', text="1", values=("1", "2", "3", "4","5", "6", "7", "8"))
 
