@@ -1,4 +1,4 @@
-import win32print
+#import win32print
 import tkinter as tk
 from tkinter import ttk
 import sqlite3, os
@@ -29,6 +29,7 @@ class PrinterForm(tk.Tk):
         printer_name = PrinterForm.load_printer(self)
         print("printer : " + str(printer_name))
         # Prepare the printer properties
+        '''
         printer_props = {
             "DesiredAccess": win32print.PRINTER_ALL_ACCESS,
             "PrinterName": printer_name,
@@ -68,11 +69,13 @@ class PrinterForm(tk.Tk):
             print("Close the printer handle\n")
             # Close the printer handle
             win32print.ClosePrinter(printer_handle)
+            '''
     
     def print_slip(self, text, cut):
         printer_name = PrinterForm.load_printer(self)
         print("printer : " + str(printer_name))
         # Prepare the printer properties
+        '''
         printer_props = {
             "DesiredAccess": win32print.PRINTER_ALL_ACCESS,
             "PrinterName": printer_name,
@@ -120,10 +123,11 @@ class PrinterForm(tk.Tk):
             print("Close the printer handle\n")
             # Close the printer handle
             win32print.ClosePrinter(printer_handle)
+            '''
     
     def print_text_with_dialog(self, text):
         # Load the saved printer driver choice
-        with open('printer.txt', 'r') as f:
+        '''with open('printer.txt', 'r') as f:
             printer_name = f.read().strip()
         # Get the default printer name
         #printer_name = win32print.GetDefaultPrinter()
@@ -182,6 +186,8 @@ class PrinterForm(tk.Tk):
             print("Close the printer handle\n")
             # Close the printer handle
             win32print.ClosePrinter(printer_handle)
+            '''
+        pass
 
 # Example usage
 text_to_print = \

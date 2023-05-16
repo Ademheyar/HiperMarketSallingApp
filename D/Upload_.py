@@ -1,42 +1,37 @@
 import tkinter as tk
 from tkinter import ttk
-import sqlite3, os, sys
-current_dir = os.path.abspath(os.path.dirname(__file__))
-MAIN_dir = os.path.join(current_dir, '..')
-sys.path.append(MAIN_dir)
-from D.Upload_ import UploadingForm
+import sqlite3, os
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
-class EnddayForm(tk.Tk):
+class UploadingForm(tk.Tk):
     def __init__(self, master):
         self.master = master
         
-        
         # create a Toplevel window for the payment form
-        self.getvalue_form = tk.Toplevel(self.master)
-        self.getvalue_form.title("endday Form")
-
-        # calculate the center coordinates of the screen
-        screen_width = self.master.winfo_screenwidth()
-        screen_height = self.master.winfo_screenheight()
-        x = (screen_width / 2) - (300 / 2)  # 500 is the width of the Payment Form window
-        y = (screen_height / 2) - (300 / 2)  # 500 is the height of the Payment Form window
-
+        self.getvalue_form = tk.Toplevel(self.master.master)
+        self.getvalue_form.title("Uploading Form")
+        cursor.execute("SELECT * FROM upload_doc")
+        b = cursor.fetchall()
+        if len(b) <= 0:
+            print("sitting : " + str(b))
+        
         # set the position of the Payment Form window to center
         # TODO: list z report for current day and history z reports for pev days but in notbook 
         # TODO: TO Print dayly, weekly, monthly and yearly report as user whats
-        self.upload_button = tk.Button(self.getvalue_form, text="Upload", bg="red", fg="white", font=("Arial", 12), command=lambda: UploadingForm(self))
-        self.upload_button.pack(side="left", fill="both")
-
+        
         # show the Payment Form window
         self.getvalue_form.transient(self.master)
         self.getvalue_form.grab_set()
         self.master.wait_window(self.getvalue_form)
 
+
+
+
+    
     def add_num(self, text):
         # Get the current value of the Entry widget
         current_value = self.include_var.get()

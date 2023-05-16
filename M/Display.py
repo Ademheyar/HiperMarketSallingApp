@@ -223,7 +223,7 @@ class DisplayFrame(tk.Frame):
     def load(self):
         self.master.show_frame("DisplayFrame")
         self.load_setting()
-        ApproveFrame(self, [])
+        #ApproveFrame(self, [])
     
     def call_splitpayment(self):
         i = 0
@@ -659,6 +659,7 @@ class DisplayFrame(tk.Frame):
                 # Commit the changes to the database
                 conn.commit()
 
+                cursor.execute('INSERT INTO upload_doc (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("23-200-" + str(brcod), "extension_barcode", self.user, self.custemr, "type", item, float(items), price, disc, tax, payments_, "doc_created_date", "doc_expire_date", "doc_updated_date"))
                 cursor.execute('INSERT INTO doc_table (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("23-200-" + str(brcod), "extension_barcode", self.user, self.custemr, "type", item, float(items), price, disc, tax, payments_, "doc_created_date", "doc_expire_date", "doc_updated_date"))
                 
                 # Commit the changes to the database

@@ -20,6 +20,22 @@ cur.execute('''CREATE TABLE IF NOT EXISTS setting
                 printer TEXT
                 )''')
 
+cur.execute('''CREATE TABLE IF NOT EXISTS upload_doc 
+                (id INTEGER PRIMARY KEY, 
+                doc_barcode TEXT, 
+                extension_barcode TEXT, 
+                user_id TEXT, 
+                customer_id TEXT, 
+                type TEXT, 
+                item TEXT, 
+                qty REAL,  
+                price REAL, 
+                discount REAL, 
+                tax REAL, 
+                payments TEXT, 
+                doc_created_date TEXT, 
+                doc_expire_date TEXT, 
+                doc_updated_date TEXT)''')
 
 
 # Define the SQL statement to delete the table
