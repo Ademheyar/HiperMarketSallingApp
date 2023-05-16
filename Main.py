@@ -9,8 +9,20 @@ conn = sqlite3.connect(db_path)
 
 # Create a table to store the document records
 cur = conn.cursor()
-# Define the SQL statement to delete the table
 
+#query = f"DROP TABLE IF EXISTS setting"
+#cur.execute(query)
+
+cur.execute('''CREATE TABLE IF NOT EXISTS setting 
+                (id INTEGER PRIMARY KEY, 
+                user_name TEXT,
+                barcode_count INT,
+                printer TEXT
+                )''')
+
+
+
+# Define the SQL statement to delete the table
 cur.execute('''CREATE TABLE IF NOT EXISTS pre_doc_table 
                 (id INTEGER PRIMARY KEY, 
                 doc_created_date TEXT, 
@@ -27,8 +39,6 @@ cur.execute('''CREATE TABLE IF NOT EXISTS pre_doc_table
                 States TEXT
                 )''')
 
-#query = f"DROP TABLE IF EXISTS doc_table"
-#cur.execute(query)
 
 cur.execute('''CREATE TABLE IF NOT EXISTS doc_table 
                 (id INTEGER PRIMARY KEY, 

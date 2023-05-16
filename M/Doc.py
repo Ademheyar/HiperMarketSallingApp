@@ -87,10 +87,10 @@ class DocForm(tk.Frame):
         self.listbox = ttk.Treeview(self.home_tab)        
         self.listbox.bind('<<TreeviewSelect>>', self.on_select)
         self.listbox.bind("<Button-1>", self.on_treeview_double_click)
-        self.listbox.grid_propagate(False)
+        #self.listbox.grid_propagate(False)
 
         # Set the size of the self.listbox widget
-        self.listbox.grid(row=1, column=0, rowspan=2)
+        self.listbox.grid(row=1, column=0, rowspan=3, sticky="nsew")
         self.get_columen()
         self.listbox.insert('', 'end', text="1", values=("1", "2", "3", "4","5", "6", "7", "8"))
 

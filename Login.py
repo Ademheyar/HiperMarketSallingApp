@@ -64,7 +64,7 @@ class Loging_Frame(tk.Frame):
             error_label = tk.Label(self.logging_box, text="Login Secsesfull", font=("Helvetica", 18), bg="#e74c3c", fg="green")
             error_label.pack(pady=20)
             self.master.frames["DisplayFrame"].user = entered_username
-            self.master.show_frame("DisplayFrame")
+            self.master.frames["DisplayFrame"].load()
         else:
             error_label = tk.Label(self.logging_box, text="Login failed", font=("Helvetica", 18), bg="#e74c3c", fg="#ffffff")
             error_label.pack(pady=20)

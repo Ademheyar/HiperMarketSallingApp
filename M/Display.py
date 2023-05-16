@@ -15,6 +15,7 @@ from M.Product import ProductForm
 from D.iteminfo import *
 from D.endday import EnddayForm
 from D.user_info import UserInfoForm
+from D.printer import PrinterForm
 
 from Manager import ManageForm
 
@@ -57,8 +58,15 @@ class DisplayFrame(tk.Frame):
         '''
 
         self.main_frame = tk.Frame(self.main_Notebook, bg="black")
-        self.main_frame.pack(side="top", fill="both", expand=True)
+        self.main_frame.grid()
         self.main_Notebook.add(self.main_frame, text='HOME')
+        
+        # Set the grid configuration for buttons_frame
+        self.main_frame.columnconfigure((0, 1), weight=1)
+        self.main_frame.columnconfigure(1, weight=0)
+        self.main_frame.rowconfigure(0, weight=0)
+        self.main_frame.rowconfigure(1, weight=2)
+
 
         # create the second frame and add it to the container
         self.manage_form = ManageForm(self.main_Notebook)
@@ -68,37 +76,48 @@ class DisplayFrame(tk.Frame):
 
         #self.frames["ManageFrame"] = manage_form
 
-        # New frame at the top of the main frame
-        self.top_frame = tk.Frame(self.main_frame, bg="red", height=screen_height * 0.10, width=screen_width)
-        self.top_frame.pack(side="top", fill="both")
-
+        # * New frame at the top of the main frame
+        self.top_frame = tk.Frame(self.main_frame, bg="red", height=int(screen_height * 0.70))
+        self.top_frame.grid(row=0, column=0, sticky="nsew")
+        # Set the grid configuration for buttons_frame
+        self.top_frame.columnconfigure((0, 1, 2, 4, 5), weight=0)
+        self.top_frame.rowconfigure((0), weight=1)
+        
         # Create 4 button widgets and pack them to the top_frame
         self.button1 = tk.Button(self.top_frame, text="Barcode", width=int(self.top_frame.winfo_width() * 0.10), bg="red", fg="white", font=("Arial", 12))
-        self.button1.pack(side="left", fill="both")
+        self.button1.grid(row=0, column=0, sticky="nsew")
         self.button2 = tk.Button(self.top_frame, text="tag", width=int(self.top_frame.winfo_width() * 0.10), bg="red", fg="white", font=("Arial", 12))
-        self.button2.pack(side="left", fill="both")
+        self.button2.grid(row=0, column=1, sticky="nsew")
         self.button3 = tk.Button(self.top_frame, text="123", width=int(self.top_frame.winfo_width() * 0.10), bg="red", fg="white", font=("Arial", 12))
-        self.button3.pack(side="left", fill="both")
+        self.button3.grid(row=0, column=2, sticky="nsew")
         self.button4 = tk.Button(self.top_frame, text="Abc", width=int(self.top_frame.winfo_width() * 0.10), bg="red", fg="white", font=("Arial", 12))
-        self.button4.pack(side="left", fill="both")
+        self.button4.grid(row=0, column=3, sticky="nsew")
 
         # Create a label and an entry widget for the search box
         self.search_label = tk.Label(self.top_frame, text="Search:", width=int(self.top_frame.winfo_width() * 0.10), bg="red", fg="white", font=("Arial", 12))
-        self.search_label.pack(side="left", fill="both")
-        self.search_entry = search_entry(self.top_frame, width=int(screen_width * 0.50), font=("Arial", 12))
+        self.search_label.grid(row=0, column=4, sticky="nsew")
+        self.search_entry = search_entry(self.top_frame, font=("Arial", 12))
         #tk.Entry
-        self.search_entry.pack(side="left", fill="both")
+        self.search_entry.grid(row=0, column=5, columnspan=2, sticky="nsew")
 
-        # New frame next to list_items in the main frame
-        self.midel_frame = tk.Frame(self.main_frame, bg="blue", height=int(screen_height * 0.90))
-        self.midel_frame.pack(side="left", fill="both", expand=True)
+        # * New frame next to list_items in the main frame
+        self.midel_frame = tk.Frame(self.main_frame, bg="blue")
+        self.midel_frame.grid(row=1, column=0, sticky="nsew")
 
         # New listbox in the main frame
         self.list_items = ttk.Treeview(self.midel_frame, columns=("CODE", "BARCODE", "ITEM Name", "AT SHOP", "COLOR", "SIZE", "QTY", "PRICE", "DISCOUNT", "TAX", "TOTAL PRICE"))
-        self.list_items.grid_propagate(False)
+        #self.list_items.grid_propagate(False)
 
-        # Set the size of the self.list_items widget
-        self.list_items.config(height=int(self.midel_frame.winfo_height() * 0.70))
+        
+        # Add vertical scrollbar
+        tree_scrollbar_y = ttk.Scrollbar(self.list_items, orient='vertical', command=self.list_items.yview)
+        self.list_items.configure(yscrollcommand=tree_scrollbar_y.set)
+        tree_scrollbar_y.pack(side='right', fill='y')
+
+        # Add horizontal scrollbar
+        tree_scrollbar_x = ttk.Scrollbar(self.list_items, orient='horizontal', command=self.list_items.xview)
+        self.list_items.configure(xscrollcommand=tree_scrollbar_x.set)
+        tree_scrollbar_x.pack(side='bottom', fill='x')
 
         self.list_items.pack(side="top", fill="both", expand=True)
         self.list_items.heading("#0", text="Item", anchor=tk.W)
@@ -127,7 +146,7 @@ class DisplayFrame(tk.Frame):
         self.list_items.column("#11", stretch=tk.NO, minwidth=25, width=100)     
         
         
-        self.total_frame = tk.Frame(self.midel_frame, bg="green")
+        self.total_frame = tk.Frame(self.midel_frame, height=100, bg="green")
         self.total_frame.pack(side="top", fill="both")
 
         # Set the top and bottom frames to fill the available space horizontally
@@ -135,22 +154,22 @@ class DisplayFrame(tk.Frame):
         self.list_items.pack(side="top")
 
         # Create labels on the right side of total_frame
-        self.total_items_label = tk.Label(self.total_frame, text="Total Items : 0", bg="green", fg="white", font=("Arial", 15))
+        self.total_items_label = tk.Label(self.total_frame, text="Total Items : 0", bg="green", fg="white", font=("Arial", 10))
         self.total_items_label.pack(side="left", padx=10)
-        self.total_tax_label = tk.Label(self.total_frame, text="Total Tax : 0", bg="green", fg="white", font=("Arial", 15))
+        self.total_tax_label = tk.Label(self.total_frame, text="Total Tax : 0", bg="green", fg="white", font=("Arial", 10))
         self.total_tax_label.pack(side="left", padx=10)
-        self.total_discount_label = tk.Label(self.total_frame, text="Item Discount : 0", bg="green", fg="white", font=("Arial", 15))
+        self.total_discount_label = tk.Label(self.total_frame, text="Item Discount : 0", bg="green", fg="white", font=("Arial", 10))
         self.total_discount_label.pack(side="left", padx=10)
-        self.total_tdiscount_label = tk.Label(self.total_frame, text="Total Discount : 0", bg="green", fg="white", font=("Arial", 15))
+        self.total_tdiscount_label = tk.Label(self.total_frame, text="Total Discount : 0", bg="green", fg="white", font=("Arial", 10))
         self.total_tdiscount_label.pack(side="left", padx=10)
-        self.total_price_label = tk.Label(self.total_frame, text="Price Befor: 0", bg="green", fg="white", font=("Arial", 15))
+        self.total_price_label = tk.Label(self.total_frame, text="Price Befor: 0", bg="green", fg="white", font=("Arial", 10))
         self.total_price_label.pack(side="left", padx=10)
-        self.total_label = tk.Label(self.total_frame, text="Total After: 0", bg="green", fg="white", font=("Arial", 15))
+        self.total_label = tk.Label(self.total_frame, text="Total After: 0", bg="green", fg="white", font=("Arial", 10))
         self.total_label.pack(side="left", padx=10)
 
-        # New frame next to list_items in the main frame
-        self.buttons_frame = tk.Frame(self.main_frame, bg="brown", height=int(screen_height * 0.90))
-        self.buttons_frame.pack(side="left", fill="both", expand=True)
+        # * New frame next to list_items in the main frame
+        self.buttons_frame = tk.Frame(self.main_frame, bg="brown")
+        self.buttons_frame.grid(row=0, column=1, rowspan=2, sticky="nsew")
 
         # Set the grid configuration for buttons_frame
         self.buttons_frame.columnconfigure((0, 1, 2, 3), weight=1, minsize=int(self.buttons_frame.winfo_height() *0.1))
@@ -176,19 +195,35 @@ class DisplayFrame(tk.Frame):
         self.endday_button.grid(row=1, column=3, sticky="nsew")
         self.userinfo_button = tk.Button(self.buttons_frame, text="Userinfo", bg="red", fg="white", font=("Arial", 12), command=lambda: UserInfoForm(self))
         self.userinfo_button.grid(row=2, column=0, sticky="nsew")
-        self.logout_button = tk.Button(self.buttons_frame, text="Logout", bg="red", fg="white", font=("Arial", 12), command=self.call_loging)
+        self.logout_button = tk.Button(self.buttons_frame, text="Logout", bg="red", fg="white", font=("Arial", 12), command=self.exit)
         self.logout_button.grid(row=2, column=1, sticky="nsew")
         self.payment_button = tk.Button(self.buttons_frame, text="Payment", bg="red", fg="white", font=("Arial", 12), command=self.call_splitpayment)
         self.payment_button.grid(row=2, column=2, sticky="nsew")
         self.creat_payment_buttons()
         self.update_info()
         self.update_list_items()
-
+        
+    def load_setting(self):
+        cursor.execute("SELECT * FROM setting")
+        b = cursor.fetchall()
+        if len(b) <= 0:
+            print("sitting : " + self.user)
+            cursor.execute('INSERT INTO setting (user_name, barcode_count, printer) VALUES (?, ?, ?)', (self.user, 0, ""))
+            # Commit the changes to the database
+            conn.commit()
+        else:
+            print("sitting : " + str(b))
+        
     def call_manager(self):
         self.master.show_frame("ManageFrame")
 
-    def call_loging(self):
+    def exit(self):
         self.master.show_frame("LogingFrame")
+
+    def load(self):
+        self.master.show_frame("DisplayFrame")
+        self.load_setting()
+        ApproveFrame(self, [])
     
     def call_splitpayment(self):
         i = 0
@@ -546,10 +581,18 @@ class DisplayFrame(tk.Frame):
                 # item [(|item_code|,|item_name|,|item_shop|,|item_color|,
                 #        |item_size|,|item_qty|,|item_price|,|item_disc|,|item_tax|),]    
                 item = ""
+                itemforslip = ""
                 price = 0
                 disc = 0
                 tax = 0
                 items = 0
+                brcod = 0
+                cursor.execute("SELECT * FROM setting WHERE user_name=?", (self.user,))
+                b = cursor.fetchone()
+                if not len(b)<= 0:
+                    brcod = b[2] # getting barcode
+                brcod += 1
+                print("brcod :" + str(brcod))
                 for a in self.list_items.get_children():
                     items += 1
                     print(str(self.list_items.item(a)))
@@ -578,6 +621,23 @@ class DisplayFrame(tk.Frame):
                     item += "|,|"
                     item += str(iv[9])  # tax
                     tax += float(iv[9])
+                    # Code   | Name      | qty | price  | totale |
+                    # TODO make equal space
+                    v = [7, 10, 3, 8, 8]
+                    vv = [str(iv[0]), str(iv[2]), str(iv[6]), str(iv[7]), str(float(iv[6])*float(iv[7]))]
+                    print("vv : " + str(vv))
+                    vvi = 0
+                    for vi in v:
+                        for w in range(vi):
+                            if w < len(vv[vvi]):
+                                print("vv : " + str(vv[vvi])+ " vvi :" + str(vvi) + " w :" + str(w))
+                                itemforslip += vv[vvi][w]
+                            else:
+                                itemforslip += ' '
+                        vvi += 1
+                        itemforslip += "|"
+                    itemforslip += "\n"
+                    
                     if items+1 <= len(self.list_items.get_children()):
                         item += "|),"
                     else:
@@ -593,21 +653,55 @@ class DisplayFrame(tk.Frame):
                     print("item2 found : " + str(it2[12]))
                     # Commit the changes to the database
                     conn.commit()
+                
+                cursor.execute('UPDATE setting SET barcode_count=? WHERE user_name=?', (brcod, self.user))
+                    
+                # Commit the changes to the database
+                conn.commit()
 
-
-                cursor.execute('INSERT INTO doc_table (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("doc_barcode", "extension_barcode", self.user, self.custemr, "type", item, float(items), price, disc, tax, payments_, "doc_created_date", "doc_expire_date", "doc_updated_date"))
+                cursor.execute('INSERT INTO doc_table (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("23-200-" + str(brcod), "extension_barcode", self.user, self.custemr, "type", item, float(items), price, disc, tax, payments_, "doc_created_date", "doc_expire_date", "doc_updated_date"))
                 
                 # Commit the changes to the database
                 conn.commit()
                 
-                print(str(["doc_barcode", "extension_barcode", self.user, "customer_id", "type", item, disc, tax, payments_, "doc_created_date", "doc_expire_date", "doc_updated_date"]))
+                print(str(["23-200-" + str(brcod), "extension_barcode", self.user, "customer_id", "type", item, disc, tax, payments_, "doc_created_date", "doc_expire_date", "doc_updated_date"]))
                 
                 print("pyment sitting equal :" + str([payment_name, payment_quick_pay, payment_customer_required, payment_print_slip, 
                                                       payment_change_allowed, payment_mark_pad, payment_open_drower]))
-                for name in payment_name:
-                    ApproveFrame(self, self.list_items)
 
-
+                brd = "23-200-" + str(brcod)
+                # TODO create function that generate slipe text logo image
+                slip = "-----------------------------------------\n" \
+                       "Receipt No : " + brd + "\n"\
+                       "extnsion Receipt No : extension_barcode\n"\
+                       "Date : doc_created_date\n"\
+                       "updated Date : doc_updated_date\n"\
+                       "Due Date : doc_expire_date\n"\
+                       "-----------------------------------------\n" \
+                       "User : " + str(self.user) + "\n"\
+                       "Customer : Customer Name\n"\
+                       "Phone No : Phone Number\n"\
+                       "-----------------------------------------\n" \
+                       "Code   |Name      |qty| price  |totale  |\n" \
+                       + itemforslip + \
+                       "-----------------------------------------\n" \
+                       "Item Counted    : " + str(items) + "\n"\
+                       "Total Discount  : " + str(disc) + "\n"\
+                       "Total Tax       : " + str(tax) + "\n"\
+                       + str(payments_) + "\n" \
+                       "=========================================\n" \
+                       "Total price     : " + str(price) + "\n"\
+                       "Total Paid      : " + str(price) + "\n"\
+                       "Total Laft      : " + str(0) + "\n"\
+                       "=========================================\n" \
+                       "          " + str(brd) + "       \n"
+                
+                
+                if payment_print_slip == 1:
+                    PrinterForm.print_slip(self, slip, 1) # TODO chack in setting if paper cut allowed
+                if payment_open_drower == 1:
+                    PrinterForm.open_drower(self)
+                    
                 # payment_type :: (1id , 2name TEXT, 3code TEXT, 4type TEXT, 5short_key TEXT, 6acsess TEXT,
                 # 7enabel INTEGER, 8quick_pay INTEGER, 9customer_required INTEGER, 10printslip REAL, 
                 # 11change_allowed REAL, 12markpad REAL, 13open_drower REAL
@@ -616,4 +710,6 @@ class DisplayFrame(tk.Frame):
                     print("pymrnt!!!!!", str(child))
                 # call void         
                 self.void_items()
+                for name in payment_name:
+                    ApproveFrame(self, self.list_items)
         
