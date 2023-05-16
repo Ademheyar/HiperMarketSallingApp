@@ -7,6 +7,8 @@ db_path = os.path.join(data_dir, 'my_database.db')
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
+import requests
+
 class UploadingForm(tk.Tk):
     def __init__(self, master):
         self.master = master
@@ -18,7 +20,39 @@ class UploadingForm(tk.Tk):
         b = cursor.fetchall()
         if len(b) <= 0:
             print("sitting : " + str(b))
-        
+
+        # Data to update
+        # Data to update for Website to Window Application
+        dataToUpdate = {
+            'data': {
+                'field1': 'new value',
+                'field2': 'updated value',
+                # Add more fields as needed
+            }
+        }
+
+        # Data to update for Window Application to Website
+        updatedData = {
+            'field1': 'updated value',
+            'field2': 'new value',
+            # Add more fields as needed
+        }
+
+        # Send data updates to the API endpoint
+        response = requests.post('http://localhost/Adot/update-api-endpoint', json=dataToUpdate)
+        response2 = requests.post('http://localhost/Adot/update-api-endpoint', json=updatedData)
+
+        # Check the response status for Website to Window Application
+        if response.status_code == 200:
+            print('Website to Window Application update successful')
+        else:
+            print('Website to Window Application update failed')
+
+        # Check the response status for Window Application to Website
+        if response2.status_code == 200:
+            print('Window Application to Website update successful')
+        else:
+            print('Window Application to Website update failed')
         # set the position of the Payment Form window to center
         # TODO: list z report for current day and history z reports for pev days but in notbook 
         # TODO: TO Print dayly, weekly, monthly and yearly report as user whats
