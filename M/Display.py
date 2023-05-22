@@ -1,7 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
 import sqlite3
+import shutil
+import datetime
 import os
+import atexit
 import sys
 current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(current_dir, '..')
@@ -14,6 +17,7 @@ from D.ApprovedDisplay import ApproveFrame
 from M.Product import ProductForm
 from D.iteminfo import *
 from D.endday import EnddayForm
+from D.Upload_ import UploadingForm
 from D.user_info import UserInfoForm
 from D.printer import PrinterForm
 
@@ -23,6 +27,7 @@ data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data')
 db_path = os.path.join(data_dir, 'my_database.db')
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
+
 
 class DisplayFrame(tk.Frame):
     def __init__(self, master, user):
@@ -80,7 +85,8 @@ class DisplayFrame(tk.Frame):
         self.top_frame = tk.Frame(self.main_frame, bg="red", height=int(screen_height * 0.70))
         self.top_frame.grid(row=0, column=0, sticky="nsew")
         # Set the grid configuration for buttons_frame
-        self.top_frame.columnconfigure((0, 1, 2, 4, 5), weight=0)
+        self.top_frame.columnconfigure((0, 1, 2, 4), weight=0)
+        self.top_frame.columnconfigure((5), weight=1)
         self.top_frame.rowconfigure((0), weight=1)
         
         # Create 4 button widgets and pack them to the top_frame
@@ -94,11 +100,12 @@ class DisplayFrame(tk.Frame):
         self.button4.grid(row=0, column=3, sticky="nsew")
 
         # Create a label and an entry widget for the search box
-        self.search_label = tk.Label(self.top_frame, text="Search:", width=int(self.top_frame.winfo_width() * 0.10), bg="red", fg="white", font=("Arial", 12))
+        self.search_label = tk.Label(self.top_frame, text="Search:", bg="red", fg="white", font=("Arial", 12))
         self.search_label.grid(row=0, column=4, sticky="nsew")
+        print("screen_width :: " + str((self.top_frame.winfo_width())) + " = " + str((screen_width/3)))
         self.search_entry = search_entry(self.top_frame, font=("Arial", 12))
         #tk.Entry
-        self.search_entry.grid(row=0, column=5, columnspan=2, sticky="nsew")
+        self.search_entry.grid(row=0, column=5, columnspan=4, sticky="nsew")
 
         # * New frame next to list_items in the main frame
         self.midel_frame = tk.Frame(self.main_frame, bg="blue")
@@ -120,7 +127,7 @@ class DisplayFrame(tk.Frame):
         tree_scrollbar_x.pack(side='bottom', fill='x')
 
         self.list_items.pack(side="top", fill="both", expand=True)
-        self.list_items.heading("#0", text="Item", anchor=tk.W)
+        self.list_items.heading("#0", text="Id", anchor=tk.W)
         self.list_items.column("#0", stretch=tk.NO, minwidth=25, width=100)   
         self.list_items.heading("#1", text="CODE", anchor=tk.W)
         self.list_items.column("#1", stretch=tk.NO, minwidth=25, width=50)
@@ -199,10 +206,53 @@ class DisplayFrame(tk.Frame):
         self.logout_button.grid(row=2, column=1, sticky="nsew")
         self.payment_button = tk.Button(self.buttons_frame, text="Payment", bg="red", fg="white", font=("Arial", 12), command=self.call_splitpayment)
         self.payment_button.grid(row=2, column=2, sticky="nsew")
+        self.update_button = tk.Button(self.buttons_frame, text="update", bg="red", fg="white", font=("Arial", 12), command=lambda: UploadingForm(self))
+        self.update_button.grid(row=2, column=3, sticky="nsew")
+        # Register the backup function to be called when the application exits
+        self.max_backups = 4     
+        #self.void_items()
+        atexit.register(self.backup_database)
         self.creat_payment_buttons()
         self.update_info()
         self.update_list_items()
         
+
+    # Function to perform the backup
+    def backup_database(self):
+        # Database file paths
+        database_file = 'data/my_database.db'
+        backup_folder = 'backup/'
+        max_backups = self.max_backups
+        # Create the backup folder if it doesn't exist
+        os.makedirs(backup_folder, exist_ok=True)
+        
+        # List existing backup files
+        existing_backups = sorted(os.listdir(backup_folder))
+        
+        # Delete oldest backups if exceeding the maximum allowed
+        if len(existing_backups) >= max_backups:
+            num_backups_to_delete = len(existing_backups) - max_backups + 1
+            for i in range(num_backups_to_delete):
+                file_to_delete = os.path.join(backup_folder, existing_backups[i])
+                os.remove(file_to_delete)
+                print("Deleted old backup:", file_to_delete)
+        
+        # Create a backup file name
+        backup_file = os.path.join(backup_folder, 'backup_' + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S') + '.db')
+        
+        # Connect to the database
+        conn = sqlite3.connect(database_file)
+        
+        try:
+            # Create a backup by copying the database file
+            shutil.copy2(database_file, backup_file)
+            print("Backup created successfully:", backup_file)
+        except IOError as e:
+            print("Error creating backup:", str(e))
+        finally:
+            # Close the database connection
+            conn.close()
+            
     def load_setting(self):
         cursor.execute("SELECT * FROM setting")
         b = cursor.fetchall()
@@ -261,7 +311,10 @@ class DisplayFrame(tk.Frame):
             print(str(self.list_items.item(a)))
             i = self.list_items.item(a)
             iv = i['values']
+            id = i['text']
             ITEM += "(|"
+            ITEM += str(id) # id
+            ITEM += "|,|"
             ITEM += str(iv[0]) # code
             ITEM += "|,|"
             ITEM += str(iv[2]) # name
@@ -360,23 +413,24 @@ class DisplayFrame(tk.Frame):
             for items in items_lists:
                 item = items.split("|,|")
                 #for each items
-                code = item[0].replace("(|", "")
-                name = item[1]
+                id = item[0].replace("(|", "")
+                code = item[1]
+                name = item[2]
                 # if item shop and sold shop not same
-                shop = item[2]
-                color = item[3]
-                size = item[4]
-                qty = item[5]
-                price = item[6]
+                shop = item[3]
+                color = item[4]
+                size = item[5]
+                qty = item[6]
+                price = item[7]
                 total_price = float(qty)*float(price)
                 PRICE += total_price
-                disc = item[7]
+                disc = item[8]
                 Disc += float(disc)
-                tax = item[8].replace("|)", "")
+                tax = item[9].replace("|)", "")
                 TAX += float(tax)
                 # Add the item to the list
-                print(str([code, "", name, shop, color, size, qty, price, disc, tax, total_price]))
-                self.list_items.insert("", "end", values=(code, "", name, shop, color, size, qty, price, disc, tax, total_price))
+                print(str([id, code, "", name, shop, color, size, qty, price, disc, tax, total_price]))
+                self.list_items.insert("", "end", text=str(id), values=(code, "", name, shop, color, size, qty, price, disc, tax, total_price))
         # Update the totals in the GUI
         #self.update_totals()
         self.update_info()
@@ -504,31 +558,39 @@ class DisplayFrame(tk.Frame):
     def creat_payment_buttons(self):
         cursor.execute("SELECT * FROM tools")
         rows = cursor.fetchall()
-        for row in rows:
-            tool_name = row[1]
-            # Check if the button already exists in the frame
-            button_exists = False
-            a = 0
-            b = 0
-            for widget in self.buttons_frame.winfo_children():
-                if b == 3: 
-                    b = 0
-                    a += 1
-                    continue
-                if widget.cget("text") == tool_name:
-                    button_exists = True
-                    break
+        buttons = []
+        i = -1
+        j = -1
+        a = 0
+        b = 0
+        for widget in range(len(self.buttons_frame.winfo_children())-1):
+            #print(" button " + str(a) + " , " + str(b))
+            j += 1
+            if b == 3: 
+                b = 0
+                a += 1
+                continue
+            if len(self.buttons_frame.winfo_children())-1 == j+1:
+                a += 1
+                b = 0
+                for row in rows:
+                    i += 1
+                    if b == 3: 
+                        b = 0
+                        a += 1
+                    tool_name = row[1]
+                    # Create a new button
+                    new_button = tk.Button(self.buttons_frame, text=tool_name)
+                    new_button.configure(command=lambda b=new_button.cget("text"): self.call_payment(b, self.price))
+                    new_button.grid(row=a, column=b, sticky="nsew")
+                    b += 1
+                break
+            else:
                 b+=1
-            a += 1
-            # Create a new button if it doesn't exist
-            if not button_exists:
-                if b == 3: 
-                    b = 0 
-                new_button = tk.Button(self.buttons_frame, text=tool_name, command=lambda : self.call_payment(row[1], self.price))
-                new_button.grid(row=a, column=b, sticky="nsew")
     
     def call_payment(self, name, price):
-        self.pid_peyment.append(str(name) + " = " + str(price))
+        self.pid_peyment.append(str(str(name) + " = " + str(price)))
+        print("self.pid_peyment = " + str(self.pid_peyment))
         self.process_payment()
 
     def process_payment(self):
@@ -598,7 +660,9 @@ class DisplayFrame(tk.Frame):
                     print(str(self.list_items.item(a)))
                     i = self.list_items.item(a)
                     iv = i['values']
-                    cursor.execute("SELECT * FROM product WHERE code=?", (iv[0],))
+                    id = i['text']
+                    print(str(id))
+                    cursor.execute("SELECT * FROM product WHERE id=?", (id,))
                     it = cursor.fetchone()
                     item += "(|"
                     item += str(iv[0]) # code
@@ -645,9 +709,9 @@ class DisplayFrame(tk.Frame):
                     print("item1 found : " + str(it[12]))
                     it_info = reduc_qty(str(it[12]), str(iv[3]), str(iv[4]),str(iv[5]), str(iv[6]))
                     print("item2 found : " + str(it_info))
-                    cursor.execute('UPDATE product SET more_info=? WHERE code=?', (it_info, iv[0]))
+                    cursor.execute('UPDATE product SET more_info=? WHERE id=?', (it_info, id))
                     
-                    cursor.execute("SELECT * FROM product WHERE code=?", (iv[0],))
+                    cursor.execute("SELECT * FROM product WHERE id=?", (id,))
                     it2 = cursor.fetchone()
                     
                     print("item2 found : " + str(it2[12]))
@@ -698,19 +762,17 @@ class DisplayFrame(tk.Frame):
                        "          " + str(brd) + "       \n"
                 
                 
-                if payment_print_slip == 1:
-                    PrinterForm.print_slip(self, slip, 1) # TODO chack in setting if paper cut allowed
-                if payment_open_drower == 1:
-                    PrinterForm.open_drower(self)
-                    
                 # payment_type :: (1id , 2name TEXT, 3code TEXT, 4type TEXT, 5short_key TEXT, 6acsess TEXT,
                 # 7enabel INTEGER, 8quick_pay INTEGER, 9customer_required INTEGER, 10printslip REAL, 
                 # 11change_allowed REAL, 12markpad REAL, 13open_drower REAL
-                
+                if payment_open_drower == 1:
+                    PrinterForm.open_drower(self)
+                    
+                for name in payment_name:
+                    ApproveFrame(self, self.list_items, slip, payment_print_slip, self.user)
+                    
                 for child in self.list_items.get_children():
                     print("pymrnt!!!!!", str(child))
                 # call void         
                 self.void_items()
-                for name in payment_name:
-                    ApproveFrame(self, self.list_items)
         

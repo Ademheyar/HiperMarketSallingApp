@@ -119,8 +119,8 @@ class ProductForm(tk.Frame):
         self.notebook_frame.add(self.tab3_frame)
 
         # Create the list box
-        self.more_info_label = tk.Label(self.tab3_frame, text='More Info:')
-        self.more_info_label.grid(row=1, column=0, sticky=tk.E)
+        self.more_info_label = tk.Entry(self.tab3_frame)
+        self.more_info_label.grid(row=0, column=0, columnspan=4, sticky=tk.W)
 
         self.inventory = []
         self.tree = ttk.Treeview(self.tab3_frame, columns=("Shop Name", "Color", "Size", "Barcode", "Qtyfirst", "Qty", "cdate", "update"))
@@ -421,7 +421,7 @@ class ProductForm(tk.Frame):
         #print("list : " + str(txt))
         #le = self.chang_to_list(txt)
         #print("le :" + str(le))
-        self.more_info_label.config(text=txt)
+        self.more_info_label.insert(0, txt)
         
     def add_info(self):
         """self.more_info_label = tk.Label(self.tab3_frame, text='More Info:')
@@ -478,7 +478,7 @@ class ProductForm(tk.Frame):
         #print("list : " + str(txt))
         #le = self.chang_to_list(txt)
         #print("le :" + str(le))
-        self.more_info_label.config(text=txt)
+        self.more_info_label.insert(0, txt)
         
 
         
@@ -635,12 +635,22 @@ class ProductForm(tk.Frame):
         #self.barcode_entry.delete(0, tk.END)
         #self.at_shop_entry.delete(0, tk.END)
         #self.quantity_entry.delete(0, tk.END)
+
+        self.inventory = []
+        # Clear the product tree
+        self.tree.delete(*self.tree.get_children())
+        self.color_entry.delete(0, tk.END)
+        self.size_entry.delete(0, tk.END)
+        self.qty_entry.delete(0, tk.END)
+        self.bracode_entry.delete(0, tk.END)
+
+        
         self.cost_entry.delete(0, tk.END)
         self.tax_entry.delete(0, tk.END)
         self.price_entry.delete(0, tk.END)
         self.include_tax_var.set(0)
         self.price_change_var.set(0)
-        self.more_info_label['text'] = ""
+        self.more_info_label.delete(0, tk.END)
         self.images_entry.delete(0, tk.END)
         self.description_entry.delete(0, tk.END)
         self.service_change_var.set(0)
@@ -698,7 +708,8 @@ class ProductForm(tk.Frame):
             self.price_entry.insert(0, price)
             self.include_tax_var.set(int(include_tax))
             self.price_change_var.set(int(price_change))
-            self.more_info_label['text'] = more_info
+            self.more_info_label.insert(0, more_info)
+            # todo fill to tree
             self.images_entry.delete(0, tk.END)
             self.images_entry.insert(0, images)
             self.description_entry.delete(0, tk.END)
@@ -748,7 +759,7 @@ class ProductForm(tk.Frame):
         price = float(self.price_entry.get())
         include_tax = int(self.include_tax_var.get())
         price_change = int(self.price_change_var.get())
-        more_info = self.more_info_label['text']
+        more_info = self.more_info_label.get()
         images = self.images_entry.get()
         description = self.description_entry.get()
         service = self.service_change_var.get()

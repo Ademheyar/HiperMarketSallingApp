@@ -79,10 +79,8 @@ class ItemSelectorWidget(tk.Tk):
                     else:
                         self.selected_qty.set(self.given_qty)
                     item = [self.selected_shop.get(), self.selected_color.get(), self.selected_size.get(), self.selected_qty.get()]            
-                    print("Item added to cart:", item)
+                    print("Item added to cart00:", item)
                     self.getvalue_form.destroy()
-                else:
-                    self.master.wait_window(self.getvalue_form)
         
     def get_shop(self, t):
         ret = self.read_code(self.list, "", "", "")
@@ -179,7 +177,7 @@ class ItemSelectorWidget(tk.Tk):
         self.selected_size.set("")
         self.selected_qty.set("")
         '''
-        print("Item added to cart:", item)
+        print("Item added to cart1:", item)
         self.getvalue_form.destroy()
 
 '''

@@ -6,18 +6,27 @@ import sys
 current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(current_dir, '..')
 sys.path.append(MAIN_dir)
+from D.searchbox import search_entry
 from D.Peymentsplit import PaymentForm
 from D.GetVALUE import GetvalueForm
+from D.Showchartlists import ShowchartForm
+from M.Product import ProductForm
+from D.iteminfo import *
+from D.endday import EnddayForm
+from D.Upload_ import UploadingForm
+from D.user_info import UserInfoForm
+from D.printer import PrinterForm
 
 conn = sqlite3.connect("my_database.db")
 cursor = conn.cursor()
 
 class ApproveFrame(tk.Frame):
-    def __init__(self, master, tree):
-
+    def __init__(self, master, tree, slip, print_slip, user):
         tk.Frame.__init__(self, master)
-
+        self.slip = slip
+        self.print_slip = print_slip
         self.tree = tree
+        self.user = user
 
         # Create a new Toplevel window for the value form
         self.getvalue_form = tk.Toplevel(self.master)
@@ -67,14 +76,23 @@ class ApproveFrame(tk.Frame):
         self.buttons_frame.rowconfigure((0, 1, 2, 3), weight=1)
 
         # Create an undo button
-        self.undo_button = tk.Button(self.buttons_frame, text="Undo", bg="orange", fg="white", font=("Arial", 15), command=self.undo_item)
-        self.undo_button.grid(row=2, column=1, sticky="nsew")
+        self.undo_button = tk.Button(self.buttons_frame, text="Undo", bg="orange", fg="white", font=("Arial", 15), command= lambda: self.undo_item)
+        self.undo_button.grid(row=1, column=1, sticky="nsew")
 
+        # Create an undo button
+        self.print_button = tk.Button(self.buttons_frame, text="print", bg="orange", fg="white", font=("Arial", 15), command= self.print_item)
+        self.print_button.grid(row=1, column=2, sticky="nsew")
+        
         # Create continue Button
         self.continue_button = ttk.Button(self.buttons_frame, text="Continue", command=self.getvalue_form.destroy)
         self.continue_button.grid(row=3, column=2, sticky="nsew")
         self.update_items()
-
+        
+    def print_item(self):
+        print("printing : " + str(self.print_slip) + "splip : " + str(self.slip))
+        if self.print_slip == 1:
+            PrinterForm.print_slip(self, self.slip, 1) # TODO chack in setting if paper cut allowed
+    
     def undo_item(self):
         pass
     

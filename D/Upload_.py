@@ -7,88 +7,63 @@ db_path = os.path.join(data_dir, 'my_database.db')
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
-import requests
+#import requests
 
 class UploadingForm(tk.Tk):
     def __init__(self, master):
         self.master = master
         
         # create a Toplevel window for the payment form
-        self.getvalue_form = tk.Toplevel(self.master.master)
+        self.getvalue_form = tk.Toplevel(self.master)
         self.getvalue_form.title("Uploading Form")
+        
+        
+    
+    def add_num(self, text):
+        pass
+        '''
+        # Fetch data from the database
         cursor.execute("SELECT * FROM upload_doc")
         b = cursor.fetchall()
-        if len(b) <= 0:
-            print("sitting : " + str(b))
+        if len(b) > 0:
+            # Convert the fetched data to a list of dictionaries
+            for row in b:
+                entry = {
+                    'id': row[0],
+                    'doc_barcode': str(row[1]),
+                    'extension_barcode': str(row[2]),
+                    'user_id': str(row[3]),
+                    'customer_id': str(row[4]),
+                    'type': str(row[5]),
+                    'item': str(row[6]),
+                    'qty': str(row[7]),
+                    'price': str(row[8]),
+                    'discount': str(row[9]),
+                    'tax': str(row[10]),
+                    'payments': str(row[11]),
+                    'doc_created_date': str(row[12]),
+                    'doc_expire_date': str(row[13]),
+                    'doc_updated_date': str(row[14])
+                }
+                #print("row : " + str(row))
+                #print("entry : " + str(entry))
+                try:
+                    # Send the data to the API
+                    response = requests.post('http://localhost/Adot/update-api-endpoint.php', json=entry)
 
-        # Data to update
-        # Data to update for Website to Window Application
-        dataToUpdate = {
-            'data': {
-                'field1': 'new value',
-                'field2': 'updated value',
-                # Add more fields as needed
-            }
-        }
+                    if response.status_code == 200:
+                        print('Data sent successfully.')
+                        updated_data = response.json()
+                        if updated_data:
+                            print("Updated data:", updated_data)
+                        else:
+                            print('Failed to retrieve data from the website.')
+                except requests.exceptions.RequestException as e:
+                    print('Failed to send data:', e)
+            
 
-        # Data to update for Window Application to Website
-        updatedData = {
-            'field1': 'updated value',
-            'field2': 'new value',
-            # Add more fields as needed
-        }
-
-        # Send data updates to the API endpoint
-        response = requests.post('http://localhost/Adot/update-api-endpoint', json=dataToUpdate)
-        response2 = requests.post('http://localhost/Adot/update-api-endpoint', json=updatedData)
-
-        # Check the response status for Website to Window Application
-        if response.status_code == 200:
-            print('Website to Window Application update successful')
-        else:
-            print('Website to Window Application update failed')
-
-        # Check the response status for Window Application to Website
-        if response2.status_code == 200:
-            print('Window Application to Website update successful')
-        else:
-            print('Window Application to Website update failed')
         # set the position of the Payment Form window to center
         # TODO: list z report for current day and history z reports for pev days but in notbook 
         # TODO: TO Print dayly, weekly, monthly and yearly report as user whats
-        
         # show the Payment Form window
-        self.getvalue_form.transient(self.master)
-        self.getvalue_form.grab_set()
-        self.master.wait_window(self.getvalue_form)
-
-
-
-
-    
-    def add_num(self, text):
-        # Get the current value of the Entry widget
-        current_value = self.include_var.get()
-        
-        if text == "clean":
-            # Clear the Entry widget
-            self.include_var.set("")
-            self.username_entry.delete(0)
-        elif text == "":
-            # Do nothing if the button is "+", "-", "0", ".", or "enter"
-            pass
-        elif text == "enter":
-            try:
-                # Attempt to convert the current value to a float
-                self.value = float(current_value)
-                # Call the give_value method to set self.vv and destroy the Toplevel window
-                self.getvalue_form.destroy()
-            except ValueError:
-                # If the current value cannot be converted to a float, do nothing
-                pass
-        elif "." in current_value and text == ".":
-            # Do nothing if the current value already contains a decimal point
-            pass
-        else:
-            # Append the button text to the current value of the Entry widget
-            self.include_var.set(current_value + text)
+        #'''

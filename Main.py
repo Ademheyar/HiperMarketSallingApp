@@ -10,7 +10,7 @@ conn = sqlite3.connect(db_path)
 # Create a table to store the document records
 cur = conn.cursor()
 
-#query = f"DROP TABLE IF EXISTS setting"
+#query = f"DROP TABLE IF EXISTS doc_table"
 #cur.execute(query)
 
 cur.execute('''CREATE TABLE IF NOT EXISTS setting 
@@ -19,6 +19,9 @@ cur.execute('''CREATE TABLE IF NOT EXISTS setting
                 barcode_count INT,
                 printer TEXT
                 )''')
+
+#query = f"DROP TABLE IF EXISTS upload_doc"
+#cur.execute(query)
 
 cur.execute('''CREATE TABLE IF NOT EXISTS upload_doc 
                 (id INTEGER PRIMARY KEY, 
@@ -37,6 +40,7 @@ cur.execute('''CREATE TABLE IF NOT EXISTS upload_doc
                 doc_expire_date TEXT, 
                 doc_updated_date TEXT)''')
 
+#cur.execute('INSERT INTO upload_doc (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("23-200-", "extension_barcode", "self.user"," self.custemr", "type", "item", 0, 1, 2, 3, "payments_", "doc_created_date", "doc_expire_date", "doc_updated_date"))
 
 # Define the SQL statement to delete the table
 cur.execute('''CREATE TABLE IF NOT EXISTS pre_doc_table 
