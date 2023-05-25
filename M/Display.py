@@ -83,7 +83,7 @@ class DisplayFrame(tk.Frame):
 
         # * New frame at the top of the main frame
         self.top_frame = tk.Frame(self.main_frame, bg="red", height=int(screen_height * 0.70))
-        self.top_frame.grid(row=0, column=0, sticky="nsew")
+        self.top_frame.grid(row=0, column=0, columnspan=2, sticky="nsew")
         # Set the grid configuration for buttons_frame
         self.top_frame.columnconfigure((0, 1, 2, 4), weight=0)
         self.top_frame.columnconfigure((5), weight=1)
@@ -162,21 +162,21 @@ class DisplayFrame(tk.Frame):
 
         # Create labels on the right side of total_frame
         self.total_items_label = tk.Label(self.total_frame, text="Total Items : 0", bg="green", fg="white", font=("Arial", 10))
-        self.total_items_label.pack(side="left", padx=10)
+        self.total_items_label.pack(side="left", padx=5)
         self.total_tax_label = tk.Label(self.total_frame, text="Total Tax : 0", bg="green", fg="white", font=("Arial", 10))
-        self.total_tax_label.pack(side="left", padx=10)
+        self.total_tax_label.pack(side="left", padx=5)
         self.total_discount_label = tk.Label(self.total_frame, text="Item Discount : 0", bg="green", fg="white", font=("Arial", 10))
-        self.total_discount_label.pack(side="left", padx=10)
+        self.total_discount_label.pack(side="left", padx=5)
         self.total_tdiscount_label = tk.Label(self.total_frame, text="Total Discount : 0", bg="green", fg="white", font=("Arial", 10))
-        self.total_tdiscount_label.pack(side="left", padx=10)
+        self.total_tdiscount_label.pack(side="left", padx=5)
         self.total_price_label = tk.Label(self.total_frame, text="Price Befor: 0", bg="green", fg="white", font=("Arial", 10))
-        self.total_price_label.pack(side="left", padx=10)
+        self.total_price_label.pack(side="left", padx=5)
         self.total_label = tk.Label(self.total_frame, text="Total After: 0", bg="green", fg="white", font=("Arial", 10))
-        self.total_label.pack(side="left", padx=10)
+        self.total_label.pack(side="left", padx=5)
 
         # * New frame next to list_items in the main frame
         self.buttons_frame = tk.Frame(self.main_frame, bg="brown")
-        self.buttons_frame.grid(row=0, column=1, rowspan=2, sticky="nsew")
+        self.buttons_frame.grid(row=1, column=1, rowspan=2, sticky="nsew")
 
         # Set the grid configuration for buttons_frame
         self.buttons_frame.columnconfigure((0, 1, 2, 3), weight=1, minsize=int(self.buttons_frame.winfo_height() *0.1))
@@ -211,6 +211,7 @@ class DisplayFrame(tk.Frame):
         # Register the backup function to be called when the application exits
         self.max_backups = 4     
         #self.void_items()
+        #ApproveFrame(self, "", "", "", self.user)
         atexit.register(self.backup_database)
         self.creat_payment_buttons()
         self.update_info()
@@ -665,6 +666,8 @@ class DisplayFrame(tk.Frame):
                     cursor.execute("SELECT * FROM product WHERE id=?", (id,))
                     it = cursor.fetchone()
                     item += "(|"
+                    item += str(id) # ID
+                    item += "|,|"
                     item += str(iv[0]) # code
                     item += "|,|"
                     item += str(iv[2]) # name
@@ -723,8 +726,8 @@ class DisplayFrame(tk.Frame):
                 # Commit the changes to the database
                 conn.commit()
 
-                cursor.execute('INSERT INTO upload_doc (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("23-200-" + str(brcod), "extension_barcode", self.user, self.custemr, "type", item, float(items), price, disc, tax, payments_, "doc_created_date", "doc_expire_date", "doc_updated_date"))
-                cursor.execute('INSERT INTO doc_table (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("23-200-" + str(brcod), "extension_barcode", self.user, self.custemr, "type", item, float(items), price, disc, tax, payments_, "doc_created_date", "doc_expire_date", "doc_updated_date"))
+                cursor.execute('INSERT INTO upload_doc (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("23-200-" + str(brcod), "extension_barcode", self.user, self.custemr, "Sale_item", item, float(items), price, disc, tax, payments_, "doc_created_date", "doc_expire_date", "doc_updated_date"))
+                cursor.execute('INSERT INTO doc_table (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("23-200-" + str(brcod), "extension_barcode", self.user, self.custemr, "Sale_item", item, float(items), price, disc, tax, payments_, "doc_created_date", "doc_expire_date", "doc_updated_date"))
                 
                 # Commit the changes to the database
                 conn.commit()

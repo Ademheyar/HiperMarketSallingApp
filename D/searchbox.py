@@ -56,13 +56,17 @@ class search_entry(ttk.Entry):
                     self.lb_up = True
                 self.lb.delete(*self.lb.get_children())
                 w = 0
+                c_w = 0
+                n_w = 0
                 while w < len(words):
                     code_leng = len(str(words[w+1])) * 4
                     name_leng = len(str(words[w+2])) * 10
-                    if self.lb.column("#1", option="width") < code_leng:
-                        self.lb.column("#1", width=code_leng) 
-                    if self.lb.column("#2", option="width") < name_leng:
-                        self.lb.column("#2", width=name_leng) 
+                    if c_w < code_leng:
+                        self.lb.column("#1", width=code_leng)
+                        c_w = code_leng
+                    if n_w < name_leng:
+                        self.lb.column("#2", width=name_leng)
+                        n_w = name_leng
                     self.lb.insert("", "end", text=str(words[w]), values=(str(words[w+1]), str(words[w+2]), str(words[w+3])))
                     if w+4 < len(words):
                         w += 4
@@ -116,23 +120,22 @@ class search_entry(ttk.Entry):
 
     def comparison(self):
         query = self.var.get()
-        print("word :" + str(query) + "search_type : " + str(self.search_type))
+        print("word: " + str(query) + " search_type: " + str(self.search_type))
+        
         if query:
-            if self.search_type == "name" or self.search_type == "":
-                self.cursor.execute("SELECT * FROM product WHERE name LIKE ?", (f"%{query}%",))
-            elif self.search_type == "barcode":
-                self.cursor.execute("SELECT * FROM product WHERE barcode LIKE ?", (f"%{query}%",))
-            elif self.search_type == "code":
-                self.cursor.execute("SELECT * FROM product WHERE code LIKE ?", (f"%{query}%",))
-            elif self.search_type == "type":
-                self.cursor.execute("SELECT * FROM product WHERE type LIKE ?", (f"%{query}%",))
-                
+            self.cursor.execute("SELECT * FROM product WHERE name LIKE ? OR code LIKE ? OR type LIKE ?",
+                                (f"%{query}%", f"%{query}%", f"%{query}%"))
+
             results = []
+            unique_results = set()  # To store unique results
+
             for row in self.cursor.fetchall():
-                results.append(row[0])
-                results.append(row[2])
-                results.append(row[1])
-                results.append(row[9])
+                result = (row[0], row[2], row[1], row[9])
+                if result not in unique_results:
+                    results.extend(result)
+                    unique_results.add(result)
+
             return results
         else:
             return []
+

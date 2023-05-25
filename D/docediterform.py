@@ -134,19 +134,20 @@ class DocEditForm(tk.Frame):
         for values in items_lists:
             item = values.split("|,|")
             #for each items
-            code = item[0].replace("(|", "")
-            name = item[1]
+            id = item[0].replace("(|", "")
+            code = item[1]
+            name = item[2]
             # if item shop and sold shop not same
-            shop = item[2]
-            color = item[3]
-            size = item[4]
-            qty = item[5]
-            price = item[6]
+            shop = item[3]
+            color = item[4]
+            size = item[5]
+            qty = item[6]
+            price = item[7]
             total_price = float(qty)*float(price)
             PRICE += total_price
-            disc = item[7]
+            disc = item[8]
             Disc += float(disc)
-            tax = item[8].replace("|)", "")
+            tax = item[9].replace("|)", "")
             TAX += float(tax)
             print("list : " + str([code, name, shop, color, size, qty, price, total_price, PRICE, disc, Disc, tax, TAX]))
             list_items.insert("", 'end', text="", values=(code, name, shop, color, size, qty, price, total_price, PRICE, disc, Disc, tax, TAX))
@@ -170,7 +171,7 @@ class DocEditForm(tk.Frame):
         items_lists = items[10].split(",")
         code, name, shop, color, size, qty, price, total_price, PRICE, \
         disc, Disc, tax, TAX = ['', '', '', "","","","",0,0,"",0,"",0]
-        id = 0
+        index = 0
         for payment in items_lists:
             item = payment.split(" = ")
             print("item :" + str(item))
@@ -178,5 +179,5 @@ class DocEditForm(tk.Frame):
             code = item[0].replace("(|", "")
             name = item[1]
             print("list : " + str([code, name]))
-            list_payment.insert("", 'end', text=id, values=(code, name))
-            id += 1
+            list_payment.insert("", 'end', text=index, values=(code, name))
+            index += 1

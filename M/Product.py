@@ -17,7 +17,7 @@ import tkinter as tk
 class ProductForm(tk.Frame):
     def __init__(self, master):
         tk.Frame.__init__(self, master)
-
+        self.master = master
         # Create the search bar
         # Create the frame for the search bar and buttons
         self.search_frame = tk.Frame(self)
@@ -768,14 +768,48 @@ class ProductForm(tk.Frame):
             
         print(str([name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active]))
         
+        item = ""
+        doc_type = ""
+        brcod = 0
+        cur.execute("SELECT * FROM setting WHERE user_name=?", (self.master.master.master.master.user,))
+        b = cur.fetchone()
+        if not len(b)<= 0:
+            brcod = b[2] # getting barcode
+        brcod += 1
         if self.add_button.cget("text") == "New":        
             # Insert the new product into the database
+            doc_type = "Add_item"
+            # Get the ID of the most recently added item
             cur.execute('INSERT INTO product (name, code, type, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active))
+            cur.execute("SELECT last_insert_rowid()")
+            new_item_id = cur.fetchone()[0]
+            print("new_product_id : " + str(new_item_id) + " barcode : " + str(brcod))
+            item += f"(|{new_item_id}|,|{name}|,|{code}|,|{typ}|,|{barcode}|,|{at_shop}|,|{quantity}|,|{cost}|,|{tax}|,|{price}|,|{include_tax}|,|{price_change}|,|{more_info}|,|{images}|,|{description}|,|{service}|,|{default_quantity}|,|{active}|)"
+            print("item : " + str(item))
         else:
             product_id = int(self.list_box.item(self.list_box.selection())['text'])
-            print("product_id : " + str(product_id))
+            print("product_id : " + str(product_id) + " barcode : " + str(brcod))
+            doc_type = "Update_item"
+            item += f"(|{product_id}|,|{name}|,|{code}|,|{typ}|,|{barcode}|,|{at_shop}|,|{quantity}|,|{cost}|,|{tax}|,|{price}|,|{include_tax}|,|{price_change}|,|{more_info}|,|{images}|,|{description}|,|{service}|,|{default_quantity}|,|{active}|)"
+            print("item : " + str(item))
             # Update the product in the database
             cur.execute('UPDATE product SET name=?, code=?, type=?, barcode=?, at_shop=?, quantity=?, cost=?, tax=?, price=?, include_tax=?, price_change=?, more_info=?, images=?, description=?, service=?, default_quantity=?, active=? WHERE id=?', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active, product_id))
+        # Commit the changes to the database
+        conn.commit()
+
+        try:
+            # Insert the record into the upload_doc table
+            cur.execute('INSERT INTO upload_doc (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("23-200-" + str(brcod), "extension_barcode", self.master.master.master.master.user, self.master.master.master.master.custemr, doc_type, item, 1, 0, 0, 0, "payments_", "doc_created_date", "doc_expire_date", "doc_updated_date"))
+
+            # Commit the changes to the database
+            conn.commit()
+            
+            print("Data inserted successfully into the upload_doc table.")
+        except Exception as e:
+            print("Error occurred while inserting data into the upload_doc table:")
+            print(str(e))
+
+
         # Commit the changes to the database
         conn.commit()
 

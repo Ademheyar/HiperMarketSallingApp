@@ -7,8 +7,9 @@ from M.Users import UserForm
 from M.Tools import ToolForm
 
 class ManageForm(tk.Frame):
-    def __init__(self, master=None):
-        super().__init__(master)
+    def __init__(self, master):
+        tk.Frame.__init__(self, master)
+        self.master = master
         screen_width = self.master.winfo_screenwidth()
         screen_height = self.master.winfo_screenheight()
         self.manuframes = {}

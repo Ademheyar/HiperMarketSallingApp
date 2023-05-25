@@ -7,7 +7,7 @@ db_path = os.path.join(data_dir, 'my_database.db')
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
-#import requests
+import requests
 
 class UploadingForm(tk.Tk):
     def __init__(self, master):
@@ -16,12 +16,12 @@ class UploadingForm(tk.Tk):
         # create a Toplevel window for the payment form
         self.getvalue_form = tk.Toplevel(self.master)
         self.getvalue_form.title("Uploading Form")
+        self.update()
         
         
     
-    def add_num(self, text):
-        pass
-        '''
+    def update(self):
+        #'''
         # Fetch data from the database
         cursor.execute("SELECT * FROM upload_doc")
         b = cursor.fetchall()
@@ -61,6 +61,7 @@ class UploadingForm(tk.Tk):
                 except requests.exceptions.RequestException as e:
                     print('Failed to send data:', e)
             
+        pass
 
         # set the position of the Payment Form window to center
         # TODO: list z report for current day and history z reports for pev days but in notbook 
