@@ -1,6 +1,15 @@
 import tkinter as tk
 from tkinter import ttk
 import sqlite3
+import shutil
+import datetime
+import os
+import atexit
+import sys
+current_dir = os.path.abspath(os.path.dirname(__file__))
+MAIN_dir = os.path.join(current_dir, '..')
+sys.path.append(MAIN_dir)
+from D.Getdefsize import ButtonEntryApp
 
 # Connect to the database or create it if it does not exist
 
@@ -123,7 +132,9 @@ class ProductForm(tk.Frame):
         self.more_info_label.grid(row=0, column=0, columnspan=4, sticky=tk.W)
 
         self.inventory = []
-        self.tree = ttk.Treeview(self.tab3_frame, columns=("Shop Name", "Color", "Size", "Barcode", "Qtyfirst", "Qty", "cdate", "update"))
+        self.tree = ttk.Treeview(self.tab3_frame, columns=
+                                 ("Shop Name", "Color", "Size", "Barcode",
+                                  "Qtyfirst", "Qty", "cdate", "update"))
         self.tree.grid(row=2, column=0, sticky=tk.E, columnspan=4)
         self.tree.heading("#0", text="Shop Name", anchor=tk.W)
         self.tree.column("#0", stretch=tk.NO, minwidth=25, width=125)
@@ -150,19 +161,21 @@ class ProductForm(tk.Frame):
         self.color_label.grid(row=8, column=0, sticky=tk.E)
         self.color_entry = tk.Entry(self.tab3_frame)
         self.color_entry.grid(row=8, column=1, sticky=tk.E)
+        self.button = tk.Button(self.tab3_frame, text="Open Size Manager", command=self.open_size_manager)
+        self.button.grid(row=9, column=1, sticky=tk.E)
         self.size_label = tk.Label(self.tab3_frame, text='Price Change:')
-        self.size_label.grid(row=9, column=0, sticky=tk.E)
+        self.size_label.grid(row=10, column=0, sticky=tk.E)
         self.size_entry = tk.Entry(self.tab3_frame)
-        self.size_entry.grid(row=9, column=1, sticky=tk.E)
+        self.size_entry.grid(row=10, column=1, sticky=tk.E)
         self.qty_label = tk.Label(self.tab3_frame, text='Quantity:')
-        self.qty_label.grid(row=10, column=0, sticky=tk.E)
+        self.qty_label.grid(row=11, column=0, sticky=tk.E)
         self.qty_entry = tk.Entry(self.tab3_frame)
-        self.qty_entry.grid(row=10, column=1, sticky=tk.E)
+        self.qty_entry.grid(row=11, column=1, sticky=tk.E)
         self.bracode_label = tk.Label(self.tab3_frame, text='Barcode : ')
-        self.bracode_label.grid(row=11, column=0, sticky=tk.E)
+        self.bracode_label.grid(row=12, column=0, sticky=tk.E)
         self.bracode_entry = tk.Entry(self.tab3_frame)
-        self.bracode_entry.grid(row=11, column=1, sticky=tk.E)
-        
+        self.bracode_entry.grid(row=12, column=1, sticky=tk.E)
+
         
         self.add_info_button = tk.Button(self.tab3_frame, text='Add', command=self.add_info)
         self.add_info_button.grid(row=22, column=0, sticky=tk.E)
@@ -186,6 +199,33 @@ class ProductForm(tk.Frame):
 
         # Pack the widgets for the product tab2
         self.update_product_listbox()
+
+    def open_size_manager(self):
+        size_manager = ButtonEntryApp(self, self)
+        for v in size_manager.result:
+            found = 0 
+            i = 0
+            for p in self.inventory:
+                if p["shop_name"] == self.shop_name_entry.get() and p["color"] == self.color_entry.get() and \
+                p["size"] == v[0]:
+                    if p["barcode"] == self.bracode_entry.get() and p["qtyfirst"] == v[1] and \
+                        p["qty"] == v[1]:
+                        print("issame!!!" + str(p)) # TODO: show same earror
+                        #    cdate#    update
+                    else:
+                        self.inventory[i]["barcode"] = self.bracode_entry.get()
+                        self.inventory[i]["qty"] = v[1]
+                    found = 1
+                else:
+                    found = 0
+                i += 1
+
+            if not found:
+                self.add_info_(self.shop_name_entry.get(), self.color_entry.get(), v[0], self.bracode_entry.get(), v[1], v[1], "", "")
+
+        txt = self.get_inventory_nested_list_text()
+        self.more_info_label.delete(0, tk.END)
+        self.more_info_label.insert(0, txt)
 
     def add_info_(self, shop_name, color, size, barcode, qtyfirst, qty, cdate, update):
         p = {"shop_name": shop_name, "color": color, "size": size, "barcode": barcode, "qtyfirst": qtyfirst, "qty": qty, "cdate": cdate, "update": update}
@@ -421,6 +461,7 @@ class ProductForm(tk.Frame):
         #print("list : " + str(txt))
         #le = self.chang_to_list(txt)
         #print("le :" + str(le))
+        self.more_info_label.delete(0, tk.END)
         self.more_info_label.insert(0, txt)
         
     def add_info(self):
@@ -478,6 +519,7 @@ class ProductForm(tk.Frame):
         #print("list : " + str(txt))
         #le = self.chang_to_list(txt)
         #print("le :" + str(le))
+        self.more_info_label.delete(0, tk.END)
         self.more_info_label.insert(0, txt)
         
 
@@ -517,16 +559,17 @@ class ProductForm(tk.Frame):
         # Get the products from the database
         cur.execute('SELECT * FROM product')
         products = cur.fetchall()
-        self.list_box['columns'] = ('Name', 'Code', 'Type', 'Price')
-        self.list_box.heading("#0", text="ID")
-        self.list_box.heading("#1", text="Name")
-        self.list_box.heading("#2", text="Code")
-        self.list_box.heading("#3", text="Type")
-        self.list_box.heading("#4", text="Price")
+        self.list_box['columns'] = ('ID', 'Name', 'Code', 'Type', 'Price')
+        self.list_box.column("#0", minwidth=0, width=0) 
+        self.list_box.heading("#1", text="ID")
+        self.list_box.heading("#2", text="Name")
+        self.list_box.heading("#3", text="Code")
+        self.list_box.heading("#4", text="Type")
+        self.list_box.heading("#5", text="Price")
 
         # Add the products to the product listbox
         for product in products:
-            self.list_box.insert('', 'end', text=product[0], values=(product[1], product[2], product[3], product[9]))
+            self.list_box.insert('', 'end', values=(product[0], product[1], product[2], product[3], product[9]))
             
 
         # Hide the product details frame
@@ -557,12 +600,13 @@ class ProductForm(tk.Frame):
         
         # clear the current items in the list box
         self.list_box.delete(*self.list_box.get_children())
-        self.list_box['columns'] = ('Name', 'Code', 'Type', 'Price')
-        self.list_box.heading("#0", text="ID")
-        self.list_box.heading("#1", text="Name")
-        self.list_box.heading("#2", text="Code")
-        self.list_box.heading("#3", text="Type")
-        self.list_box.heading("#4", text="Price")
+        self.list_box['columns'] = ('ID', 'Name', 'Code', 'Type', 'Price')
+        self.list_box.column("#0", minwidth=0, width=0) 
+        self.list_box.heading("#1", text="ID")
+        self.list_box.heading("#2", text="Name")
+        self.list_box.heading("#3", text="Code")
+        self.list_box.heading("#4", text="Type")
+        self.list_box.heading("#5", text="Price")
 
         # Add the products to the product listbox
         for product in products:
@@ -578,18 +622,19 @@ class ProductForm(tk.Frame):
         # Get the products from the database
         cur.execute('SELECT * FROM product')
         products = cur.fetchall()
-        self.list_box['columns'] = ('Name', 'Type', 'Phone_Number', 'Id_Number', 'Email', 'Adress')
-        self.list_box.heading("#0", text="ID")
-        self.list_box.heading("#1", text="Name")
-        self.list_box.heading("#2", text="Type")
-        self.list_box.heading("#3", text="Phone_Number")
-        self.list_box.heading("#4", text="Id_Number")
-        self.list_box.heading("#4", text="Email")
-        self.list_box.heading("#4", text="Adress")
+        self.list_box['columns'] = ('ID', 'Name', 'Type', 'Phone_Number', 'Id_Number', 'Email', 'Adress')
+        self.list_box.column("#0", minwidth=0, width=0) 
+        self.list_box.heading("#1", text="ID")
+        self.list_box.heading("#2", text="Name")
+        self.list_box.heading("#3", text="Type")
+        self.list_box.heading("#4", text="Phone_Number")
+        self.list_box.heading("#5", text="Id_Number")
+        self.list_box.heading("#6", text="Email")
+        self.list_box.heading("#7", text="Adress")
 
         # Add the products to the product listbox
         for product in products:
-            self.list_box.insert('', 'end', text=product[0], values=(product[1], product[2], product[3], product[4], product[5], product[6]))
+            self.list_box.insert('', 'end', values=(product[0], product[1], product[2], product[3], product[4], product[5], product[6]))
 
         # Hide the product details frame
         self.hide_add_product_forme()
@@ -618,7 +663,8 @@ class ProductForm(tk.Frame):
         cur.execute('SELECT * FROM product')
         products = cur.fetchall()
         for product in products:
-            print("on_name_entry\n"+str(product[1]))
+            #TODO MAKE IT EASY BY ID
+            #print("on_name_entry\n"+str(product[1]))
             if product[1] == self.name_entry.get():
                 self.add_button.config(text="Update")    
                 return
@@ -678,7 +724,7 @@ class ProductForm(tk.Frame):
             product_id = self.list_box.item(selected_product)['values'][0]
 
             # Delete the product from the database
-            cur.execute('SELECT * FROM product WHERE name=?', (product_id,))
+            cur.execute('SELECT * FROM product WHERE id=?', (product_id,))
             products = cur.fetchall()
 
             print("name : " + str(products))
@@ -734,7 +780,7 @@ class ProductForm(tk.Frame):
             product_id = self.list_box.item(selected_product)['values'][0]
         
             # Delete the product from the database
-            cur.execute('DELETE FROM product WHERE name=?', (product_id,))
+            cur.execute('DELETE FROM product WHERE id=?', (product_id,))
 
             # Commit the changes to the database
             conn.commit()
@@ -778,19 +824,19 @@ class ProductForm(tk.Frame):
         brcod += 1
         if self.add_button.cget("text") == "New":        
             # Insert the new product into the database
-            doc_type = "Add_item"
+            doc_type = "Add_Items"
             # Get the ID of the most recently added item
             cur.execute('INSERT INTO product (name, code, type, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active))
             cur.execute("SELECT last_insert_rowid()")
             new_item_id = cur.fetchone()[0]
             print("new_product_id : " + str(new_item_id) + " barcode : " + str(brcod))
-            item += f"(|{new_item_id}|,|{name}|,|{code}|,|{typ}|,|{barcode}|,|{at_shop}|,|{quantity}|,|{cost}|,|{tax}|,|{price}|,|{include_tax}|,|{price_change}|,|{more_info}|,|{images}|,|{description}|,|{service}|,|{default_quantity}|,|{active}|)"
+            item += f"(:{new_item_id}:,:{name}:,:{code}:,:{typ}:,:{barcode}:,:{at_shop}:,:{quantity}:,:{cost}:,:{tax}:,:{price}:,:{include_tax}:,:{price_change}:,:{more_info}:,:{images}:,:{description}:,:{service}:,:{default_quantity}:,:{active}:)"
             print("item : " + str(item))
         else:
-            product_id = int(self.list_box.item(self.list_box.selection())['text'])
+            product_id = int(self.list_box.item(self.list_box.selection())['values'][0])
             print("product_id : " + str(product_id) + " barcode : " + str(brcod))
-            doc_type = "Update_item"
-            item += f"(|{product_id}|,|{name}|,|{code}|,|{typ}|,|{barcode}|,|{at_shop}|,|{quantity}|,|{cost}|,|{tax}|,|{price}|,|{include_tax}|,|{price_change}|,|{more_info}|,|{images}|,|{description}|,|{service}|,|{default_quantity}|,|{active}|)"
+            doc_type = "Update_Items"
+            item += f"(:{product_id}:,:{name}:,:{code}:,:{typ}:,:{barcode}:,:{at_shop}:,:{quantity}:,:{cost}:,:{tax}:,:{price}:,:{include_tax}:,:{price_change}:,:{more_info}:,:{images}:,:{description}:,:{service}:,:{default_quantity}:,:{active}:)"
             print("item : " + str(item))
             # Update the product in the database
             cur.execute('UPDATE product SET name=?, code=?, type=?, barcode=?, at_shop=?, quantity=?, cost=?, tax=?, price=?, include_tax=?, price_change=?, more_info=?, images=?, description=?, service=?, default_quantity=?, active=? WHERE id=?', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active, product_id))

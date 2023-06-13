@@ -9,6 +9,7 @@ import sys
 current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(current_dir, '..')
 sys.path.append(MAIN_dir)
+from D.ChooseCustemr import UserManagementApp
 from D.searchbox import search_entry
 from D.Peymentsplit import PaymentForm
 from D.GetVALUE import GetvalueForm
@@ -20,6 +21,7 @@ from D.endday import EnddayForm
 from D.Upload_ import UploadingForm
 from D.user_info import UserInfoForm
 from D.printer import PrinterForm
+from C.slipe import load_slip
 
 from Manager import ManageForm
 
@@ -85,23 +87,13 @@ class DisplayFrame(tk.Frame):
         self.top_frame = tk.Frame(self.main_frame, bg="red", height=int(screen_height * 0.70))
         self.top_frame.grid(row=0, column=0, columnspan=2, sticky="nsew")
         # Set the grid configuration for buttons_frame
-        self.top_frame.columnconfigure((0, 1, 2, 4), weight=0)
+        self.top_frame.columnconfigure((0), weight=0)
         self.top_frame.columnconfigure((5), weight=1)
         self.top_frame.rowconfigure((0), weight=1)
-        
-        # Create 4 button widgets and pack them to the top_frame
-        self.button1 = tk.Button(self.top_frame, text="Barcode", width=int(self.top_frame.winfo_width() * 0.10), bg="red", fg="white", font=("Arial", 12))
-        self.button1.grid(row=0, column=0, sticky="nsew")
-        self.button2 = tk.Button(self.top_frame, text="tag", width=int(self.top_frame.winfo_width() * 0.10), bg="red", fg="white", font=("Arial", 12))
-        self.button2.grid(row=0, column=1, sticky="nsew")
-        self.button3 = tk.Button(self.top_frame, text="123", width=int(self.top_frame.winfo_width() * 0.10), bg="red", fg="white", font=("Arial", 12))
-        self.button3.grid(row=0, column=2, sticky="nsew")
-        self.button4 = tk.Button(self.top_frame, text="Abc", width=int(self.top_frame.winfo_width() * 0.10), bg="red", fg="white", font=("Arial", 12))
-        self.button4.grid(row=0, column=3, sticky="nsew")
 
         # Create a label and an entry widget for the search box
         self.search_label = tk.Label(self.top_frame, text="Search:", bg="red", fg="white", font=("Arial", 12))
-        self.search_label.grid(row=0, column=4, sticky="nsew")
+        self.search_label.grid(row=0, column=0, sticky="nsew")
         print("screen_width :: " + str((self.top_frame.winfo_width())) + " = " + str((screen_width/3)))
         self.search_entry = search_entry(self.top_frame, font=("Arial", 12))
         #tk.Entry
@@ -213,7 +205,7 @@ class DisplayFrame(tk.Frame):
         #self.void_items()
         #ApproveFrame(self, "", "", "", self.user)
         atexit.register(self.backup_database)
-        self.creat_payment_buttons()
+        self.create_payment_buttons()
         self.update_info()
         self.update_list_items()
         
@@ -313,33 +305,33 @@ class DisplayFrame(tk.Frame):
             i = self.list_items.item(a)
             iv = i['values']
             id = i['text']
-            ITEM += "(|"
+            ITEM += "(:"
             ITEM += str(id) # id
-            ITEM += "|,|"
+            ITEM += ":,:"
             ITEM += str(iv[0]) # code
-            ITEM += "|,|"
+            ITEM += ":,:"
             ITEM += str(iv[2]) # name
-            ITEM += "|,|"
+            ITEM += ":,:"
             ITEM += str(iv[3]) # shop
-            ITEM += "|,|"
+            ITEM += ":,:"
             ITEM += str(iv[4]) # color
-            ITEM += "|,|"
+            ITEM += ":,:"
             ITEM += str(iv[5]) # size
-            ITEM += "|,|"
+            ITEM += ":,:"
             ITEM += str(iv[6]) # qty
-            ITEM += "|,|"
+            ITEM += ":,:"
             ITEM += str(iv[7])  # price
             PRICE += float(iv[6])*float(iv[7])
-            ITEM += "|,|"
+            ITEM += ":,:"
             ITEM += str(iv[8])  # disc
             Disc += float(iv[8])
-            ITEM += "|,|"
+            ITEM += ":,:"
             ITEM += str(iv[9])  # tax
             TAX += float(iv[9])
             if items+1 <= len(self.list_items.get_children()):
-                ITEM += "|),"
+                ITEM += ":),"
             else:
-                ITEM += "|)"
+                ITEM += ":)"
 
         if items > 0:
             # Define the query to check if the ID exists in the table
@@ -410,11 +402,11 @@ class DisplayFrame(tk.Frame):
             
             # Create a new item using the product information
             # from founded ITEM value fill this info
-            items_lists = ITEM.split("|),")
+            items_lists = ITEM.split(":),")
             for items in items_lists:
-                item = items.split("|,|")
+                item = items.split(":,:")
                 #for each items
-                id = item[0].replace("(|", "")
+                id = item[0].replace("(:", "")
                 code = item[1]
                 name = item[2]
                 # if item shop and sold shop not same
@@ -427,7 +419,7 @@ class DisplayFrame(tk.Frame):
                 PRICE += total_price
                 disc = item[8]
                 Disc += float(disc)
-                tax = item[9].replace("|)", "")
+                tax = item[9].replace(":)", "")
                 TAX += float(tax)
                 # Add the item to the list
                 print(str([id, code, "", name, shop, color, size, qty, price, disc, tax, total_price]))
@@ -457,60 +449,153 @@ class DisplayFrame(tk.Frame):
         print("selected chart : "+ str(v.value))
         self.update_list_items()
 
-    def get_chart(self):
-        cursor.execute("SELECT * FROM pre_doc_table WHERE id=?", (self.chart_index,))
-        result = self.cursor.fetchone()
+    def chack_list(self):
+        total_discount = 0
+        total_tax = 0
+        total_qty = 0
+        all_total_price = 0
 
-        self.pid = 0
-        self.price = 0
-        item_dic = 0
-        item_count = 0
         for a in self.list_items.get_children():
             item = self.list_items.item(a)['values']
             print("in update item: " + str(item))
-            item_count += float(item[6])
-            item_dic += float(item[8]) 
-            self.price += float(item[7])
-        print("Amount Pide : " + str(self.price))
-        self.total_items_label.config(text="Total Items : " + str(item_count))
-        self.total_tax_label.config(text="Total Tax : " + str(self.tax))
-        self.total_discount_label.config(text="Item Discount : " + str(item_dic))
-        self.total_tdiscount_label.config(text="Total Discount : " + str(self.disc))
-        self.total_price_label.config(text="Price Befor : " + str(self.price))
-        self.total_label.config(text="Price After: " + str((self.price - item_dic) - self.disc))
-        self.update_info()
 
+            qty = float(item[6])
+            price = float(item[7])
+            discount = float(item[8])
+            tax = float(item[9])
+            total_price = float(item[10])
+            
+            # Calculate the expected total price based on quantity, price, discount, and tax
+            expected_total_price = qty * price - discount + tax
+            
+            # Update the total price in the item if it doesn't match the expected value
+            if total_price != expected_total_price:
+                item[10] = expected_total_price
+                self.list_items.item(a, values=item)
+            
+            # Update the price variable
+            total_qty += qty
+            total_discount += discount
+            total_tax += tax
+            all_total_price += expected_total_price
+        
+        return total_qty, total_discount, total_tax, all_total_price
 
+    # this will 
     def update_info(self):
-        self.pid = 0
-        self.price = 0
-        item_dic = 0
-        item_count = 0
-        for a in self.list_items.get_children():
-            item = self.list_items.item(a)['values']
-            print("in update item: " + str(item))
-            item_count += float(item[6])
-            item_dic += float(item[8]) 
-            self.price += float(item[7])
-        print("Amount Pide : " + str(self.price))
-        self.total_items_label.config(text="Total Items : " + str(item_count))
+        cursor.execute("SELECT * FROM pre_doc_table WHERE id=?", (self.chart_index,))
+        result = cursor.fetchone()
+
+        total_qty, total_discount, total_tax, all_total_price = self.chack_list()
+        self.total = (all_total_price - self.tax) - self.disc
+        self.total_items_label.config(text="Total Items : " + str(total_qty))
         self.total_tax_label.config(text="Total Tax : " + str(self.tax))
-        self.total_discount_label.config(text="Item Discount : " + str(item_dic))
+        self.total_discount_label.config(text="Item Discount : " + str(total_discount))
         self.total_tdiscount_label.config(text="Total Discount : " + str(self.disc))
-        self.total_price_label.config(text="Price Befor : " + str(self.price))
-        self.total_label.config(text="Price After: " + str((self.price - item_dic) - self.disc))
+        self.total_price_label.config(text="Price Befor : " + str(all_total_price))
+        self.total_label.config(text="Price After: " + str((all_total_price - self.tax) - self.disc))
         self.update_chart()
 
     def void_items(self):
         for a in self.list_items.get_children():
             self.list_items.delete(a)
+        # delete all items
+        self.pid_peyment = []
+        self.custemr = ""
         # delete this list on db
         cursor.execute("DELETE FROM pre_doc_table WHERE id=?", (self.chart_index,))
         # Commit the changes to the database
         conn.commit()
         # self.update_info() will be called in next_prev_chart 
         self.next_prev_chart("prev")
+        
+    def add_item(self, item, barcode, shop_name, color, size, qty):
+        self.list_items.insert("", "end", text=str(item[0]), values=(item[2], barcode, item[1], shop_name, color, size, float(qty), item[9], self.disc, item[10],float(qty)*float(item[9])))
+    
+    def remove_item(self):
+        # Function to remove selected items from the list
+        for a in self.list_items.selection():
+            self.list_items.delete(a)
+        self.update_info()
 
+    def make_qty(self):
+        # Function to update the quantity of selected items or set the default quantity
+        i = GetvalueForm(self)
+        if len(self.list_items.selection()) > 0:
+            for a in self.list_items.selection():
+                values = self.list_items.item(a)['values']
+                
+                # Modify the quantity of the item as required
+                values[6] = i.value
+                
+                # Update the selected item with the modified values
+                self.list_items.item(a, values=values)
+                print("update qty on item " + str(values))
+        elif i:
+            self.qty = i.value
+            print("update qty " + str(self.qty))
+        self.update_info()
+
+    def make_discount(self):
+        # Function to update the discount of selected items or set the default discount
+        i = None
+        if len(self.list_items.get_children()) <= 0:
+            print("no list")
+        else:
+            i = GetvalueForm(self)
+        if len(self.list_items.selection()) > 0:
+            for a in self.list_items.selection():
+                values = self.list_items.item(a)['values']
+                
+                # Modify the discount of the item as required
+                values[8] = i.value
+                
+                # Update the selected item with the modified values
+                self.list_items.item(a, values=values)
+                print("update discount on item " + str(values))
+        elif i:
+            self.disc = i.value
+            print("update discount " + str(self.disc))
+        self.update_info()
+
+    def create_payment_buttons(self):
+        # Function to create payment buttons based on tools in the database
+        cursor.execute("SELECT * FROM tools")
+        rows = cursor.fetchall()
+        buttons = []
+        i = -1
+        j = -1
+        a = 0
+        b = 0
+        for widget in range(len(self.buttons_frame.winfo_children()) - 1):
+            j += 1
+            if b == 3:
+                b = 0
+                a += 1
+                continue
+            if len(self.buttons_frame.winfo_children()) - 1 == j + 1:
+                a += 1
+                b = 0
+                for row in rows:
+                    i += 1
+                    if b == 3:
+                        b = 0
+                        a += 1
+                    tool_name = row[1]
+                    # Create a new button
+                    new_button = tk.Button(self.buttons_frame, text=tool_name, command=lambda d=tool_name: self.call_payment(d))
+                    new_button.grid(row=a, column=b, sticky="nsew")
+                    b += 1
+                break
+            else:
+                b += 1
+
+    def call_payment(self, name):
+        # Function called when a payment button is clicked
+        self.pid_peyment.append([str(name), str(self.total)])
+        print("call_payment self.pid_peyment = " + str(self.pid_peyment))
+        self.process_payment()
+        
     def remove_item(self):
         for a in self.list_items.selection():
             self.list_items.delete(a)
@@ -556,50 +641,12 @@ class DisplayFrame(tk.Frame):
             print("update dicount "+str(self.disc))
         self.update_info()    
 
-    def creat_payment_buttons(self):
-        cursor.execute("SELECT * FROM tools")
-        rows = cursor.fetchall()
-        buttons = []
-        i = -1
-        j = -1
-        a = 0
-        b = 0
-        for widget in range(len(self.buttons_frame.winfo_children())-1):
-            #print(" button " + str(a) + " , " + str(b))
-            j += 1
-            if b == 3: 
-                b = 0
-                a += 1
-                continue
-            if len(self.buttons_frame.winfo_children())-1 == j+1:
-                a += 1
-                b = 0
-                for row in rows:
-                    i += 1
-                    if b == 3: 
-                        b = 0
-                        a += 1
-                    tool_name = row[1]
-                    # Create a new button
-                    new_button = tk.Button(self.buttons_frame, text=tool_name)
-                    new_button.configure(command=lambda b=new_button.cget("text"): self.call_payment(b, self.price))
-                    new_button.grid(row=a, column=b, sticky="nsew")
-                    b += 1
-                break
-            else:
-                b+=1
-    
-    def call_payment(self, name, price):
-        self.pid_peyment.append(str(str(name) + " = " + str(price)))
-        print("self.pid_peyment = " + str(self.pid_peyment))
-        self.process_payment()
-
     def process_payment(self):
         print("self.pid_peyment = " + str(self.pid_peyment))
         if len(self.list_items.get_children()) <= 0:
             print("no list")
         else:
-            payment_name = []
+            date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             payments_ = ""
             payment_enable = 0
             payment_quick_pay = 0
@@ -607,12 +654,14 @@ class DisplayFrame(tk.Frame):
             payment_print_slip = 0
             payment_change_allowed = 0
             payment_mark_pad = 0
-            payment_open_drower = 0    
-            for pyment in self.pid_peyment:
-                p = pyment.split(" = ")
-                if len(p) <= 0: 
+            payment_open_drower = 0
+            pay_index = 0
+            for p in range(len(self.pid_peyment)):
+                pay_index += 1
+                print("self.pid_peyment[p]:" + str(self.pid_peyment[p]))
+                if self.pid_peyment[p][1] == "":
                     break
-                cursor.execute("SELECT * FROM tools WHERE name=?", (p[0],))
+                cursor.execute("SELECT * FROM tools WHERE name=?", (self.pid_peyment[p][0],))
                 rows = cursor.fetchall()
                 print("rows:" + str(rows))
                 if rows[0][6] == 1: # chack if enabled
@@ -629,10 +678,8 @@ class DisplayFrame(tk.Frame):
                     payment_mark_pad = 1
                 if rows[0][12] == 1 and payment_open_drower == 0: # chack if enabled
                     payment_open_drower = 1
-                payments_ += str(rows[0][1]) + " = " + str(p[1])
-                payment_name.append([str(rows[0][1]), str(p[1])])
-                break
-
+                payments_ += "(" + str(pay_index) + "," + str(self.pid_peyment[p][0]) + "," +  str(self.pid_peyment[p][1]) + "," + date + "," + date + "," + self.user + "),"
+                
             if payment_enable == 0:
                 print("no pyment")
             else:
@@ -641,8 +688,9 @@ class DisplayFrame(tk.Frame):
                 #create doc_id
                 # 
                 # 
-                # item [(|item_code|,|item_name|,|item_shop|,|item_color|,
-                #        |item_size|,|item_qty|,|item_price|,|item_disc|,|item_tax|),]    
+                # item [(:item_code:,:item_name:,:item_shop:,:item_color:,
+                #        :item_size:,:item_qty:,:item_price:,:item_disc:,:item_tax:),]    
+                
                 item = ""
                 itemforslip = ""
                 price = 0
@@ -665,50 +713,34 @@ class DisplayFrame(tk.Frame):
                     print(str(id))
                     cursor.execute("SELECT * FROM product WHERE id=?", (id,))
                     it = cursor.fetchone()
-                    item += "(|"
+                    item += "(:"
                     item += str(id) # ID
-                    item += "|,|"
+                    item += ":,:"
                     item += str(iv[0]) # code
-                    item += "|,|"
+                    item += ":,:"
                     item += str(iv[2]) # name
-                    item += "|,|"
+                    item += ":,:"
                     item += str(iv[3]) # shop
-                    item += "|,|"
+                    item += ":,:"
                     item += str(iv[4]) # color
-                    item += "|,|"
+                    item += ":,:"
                     item += str(iv[5]) # size
-                    item += "|,|"
+                    item += ":,:"
                     item += str(iv[6]) # qty
-                    item += "|,|"
+                    item += ":,:"
                     item += str(iv[7])  # price
                     price += float(iv[6])*float(iv[7])
-                    item += "|,|"
+                    item += ":,:"
                     item += str(iv[8])  # disc
                     disc += float(iv[8])
-                    item += "|,|"
+                    item += ":,:"
                     item += str(iv[9])  # tax
                     tax += float(iv[9])
-                    # Code   | Name      | qty | price  | totale |
-                    # TODO make equal space
-                    v = [7, 10, 3, 8, 8]
-                    vv = [str(iv[0]), str(iv[2]), str(iv[6]), str(iv[7]), str(float(iv[6])*float(iv[7]))]
-                    print("vv : " + str(vv))
-                    vvi = 0
-                    for vi in v:
-                        for w in range(vi):
-                            if w < len(vv[vvi]):
-                                print("vv : " + str(vv[vvi])+ " vvi :" + str(vvi) + " w :" + str(w))
-                                itemforslip += vv[vvi][w]
-                            else:
-                                itemforslip += ' '
-                        vvi += 1
-                        itemforslip += "|"
-                    itemforslip += "\n"
                     
                     if items+1 <= len(self.list_items.get_children()):
-                        item += "|),"
+                        item += ":),"
                     else:
-                        item += "|)"
+                        item += ":)"
                     print("item1 found : " + str(it[12]))
                     it_info = reduc_qty(str(it[12]), str(iv[3]), str(iv[4]),str(iv[5]), str(iv[6]))
                     print("item2 found : " + str(it_info))
@@ -722,60 +754,40 @@ class DisplayFrame(tk.Frame):
                     conn.commit()
                 
                 cursor.execute('UPDATE setting SET barcode_count=? WHERE user_name=?', (brcod, self.user))
-                    
                 # Commit the changes to the database
                 conn.commit()
+                
+                
+                print("custemer : " + str(self.custemr) + "isneded : " + str(payment_customer_required))
+                name = ""
+                phone_num = ""
+                if payment_customer_required:
+                    app = UserManagementApp(self)
 
-                cursor.execute('INSERT INTO upload_doc (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("23-200-" + str(brcod), "extension_barcode", self.user, self.custemr, "Sale_item", item, float(items), price, disc, tax, payments_, "doc_created_date", "doc_expire_date", "doc_updated_date"))
-                cursor.execute('INSERT INTO doc_table (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("23-200-" + str(brcod), "extension_barcode", self.user, self.custemr, "Sale_item", item, float(items), price, disc, tax, payments_, "doc_created_date", "doc_expire_date", "doc_updated_date"))
+                    if app.user_details:
+                        self.custemr = app.user_details['id']
+                        name = app.user_details['name']
+                        phone_num = app.user_details['phone_num']
+                        print(app.user_details)
+
+                
+                cursor.execute('INSERT INTO upload_doc (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("23-200-" + str(brcod), "extension_barcode", self.user, self.custemr, "Sale_item", item, float(items), price, disc, tax, payments_, date, "doc_expire_date", date))
+                cursor.execute('INSERT INTO doc_table (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("23-200-" + str(brcod), "extension_barcode", self.user, self.custemr, "Sale_item", item, float(items), price, disc, tax, payments_, date, "doc_expire_date", date))
                 
                 # Commit the changes to the database
                 conn.commit()
-                
-                print(str(["23-200-" + str(brcod), "extension_barcode", self.user, "customer_id", "type", item, disc, tax, payments_, "doc_created_date", "doc_expire_date", "doc_updated_date"]))
-                
-                print("pyment sitting equal :" + str([payment_name, payment_quick_pay, payment_customer_required, payment_print_slip, 
+                slip0 = ["23-200-" + str(brcod), "extension_barcode", self.user, self.custemr, "Sale_item", item, float(items), price, disc, tax, payments_, date, "doc_expire_date", date]
+                print(str(slip0))
+                slip1 = load_slip(slip0, 0) #TODO GET ID
+                print(str(slip1))
+                print("pyment sitting equal :" + str([payments_, payment_quick_pay, payment_customer_required, payment_print_slip, 
                                                       payment_change_allowed, payment_mark_pad, payment_open_drower]))
-
-                brd = "23-200-" + str(brcod)
-                # TODO create function that generate slipe text logo image
-                slip = "-----------------------------------------\n" \
-                       "Receipt No : " + brd + "\n"\
-                       "extnsion Receipt No : extension_barcode\n"\
-                       "Date : doc_created_date\n"\
-                       "updated Date : doc_updated_date\n"\
-                       "Due Date : doc_expire_date\n"\
-                       "-----------------------------------------\n" \
-                       "User : " + str(self.user) + "\n"\
-                       "Customer : Customer Name\n"\
-                       "Phone No : Phone Number\n"\
-                       "-----------------------------------------\n" \
-                       "Code   |Name      |qty| price  |totale  |\n" \
-                       + itemforslip + \
-                       "-----------------------------------------\n" \
-                       "Item Counted    : " + str(items) + "\n"\
-                       "Total Discount  : " + str(disc) + "\n"\
-                       "Total Tax       : " + str(tax) + "\n"\
-                       + str(payments_) + "\n" \
-                       "=========================================\n" \
-                       "Total price     : " + str(price) + "\n"\
-                       "Total Paid      : " + str(price) + "\n"\
-                       "Total Laft      : " + str(0) + "\n"\
-                       "=========================================\n" \
-                       "          " + str(brd) + "       \n"
                 
-                
-                # payment_type :: (1id , 2name TEXT, 3code TEXT, 4type TEXT, 5short_key TEXT, 6acsess TEXT,
-                # 7enabel INTEGER, 8quick_pay INTEGER, 9customer_required INTEGER, 10printslip REAL, 
-                # 11change_allowed REAL, 12markpad REAL, 13open_drower REAL
                 if payment_open_drower == 1:
                     PrinterForm.open_drower(self)
+                
+                ApproveFrame(self, self.list_items, slip1, payment_print_slip, self.user)
                     
-                for name in payment_name:
-                    ApproveFrame(self, self.list_items, slip, payment_print_slip, self.user)
-                    
-                for child in self.list_items.get_children():
-                    print("pymrnt!!!!!", str(child))
                 # call void         
                 self.void_items()
         

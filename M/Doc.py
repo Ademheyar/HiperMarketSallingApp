@@ -7,6 +7,8 @@ current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(current_dir, '..')
 sys.path.append(MAIN_dir)
 from D.docediterform import DocEditForm
+from D.printer import PrinterForm
+from C.slipe import load_slip
 import os
 # Create a connection to the SQLite database
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
@@ -16,8 +18,6 @@ conn = sqlite3.connect(db_path)
 cur = conn.cursor()
 
 conn.commit()
-
-tab_titles = []
 
 # Function to search for documents in the doc_table SQLite database table
 def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_barcode=None, 
@@ -61,7 +61,6 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
 class DocForm(tk.Frame):
     def __init__(self, master):
         tk.Frame.__init__(self, master)
-        
         # Notebook widget - CENTER_NOTEBOK
         self.center_notebook = ttk.Notebook(self)
         self.center_notebook.pack()
@@ -82,6 +81,8 @@ class DocForm(tk.Frame):
         self.home_tab.grid_rowconfigure(0, weight=5)
         self.home_tab.grid_rowconfigure(1, weight=5)
         self.home_tab.grid_rowconfigure(2, weight=5)
+        self.home_tab.grid_rowconfigure(3, weight=5)
+        self.home_tab.grid_rowconfigure(4, weight=5)
         
         # Create the listbox to display search results
         self.listbox = ttk.Treeview(self.home_tab)        
@@ -180,6 +181,10 @@ class DocForm(tk.Frame):
         self.search_button = tk.Button(self.details_frame, text="Search", command=self.perform_search)
         self.search_button.grid(row=3, column=6)
 
+        # Create the search button
+        self.print_button = tk.Button(self.details_frame, text="Print", command=self.perform_print)
+        self.print_button.grid(row=4, column=1)
+
     def show_doc_form(self):
         # call the function in the main file to show the first frame
         self.master.master.show_frame("DocForm")
@@ -224,6 +229,7 @@ class DocForm(tk.Frame):
         item = self.listbox.focus()  # Get the item that was clicked
         print("in dubleclicked")
         item_text = self.listbox.item(item, "values")  # Get the text values of the item
+        id = self.listbox.item(item, "text")
 
         if item:
             # Detect double-click
@@ -231,24 +237,43 @@ class DocForm(tk.Frame):
 
             # Add tabs to the self.center_notebook
             if item_text[0]:
-                if item_text[0] not in tab_titles:
-                    tab_titles.append(item_text[0])
+                tab_exist = any(self.center_notebook.tab(tab_id, "text") == item_text[0] for tab_id in self.center_notebook.tabs())
+                if not tab_exist:
                     test_tab = ttk.Frame(self.center_notebook)
                     self.center_notebook.add(test_tab, text=item_text[0])
-                    doc_edit_form = DocEditForm(test_tab, item_text)
-                    doc_edit_form.pack(fill="both", expand=True)
                     # Create a close button and position it at the top next to the tab title
-                    close_button1 = tk.Button(test_tab, text="X")
+                    close_button1 = tk.Button(test_tab, text="X", command=lambda : self.close_tab(test_tab))
                     close_button1.pack(side="top", anchor="ne", padx=5, pady=2)
-                    close_button1.bind("<Button-1>", lambda event: self.close_tab(event, test_tab))
+                    doc_edit_form = DocEditForm(test_tab, item_text, id)
+                    doc_edit_form.pack(fill="both", expand=True)
                 else:
-                    print("Tab already exists!")
+                    for a in self.center_notebook.tabs():
+                        print("Tab already exists!")
+                        print(str(self.center_notebook.tab(a, "text")))
 
-    def close_tab(self, tab_id):
-        self.center_notebook.forget(tab_id)
+    def close_tab(self, t_id):
+        self.center_notebook.forget(t_id)
+        
 
     def on_select(self, event):
         pass
+    
+    def perform_print(self):
+        item = self.listbox.focus()  # Get the item that was clicked
+        print("in dubleclicked")
+        item_text = self.listbox.item(item, "values")  # Get the text values of the item
+        id = self.listbox.item(item, "text")
+
+        if item:
+            # Detect double-click
+            print("Double-clicked item:", item_text)
+
+            # Add tabs to the self.center_notebook
+            if item_text[0]:
+                doc_edit_form = load_slip(item_text, id)
+                print("don loding slip : \n\n" + str(doc_edit_form))
+                self.user = self.master.master.master.master.user
+                PrinterForm.print_slip(self, doc_edit_form, 1) # TODO chack in setting if paper cut allowed
 
     # Function to perform the search and display the results in the listbox
     def perform_search(self):
@@ -270,8 +295,30 @@ class DocForm(tk.Frame):
         # Perform the search and update the listbox with the results
         df = search_documents(doc_id, doc_type, doc_barcode, extension_barcode, item, user_id, customer_id,
                             sold_item_info, discount, tax, doc_created_date, doc_expire_date, doc_updated_date)
-        print("df : " + str(df))
         self.listbox.delete(*self.listbox.get_children())
         #self.get_columen()
         for index in df:
-            self.listbox.insert('', 'end', text=index[0], values=(index[1], index[2], index[3], index[4], index[5], index[6], index[7], index[8], index[9], index[10], index[11], index[12]))
+            #print("df : " + str(index))
+            item = self.listbox.insert('', 'end', text=index[0], values=(index[1], index[2], index[3], index[4], index[5], index[6], index[7], index[8], index[9], index[10], index[11], index[12], index[13], index[14]))
+            '''id = self.listbox.item(item, "text")
+            item_text = self.listbox.item(item, "values")
+
+            if item:
+                # Detect double-click
+                print("Double-clicked item:", item_text)
+
+                # Add tabs to the self.center_notebook
+                if item_text[0]:
+                    tab_exist = any(self.center_notebook.tab(tab_id, "text") == item_text[0] for tab_id in self.center_notebook.tabs())
+                    if not tab_exist:
+                        test_tab = ttk.Frame(self.center_notebook)
+                        self.center_notebook.add(test_tab, text=item_text[0])
+                        # Create a close button and position it at the top next to the tab title
+                        close_button1 = tk.Button(test_tab, text="X", command=lambda : self.close_tab(test_tab))
+                        close_button1.pack(side="top", anchor="ne", padx=5, pady=2)
+                        doc_edit_form = DocEditForm(test_tab, item_text, id)
+                    else:
+                        for a in self.center_notebook.tabs():
+                            print("Tab already exists!")
+                            print(str(self.center_notebook.tab(a, "text")))'''
+
