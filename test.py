@@ -1,269 +1,434 @@
 import tkinter as tk
-import tkinter.ttk as ttk
-import sqlite3
-import os
 
+class ItemSelectorWidget(tk.Tk):
+    def __init__(self, parent, list, ischange_qty, given_qty):
+        self.master = parent
+        self.list = list
+        self.ischange_qty = ischange_qty
+        self.given_qty = given_qty
 
-class App:
-    def __init__(self, master):
-        self.master = master
-        master.title("Database Copier")
+        self.getvalue_form = tk.Toplevel(self.master)
+        self.getvalue_form.title("Selector Form")
 
-        self.db_paths = []
+        self.item_list = self.read_code(self.list, "", "", "")[3]
+        print(str(self.item_list))
+        self.current_form = 0
+        self.forms = [
+            self.display_shop_buttons,
+            self.display_color_buttons,
+            self.display_size_buttons,
+            self.display_quantity_entry,
+            self.show_selected_items
+        ]
+        self.selected_shop = ""
+        self.selected_color = ""
+        self.selected_size = ""
+        self.selected_qty = 0
+        self.selected_items = []
+        self.form_frame = None
 
-        # Create labels and entry boxes for copying information
-        self.source_db_label = tk.Label(master, text="Source Database:")
-        self.source_db_entry = tk.Entry(master)
-        self.source_db_entry.insert(0, "source.db")
-        self.source_table_label = tk.Label(master, text="Source Table:")
-        self.source_table_entry = tk.Entry(master)
-        self.source_table_entry.insert(0, "source_table")
-        self.source_column_label = tk.Label(master, text="Source Column:")
-        self.source_column_entry = tk.Entry(master)
-        self.source_column_entry.insert(0, "source_column")
-        self.source_id_label = tk.Label(master, text="Source id:")
-        self.source_id_entry = tk.Entry(master)
-        self.source_id_entry.insert(0, "id")
+        self.next_form()
         
-        self.destination_db_label = tk.Label(master, text="Destination Database:")
-        self.destination_db_entry = tk.Entry(master)
-        self.destination_db_entry.insert(0, "destination.db")
-        self.destination_table_label = tk.Label(master, text="Destination Table:")
-        self.destination_table_entry = tk.Entry(master)
-        self.destination_table_entry.insert(0, "destination_table")
-        self.destination_column_label = tk.Label(master, text="Destination Column:")
-        self.destination_column_entry = tk.Entry(master)
-        self.destination_column_entry.insert(0, "destination_column")
-        self.destination_id_label = tk.Label(master, text="Destination id:")
-        self.destination_id_entry = tk.Entry(master)
-        self.destination_id_entry.insert(0, "id")
+        #self.show_selected_items()
 
-        # Create a Treeview to show source database information
-        self.source_treeview = ttk.Treeview(master, columns=("table", "column"))
-        self.source_treeview.heading("#0", text="Database")
-        self.source_treeview.heading("table", text="Table")
+    def read_code(self, vs_info, shop_s, color_s, size_s):
+        a_u_list = []
+        shops = []
+        colors = []
+        sizes = []
 
-        # Create a Treeview to show destination database information
-        self.destination_treeview = ttk.Treeview(master, columns=("table", "column"))
-        self.destination_treeview.heading("#0", text="Database")
-        self.destination_treeview.heading("table", text="Table")
+        t = vs_info.replace("\"", "") + ","
+        main_info = t.split("},")
 
-        # Create a Treeview to show copying information
-        self.copy_treeview = ttk.Treeview(master, columns=("source_db", "source_table"))
-        
-        self.copy_treeview.heading("#0", text="Copy")
-        self.copy_treeview.heading("source_db", text="Source DB")
-        self.copy_treeview.heading("source_table", text="Source Table")
+        for m in range(len(main_info)-1):
+            main_value = main_info[m].split(",(")
+            shop_name = main_value[0].replace("{", "").strip()
 
+            if shop_s == "" or shop_s == shop_name:
+                shops.append(shop_name)
 
-        # Create a button to start copying
-        self.copy_button = tk.Button(master, text="Copy", command=self.copy_)
-        # Create buttons to add source and destination database paths
-        self.source_button = tk.Button(master, text="Add Source DB", command=self.add_source)
-        self.destination_button = tk.Button(master, text="Add Destination DB", command=self.add_destination)
+            shop = [shop_name]
+            shop_node = []
 
-                # Grid layout for widgets
-        self.source_db_label.grid(row=0, column=0, sticky="W")
-        self.source_db_entry.grid(row=0, column=1, padx=5, pady=5)
-        self.source_table_label.grid(row=1, column=0, sticky="W")
-        self.source_table_entry.grid(row=1, column=1, padx=5, pady=5)
-        self.source_column_label.grid(row=2, column=0, sticky="W")
-        self.source_column_entry.grid(row=2, column=1, padx=5, pady=5)
-        self.source_id_label.grid(row=3, column=0, sticky="W")
-        self.source_id_entry.grid(row=3, column=1, padx=5, pady=5)
-        self.destination_db_label.grid(row=0, column=2, sticky="W")
-        self.destination_db_entry.grid(row=0, column=3, padx=5, pady=5)
-        self.destination_table_label.grid(row=1, column=2, sticky="W")
-        self.destination_table_entry.grid(row=1, column=3, padx=5, pady=5)
-        self.destination_column_label.grid(row=2, column=2, sticky="W")
-        self.destination_column_entry.grid(row=2, column=3, padx=5, pady=5)
-        self.destination_id_label.grid(row=3, column=2, sticky="W")
-        self.destination_id_entry.grid(row=3, column=3, padx=5, pady=5)
+            t = main_value[1].replace(")", "") + ","
+            f_info = t.split(">,")
+            
+            for c in range(len(f_info)-1):
+                f_value = f_info[c].split(",[")
+                color_txt = f_value[0].replace("<", "").strip()
 
-        self.copy_treeview.grid(row=4, column=0, columnspan=4, padx=5, pady=5)
-        
-        self.source_treeview.grid(row=7, column=0, columnspan=2, padx=5, pady=5)
-        self.destination_treeview.grid(row=7, column=2, columnspan=2, padx=5, pady=5)
+                if (not shop_s == "" and shop_s == shop_name) and \
+                (color_s == "" or color_s == color_txt):
+                    colors.append(color_txt)
 
-        self.source_button.grid(row=4, column=4, padx=5, pady=5)
-        self.destination_button.grid(row=5, column=4, padx=5, pady=5)
-        self.copy_button.grid(row=6, column=4, columnspan=2, padx=5, pady=5)
-    def add_source(self):
-        db_path = self.source_db_entry.get()
-        if db_path:
-            self.db_paths.append(db_path)
-            self.update_source_treeview()
+                color = [color_txt]
+                color_node = []
 
-    def add_destination(self):
-        db_path = self.destination_db_entry.get()
-        if db_path:
-            self.db_paths.append(db_path)
-            self.update_destination_treeview()
+                t = f_value[1].replace("]", "") + ","
+                s_info = t.split("|,")
 
-    def update_source_treeview(self):
-        self.source_treeview.delete(*self.source_treeview.get_children())
-        for db_path in self.db_paths:
-            # Connect to the database and fetch source table and column information
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-            tables = cursor.fetchall()
-            for table in tables:
-                cursor.execute(f"PRAGMA table_info({table[0]})")
-                columns = cursor.fetchall()
-                for column in columns:
-                    self.source_treeview.insert("", "end", text=db_path, values=(table[0], column[1]))
-            conn.close()
+                for s in range(len(s_info)-1):
+                    s_value = s_info[s].split(", ")
 
-    def update_destination_treeview(self):
-        self.destination_treeview.delete(*self.destination_treeview.get_children())
-        for db_path in self.db_paths:
-            # Connect to the database and fetch destination table and column information
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-            tables = cursor.fetchall()
-            for table in tables:
-                cursor.execute(f"PRAGMA table_info({table[0]})")
-                columns = cursor.fetchall()
-                for column in columns:
-                    self.destination_treeview.insert("", "end", text=db_path, values=(table[0], column[1]))
-            conn.close()
+                    if len(s_value) <= 1:
+                        s_value = s_info[s].split(",")
+
+                    s_n = []
+                    for si in range(len(s_value)-1):
+                        if (not shop_s == "" and shop_s == shop_name) and \
+                        (not color_s == "" and color_s == color_txt) and \
+                        (size_s == "" or size_s == s_value[si].replace("|", "").strip()):
+                            if si == 0:
+                                sizes.append(s_value[si].replace("|", "").strip())
+                            elif si == 1:
+                                self.selected_barcode.set(s_value[si].strip())
+
+                        s_n.append(s_value[si].replace("|", "").strip())
+
+                    color_node.append(s_n)
+                
+                color.append(color_node)
+                shop_node.append(color)
+
+            shop.append(shop_node)
+            a_u_list.append(shop)
+
+        return shops, colors, sizes, a_u_list
     
-    def create_database(self, db_path, table_name, column_name, column_values):
-        if not os.path.isfile(db_path):
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-            cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name} ({column_name} TEXT)")
-            for value in column_values:
-                cursor.execute(f"INSERT INTO {table_name} ({column_name}) VALUES ('{value}')")
-            conn.commit()
-            conn.close()
-            print(f"{db_path} created.")
-    
-    def copy_(self):
-        source_db = self.source_db_entry.get()
-        destination_db = self.destination_db_entry.get()
-        source_table = self.source_table_entry.get()
-        source_column = self.source_column_entry.get()
-        destination_table = self.destination_table_entry.get()
-        destination_column = self.destination_column_entry.get()
+    def create_form_frame(self):
+        self.form_frame = tk.Frame(self.getvalue_form)
+        self.form_frame.pack()
 
-        if not all([source_db, destination_db, source_table, source_column, destination_table, destination_column]):
-            print("Error: Please fill in all the fields.")
-            return
+    def next_form(self):
+        if self.current_form < len(self.forms) and self.current_form < 4:
+            if self.current_form > 0:
+                self.form_frame.destroy()
+                self.create_form_frame()
+            else:
+                self.create_form_frame()
+            print("current_form : " + str(self.current_form))
+            self.forms[self.current_form]()
+            print("out forms: " + str(self.current_form))
+            self.current_form += 1
+        else:
+            self.add_to_cart()
 
-        # Create the source database if it doesn't exist
-        self.create_database(source_db, source_table, source_column, ["Value 1", "Value 2", "Value 3"])
+    def prev_form(self):
+        if self.current_form > 1:
+            self.selected_qty = 0
+            self.current_form -= 2
+            self.next_form()
 
-        # Create the destination database if it doesn't exist
-        self.create_database(destination_db, destination_table, destination_column, ["Value A", "Value B"])
+    def display_shop_buttons(self):
+        tk.Label(self.form_frame, text="Select Shop:").pack()
+        txt = ""
+        for shop in self.item_list:
+            txt = shop[0]
+            tk.Button(
+                self.form_frame,
+                text=shop[0],
+                command=lambda s=shop[0]: self.select_shop(s)
+            ).pack()
+        if len(self.form_frame.winfo_children()) == 2:
+            self.current_form += 1
+            self.select_shop(txt)
 
-        # Copy the column
-        self.copy_column(source_db, destination_db, source_table, source_column, destination_table, destination_column)
+    def select_shop(self, shop):
+        self.selected_shop = shop
+        self.next_form()
 
+    def display_color_buttons(self):
+        tk.Label(self.form_frame, text="Select Color:").pack()
+        txt = ""
+        for color in self.get_colors():
+            txt=color
+            tk.Button(
+                self.form_frame,
+                text=color,
+                command=lambda c=color: self.select_color(c)
+            ).pack()
+        tk.Button(
+            self.form_frame,
+            text="Previous",
+            command=self.prev_form
+        ).pack()
+        if len(self.form_frame.winfo_children()) == 3:
+            self.current_form += 1
+            self.select_color(txt)
 
+    def select_color(self, color):
+        self.selected_color = color
+        self.next_form()
 
-    def copy_column(self, source_db, destination_db, source_table, source_column, destination_table, destination_column):
-        # Connect to the source database
-        source_conn = sqlite3.connect(source_db)
-        source_cursor = source_conn.cursor()
+    def display_size_buttons(self):
+        txt = ""
+        tk.Label(self.form_frame, text="Select Size:").pack()
+        for size in self.get_sizes():
+            txt = size
+            tk.Button(
+                self.form_frame,
+                text=size[0],
+                command=lambda s=size[0]: self.select_size(s)
+            ).pack()
+        tk.Button(
+            self.form_frame,
+            text="Previous",
+            command=self.prev_form
+        ).pack()
+        if len(self.form_frame.winfo_children()) == 3:
+            print("txt :" + str(txt[3]))
+            if txt[3] == '1' or txt[3] == "1.0":
+                self.selected_qty = 1
+                self.selected_size = txt
+                self.add_to_cart()
+            else:
+                self.current_form += 1
+                self.select_size(txt)
 
-        # Connect to the destination database
-        destination_conn = sqlite3.connect(destination_db)
-        destination_cursor = destination_conn.cursor()
+    def select_size(self, size):
+        self.selected_size = size
+        self.next_form()
 
-        try:
-            # Check if the source table exists
-            source_cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{source_table}'")
-            if not source_cursor.fetchone():
-                print(f"Error: Source table '{source_table}' does not exist.")
-                return
+    def display_quantity_entry(self):
+        tk.Label(self.form_frame, text="Enter Quantity:").pack()
+        self.qty_entry = tk.Entry(self.form_frame)
+        self.selected_qty = 0
+        self.qty_entry.insert(0, "1")
+        self.qty_entry.pack()
+        tk.Button(
+            self.form_frame,
+            text="Previous",
+            command=self.prev_form
+        ).pack()
+        tk.Button(
+            self.form_frame,
+            text="Add to Cart",
+            command=self.add_to_cart
+        ).pack()
 
-            # Check if the source column exists
-            source_cursor.execute(f"PRAGMA table_info({source_table})")
-            columns = [column[1] for column in source_cursor.fetchall()]
-            if source_column not in columns:
-                print(f"Error: Source column '{source_column}' does not exist in '{source_table}'.")
-                return
+    def add_to_cart(self):
+        print("add_to_cart :")
+        if self.selected_shop and self.selected_color and self.selected_size:
+            print("add_to_cart :")
+            if self.selected_qty == 0:
+                self.selected_qty = self.qty_entry.get()
+            item = [self.selected_shop, self.selected_color, self.selected_size, self.selected_qty]
+            self.selected_items.append(item)
+            print("true :" + str(self.selected_items[0]))
+            self.getvalue_form.destroy()
+        else:
+            tk.messagebox.showerror("Error", "Please complete the selection.")
 
-            # Fetch data from the source table
-            source_cursor.execute(f"SELECT {source_column} FROM {source_table}")
-            data = source_cursor.fetchall()
+    def get_colors(self):
+        for shop in self.item_list:
+            if shop[0] == self.selected_shop:
+                return [color[0] for color in shop[1]]
+        return []
 
-            # Check if the destination table exists
-            destination_cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{destination_table}'")
-            if not destination_cursor.fetchone():
-                print(f"Error: Destination table '{destination_table}' does not exist.")
-                return
+    def get_sizes(self):
+        for shop in self.item_list:
+            if shop[0] == self.selected_shop:
+                for color in shop[1]:
+                    if color[0] == self.selected_color:
+                        return color[1]
+        return []
 
-            # Check if the destination column exists
-            destination_cursor.execute(f"PRAGMA table_info({destination_table})")
-            columns = [column[1] for column in destination_cursor.fetchall()]
-            if destination_column not in columns:
-                print(f"Error: Destination column '{destination_column}' does not exist in '{destination_table}'.")
-                return
+    def show_selected_items(self):
+        self.form_frame.destroy()
+        result_frame = tk.Frame(self.master)
+        result_frame.pack()
+        tk.Label(result_frame, text="Selected Items:").pack()
+        for item in self.selected_items:
+            tk.Label(result_frame, text=str(item)).pack()
 
-            # Check if the value already exists in the destination column
-            destination_cursor.execute(f"SELECT {destination_column} FROM {destination_table}")
-            existing_values = destination_cursor.fetchall()
-            existing_values = [value[0] for value in existing_values]
-            data = [value for value in data if value[0] not in existing_values]
+    def cancel_selection(self):
+        self.master.quit()
 
-            # Print the before results
-            print("Before copying:")
-            print(f"Source Database - Source Table ({source_table}) - Source Column ({source_column}):")
-            print(data)
-            print(f"Destination Database - Destination Table ({destination_table}) - Destination Column ({destination_column}):")
-            destination_cursor.execute(f"SELECT {destination_column} FROM {destination_table}")
-            print(destination_cursor.fetchall())
-            print()
+if __name__ == "__main__":
+    #"\"{shopname1,(<color11,[|size111,barcode111, 30, 27.0, , |, |size112,barcode112, 30, 27.0, , |]>, <color12,[|size121,barcode121, 30, 27.0, , |, |size122,barcode122, 30, 27.0, , |]>)},{shopname2,(<color21,[|size211,barcode211, 30, 27.0, , |, |size212,barcode212, 30, 27.0, , |]>)}\""
+    #"[[shopname1, [[color11, [[size111, barcode111, 30, 27.0, , ], [size112, barcode112, 30, 27.0, , ]]], [color12, [[size121, barcode121, 30, 27.0, , ], [size122, barcode122, 30, 27.0, , ]]]]], [shopname2, [[color21, [[size211, barcode211, 30, 27.0, , ], [size212, barcode212, 30, 27.0, , ]]]]]]"
 
-            # Start a transaction
-            destination_conn.execute("BEGIN TRANSACTION")
+    list = "\"{FLAG_SQUARE,(<FRUATE,[|1X30, , 30, 27.0, , |]>)},\""
 
-            # Insert data into the destination table
-            destination_cursor.executemany(f"INSERT INTO {destination_table} ({destination_column}) VALUES (?)", data)
-
-            # Commit the transaction
-            destination_conn.execute("COMMIT")
-            print("Column copied successfully!")
-            print()
-
-            # Print the after results
-            print("After copying:")
-            print(f"Source Database - Source Table ({source_table}) - Source Column ({source_column}):")
-            print(data)
-            print(f"Destination Database - Destination Table ({destination_table}) - Destination Column ({destination_column}):")
-            destination_cursor.execute(f"SELECT {destination_column} FROM {destination_table}")
-            print(destination_cursor.fetchall())
-
-        except Exception as e:
-            # Roll back the transaction on error
-            destination_conn.execute("ROLLBACK")
-            print(f"Error: {e}")
-
-        finally:
-            # Close the connections
-            source_conn.close()
-            destination_conn.close()
-
-
-
-root = tk.Tk()
-app = App(root)
-root.mainloop()
-
-
+    root = tk.Tk()
+    item_selector = ItemSelectorWidget(root, list, False, None)
+    root.mainloop()
 
 '''
-def create_databases():
+import tkinter as tk
+
+class ItemSelectorWidget(tk.Tk):
+    def __init__(self, parent, list, ischange_qty, given_qty):
+        self.master = parent
+        self.list = list
+        self.ischange_qty = ischange_qty
+        self.given_qty = given_qty
+
+        self.getvalue_form = tk.Toplevel(self.master)
+        self.getvalue_form.title("Selector Form")
+        # calculate the center coordinates of the screen
+        screen_width = self.master.winfo_screenwidth()
+        screen_height = self.master.winfo_screenheight()
+        x = (screen_width / 2) - (500 / 2)  # 500 is the width of the Payment Form window
+        y = (screen_height / 2) - (500 / 2)  # 500 is the height of the Payment Form window
+
+        # set the position of the Payment Form window to center
+        self.getvalue_form.geometry(f"200x200+{int(x)}+{int(y)}")
+
+        self.selected_shop = tk.StringVar()
+        self.selected_color = tk.StringVar()
+        self.selected_size = tk.StringVar()
+        self.selected_qty = tk.StringVar()
+        self.selected_barcode = tk.StringVar()
+        self.selected_items = []
+
+        # Create the shop label and dropdown menu
+        tk.Label(self.getvalue_form, text="Shop:").grid(row=0, column=0)
+        self.shop_dropdown = tk.OptionMenu(self.getvalue_form, self.selected_shop, '')
+        self.shop_dropdown.grid(row=0, column=1)
+        self.shop_dropdown.bind('<Button-1>', self.get_shop)
+
+        # Create the color label and dropdown menu
+        tk.Label(self.getvalue_form, text="Color:").grid(row=1, column=0)
+        self.color_dropdown = tk.OptionMenu(self.getvalue_form, self.selected_color, '')
+        self.color_dropdown.grid(row=1, column=1)
+        self.color_dropdown.bind('<Button-1>', self.get_color)
+
+        # Create the size label and dropdown menu
+        tk.Label(self.getvalue_form, text="Size:").grid(row=2, column=0)
+        self.size_dropdown = tk.OptionMenu(self.getvalue_form, self.selected_size, '')
+        self.size_dropdown.grid(row=2, column=1)
+        self.size_dropdown.bind('<Button-1>', self.get_size)
+
+        # Create the quantity label and entry field
+        tk.Label(self.getvalue_form, text="Qty:").grid(row=3, column=0)
+        self.qty_entry = tk.Entry(self.getvalue_form, textvariable=self.selected_qty)
+        self.qty_entry.grid(row=3, column=1)
+
+        # Create the Add to Cart button
+        tk.Button(self.getvalue_form, text="Add to Cart", command=self.add_to_cart).grid(row=4, column=1)
+
+        # show the Selector Form window
+        self.get_auto()
     
-import sqlite3
+    def get_auto(self):
+        f = self.read_code(self.list, "", "", "")
+        self.selected_shop.set(f[0][0])
+        print("shop :" + str(f[0])[0])
+        if len(f[0]) == 1: 
+            s = self.read_code(self.list, f[0][0], "", "")
+            print("color list :" + str(s))
+            print("color :" + str(s[1])[0])
+            self.selected_color.set(s[1][0])
+            if len(s[1]) == 1: 
+                t = self.read_code(self.list, f[0][0], s[1][0], "")
+                print("list size :" + str(t))
+                self.selected_size.set(t[2][0])
+                print("size :" + str(t[2][0]))
+                if len(t[2]) == 1 and self.ischange_qty or self.given_qty:
+                    if not self.given_qty: 
+                        self.selected_qty.set(1)
+                        # TODO: get deffalute value
+                    else:
+                        self.selected_qty.set(self.given_qty)
+                    item = [self.selected_shop.get(), self.selected_color.get(), self.selected_size.get(), self.selected_qty.get()]            
+                    print("Item added to cart00:", item)
+                    self.getvalue_form.destroy()
+        
+    def get_shop(self, t):
+        ret = self.read_code(self.list, "", "", "")
+        print("shop list :" + str(ret))
+        print("shop :" + str(ret[0]))
+        self.shop_dropdown['menu'].delete(0, 'end')
+        for value in ret[0]:
+            self.selected_shop.set(ret[0][0])
+            self.shop_dropdown['menu'].add_command(label=value, command=tk._setit(self.selected_shop, value))
+        print("shop value :" + self.selected_shop.get())
+         
+    def get_color(self, t):
+        ret = self.read_code(self.list, self.selected_shop.get(), "", "")
+        print("color list :" + str(ret))
+        print("color :" + str(ret[1]))
+        self.color_dropdown['menu'].delete(0, 'end')
+        for value in ret[1]:
+            self.selected_color.set(ret[1][0])
+            self.color_dropdown['menu'].add_command(label=value, command=tk._setit(self.selected_color, value))
+    
+    def get_size(self, t):
+        ret = self.read_code(self.list, self.selected_shop.get(), self.selected_color.get(), "")
+        print("list size :" + str(ret))
+        print("size :" + str(ret[2]))
+        self.size_dropdown['menu'].delete(0, 'end')
+        for value in ret[2]:
+            self.selected_size.set(ret[2][0])
+            self.size_dropdown['menu'].add_command(label=value, command=tk._setit(self.selected_size, value))
+        #if len(ret[0]) == 1: 
+            
 
-# Create the databases and tables
-create_databases()
+    def read_code(self, vs_info, shop_s, color_s, size_s):
+        a_u_list = []
+        shops = []
+        colors = []
+        sizes  = []
+        t = vs_info.replace("\"", "") + ","
+        main_info = t.split("},")
+        for m in range(len(main_info)-1):
+            main_value = main_info[m].split(",(")
+            shop_name = main_value[0].replace("{", "")
+            if shop_s == "" or shop_s == shop_name:
+                shops.append(shop_name)
+            shop = [shop_name]
+            shop_node = []
+            t = main_value[1].replace(")", "") + ","
+            f_info = t.split(">,")
+            for c in range(len(f_info)-1):
+                f_value = f_info[c].split(",[")
+                color_txt = f_value[0].replace("<", "")
+                if not shop_s == "" and shop_s == shop_name and \
+                   color_s == "" or color_s == color_txt:
+                    colors.append(color_txt)
+                color = [color_txt]
+                color_node = []
+                t = f_value[1].replace("]", "") + ","
+                s_info = t.split("|,")
+                for s in range(len(s_info)-1):
+                    s_value = s_info[s].split(", ")
+                    if len(s_value) <= 1:
+                        s_value = s_info[s].split(",")
+                    s_n = []
+                    si = 0
+                    for s_v in s_value:
+                        if not shop_s == "" and shop_s == shop_name and \
+                        not color_s == "" and color_s == color_txt and \
+                        size_s == "" or size_s == s_v.replace("|", ""):
+                            if si == 0:
+                                sizes.append(s_v.replace("|", ""))
+                            elif si == 1:
+                                self.selected_barcode.set(s_v.replace("|", ""))
+                        print("value : " + s_v.replace("|", ""))
+                        s_n.append(s_v.replace("|", ""))
+                        color_node.append(s_n)
+                        si += 1
+                color.append(color_node)
+                shop_node.append(color)
+            shop.append(shop_node)
+            a_u_list.append(shop)
+        return shops, colors, sizes, a_u_list
+    
+    def add_to_cart(self):
+        item = [self.selected_shop.get(), self.selected_color.get(), self.selected_size.get(), self.selected_qty.get()]
+        print("Item added to cart:", item)
+        self.selected_items.append(item)
+        self.getvalue_form.destroy()
 
-# Example usage
-copy_column('source.db', 'destination.db', 'source_table', 'source_column', 'destination_table', 'destination_column')
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.withdraw()
+    list = "\"{FLAG_SQUER,(<NONE,[|1X10, 8906046682441, 21, 20.0, , |]>)},\""
+    #list = "\"{Shop 1},({Color 1},[Size 1, Size 2]),({Color 2},[Size 1, Size 2])}\",\"{Shop 2},({Color 1},[Size 1, Size 2]),({Color 2},[Size 1, Size 2])}\""
+    item_selector = ItemSelectorWidget(root, list, False, None)
+    root.wait_window(item_selector.getvalue_form)
+    print("Selected Items:", item_selector.selected_items)
+
 '''

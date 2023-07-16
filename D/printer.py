@@ -16,7 +16,8 @@ class PrinterForm(tk.Tk):
     def load_printer(self):
         cursor.execute("SELECT * FROM setting WHERE user_name = ?", (self.user,))
         b = cursor.fetchall()
-        if len(b) >= 0:
+        print("user " + str(self.user) + "found " +str(b))
+        if len(b) > 0:
             if b[0][3] == "":
                 print("sitting : " + str(b))
                 printer_name = "EPSON TM-T88V Receipt"
@@ -69,10 +70,12 @@ class PrinterForm(tk.Tk):
             print("Close the printer handle\n")
             # Close the printer handle
             win32print.ClosePrinter(printer_handle)
-            '''
+            # '''
     
     def print_slip(self, text, cut):
         printer_name = PrinterForm.load_printer(self)
+        if printer_name == "":
+            return
         print("printer : " + str(printer_name))
         # Prepare the printer properties
         '''
@@ -123,7 +126,7 @@ class PrinterForm(tk.Tk):
             print("Close the printer handle\n")
             # Close the printer handle
             win32print.ClosePrinter(printer_handle)
-            '''
+            # '''
     
     def print_text_with_dialog(self, text):
         # Load the saved printer driver choice
@@ -187,5 +190,5 @@ class PrinterForm(tk.Tk):
             print("Close the printer handle\n")
             # Close the printer handle
             win32print.ClosePrinter(printer_handle)
-            '''
+           # '''
         pass

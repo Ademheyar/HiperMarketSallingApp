@@ -1,4 +1,5 @@
-def reduc_qty(item_info, item_shop_name, item_color, item_size, item_qty_):
+# give do_ 0 to reduce and 1 to add qty
+def reduc_qty(item_info, do_, item_shop_name, item_color, item_size, item_qty_):
     vs_info = "\""
     t = item_info.replace("\"", "") + ","
     main_info = t.split("},")
@@ -36,7 +37,11 @@ def reduc_qty(item_info, item_shop_name, item_color, item_size, item_qty_):
                     if j == 1:
                         size_txt = s_v.replace("|", "")
                     if j == 4 and shop_name == item_shop_name and item_color == color_txt and item_size == size_txt:
-                        new_qty = float(s_v.replace("|", ""))-float(item_qty_)
+                        new_qty = float(s_v.replace("|", ""))
+                        if do_ == 0:
+                            new_qty = float(s_v.replace("|", ""))-float(item_qty_)
+                        if do_ == 1:
+                            new_qty = float(s_v.replace("|", ""))+float(item_qty_)
                         vs_info += str(new_qty)
                     else:
                         vs_info += s_v.replace("|", "")

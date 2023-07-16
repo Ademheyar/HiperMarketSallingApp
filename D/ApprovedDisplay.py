@@ -31,7 +31,7 @@ class ApproveFrame(tk.Frame):
         # Create a new Toplevel window for the value form
         self.getvalue_form = tk.Toplevel(self.master)
         self.getvalue_form.title("Selector Form")
-        self.getvalue_form.columnconfigure((0), weight=0)
+        self.getvalue_form.columnconfigure((0), weight=1)
         self.getvalue_form.columnconfigure((1,2,3), weight=1)
         self.getvalue_form.rowconfigure((0,1,2,3,4), weight=1)
         
@@ -45,7 +45,10 @@ class ApproveFrame(tk.Frame):
         self.getvalue_form.geometry(f"{int(screen_width)}x{int(screen_height)}+{int(0)}+{int(0)}")
 
         # Create a listbox for the items
-        self.list_items = tk.Listbox(self.getvalue_form)
+        self.total_tax_label = tk.Label(self.getvalue_form, text=slip, font=("Arial", 10))
+        self.total_tax_label.grid(row=0, column=0, rowspan=5)
+        
+        '''self.list_items = tk.Listbox(self.getvalue_form)
         self.list_items.grid(row=0, column=0, rowspan=4, sticky="nsew")
         #.pack(side="left", fill="both", expand=True)
 
@@ -69,7 +72,7 @@ class ApproveFrame(tk.Frame):
         self.total_tax_label = tk.Label(self.info_frame, text="Total Tax : 0", font=("Arial", 15))
         self.total_tax_label.grid(row=2, column=1, sticky="nsew")
         self.total_label = tk.Label(self.info_frame, text="Total : 0", font=("Arial", 25))
-        self.total_label.grid(row=3, column=0, sticky="nsew")
+        self.total_label.grid(row=3, column=0, sticky="nsew")'''
 
         # Create a frame for buttons and labels
         self.buttons_frame = tk.Frame(self.getvalue_form)
@@ -95,7 +98,7 @@ class ApproveFrame(tk.Frame):
         # Create continue Button
         self.continue_button = ttk.Button(self.buttons_frame, text="Continue", command=self.getvalue_form.destroy)
         self.continue_button.grid(row=6, column=4, sticky="nsew")
-        self.update_items()
+        #self.update_items()
         
     def print_item(self):
         print("printing : " + str(self.print_slip) + "splip : " + str(self.slip))
@@ -114,7 +117,7 @@ class ApproveFrame(tk.Frame):
         # Clear any existing items in the listbox
         self.list_items.delete(0, tk.END)
 
-        total_items = 0
+        '''total_items = 0
         total_discount = 0
         total_price = 0
 
@@ -131,4 +134,4 @@ class ApproveFrame(tk.Frame):
         self.total_items_label.config(text=f"Total Items: " + str(total_items) )
         self.total_discount_label.config(text=f"Total Discount: " + str(total_discount) )
         self.total_label.config(text=f"Total Price: " + str(total_price) )
-        self.total_tax_label.config(text=f"Total Tax : "  )
+        self.total_tax_label.config(text=f"Total Tax : "  )'''
