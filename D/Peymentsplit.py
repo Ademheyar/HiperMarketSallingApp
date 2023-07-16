@@ -42,13 +42,10 @@ class PaymentForm(tk.Tk):
         # create the combo box
         self.search_entry = ttk.Combobox(self.top_frame, width=20, font=("Arial", 12), textvariable=self.selected_value)
         #tk.Entry
-        print("row = " + str(rows))
         self.search_entry.grid(row=0, column=1, sticky="nsew", columnspan=2)
-        options = []
         for row in rows:
-            options.append(row[1])
+            self.search_entry['values'] = row[1]
         # set the list of options
-        self.search_entry['values'] = options
         #combo_box['values'] = options
 
         # set the default value
@@ -121,11 +118,11 @@ class PaymentForm(tk.Tk):
             if self.get_amount_entry.get() == '':
                 print("amount not given")
             else:
-                self.list_items.insert(tk.END, [self.selected_value.get(), self.get_amount_entry.get()])
+                self.list_items.insert(tk.END, self.selected_value.get()+ " = " + self.get_amount_entry.get())
                 self.master.pid = 0
                 for a in self.list_items.get(0, tk.END):
-                    print(int(a[1]))
-                    self.master.pid = self.master.pid + int(a[1])
+                    print(int(a.split(' = ')[1]))
+                    self.master.pid = self.master.pid + int(a.split(' = ')[1])
                 self.update_info()
             
     def remove_payment(self):
@@ -133,8 +130,8 @@ class PaymentForm(tk.Tk):
         self.list_items.delete(index)
         self.master.pid = 0
         for a in self.list_items.get(0, tk.END):
-            print(int(a[1]))
-            self.master.pid = self.master.pid + int(a[1])
+            print(int(a.split(' = ')[1]))
+            self.master.pid = self.master.pid + int(a.split(' = ')[1])
         self.update_info()
 
     def hide_all_manager(self):

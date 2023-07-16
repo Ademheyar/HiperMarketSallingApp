@@ -108,10 +108,9 @@ class search_entry(ttk.Entry):
         if result:
             a = ItemSelectorWidget(self, result[12], result[16], self.master.master.master.master.qty)
             self.wait_window(a.getvalue_form)
-            print("ret : " + str(a.selected_items))
+            print("ret : " + str([a.selected_shop.get(), a.selected_color.get(), a.selected_size.get(), a.selected_qty.get()]))
             print("info : " + str(result))
-            for t in a.selected_items:
-                self.master.master.master.master.add_item(result, t[2][1], t[0], t[1], t[2][0], t[3])
+            self.master.master.master.master.list_items.insert("", "end", text=str(result[0]), values=(result[2], a.selected_barcode.get(), result[1], a.selected_shop.get(), a.selected_color.get(), a.selected_size.get(), a.selected_qty.get(), result[9], self.master.master.master.master.disc, result[10],float(a.selected_qty.get())*float(result[9])))
             #column_name = tree.column("#1", "heading")
             for a in self.master.master.master.master.list_items.get_children():
                 self.master.master.master.master.list_items.item(a)['values'][2] = "000"
@@ -124,8 +123,8 @@ class search_entry(ttk.Entry):
         print("word: " + str(query) + " search_type: " + str(self.search_type))
         
         if query:
-            self.cursor.execute("SELECT * FROM product WHERE name LIKE ? OR code LIKE ? OR type LIKE ? OR more_info LIKE ?",
-                                (f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%"))
+            self.cursor.execute("SELECT * FROM product WHERE name LIKE ? OR code LIKE ? OR type LIKE ?",
+                                (f"%{query}%", f"%{query}%", f"%{query}%"))
 
             results = []
             unique_results = set()  # To store unique results

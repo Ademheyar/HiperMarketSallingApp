@@ -11,6 +11,7 @@ class UserInfoForm(tk.Tk):
     def __init__(self, master):
         self.master = master
         
+        
         # create a Toplevel window for the payment form
         self.getvalue_form = tk.Toplevel(self.master)
         self.getvalue_form.title("endday Form")
@@ -37,6 +38,7 @@ class UserInfoForm(tk.Tk):
         # TODO: user can change name, or password in this form
         # TODO: user can add sub user depanding on it usertype
         
+
         # show the Payment Form window
         self.getvalue_form.transient(self.master)
         self.getvalue_form.grab_set()
