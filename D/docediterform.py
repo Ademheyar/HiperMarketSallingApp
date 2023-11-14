@@ -206,11 +206,7 @@ class DocEditForm(tk.Frame):
         payment_tab.rowconfigure(1, weight=1)
         payment_tab.rowconfigure(2, weight=1)
 
-<<<<<<< HEAD
-        self.list_payment = ttk.Treeview(payment_tab, columns=("Peyment Type", "Paid", "Paid Date", "Updated Date", "User"))
-=======
         self.list_payment = ttk.Treeview(payment_tab, columns=("Peyment Type", "Paid", "Paid Date", "Updated Date", "User", "Paid", "Extantion Bracodes"))
->>>>>>> db9ae79 (adding seller)
         self.list_payment.grid(row=0, column=0, columnspan=4, sticky="nsew")
         self.list_payment.heading("#0", text="ID", anchor=tk.W)
         self.list_payment.column("#0", stretch=tk.NO, width=50)
@@ -224,13 +220,10 @@ class DocEditForm(tk.Frame):
         self.list_payment.column("#4", stretch=tk.NO, width=250)
         self.list_payment.heading("#5", text="User", anchor=tk.W)
         self.list_payment.column("#5", stretch=tk.NO, width=250)
-<<<<<<< HEAD
-=======
         self.list_payment.heading("#6", text="Paid", anchor=tk.W)
         self.list_payment.column("#6", stretch=tk.NO, width=250)
         self.list_payment.heading("#7", text="Extantion Bracodes", anchor=tk.W)
         self.list_payment.column("#7", stretch=tk.NO, width=250)
->>>>>>> db9ae79 (adding seller)
         
         payment_tools = tk.Frame(payment_tab)
         payment_tools.grid(row=1, column=0)

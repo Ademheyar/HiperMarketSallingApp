@@ -1,19 +1,14 @@
-#import win32print
+import win32print
 import tkinter as tk
 from tkinter import ttk
 import sqlite3, os
-<<<<<<< HEAD
-=======
 from tkinter import simpledialog
->>>>>>> db9ae79 (adding seller)
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 printer_name = ""
-<<<<<<< HEAD
-=======
 def list_available_printers():
     printers = []
     printer_info = win32print.EnumPrinters(win32print.PRINTER_ENUM_LOCAL, None, 1)
@@ -51,35 +46,16 @@ class PrinterSelectionDialog(tk.Toplevel):
     def select_printer(self):
         self.selected_printer = self.printer_var.get()
         self.destroy()
->>>>>>> db9ae79 (adding seller)
 
 class PrinterForm(tk.Tk):
     def __init__(self, master):
         self.master = master
-<<<<<<< HEAD
-        
-    def load_printer(self):
-        cursor.execute("SELECT * FROM setting WHERE user_name = ?", (self.user,))
-        b = cursor.fetchall()
-        print("user " + str(self.user) + "found " +str(b))
-        if len(b) > 0:
-            if b[0][3] == "":
-                print("sitting : " + str(b))
-                printer_name = "EPSON TM-T88V Receipt"
-                # TODO MAKE USER CHOOSE PRINTER
-            else:
-                printer_name = b[0][3] # getting printer
-        return printer_name
-                
-    def open_drower(self):
-        printer_name = PrinterForm.load_printer(self)
-=======
 
     def list_available_printers(self):
         printers = []
-        '''printer_info = win32print.EnumPrinters(win32print.PRINTER_ENUM_LOCAL, None, 1)
+        printer_info = win32print.EnumPrinters(win32print.PRINTER_ENUM_LOCAL, None, 1)
         for printer in printer_info:
-            printers.append(printer[2])  # Extract printer names from the tuple'''
+            printers.append(printer[2])  # Extract printer names from the tuple
         return printers
 
     def choose_printer(self):
@@ -119,10 +95,9 @@ class PrinterForm(tk.Tk):
                 
     def open_drower(self, user_info):
         printer_name = PrinterForm.load_printer(self, user_info)
->>>>>>> db9ae79 (adding seller)
         print("printer : " + str(printer_name))
         # Prepare the printer properties
-        '''
+        #'''
         printer_props = {
             "DesiredAccess": win32print.PRINTER_ALL_ACCESS,
             "PrinterName": printer_name,
@@ -164,18 +139,13 @@ class PrinterForm(tk.Tk):
             win32print.ClosePrinter(printer_handle)
             # '''
     
-<<<<<<< HEAD
-    def print_slip(self, text, cut):
-        printer_name = PrinterForm.load_printer(self)
-=======
     def print_slip(self, user, text, cut):
         printer_name = PrinterForm.load_printer(self, user)
->>>>>>> db9ae79 (adding seller)
         if printer_name == "":
             return
         print("printer : " + str(printer_name))
         # Prepare the printer properties
-        '''
+        #'''
         printer_props = {
             "DesiredAccess": win32print.PRINTER_ALL_ACCESS,
             "PrinterName": printer_name,
@@ -227,7 +197,7 @@ class PrinterForm(tk.Tk):
     
     def print_text_with_dialog(self, text):
         # Load the saved printer driver choice
-        '''
+        #'''
         with open('printer.txt', 'r') as f:
             printer_name = f.read().strip()
         # Get the default printer name

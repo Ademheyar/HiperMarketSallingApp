@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-# give do_ 0 to reduce and 1 to add qty
-def reduc_qty(item_info, do_, item_shop_name, item_color, item_size, item_qty_):
-    vs_info = "\""
-    t = item_info.replace("\"", "") + ","
-=======
 
 import os
 import atexit
@@ -40,7 +34,6 @@ def change_qty(qty_info_list, do_, item_shop_name, item_code, item_color, item_s
 def reduc_qty(item_info, do_, item_shop_name, item_color, item_size, item_qty_):
     vs_info = "\""
     t = (item_info.replace("\"", "") + ",").replace(" ", "")
->>>>>>> db9ae79 (adding seller)
     main_info = t.split("},")
     si = 0
     for m in range(len(main_info)-1):
@@ -65,13 +58,7 @@ def reduc_qty(item_info, do_, item_shop_name, item_color, item_size, item_qty_):
             s_info = t.split("|,")
             for s in range(len(s_info)-1):
                 vs_info += '|'
-<<<<<<< HEAD
-                s_value = s_info[s].split(", ")
-                if s_info[s] == s_value[0]:
-                    s_value = s_info[s].split(",")
-=======
                 s_value = s_info[s].split(",")
->>>>>>> db9ae79 (adding seller)
                 size_txt = ""
                 j = 0
                 for s_v in s_value:
@@ -81,12 +68,6 @@ def reduc_qty(item_info, do_, item_shop_name, item_color, item_size, item_qty_):
                         size_txt = s_v.replace("|", "")
                     if j == 4 and shop_name == item_shop_name and item_color == color_txt and item_size == size_txt:
                         new_qty = float(s_v.replace("|", ""))
-<<<<<<< HEAD
-                        if do_ == 0:
-                            new_qty = float(s_v.replace("|", ""))-float(item_qty_)
-                        if do_ == 1:
-                            new_qty = float(s_v.replace("|", ""))+float(item_qty_)
-=======
                         if float(item_qty_) > 0 and (float(s_v.replace("|", ""))-float(item_qty_) > -100 and float(s_v.replace("|", ""))+float(item_qty_) > -100):
                             if do_ == 0:
                                 new_qty = float(s_v.replace("|", ""))-float(item_qty_)
@@ -96,7 +77,6 @@ def reduc_qty(item_info, do_, item_shop_name, item_color, item_size, item_qty_):
                             print("in iteminfo there is erorr 0")
                             #while True:
                             #    continue
->>>>>>> db9ae79 (adding seller)
                         vs_info += str(new_qty)
                     else:
                         vs_info += s_v.replace("|", "")

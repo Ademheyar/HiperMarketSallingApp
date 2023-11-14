@@ -10,18 +10,11 @@ cursor = conn.cursor()
 class PaymentForm(tk.Tk):
     def __init__(self, master):
         self.master = master
-<<<<<<< HEAD
-        
-        # create a Toplevel window for the payment form
-        self.payment_form = tk.Toplevel(self.master)
-        self.payment_form.title("Payment Form")
-=======
         self.ex_pid = []
         self.left = 0
         # create a Toplevel window for the payment form
         self.payment_form = tk.Toplevel(self.master)
         self.payment_form.title("Payment Split Form")
->>>>>>> db9ae79 (adding seller)
 
         # calculate the center coordinates of the screen
         screen_width = self.master.winfo_screenwidth()
@@ -31,15 +24,6 @@ class PaymentForm(tk.Tk):
 
         # set the position of the Payment Form window to center
         self.payment_form.geometry(f"500x500+{int(x)}+{int(y)}")
-<<<<<<< HEAD
-
-        self.manage_form_label = tk.Label(self.payment_form, text="Payment Split Form")
-        self.manage_form_label.grid(row=0, column=0, sticky="nsew")
-
-        # New frame at the top of the main frame
-        self.top_frame = tk.Frame(self.payment_form, bg="red", height=screen_height * 0.10, width=screen_width)
-        self.top_frame.grid(row=1, column=0, sticky="nsew", columnspan=2)
-=======
         
         # New frame at the top of the main frame
         self.top_extantion_frame = tk.Frame(self.payment_form, bg="white", height=screen_height * 0.10, width=screen_width)
@@ -48,7 +32,6 @@ class PaymentForm(tk.Tk):
         # New frame at the top of the main frame
         self.top_frame = tk.Frame(self.payment_form, bg="red", height=screen_height * 0.10, width=screen_width)
         self.top_frame.grid(row=1, column=0, sticky="nsew", columnspan=4)
->>>>>>> db9ae79 (adding seller)
 
         # Create a label and an entry widget for the search box
         self.search_label = tk.Label(self.top_frame, text="Search:", width=int(self.top_frame.winfo_width() * 0.10), bg="red", fg="white", font=("Arial", 12))
@@ -69,11 +52,8 @@ class PaymentForm(tk.Tk):
         # set the list of options
         self.search_entry['values'] = options
         #combo_box['values'] = options
-<<<<<<< HEAD
-=======
         self.get_extantion_barcode = tk.Entry(self.top_frame, width=15, font=("Arial", 12))
         self.get_extantion_barcode.grid(row=0, column=3, sticky="nsew")
->>>>>>> db9ae79 (adding seller)
 
         # set the default value
         #combo_box.current(0)
@@ -87,34 +67,6 @@ class PaymentForm(tk.Tk):
         self.button3.grid(row=1, column=2, sticky="nsew")
         self.button4 = tk.Button(self.top_frame, text="remove", bg="red", fg="white", font=("Arial", 12), command=self.remove_payment)
         self.button4.grid(row=1, column=3, sticky="nsew")
-<<<<<<< HEAD
-
-        # New listbox in the main frame
-        self.list_items = tk.Listbox(self.payment_form, bg="yellow", height=17)
-        self.list_items.grid(row=2, column=0, sticky="nsew", rowspan=2, columnspan=2)
-
-        # New frame next to list_items in the main frame
-        self.midel_frame = tk.Frame(self.payment_form, bg="blue", height=int(screen_height * 0.90))
-        self.midel_frame.grid(row=4, column=0, sticky="nsew", columnspan=2)
-
-        
-        
-        
-        self.Price_label = tk.Label(self.midel_frame, text="Price : " + str(self.master.price))
-        self.Price_label.grid(row=0, column=0, sticky="nsew")
-        self.price_A_disc_form_label = tk.Label(self.midel_frame, text="Price After discount : " + str(self.master.disc))
-        self.price_A_disc_form_label.grid(row=1, column=0, sticky="nsew")
-        self.Amount_pide_form_label = tk.Label(self.midel_frame, text="Amount Pide : " + str(self.master.pid))
-        self.Amount_pide_form_label.grid(row=2, column=0, sticky="nsew")
-        self.Total_form_label = tk.Label(self.midel_frame, text="TOTAL : " + str(self.master.total))
-        self.Total_form_label.grid(row=3, column=0, sticky="nsew")
-        
-        self.close_btn = tk.Button(self.midel_frame, text="Continue", command=self.continue_pyment)
-        self.close_btn.grid(row=4, column=0, sticky="nsew")
-
-        self.close_btn = tk.Button(self.midel_frame, text="Close", command=self.payment_form.destroy)
-        self.close_btn.grid(row=4, column=1, sticky="nsew")
-=======
         
         
 
@@ -159,34 +111,12 @@ class PaymentForm(tk.Tk):
 
         self.close_btn = tk.Button(self.midel_frame, text="Close", command=self.payment_form.destroy)
         self.close_btn.grid(row=4, column=2, sticky="nsew", columnspan=2)
->>>>>>> db9ae79 (adding seller)
 
         # show the Payment Form window
         self.payment_form.transient(self.master)
         self.payment_form.grab_set()
         self.update_info()
         self.master.wait_window(self.payment_form)
-<<<<<<< HEAD
-
-    def continue_pyment(self):
-        self.master.pid_peyment.clear()
-        for a in self.list_items.get(0, tk.END):
-            self.master.pid_peyment.append(a)
-        print("self.master.pid_peyment = " + str(self.master.pid_peyment))
-        self.master.process_payment()
-        self.payment_form.destroy()
-
-    def update_info(self):
-        print("Amount price : " + str(self.master.price))
-        self.Price_label.config(text="2Price : " + str(self.master.price))
-        self.Amount_pide_form_label.config(text="Amount Pide : " + str(self.master.pid))
-        self.price_A_disc_form_label.config(text="Price After discount : " + str(self.master.price - self.master.disc))
-        self.Total_form_label.config(text="TOTAL : " + str(self.master.price - self.master.disc - self.master.pid))
-        print("Amount Pide : " + str(self.master.pid))
-        self.Amount_pide_form_label.config(text="Amount Pide : " + str(self.master.pid))
-        self.Total_form_label.config(text="TOTAL : " + str(self.master.pid - self.master.price - self.master.disc))
-
-=======
         
     def continue_pyment(self):
         #self.master.pid_peyment.clear()
@@ -272,7 +202,6 @@ class PaymentForm(tk.Tk):
 
         self.update_info()
         
->>>>>>> db9ae79 (adding seller)
     def add_payment(self):
         if self.selected_value.get() == '':
             print("payment not selected")
@@ -280,22 +209,6 @@ class PaymentForm(tk.Tk):
             if self.get_amount_entry.get() == '':
                 print("amount not given")
             else:
-<<<<<<< HEAD
-                self.list_items.insert(tk.END, [self.selected_value.get(), self.get_amount_entry.get()])
-                self.master.pid = 0
-                for a in self.list_items.get(0, tk.END):
-                    print(int(a[1]))
-                    self.master.pid = self.master.pid + int(a[1])
-                self.update_info()
-            
-    def remove_payment(self):
-        index = self.list_items.curselection()[0]
-        self.list_items.delete(index)
-        self.master.pid = 0
-        for a in self.list_items.get(0, tk.END):
-            print(int(a[1]))
-            self.master.pid = self.master.pid + int(a[1])
-=======
                 self.list_payment.insert("", 'end', text="", values=(self.selected_value.get(), self.get_amount_entry.get(), self.get_extantion_barcode.get()))
                 self.master.pid_peyment.append(["", self.selected_value.get(), self.get_amount_entry.get(), self.get_extantion_barcode.get()])
                 self.master.pid = self.master.pid + float(self.get_amount_entry.get())
@@ -322,7 +235,6 @@ class PaymentForm(tk.Tk):
                 else:
                     p1+=1
             aa = self.list_payment.delete(a)
->>>>>>> db9ae79 (adding seller)
         self.update_info()
 
     def hide_all_manager(self):

@@ -1,13 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
 import sqlite3
-<<<<<<< HEAD
-
-class InfoForm(tk.Frame):
-    def __init__(self, master):
-        tk.Frame.__init__(self, master)
-
-=======
 import shutil
 import datetime
 import os
@@ -33,21 +26,12 @@ class InfoForm(tk.Frame):
     def __init__(self, master):
         tk.Frame.__init__(self, master)
         self.master = master
->>>>>>> db9ae79 (adding seller)
         # Create the search bar
         # Create the frame for the search bar and buttons
         self.search_frame = tk.Frame(self)
         self.search_frame.pack(side=tk.TOP, padx=5, pady=5)
 
         # create a StringVar to represent the search box
-<<<<<<< HEAD
-        # Create the frame for the product details
-        
-
-    def show_info_form(self):
-        # call the function in the main file to show the first frame
-        self.master.master.show_frame("InfoForm")
-=======
         search_var = tk.StringVar()
         self.search_entry = tk.Entry(self.search_frame, textvariable=search_var)
         self.search_entry.bind('<KeyRelease>', self.update_search_results)
@@ -884,4 +868,3 @@ class InfoForm(tk.Frame):
         # Update the product listbox
         self.update_product_listbox()
 
->>>>>>> db9ae79 (adding seller)

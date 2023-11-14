@@ -1,15 +1,12 @@
 import sqlite3
 import tkinter as tk
 from tkinter import ttk
-<<<<<<< HEAD
-=======
 import tkinter as tk
 from tkinter import ttk
 import sqlite3
 import shutil
 import datetime
 import atexit
->>>>>>> db9ae79 (adding seller)
 
 import os, sys
 current_dir = os.path.abspath(os.path.dirname(__file__))
@@ -28,75 +25,6 @@ cur = conn.cursor()
 
 conn.commit()
 
-<<<<<<< HEAD
-# Function to search for documents in the doc_table SQLite database table
-def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_barcode=None, 
-                    item=None, user_id=None, customer_id=None, sold_item_info=None, discount=None, 
-                    tax=None, doc_created_date=None, doc_expire_date=None, doc_updated_date=None):
-    # Build the SQL query based on the provided attributes
-    query = 'SELECT * FROM doc_table WHERE 1=1'
-    if doc_id is not None and doc_id is not '':
-        query += f" AND id='{doc_id}'"
-    if doc_type is not None and doc_type != '':
-        query += f" AND type='{doc_type}'"
-    if doc_barcode is not None and doc_barcode is not '':
-        query += f" AND doc_barcode='{doc_barcode}'"
-    if extension_barcode is not None and extension_barcode is not '':
-        query += f" AND extension_barcode='{extension_barcode}'"
-    if item is not None and item is not '':
-        query += f" AND item='{item}'"
-    if user_id is not None and user_id is not '':
-        query += f" AND user_id='{user_id}'"
-    if customer_id is not None and customer_id is not '':
-        query += f" AND customer_id='{customer_id}'"
-    if sold_item_info is not None and sold_item_info is not '':
-        query += f" AND sold_item_info='{sold_item_info}'"
-    if discount is not None and discount is not '':
-        query += f" AND discount='{discount}'"
-    if tax is not None and tax is not '':
-        query += f" AND tax='{tax}'"
-    if doc_created_date is not None and doc_created_date is not '':
-        query += f" AND doc_created_date='{doc_created_date}'"
-    if doc_expire_date is not None and doc_expire_date is not '':
-        query += f" AND doc_expire_date='{doc_expire_date}'"
-    if doc_updated_date is not None and doc_updated_date is not '':
-        query += f" AND doc_updated_date='{doc_updated_date}'"
-    
-    print(query+"\n")
-    # Execute the SQL query and return the results as a list of tuples
-    cur.execute(query)
-    results = cur.fetchall()
-    return results
-    
-class DocForm(tk.Frame):
-    def __init__(self, master):
-        tk.Frame.__init__(self, master)
-        # Notebook widget - CENTER_NOTEBOK
-        self.center_notebook = ttk.Notebook(self)
-        self.center_notebook.pack(side="top", fill="both", expand=True)
-
-        self.home_tab = ttk.Frame(self.center_notebook)
-        self.home_tab.grid()
-
-        # Add tabs to the self.center_notebook
-        self.center_notebook.add(self.home_tab, text='Documents')
-
-        self.home_tab.grid_columnconfigure(0, weight=1)
-        self.home_tab.grid_columnconfigure(1, weight=1)
-        self.home_tab.grid_columnconfigure(2, weight=1)
-        self.home_tab.grid_columnconfigure(3, weight=1)
-        self.home_tab.grid_columnconfigure(4, weight=1)
-        self.home_tab.grid_columnconfigure(5, weight=1)
-        self.home_tab.grid_columnconfigure(6, weight=1)
-        self.home_tab.grid_rowconfigure(0, weight=1)
-        self.home_tab.grid_rowconfigure(1, weight=0)
-        self.home_tab.grid_rowconfigure(2, weight=1)
-        self.home_tab.grid_rowconfigure(3, weight=1)
-        self.home_tab.grid_rowconfigure(4, weight=1)
-        
-        # Create the listbox to display search results
-        self.listbox = ttk.Treeview(self.home_tab)        
-=======
 from D.Getdate import GetDateForm
 from D.Chart.Chart import *
 
@@ -199,35 +127,17 @@ class DocForm(tk.Frame):
 
         # Create the listbox to display search results
         self.listbox = ttk.Treeview(self.l_frame)        
->>>>>>> db9ae79 (adding seller)
         self.listbox.bind('<<TreeviewSelect>>', self.on_select)
         self.listbox.bind("<Button-1>", self.on_treeview_double_click)
         #self.listbox.grid_propagate(False)
 
 
         # Add vertical scrollbar
-<<<<<<< HEAD
-        tree_scrollbar_y = ttk.Scrollbar(self.listbox, orient='vertical', command=self.listbox.yview)
-=======
         tree_scrollbar_y = ttk.Scrollbar(self.l_frame, orient='vertical', command=self.listbox.yview)
->>>>>>> db9ae79 (adding seller)
         self.listbox.configure(yscrollcommand=tree_scrollbar_y.set)
         tree_scrollbar_y.pack(side='right', fill='y')
 
         # Add horizontal scrollbar
-<<<<<<< HEAD
-        tree_scrollbar_x = ttk.Scrollbar(self.listbox, orient='horizontal', command=self.listbox.xview)
-        self.listbox.configure(xscrollcommand=tree_scrollbar_x.set)
-        tree_scrollbar_x.pack(side='bottom', fill='x')
-
-        # Set the size of the self.listbox widget
-        self.listbox.grid(row=1, column=0, rowspan=4, sticky="nsew")
-        self.get_columen()
-        self.listbox.insert('', 'end', text="1", values=("1", "2", "3", "4","5", "6", "7", "8"))
-
-        self.details_frame = tk.Frame(self.home_tab)
-        self.details_frame.grid(row=0, column=0)
-=======
         tree_scrollbar_x = ttk.Scrollbar(self.l_frame, orient='horizontal', command=self.listbox.xview)
         self.listbox.configure(xscrollcommand=tree_scrollbar_x.set)
         tree_scrollbar_x.pack(side='bottom', fill='x', )
@@ -249,7 +159,6 @@ class DocForm(tk.Frame):
         
         # Add tabs to the self.center_notebook
         self.info_notebook.add(self.details_frame, text='Controler')
->>>>>>> db9ae79 (adding seller)
 
         # Create the label and entry for the document ID search
         self.doc_id_label = tk.Label(self.details_frame, text="Document ID:")
@@ -311,26 +220,6 @@ class DocForm(tk.Frame):
         self.tax_entry = tk.Entry(self.details_frame)
         self.tax_entry.grid(row=3, column=2)
 
-<<<<<<< HEAD
-        # Create the label and entry for the document created date search
-        self.doc_created_date_label = tk.Label(self.details_frame, text="Document Created Date:")
-        self.doc_created_date_label.grid(row=2, column=3)
-        self.doc_created_date_entry = tk.Entry(self.details_frame)
-        self.doc_created_date_entry.grid(row=3, column=3)
-
-        # Create the label and entry for the document expire date search
-        self.doc_expire_date_label = tk.Label(self.details_frame, text="Document Expire Date:")
-        self.doc_expire_date_label.grid(row=2, column=4)
-        self.doc_expire_date_entry = tk.Entry(self.details_frame)
-        self.doc_expire_date_entry.grid(row=3, column=4)
-       
-
-        # Create the label and entry for the document expire date search
-        self.doc_updated_date_entry = tk.Label(self.details_frame, text="Document Updated Date:")
-        self.doc_updated_date_entry.grid(row=2, column=5)
-        self.doc_updated_date_entry = tk.Entry(self.details_frame)
-        self.doc_updated_date_entry.grid(row=3, column=5)
-=======
         self.doc_created_date_var = tk.IntVar()
         self.doc_created_date_var.set(1)
         self.doc_created_date_Checkbutton = tk.Checkbutton(self.details_frame, text='Created Date', variable=self.doc_created_date_var)
@@ -356,17 +245,11 @@ class DocForm(tk.Frame):
         
         self.GetDate_button = tk.Button(self.details_frame, text="GetDate", font=("Arial", 12), command=self.fix_date)
         self.GetDate_button.grid(row=3, column=5, sticky="nsew")
->>>>>>> db9ae79 (adding seller)
 
         # Create the search button
         self.search_button = tk.Button(self.details_frame, text="Search", command=self.perform_search)
         self.search_button.grid(row=3, column=6)
 
-<<<<<<< HEAD
-        # Create the search button
-        self.print_button = tk.Button(self.details_frame, text="Print", command=self.perform_print)
-        self.print_button.grid(row=4, column=1)
-=======
         # Notebook widget - CENTER_NOTEBOK
         self.graph_value = {}
         self.graph_value0 = [["A", 10], ["B", 90], ["C", 50], ["D", 100], ["E", 65], ["F", 500], ["G", 1000], ["H", 85], ["I", 5]]
@@ -554,7 +437,6 @@ class DocForm(tk.Frame):
         self.master.master.show_frame("InfoForm")
         
     
->>>>>>> db9ae79 (adding seller)
 
     def show_doc_form(self):
         # call the function in the main file to show the first frame
@@ -598,21 +480,13 @@ class DocForm(tk.Frame):
         #self.listbox.column("#1", stretch=tk.NO, minwidth=25, width=100)   
     def on_treeview_double_click(self, event):
         item = self.listbox.focus()  # Get the item that was clicked
-<<<<<<< HEAD
-        print("in dubleclicked")
-=======
         #print("in dubleclicked")
->>>>>>> db9ae79 (adding seller)
         item_text = self.listbox.item(item, "values")  # Get the text values of the item
         id = self.listbox.item(item, "text")
 
         if item:
             # Detect double-click
-<<<<<<< HEAD
-            print("Double-clicked item:", item_text)
-=======
             #print("Double-clicked item:", item_text)
->>>>>>> db9ae79 (adding seller)
 
             # Add tabs to the self.center_notebook
             if item_text[0]:
@@ -627,14 +501,9 @@ class DocForm(tk.Frame):
                     doc_edit_form.pack(fill="both", expand=True)
                 else:
                     for a in self.center_notebook.tabs():
-<<<<<<< HEAD
-                        print("Tab already exists!")
-                        print(str(self.center_notebook.tab(a, "text")))
-=======
                         #print("Tab already exists!")
                         #print(str(self.center_notebook.tab(a, "text")))
                         pass
->>>>>>> db9ae79 (adding seller)
 
     def close_tab(self, t_id):
         self.center_notebook.forget(t_id)
@@ -645,25 +514,6 @@ class DocForm(tk.Frame):
     
     def perform_print(self):
         item = self.listbox.focus()  # Get the item that was clicked
-<<<<<<< HEAD
-        print("in dubleclicked")
-        item_text = self.listbox.item(item, "values")  # Get the text values of the item
-        id = self.listbox.item(item, "text")
-
-        if item:
-            # Detect double-click
-            print("Double-clicked item:", item_text)
-
-            # Add tabs to the self.center_notebook
-            if item_text[0]:
-                doc_edit_form = load_slip(item_text, id)
-                print("don loding slip : \n\n" + str(doc_edit_form))
-                self.user = self.master.master.master.master.user
-                PrinterForm.print_slip(self, doc_edit_form, 1) # TODO chack in setting if paper cut allowed
-
-    # Function to perform the search and display the results in the listbox
-    def perform_search(self):
-=======
         if item:
             item_text = self.listbox.item(item, "values")  # Get the text values of the item
             id = self.listbox.item(item, "text")
@@ -679,7 +529,6 @@ class DocForm(tk.Frame):
     # Function to perform the search and display the results in the listbox
     def perform_search(self):
         self.pyment_used = []
->>>>>>> db9ae79 (adding seller)
         # Get the search criteria from the entry boxes
         doc_id = self.doc_id_entry.get()
         doc_type = self.doc_type_entry.get()
@@ -691,19 +540,6 @@ class DocForm(tk.Frame):
         sold_item_info = self.sold_item_info_entry.get()
         discount = self.discount_entry.get()
         tax = self.tax_entry.get()
-<<<<<<< HEAD
-        doc_created_date = self.doc_created_date_entry.get()
-        doc_expire_date = self.doc_expire_date_entry.get()
-        doc_updated_date = self.doc_updated_date_entry.get()
-
-        # Perform the search and update the listbox with the results
-        df = search_documents(doc_id, doc_type, doc_barcode, extension_barcode, item, user_id, customer_id,
-                            sold_item_info, discount, tax, doc_created_date, doc_expire_date, doc_updated_date)
-        self.listbox.delete(*self.listbox.get_children())
-        #self.get_columen()
-        for index in df:
-            #print("df : " + str(index))
-=======
         
 
         # Perform the search and update the listbox with the results
@@ -724,7 +560,6 @@ class DocForm(tk.Frame):
             month = date[1]
             year = date[0]
             vv.append([year, month, day, hour, float(index[8])-float(index[9])])
->>>>>>> db9ae79 (adding seller)
             item = self.listbox.insert('', 'end', text=index[0], values=(index[1], index[2], index[3], index[4], index[5], index[6], index[7], index[8], index[9], index[10], index[11], index[12], index[13], index[14]))
             '''id = self.listbox.item(item, "text")
             item_text = self.listbox.item(item, "values")
@@ -748,8 +583,6 @@ class DocForm(tk.Frame):
                             print("Tab already exists!")
                             print(str(self.center_notebook.tab(a, "text")))'''
 
-<<<<<<< HEAD
-=======
         if len(vv) > 0:
             #print(" v : " + str(vv))
             self.graph_value, self.graph_value0, tilte = make_list(vv)
@@ -761,4 +594,3 @@ class DocForm(tk.Frame):
       
         self.creat_info()
             
->>>>>>> db9ae79 (adding seller)
