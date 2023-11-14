@@ -476,7 +476,7 @@ class SettingForm(tk.Frame):
         print("chacke_remaber_printer")
         if int(self.Remamber_printer_int.get()):
             b = cur.execute("SELECT * FROM setting WHERE User_id = ?", (self.user[0],)).fetchall()
-            print("user " + str(self.user[3]) + "found " +str(b))
+            print("user " + str(self.user[0]) + " found " +str(b))
             printers = list_available_printers()
             if b and len(b) > 0 and b[0][3] == "" or not b:
                 dialog = PrinterSelectionDialog(self, printers)
@@ -485,15 +485,15 @@ class SettingForm(tk.Frame):
                 if selected_printer:
                     if dialog.issave.get():
                         if b:
-                            cur.execute('UPDATE setting SET printer=? WHERE user_name=?', (selected_printer, self.user[3]))
+                            cur.execute('UPDATE setting SET printer=?, Get_printer=? WHERE User_id=?', ("", int(self.ask_seller_int.get()), self.user[0]))
                             # Commit the changes to the database
                             conn.commit()
                         else:
-                            cur.execute('INSERT INTO setting (user_name, printer) VALUES (?, ?, ?)', (self.user[3], selected_printer))
+                            cur.execute('INSERT INTO setting (User_id, Get_printer, printer) VALUES (?, ?, ?, ?)', (self.user[0], int(self.ask_seller_int.get()), selected_printer))
                             # Commit the changes to the database
                             conn.commit()                    
         else:
-            cur.execute('UPDATE setting SET printer=? WHERE user_name=?', ("", self.user[3]))
+            cur.execute('UPDATE setting SET printer=?, Get_printer=? WHERE User_id=?', ("t", int(self.ask_seller_int.get()), self.user[0]))
             # Commit the changes to the database
             conn.commit()
                 
@@ -502,14 +502,17 @@ class SettingForm(tk.Frame):
         cur.execute("SELECT * FROM setting WHERE User_id = ?", (self.user[0],))
         sittings = cur.fetchall()
         if sittings:
-            #print("sitting2 : " + str(sittings))
+            print("sitting2 : " + str(sittings))
             for sitting in sittings:
-                if sitting[1] == self.user[3]:
+                if sitting[1] == self.user[0]:
                     self.load_type_info(sitting[4])
-                    self.Remamber_printer_int.set(int(sitting[4]))
-                    self.ask_seller_int.set(int(sitting[5]))
+                    if sitting[5]:
+                        self.ask_seller_int.set(int(sitting[5]))
+                    if sitting[6]:
+                        self.Remamber_printer_int.set(int(sitting[6]))
             
     def chacke_ask_seller(self):
+        print("going to make seller ask or not...")
         cur.execute('UPDATE setting SET Get_seller=? WHERE user_id=?', (int(self.ask_seller_int.get()), self.user[0]))
         # Commit the changes to the database
         conn.commit()

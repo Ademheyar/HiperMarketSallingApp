@@ -791,6 +791,9 @@ class DisplayFrame(tk.Frame):
         if f_user_s and f_user_s[0] and f_user_s[0][5]:
             print("opning worker dialog")
             app = WorkerManagementApp(self)
+            if app.user_details:
+                print("app.user_details['User_id'] "+str(app.user_details['User_id']))
+                Seller_id = app.user_details['User_id']
             '''if app.user_details:
                 self.custemr = app.user_details['User_id']
                 cm_id = self.custemr'''

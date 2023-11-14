@@ -31,7 +31,7 @@ from D.Chart.Chart import *
 # Function to search for documents in the doc_table SQLite database table
 def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_barcode=None, 
                     item=None, user_id=None, customer_id=None, sold_item_info=None, discount=None, 
-                    tax=None, date_from=None, date_to=None, doc_created_date=None, doc_expire_date=None, doc_updated_date=None):
+                    seller_id=None, date_from=None, date_to=None, doc_created_date=None, doc_expire_date=None, doc_updated_date=None):
     given = []
     # Build the SQL query based on the provided attributes
     query = 'SELECT * FROM doc_table WHERE'
@@ -58,8 +58,8 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
         q += f" AND sold_item_info='{sold_item_info}'" if q != '' else f" sold_item_info='{sold_item_info}'"
     if discount is not None and discount is not '':
         q += f" AND discount='{discount}'" if q != '' else f" discount='{discount}'"
-    if tax is not None and tax is not '':
-        q += f" AND tax='{tax}'" if q != '' else f" tax='{tax}'"
+    if seller_id is not None and seller_id is not '':
+        q += f" AND Seller_id='{seller_id}'" if q != '' else f" Seller_id='{seller_id}'"
 
     if doc_created_date is not None and doc_created_date:
         d += f" OR strftime('%Y-%m-%d', doc_created_date) BETWEEN ? AND ?" if d != '' else f" strftime('%Y-%m-%d', doc_created_date) BETWEEN ? AND ?"
@@ -190,35 +190,37 @@ class DocForm(tk.Frame):
         self.item_entry = tk.Entry(self.details_frame)
         self.item_entry.grid(row=1, column=4)
 
-        # Create the label and entry for the user ID search
-        self.user_id_label = tk.Label(self.details_frame, text="User ID:")
-        self.user_id_label.grid(row=0, column=5)
-        self.user_id_entry = tk.Entry(self.details_frame)
-        self.user_id_entry.grid(row=1, column=5)
-
-        # Create the label and entry for the customer ID search
-        self.customer_id_label = tk.Label(self.details_frame, text="Customer ID:")
-        self.customer_id_label.grid(row=0, column=6)
-        self.customer_id_entry = tk.Entry(self.details_frame)
-        self.customer_id_entry.grid(row=1, column=6)
-
         # Create the label and entry for the sold item info search
         self.sold_item_info_label = tk.Label(self.details_frame, text="Sold Item Info:")
-        self.sold_item_info_label.grid(row=2, column=0)
+        self.sold_item_info_label.grid(row=0, column=5)
         self.sold_item_info_entry = tk.Entry(self.details_frame)
-        self.sold_item_info_entry.grid(row=3, column=0)
+        self.sold_item_info_entry.grid(row=1, column=5)
+
 
         # Create the label and entry for the discount search
         self.discount_label = tk.Label(self.details_frame, text="Discount:")
-        self.discount_label.grid(row=2, column=1)
+        self.discount_label.grid(row=0, column=6)
         self.discount_entry = tk.Entry(self.details_frame)
-        self.discount_entry.grid(row=3, column=1)
+        self.discount_entry.grid(row=1, column=6)
+        
+        # Create the label and entry for the user ID search
+        self.user_id_label = tk.Label(self.details_frame, text="User ID:")
+        self.user_id_label.grid(row=2, column=0)
+        self.user_id_entry = tk.Entry(self.details_frame)
+        self.user_id_entry.grid(row=3, column=0)
+
+        # Create the label and entry for the customer ID search
+        self.customer_id_label = tk.Label(self.details_frame, text="Customer ID:")
+        self.customer_id_label.grid(row=2, column=1)
+        self.customer_id_entry = tk.Entry(self.details_frame)
+        self.customer_id_entry.grid(row=3, column=1)
+
 
         # Create the label and entry for the tax search
-        self.tax_label = tk.Label(self.details_frame, text="Tax:")
-        self.tax_label.grid(row=2, column=2)
-        self.tax_entry = tk.Entry(self.details_frame)
-        self.tax_entry.grid(row=3, column=2)
+        self.seller_id_label = tk.Label(self.details_frame, text="Seller ID:")
+        self.seller_id_label.grid(row=2, column=2)
+        self.seller_id_entry = tk.Entry(self.details_frame)
+        self.seller_id_entry.grid(row=3, column=2)
 
         self.doc_created_date_var = tk.IntVar()
         self.doc_created_date_var.set(1)
@@ -304,8 +306,8 @@ class DocForm(tk.Frame):
         self.doc_total_ = tk.Label(self.home_tab, text="Totale :", font=("Arial", 15))
         self.doc_total_.grid(row=3, column=5)
         
-        self.chart1_title = tk.Label(self.home_tab, text="TOTAL ITEM COUNT :")
-        self.chart1_title.grid(row=3, column=0)
+        self.doc_total_counted = tk.Label(self.home_tab, text="TOTAL COUNT :", font=("Arial", 15))
+        self.doc_total_counted.grid(row=3, column=4)
         
         self.which_var = tk.StringVar()
         self.which_var.set("1")
@@ -324,9 +326,6 @@ class DocForm(tk.Frame):
         self.prev_button = tk.Button(self.home_tab, text=">", font=("Arial", 12))
         self.prev_button.grid(row=4, column=3, sticky="nsew")
         
-        self.chart1_total_title = tk.Label(self.home_tab, text="TOTAL ITEM COUNT :")
-        self.chart1_total_title.grid(row=3, column=4)
-
         self.style_var1 = tk.StringVar()
         self.style_var1.set("2")
         self.style_var1.trace("w", on_style_selected)
@@ -348,7 +347,7 @@ class DocForm(tk.Frame):
 
         self.perform_search()
 
-    def creat_info(self):
+    def creat_info(self, counted):
         self.list_items.delete(0, tk.END)
         unpid = 0
         pid = 0
@@ -359,10 +358,12 @@ class DocForm(tk.Frame):
         self.doc_total_unpaid.config(text="Amount UnPide : " + str(unpid))
         self.doc_total_paid.config(text="Amount Pide : " + str(pid))
         self.doc_total_.config(text="Total : " + str(pid + unpid))
+        self.doc_total_counted.config(text="Total Counted : " + str(counted))
         #tk.Label(self.info_tab, text=" :"+str(pay[1])).pack()
       
     def load_payment(self, p_text):
         #print("tiems : " + str(p_text))
+        iscount = 0
         if ")" in str(p_text) or ")," in str(p_text):
             items_lists = (p_text + ",").split("),")
             index = 0
@@ -383,13 +384,15 @@ class DocForm(tk.Frame):
                     if pay[0] == pay_type:
                         found = 1
                         pay[1] += float(pay_pid)
+                        iscount = 1
                         break
                 if found == 0:
                     #print("new payment :" + str([pay_type, pay_pid]))
                     self.pyment_used.append([pay_type, float(pay_pid)])
+                    iscount = 1
                 index += 1
+        return iscount
         
-
     def close_tab(self, t_id):
         self.center_notebook.forget(t_id)
         
@@ -535,22 +538,24 @@ class DocForm(tk.Frame):
         doc_barcode = self.doc_barcode_entry.get()
         extension_barcode = self.extension_barcode_entry.get()
         item = self.item_entry.get()
-        user_id = self.user_id_entry.get()
-        customer_id = self.customer_id_entry.get()
         sold_item_info = self.sold_item_info_entry.get()
         discount = self.discount_entry.get()
-        tax = self.tax_entry.get()
+        user_id = self.user_id_entry.get()
+        customer_id = self.customer_id_entry.get()
+        seller_id = self.seller_id_entry.get()
         
 
         # Perform the search and update the listbox with the results
         df = search_documents(doc_id, doc_type, doc_barcode, extension_barcode, item, user_id, customer_id,
-                            sold_item_info, discount, tax, self.date_from_Entry.get(), self.date_to_Entry.get(), self.doc_created_date_var.get(), self.doc_expire_date_var.get(), self.doc_updated_date_var.get())
+                            sold_item_info, discount, seller_id, self.date_from_Entry.get(), self.date_to_Entry.get(), self.doc_created_date_var.get(), self.doc_expire_date_var.get(), self.doc_updated_date_var.get())
         self.listbox.delete(*self.listbox.get_children())
         #self.get_columen()
         vv = []
+        count = 0
         for index in df:
-            item = self.listbox.insert('', 'end', text=index[0], values=(index[1], index[2], index[3], index[4], index[5], index[6], index[7], index[8], index[9], index[10], index[11], index[12], index[13], index[14]))
-            self.load_payment(index[11])
+            ispayed = self.load_payment(index[11])
+            if ispayed:
+                count+=1
             #print("df : " + str(index)
             #print("df : " + str(index[12]))
             dateandtime = index[12].split(" ") if " " in index[12] else index[12].split("_")
@@ -592,5 +597,5 @@ class DocForm(tk.Frame):
             draw_cart(int(self.style_var.get()), self.chart2_canvas, None, None, self.graph_value0, int(self.which_var.get()), 2, 0)
             self.display_products(self.graph_value0, int(self.which_var.get()))
       
-        self.creat_info()
+        self.creat_info(count)
             

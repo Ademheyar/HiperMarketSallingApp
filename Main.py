@@ -17,14 +17,15 @@ cur = conn.cursor()
 
 #query = f"DROP TABLE IF EXISTS setting"
 #cur.execute(query)
-#cur.execute("ALTER TABLE setting CHANGE COLUMN user_name User_id INT")
+#cur.execute("ALTER TABLE setting ADD COLUMN Get_printer INT")
 cur.execute('''CREATE TABLE IF NOT EXISTS setting 
                 (id INTEGER PRIMARY KEY,
                 User_id INT,
                 barcode_count INT,
                 printer TEXT,
                 Items_type TEXT,
-                Get_seller INT
+                Get_seller INT,
+                Get_printer INT
                 )''')
 
 #query = f"DROP TABLE IF EXISTS upload_doc"
@@ -74,6 +75,7 @@ cur.execute('''CREATE TABLE IF NOT EXISTS pre_doc_table
 #query = f"DROP TABLE IF EXISTS upload_doc"
 #cur.execute(query)
 # TODO add 'pid' column on doc_table
+#cur.execute("ALTER TABLE doc_table ADD COLUMN Seller_id TEXT AFTER customer_id")
 
 cur.execute('''CREATE TABLE IF NOT EXISTS doc_table 
                 (id INTEGER PRIMARY KEY, 
@@ -81,7 +83,6 @@ cur.execute('''CREATE TABLE IF NOT EXISTS doc_table
                 extension_barcode TEXT, 
                 user_id TEXT, 
                 customer_id TEXT, 
-                Seller_id TEXT,
                 type TEXT, 
                 item TEXT, 
                 qty REAL,  
@@ -92,7 +93,8 @@ cur.execute('''CREATE TABLE IF NOT EXISTS doc_table
                 doc_created_date TEXT, 
                 doc_expire_date TEXT, 
                 doc_updated_date TEXT,
-                pid INT)''')
+                pid INT,
+                Seller_id TEXT)''')
 
 # Example usage:
 # Add a new document record to the doc_table SQLite database table

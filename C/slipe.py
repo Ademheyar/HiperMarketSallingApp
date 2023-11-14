@@ -38,6 +38,13 @@ def load_slip(doc, d_id):
     # get user and custemusr infor
     slip += "User : " + str(doc[3]) + "\n"
     
+    # get Seller info
+    if len(doc) > 16 and doc[16] and doc[16] != "":
+        it = cursor.execute("SELECT * FROM users WHERE User_id=?", (doc[16],)).fetchone()
+        if it:
+            #print("it c: " + str(it))   
+            slip += "Seller : "+ str(it[3]) +"\n"
+            
             
     # get custemur info
     if doc[4] != "":
@@ -46,6 +53,7 @@ def load_slip(doc, d_id):
             #print("it c: " + str(it))   
             slip += "Customer : "+ str(it[3]) +"\n"\
                     "Phone No : "+ str(it[6]) +"\n"
+    
     slip += "------------------------------------------\n"
 
     # get items
