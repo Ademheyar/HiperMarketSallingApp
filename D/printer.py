@@ -1,4 +1,4 @@
-import win32print
+#import win32print
 import tkinter as tk
 from tkinter import ttk
 import sqlite3, os
@@ -11,10 +11,13 @@ cursor = conn.cursor()
 printer_name = ""
 def list_available_printers():
     printers = []
+    '''
     printer_info = win32print.EnumPrinters(win32print.PRINTER_ENUM_LOCAL, None, 1)
     for printer in printer_info:
         printers.append(printer[2])
+    #'''
     return printers
+
 
 class PrinterSelectionDialog(tk.Toplevel):
     def __init__(self, master, printers):
@@ -53,9 +56,11 @@ class PrinterForm(tk.Tk):
 
     def list_available_printers(self):
         printers = []
+        '''
         printer_info = win32print.EnumPrinters(win32print.PRINTER_ENUM_LOCAL, None, 1)
         for printer in printer_info:
             printers.append(printer[2])  # Extract printer names from the tuple
+        #'''
         return printers
 
     def choose_printer(self):
@@ -97,7 +102,7 @@ class PrinterForm(tk.Tk):
         printer_name = PrinterForm.load_printer(self, user_info)
         print("printer : " + str(printer_name))
         # Prepare the printer properties
-        #'''
+        '''
         printer_props = {
             "DesiredAccess": win32print.PRINTER_ALL_ACCESS,
             "PrinterName": printer_name,
@@ -145,7 +150,7 @@ class PrinterForm(tk.Tk):
             return
         print("printer : " + str(printer_name))
         # Prepare the printer properties
-        #'''
+        '''
         printer_props = {
             "DesiredAccess": win32print.PRINTER_ALL_ACCESS,
             "PrinterName": printer_name,
@@ -197,7 +202,7 @@ class PrinterForm(tk.Tk):
     
     def print_text_with_dialog(self, text):
         # Load the saved printer driver choice
-        #'''
+        '''
         with open('printer.txt', 'r') as f:
             printer_name = f.read().strip()
         # Get the default printer name

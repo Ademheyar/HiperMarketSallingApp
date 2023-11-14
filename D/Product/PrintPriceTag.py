@@ -26,10 +26,10 @@ from tkinter import filedialog, messagebox
 #from reportlab.lib.pagesizes import letter
 #from reportlab.pdfgen import canvas
 import barcode
-from barcode.writer import ImageWriter
+#from barcode.writer import ImageWriter
 #from PIL import Image, ImageTk
 import io
-import win32print
+#import win32print
 
 #from reportlab.pdfgen import canvas as reportlab_canvas
 from PyPDF2 import PdfWriter
@@ -40,9 +40,8 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter.simpledialog import askstring, Dialog
 #from PIL import Image, ImageTk, ImageGrab  # Import ImageGrab
-import win32print
-import win32api  # Corrected impor
-import tempfile
+#import win32api  # Corrected impor
+#import tempfile
 import os
 
 #from reportlab.pdfgen import canvas
@@ -499,9 +498,11 @@ class PrintPriceTagFrame(tk.Toplevel):
     def load_pdf(self, file_path):
         if self.pdf_document:
             self.pdf_document.close()
+        '''
         self.pdf_document = fitz.open(file_path)
         self.current_page_num = 0
         self.display_pages()
+        #'''
 
     def display_pages(self):
         if not self.pdf_document:
@@ -512,7 +513,7 @@ class PrintPriceTagFrame(tk.Toplevel):
         X, Y = 0, 10
         canvas_height = 0
         canvas_width = 0
-
+        '''
         for page_num in range(self.pdf_document.page_count):
             page = self.pdf_document.load_page(page_num)
             image = page.get_pixmap(matrix=fitz.Matrix(2, 2))
@@ -531,11 +532,12 @@ class PrintPriceTagFrame(tk.Toplevel):
             canvas_width = max(canvas_width, x + img.width())
 
         self.canvas.configure(scrollregion=(0, 0, canvas_width, canvas_height))
+        #'''
 
     def print_pdf(self):
         if not self.pdf_document:
             return
-
+        '''
         available_printers = win32print.EnumPrinters(2)
         printer_names = [printer[2] for printer in available_printers]
 
@@ -558,12 +560,13 @@ class PrintPriceTagFrame(tk.Toplevel):
                     win32print.EndDocPrinter(printer_handle)
                 finally:
                     win32print.ClosePrinter(printer_handle)
+            #'''
 
     def get_photo_image_data(self, photo_image):
         # Render the PhotoImage on a Canvas widget
         canvas = tk.Canvas(self.root, width=photo_image.width(), height=photo_image.height())
         canvas.create_image(0, 0, anchor=tk.NW, image=photo_image)
-        
+        '''
         # Take a screenshot of the canvas
         bbox=canvas.winfo_rootx()
         screenshot = ImageGrab.grab(bbox, canvas.winfo_rooty(),
@@ -579,6 +582,7 @@ class PrintPriceTagFrame(tk.Toplevel):
 
         os.remove(temp_filename)
         return img_data
+        #'''
 
                     
     def new_list(self):
@@ -587,6 +591,7 @@ class PrintPriceTagFrame(tk.Toplevel):
     def generate_price_tag(self):
         if len(self.list_items.get_children()):
             pdf_path = "price_tags.pdf"
+            '''
             c = reportlab_canvas.Canvas(pdf_path, pagesize=letter)
             page_width, page_height = int(self.Pag_width_entry.get()), int(self.Pag_hight_entry.get())
             if int(self.Pag_width_entry.get())+ int(self.Pag_hight_entry.get()) > 0:
@@ -699,6 +704,7 @@ class PrintPriceTagFrame(tk.Toplevel):
 
 
             c.save()
+            #'''
             messagebox.showinfo("Info", f"PDF saved successfully as {pdf_path}")
             self.pdf_path = pdf_path
             self.load_pdf(pdf_path)
