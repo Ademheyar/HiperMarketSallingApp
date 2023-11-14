@@ -57,3 +57,17 @@ For any questions, issues, or inquiries, please contact [@AdemHeyar](mailto:adem
 Feel free to customize this README file to suit your specific project needs. Provide information about any additional features, installation instructions, or usage guidelines as necessary.
 
 Good luck with your Point of Sale application development!
+<<<<<<< HEAD
+=======
+
+
+
+python -m pip install --upgrade pip
+pip install pywin32
+pip install reportlab
+pip install Pillow
+pip install python-barcode
+pip install PyPDF2
+pip install fpdf
+pip install PyMuPDF
+>>>>>>> db9ae79 (adding seller)

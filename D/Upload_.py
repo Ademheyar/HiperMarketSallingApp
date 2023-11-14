@@ -9,7 +9,11 @@ db_path = os.path.join(data_dir, 'my_database.db')
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
+<<<<<<< HEAD
 import requests
+=======
+#import requests
+>>>>>>> db9ae79 (adding seller)
 
 class UploadingForm(tk.Tk):
     def __init__(self, master):
@@ -23,7 +27,11 @@ class UploadingForm(tk.Tk):
         
     
     def update(self):
+<<<<<<< HEAD
         #'''
+=======
+        '''
+>>>>>>> db9ae79 (adding seller)
         # Fetch data from the database
         url = 'http://localhost/Adot/update-api-endpoint.php'
         cursor.execute("SELECT * FROM upload_doc")
@@ -118,4 +126,8 @@ class UploadingForm(tk.Tk):
 if __name__ == "__main__":
     root = tk.Tk()
     app = UploadingForm(root)
+<<<<<<< HEAD
     root.mainloop()
+=======
+    root.mainloop()
+>>>>>>> db9ae79 (adding seller)

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 def read_code(vs_info, shop_s, color_s, size_s):
       a_u_list = []
       shops = []
@@ -66,3 +67,18 @@ def convert_string_to_nested_list(input_string):
     return nested_list
 
 print(convert_string_to_nested_list("\"{FLAG_SQUER,(<BROWN,[|XL, , 1, 0.0, , |]>)},\""))
+=======
+a ='a'
+itmes = [['a', 9], ['b', 4], ['q', 3], ['a', 3]] 
+olditems = list(itmes)
+
+for olditem in olditems:
+    # [id, code, name, shop, color, size, qty, price]
+    if olditem[0] == a:
+        if olditem[1] == 9:
+           olditem[1] = "6"
+        elif olditem[1] == 3:
+           olditem[1] = 0
+print("items :" + str(itmes))
+print("new olditems :" + str(olditems))
+>>>>>>> db9ae79 (adding seller)

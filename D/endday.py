@@ -29,6 +29,10 @@ conn.commit()
 def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_barcode=None, 
                     item=None, user_id=None, customer_id=None, sold_item_info=None, discount=None, 
                     tax=None, doc_created_date=None, doc_expire_date=None, doc_updated_date=None):
+<<<<<<< HEAD
+=======
+    given = []
+>>>>>>> db9ae79 (adding seller)
     # Build the SQL query based on the provided attributes
     query = 'SELECT * FROM doc_table WHERE 1=1'
     if doc_id is not None and doc_id is not '':
@@ -40,7 +44,15 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
     if extension_barcode is not None and extension_barcode is not '':
         query += f" AND extension_barcode='{extension_barcode}'"
     if item is not None and item is not '':
+<<<<<<< HEAD
         query += f" AND item='{item}'"
+=======
+        query += f" AND item LIKE ?"
+        if given == None:
+            given.append(f'%{item}%')
+        else:
+            given.append(f'%{item}%')
+>>>>>>> db9ae79 (adding seller)
     if user_id is not None and user_id is not '':
         query += f" AND user_id='{user_id}'"
     if customer_id is not None and customer_id is not '':
@@ -53,6 +65,13 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
         query += f" AND tax='{tax}'"
     if doc_created_date is not None and doc_created_date is not '':
         query += f" AND doc_created_date LIKE ?"
+<<<<<<< HEAD
+=======
+        if given == None:
+            given.append(f'%{doc_created_date}%')
+        else:
+            given.append(f'%{doc_created_date}%')
+>>>>>>> db9ae79 (adding seller)
     if doc_expire_date is not None and doc_expire_date is not '':
         query += f" AND doc_expire_date='{doc_expire_date}'"
     if doc_updated_date is not None and doc_updated_date is not '':
@@ -60,7 +79,11 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
     
     print(query+"\n")
     # Execute the SQL query and return the results as a list of tuples
+<<<<<<< HEAD
     cur.execute(query, (f'%{doc_created_date}%',))
+=======
+    cur.execute(query, (*given,))
+>>>>>>> db9ae79 (adding seller)
     results = cur.fetchall()
     return results
     
@@ -109,6 +132,7 @@ class EnddayForm(tk.Tk):
         self.home_tab.grid_rowconfigure(3, weight=5)
         self.home_tab.grid_rowconfigure(4, weight=5)
         
+<<<<<<< HEAD
         # Create the listbox to display search results
         self.listbox = ttk.Treeview(self.home_tab)        
         self.listbox.bind('<<TreeviewSelect>>', self.on_select)
@@ -133,6 +157,10 @@ class EnddayForm(tk.Tk):
 
         self.details_frame = tk.Frame(self.home_tab)
         self.details_frame.grid(row=0, column=0)
+=======
+        self.details_frame = tk.Frame(self.home_tab)
+        self.details_frame.grid(row=0, column=0, columnspan=6)
+>>>>>>> db9ae79 (adding seller)
 
         # Create the label and entry for the document ID search
         self.doc_id_label = tk.Label(self.details_frame, text="Document ID:")
@@ -225,12 +253,52 @@ class EnddayForm(tk.Tk):
         self.upload_button = tk.Button(self.details_frame, text="Upload", bg="red", fg="white", font=("Arial", 12), command=lambda: UploadingForm(self))
         self.upload_button.grid(row=4, column=2)
 
+<<<<<<< HEAD
+=======
+
+        # Create the listbox to display search results
+        self.listbox = ttk.Treeview(self.home_tab)        
+        self.listbox.bind('<<TreeviewSelect>>', self.on_select)
+        #self.listbox.bind("<Button-1>", self.on_treeview_double_click)
+        #self.listbox.grid_propagate(False)
+
+
+        # Add vertical scrollbar
+        tree_scrollbar_y = ttk.Scrollbar(self.listbox, orient='vertical', command=self.listbox.yview)
+        self.listbox.configure(yscrollcommand=tree_scrollbar_y.set)
+        tree_scrollbar_y.pack(side='right', fill='y')
+
+        # Add horizontal scrollbar
+        tree_scrollbar_x = ttk.Scrollbar(self.listbox, orient='horizontal', command=self.listbox.xview)
+        self.listbox.configure(xscrollcommand=tree_scrollbar_x.set)
+        tree_scrollbar_x.pack(side='bottom', fill='x')
+
+        # Set the size of the self.listbox widget
+        self.listbox.grid(row=1, column=0, rowspan=3, columnspan=5, sticky="nsew")
+        self.get_columen()
+        
+        # New listbox in the main frame
+        self.list_items = tk.Listbox(self.home_tab, bg="yellow", height=17)
+        self.list_items.grid(row=1, column=5, rowspan=2, sticky="nsew")
+        self.doc_total_unpaid = tk.Label(self.home_tab, text="Amount Unpid:", font=("Arial", 11))
+        self.doc_total_unpaid.grid(row=3, column=5)
+        self.doc_total_paid = tk.Label(self.home_tab, text="Amount pid:", font=("Arial", 12))
+        self.doc_total_paid.grid(row=4, column=5)
+        self.doc_total_ = tk.Label(self.home_tab, text="Totale :", font=("Arial", 15))
+        self.doc_total_.grid(row=5, column=5)
+
+
+>>>>>>> db9ae79 (adding seller)
         # show the Payment Form window
         self.perform_search()
         self.getvalue_form.transient(self.master)
         self.getvalue_form.grab_set()
         self.master.wait_window(self.getvalue_form)
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> db9ae79 (adding seller)
     def show_doc_form(self):
         # call the function in the main file to show the first frame
         self.master.master.show_frame("DocForm")
@@ -272,6 +340,7 @@ class EnddayForm(tk.Tk):
         #self.listbox.heading("#1", text="BARCODE", anchor=tk.W)
         #self.listbox.column("#1", stretch=tk.NO, minwidth=25, width=100)   
     def creat_info(self):
+<<<<<<< HEAD
         if self.info_tab != None:
             self.info_tab.destroy()
         self.info_tab = ttk.Frame(self.home_tab)
@@ -281,6 +350,20 @@ class EnddayForm(tk.Tk):
         for pay in self.pyment_used:
             print("creating lable : " + str(pay[0]+" :"+str(pay[1])))
             tk.Label(self.info_tab, text=pay[0]+" :"+str(pay[1])).pack()
+=======
+        self.list_items.delete(0, tk.END)
+        unpid = 0
+        pid = 0
+        for pay in self.pyment_used:
+            print("creating lable : " + str(pay[0]+" :"+str(pay[1])))
+            self.list_items.insert(tk.END, [pay[0], pay[1]])
+            pid += pay[1]
+        self.doc_total_unpaid.config(text="Amount UnPide : " + str(unpid))
+        self.doc_total_paid.config(text="Amount Pide : " + str(pid))
+        self.doc_total_.config(text="Total : " + str(pid + unpid))
+        #tk.Label(self.info_tab, text=" :"+str(pay[1])).pack()
+        
+>>>>>>> db9ae79 (adding seller)
         
 
     def close_tab(self, t_id):
@@ -290,6 +373,7 @@ class EnddayForm(tk.Tk):
     def on_select(self, event):
         pass
     
+<<<<<<< HEAD
     def perform_print(self):
         item = self.listbox.focus()  # Get the item that was clicked
         print("in dubleclicked")
@@ -307,6 +391,8 @@ class EnddayForm(tk.Tk):
                 self.user = self.master.master.master.master.user
                 PrinterForm.print_slip(self, doc_edit_form, 1) # TODO chack in setting if paper cut allowed
 
+=======
+>>>>>>> db9ae79 (adding seller)
     # Function to perform the search and display the results in the listbox
     def perform_search(self):
         self.pyment_used = []
@@ -376,7 +462,11 @@ class EnddayForm(tk.Tk):
                 name = item[0].replace("(:", "")
                 price = item[1]
                 #print("list : " + str([name, price]))
+<<<<<<< HEAD
                 self.list_payment.insert("", 'end', text=index, values=(name, price, self.created_date, self.created_date, self.created_user))
+=======
+                
+>>>>>>> db9ae79 (adding seller)
                 index += 1
         else:
             item = str(p_text).split(" = ")

@@ -12,11 +12,16 @@ from D.GetVALUE import GetvalueForm
 from D.Showchartlists import ShowchartForm
 from M.Product import ProductForm
 from D.iteminfo import *
+<<<<<<< HEAD
+=======
+from C.slipe import load_slip
+>>>>>>> db9ae79 (adding seller)
 from D.endday import EnddayForm
 from D.Upload_ import UploadingForm
 from D.user_info import UserInfoForm
 from D.printer import PrinterForm
 
+<<<<<<< HEAD
 conn = sqlite3.connect("my_database.db")
 cursor = conn.cursor()
 
@@ -28,12 +33,41 @@ class ApproveFrame(tk.Frame):
         self.tree = tree
         self.user = user
 
+=======
+
+data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
+db_path = os.path.join(data_dir, 'my_database.db')
+conn = sqlite3.connect(db_path)
+cursor = conn.cursor()
+
+class ApproveFrame(tk.Frame):
+    def __init__(self, master, user, slips, left, print_slip):
+        tk.Frame.__init__(self, master)
+        self.slips = []
+        self.print_slip = print_slip
+        self.left = left
+        self.user = user
+        slip = ""
+        for barcode in slips:
+            doc_ = cursor.execute("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,)).fetchone()
+            if doc_:
+                print(str(doc_))
+                slip = load_slip(doc_, 0) #TODO GET ID
+                self.slips.append([barcode, slip])
+                print(str(slip))
+                
+>>>>>>> db9ae79 (adding seller)
         # Create a new Toplevel window for the value form
         self.getvalue_form = tk.Toplevel(self.master)
         self.getvalue_form.title("Selector Form")
         self.getvalue_form.columnconfigure((0), weight=1)
+<<<<<<< HEAD
         self.getvalue_form.columnconfigure((1,2,3), weight=1)
         self.getvalue_form.rowconfigure((0,1,2,3,4), weight=1)
+=======
+        self.getvalue_form.columnconfigure((1,2,3, 4, 5, 6, 7, 8, 9, 10), weight=1)
+        self.getvalue_form.rowconfigure((0,1,2,3,4, 5), weight=1)
+>>>>>>> db9ae79 (adding seller)
         
         # Calculate the center coordinates of the screen
         screen_width = self.master.winfo_screenwidth()
@@ -45,6 +79,7 @@ class ApproveFrame(tk.Frame):
         self.getvalue_form.geometry(f"{int(screen_width)}x{int(screen_height)}+{int(0)}+{int(0)}")
 
         # Create a listbox for the items
+<<<<<<< HEAD
         self.total_tax_label = tk.Label(self.getvalue_form, text=slip, font=("Arial", 10))
         self.total_tax_label.grid(row=0, column=0, rowspan=5)
         
@@ -75,12 +110,16 @@ class ApproveFrame(tk.Frame):
         self.total_label.grid(row=3, column=0, sticky="nsew")'''
 
         # Create a frame for buttons and labels
+=======
+        
+>>>>>>> db9ae79 (adding seller)
         self.buttons_frame = tk.Frame(self.getvalue_form)
         self.buttons_frame.grid(row=0, column=1, columnspan=3, rowspan=5, sticky="nsew")
         #.pack(side="left", fill="both", expand=True)
         self.buttons_frame.columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
         self.buttons_frame.rowconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
         
+<<<<<<< HEAD
         self.label1 = tk.Label(self.buttons_frame, text="change : 0", font=("Arial", 25))
         self.label1.grid(row=0, column=2, columnspan=3, sticky="nsew")
                          
@@ -90,6 +129,40 @@ class ApproveFrame(tk.Frame):
         # Create an undo button
         self.print_button = tk.Button(self.buttons_frame, text="print", font=("Arial", 15), command= self.print_item)
         self.print_button.grid(row=2, column=1, columnspan=2, sticky="nsew")
+=======
+        self.prev_slip = tk.Button(self.getvalue_form, text="<<", font=("Arial", 15), command= self.get_prev_slip)
+        self.prev_slip.grid(row=0, column=0, sticky="nsew")
+        
+
+        self.on_barid = tk.Label(self.getvalue_form, text=str(len(self.slips)-2), font=("Arial", 25))
+        self.on_barid.grid(row=0, column=1, sticky="nsew")
+
+        self.next_slip = tk.Button(self.getvalue_form, text=">>", font=("Arial", 15), command= self.get_next_slip)
+        self.next_slip.grid(row=0, column=2, sticky="nsew")
+        
+        self.on_slip = tk.Label(self.getvalue_form, text=slip, font=("Arial", 10))
+        self.on_slip.grid(row=1, column=0, columnspan=5, rowspan=4, sticky="nsew")
+
+        
+        self.label1 = tk.Label(self.getvalue_form, text="change : 0", font=("Arial", 25))
+        self.label1.grid(row=5, column=0, columnspan=3, sticky="nsew")
+
+        # Create a frame for buttons and labels
+        self.buttons_frame = tk.Frame(self.getvalue_form)
+        self.buttons_frame.grid(row=0, column=5, columnspan=3, rowspan=5, sticky="nsew")
+        #.pack(side="left", fill="both", expand=True)
+        self.buttons_frame.columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
+        self.buttons_frame.rowconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
+        
+        
+        self.label2 = tk.Label(self.buttons_frame, text="How Would the Customer like their receipt?", font=("Arial", 20))
+        self.label2.grid(row=1, column=4, columnspan=4, sticky="nsew")
+        
+        # Create an undo button
+        self.print_button = tk.Button(self.buttons_frame, text="print", font=("Arial", 15), command= lambda:self.print_item(None))
+        self.print_button.grid(row=5, column=4, sticky="nsew")
+        self.print_button.focus_set()
+>>>>>>> db9ae79 (adding seller)
         
         # Create an undo button
         self.undo_button = tk.Button(self.buttons_frame, text="Undo", font=("Arial", 15), command= lambda: self.undo_item)
@@ -99,11 +172,54 @@ class ApproveFrame(tk.Frame):
         self.continue_button = ttk.Button(self.buttons_frame, text="Continue", command=self.getvalue_form.destroy)
         self.continue_button.grid(row=6, column=4, sticky="nsew")
         #self.update_items()
+<<<<<<< HEAD
         
     def print_item(self):
         print("printing : " + str(self.print_slip) + "splip : " + str(self.slip))
         if self.print_slip == 1:
             PrinterForm.print_slip(self, self.slip, 1) # TODO chack in setting if paper cut allowed
+=======
+        self.get_next_slip()
+        self.getvalue_form.bind("<Return>", self.print_item)
+        self.getvalue_form.bind("<Escape>", self.exit)
+
+    def exit(self, event):
+        self.getvalue_form.destroy()
+        
+    def change_focus(self, event):
+        self.print_button.focus_set()
+        
+    def get_next_slip(self):
+        i = 0;
+        if self.on_barid.cget('text') != "":
+            i = int(self.on_barid.cget('text'))
+        if not i+1 >= len(self.slips):
+            i += 1
+            self.on_barid.config(text=str(i))
+            self.on_slip.config(text=str(self.slips[i][1]))
+        else:
+            i = 0
+            self.on_barid.config(text=str(i))
+            self.on_slip.config(text=str(self.slips[i][1]))
+            
+    def get_prev_slip(self):
+        i = 0;
+        if self.on_barid.cget('text') != "":
+            i = int(self.on_barid.cget('text'))
+        if not i-1 < 0:
+            i -= 1
+            self.on_barid.config(text=str(i))
+            self.on_slip.config(text=str(self.slips[i][1]))
+        else:
+            i = len(self.slips)-1
+            self.on_barid.config(text=str(i))
+            self.on_slip.config(text=str(self.slips[i][1]))
+            
+    def print_item(self, a):
+        print("printing : " + str(self.print_slip) + "splip : " + str(self.on_barid.cget('text')))
+        if self.print_slip == 1:
+            PrinterForm.print_slip(self, self.user, self.on_slip.cget('text'), 1) # TODO chack in setting if paper cut allowed
+>>>>>>> db9ae79 (adding seller)
     
     def undo_item(self):
         pass

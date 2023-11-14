@@ -1,15 +1,28 @@
 import tkinter as tk
 from tkinter import ttk
+<<<<<<< HEAD
 from Info import InfoForm
+=======
+>>>>>>> db9ae79 (adding seller)
 from M.Doc import DocForm
 from M.Product import ProductForm
 from M.Users import UserForm
 from M.Tools import ToolForm
+<<<<<<< HEAD
 
 class ManageForm(tk.Frame):
     def __init__(self, master):
         tk.Frame.__init__(self, master)
         self.master = master
+=======
+from M.Setting import SettingForm
+
+class ManageForm(tk.Frame):
+    def __init__(self, master, user):
+        tk.Frame.__init__(self, master)
+        self.master = master
+        self.user = user
+>>>>>>> db9ae79 (adding seller)
         screen_width = self.master.winfo_screenwidth()
         screen_height = self.master.winfo_screenheight()
         self.manuframes = {}
@@ -24,6 +37,7 @@ class ManageForm(tk.Frame):
         self.manage_menus_label = tk.Label(self.left_pane, text="Manage Menus")
         self.manage_menus_label.pack()
 
+<<<<<<< HEAD
         self.info_Form = InfoForm(self.manage_form)
         self.manuframes["InfoForm"] = self.info_Form
 
@@ -31,6 +45,12 @@ class ManageForm(tk.Frame):
         self.manuframes["DocForm"] = self.doc_form
 
         self.Product_form = ProductForm(self.manage_form)
+=======
+        self.doc_form = DocForm(self.manage_form, self.user)
+        self.manuframes["DocForm"] = self.doc_form
+
+        self.Product_form = ProductForm(self.manage_form, user)
+>>>>>>> db9ae79 (adding seller)
         self.manuframes["ProductFrame"] = self.Product_form
         
         self.user_Form = UserForm(self.manage_form)
@@ -39,6 +59,7 @@ class ManageForm(tk.Frame):
         self.tool_form = ToolForm(self.manage_form)
         self.manuframes["ToolForm"] = self.tool_form
 
+<<<<<<< HEAD
         # create buttons in manage_menus form
         self.info_btn = tk.Button(self.left_pane, text="Info", command=InfoForm(self.manage_form).show_info_form)
         self.info_btn.pack(side="top", fill="both", expand=True)
@@ -47,6 +68,16 @@ class ManageForm(tk.Frame):
         self.doc_btn.pack(side="top", fill="both", expand=True)
 
         self.product_btn = tk.Button(self.left_pane, text="Product", command=ProductForm(self.manage_form).show_product_form)
+=======
+        self.setting_form = SettingForm(self.manage_form, user)
+        self.manuframes["SettingForm"] = self.setting_form
+
+        # create buttons in manage_menus form
+        self.doc_btn = tk.Button(self.left_pane, text="Doc", command=self.doc_form.show_doc_form)
+        self.doc_btn.pack(side="top", fill="both", expand=True)
+
+        self.product_btn = tk.Button(self.left_pane, text="Product", command=self.Product_form.show_product_form)
+>>>>>>> db9ae79 (adding seller)
         self.product_btn.pack(side="top", fill="both", expand=True)
 
         #self.report_btn = tk.Button(self.left_pane, text="Report", command=self.show_report_form)
@@ -58,7 +89,11 @@ class ManageForm(tk.Frame):
         self.tools_btn = tk.Button(self.left_pane, text="Tools", command=ToolForm(self.manage_form).show_tools_form)
         self.tools_btn.pack(side="top", fill="both", expand=True)
 
+<<<<<<< HEAD
         self.setting_btn = tk.Button(self.left_pane, text="Setting", command=self.show_setting_form)
+=======
+        self.setting_btn = tk.Button(self.left_pane, text="Setting", command=self.setting_form.show_Setting_Form)
+>>>>>>> db9ae79 (adding seller)
         self.setting_btn.pack(side="top", fill="both", expand=True)
 
         self.about_btn = tk.Button(self.left_pane, text="About", command=self.show_about_form)

@@ -2,16 +2,61 @@
 import tkinter as tk
 from tkinter import ttk
 import sqlite3, os
+<<<<<<< HEAD
+=======
+from tkinter import simpledialog
+>>>>>>> db9ae79 (adding seller)
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 printer_name = ""
+<<<<<<< HEAD
+=======
+def list_available_printers():
+    printers = []
+    printer_info = win32print.EnumPrinters(win32print.PRINTER_ENUM_LOCAL, None, 1)
+    for printer in printer_info:
+        printers.append(printer[2])
+    return printers
+
+class PrinterSelectionDialog(tk.Toplevel):
+    def __init__(self, master, printers):
+        super().__init__(master)
+        self.printers = printers
+        self.selected_printer = None
+        self.title("Select Printer")
+        self.geometry("300x200")
+        self.initUI()
+
+    def initUI(self):
+        label = tk.Label(self, text="Select a Printer:")
+        label.pack(pady=10)
+        
+        self.printer_var = tk.StringVar()
+        self.printer_var.set(self.printers[0] if self.printers else "")
+        
+        printer_menu = tk.OptionMenu(self, self.printer_var, *self.printers)
+        printer_menu.pack(pady=10)
+
+        
+        self.issave = tk.IntVar()
+        self.change_entry = tk.Checkbutton(self, text='REMAMBER MY CHOICE', variable=self.issave)
+        self.change_entry.pack(pady=10)
+        
+        select_button = tk.Button(self, text="Select", command=self.select_printer)
+        select_button.pack(pady=10)
+
+    def select_printer(self):
+        self.selected_printer = self.printer_var.get()
+        self.destroy()
+>>>>>>> db9ae79 (adding seller)
 
 class PrinterForm(tk.Tk):
     def __init__(self, master):
         self.master = master
+<<<<<<< HEAD
         
     def load_printer(self):
         cursor.execute("SELECT * FROM setting WHERE user_name = ?", (self.user,))
@@ -28,6 +73,53 @@ class PrinterForm(tk.Tk):
                 
     def open_drower(self):
         printer_name = PrinterForm.load_printer(self)
+=======
+
+    def list_available_printers(self):
+        printers = []
+        '''printer_info = win32print.EnumPrinters(win32print.PRINTER_ENUM_LOCAL, None, 1)
+        for printer in printer_info:
+            printers.append(printer[2])  # Extract printer names from the tuple'''
+        return printers
+
+    def choose_printer(self):
+        printers = self.list_available_printers()
+        dialog = PrinterSelectionDialog(self, printers)
+        self.wait_window(dialog)
+        selected_printer = dialog.selected_printer
+        if selected_printer:
+            return selected_printer
+        else:
+            return "AnyDesk Printer"
+    
+    def load_printer(self, user_info):
+        selected_printer = "DEFALUET"
+        printers = list_available_printers()
+        cursor.execute("SELECT * FROM setting WHERE User_id = ?", (int(user_info[0]),))
+        b = cursor.fetchall()
+        print("user " + str(user_info[3]) + "found " +str(b))
+        if b and len(b) > 0 and b[0][3] != "" and b[0][3] in printers:
+            selected_printer = b[0][3] # getting printer
+        else:
+            print("sitting : " + str(b))
+            dialog = PrinterSelectionDialog(self, printers)
+            self.wait_window(dialog)
+            selected_printer = dialog.selected_printer
+            if selected_printer:
+                if dialog.issave.get():
+                    if b:
+                        cursor.execute('UPDATE setting SET printer=? WHERE User_id=?', (selected_printer, int(self.user[0])))
+                        # Commit the changes to the database
+                        conn.commit()
+                    else:
+                        cursor.execute('INSERT INTO setting (User_id, printer) VALUES (?, ?, ?)', (int(self.user[0]), selected_printer))
+                        # Commit the changes to the database
+                        conn.commit()
+        return selected_printer
+                
+    def open_drower(self, user_info):
+        printer_name = PrinterForm.load_printer(self, user_info)
+>>>>>>> db9ae79 (adding seller)
         print("printer : " + str(printer_name))
         # Prepare the printer properties
         '''
@@ -72,8 +164,13 @@ class PrinterForm(tk.Tk):
             win32print.ClosePrinter(printer_handle)
             # '''
     
+<<<<<<< HEAD
     def print_slip(self, text, cut):
         printer_name = PrinterForm.load_printer(self)
+=======
+    def print_slip(self, user, text, cut):
+        printer_name = PrinterForm.load_printer(self, user)
+>>>>>>> db9ae79 (adding seller)
         if printer_name == "":
             return
         print("printer : " + str(printer_name))
