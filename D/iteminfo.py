@@ -12,24 +12,31 @@ from C.List import *
 
 # give do_ 0 to reduce and 1 to add qty
 def change_qty(qty_info_list, do_, item_shop_name, item_code, item_color, item_size, item_qty_):
-    #print("qty_info_list: "+str(qty_info_list))
-    #print("qty_info_list path: "+str(item_shop_name+"|"+item_code+"|"+item_color+"|"+item_size))
-    values = get_last_same_path_list(item_shop_name+"|"+item_code+"|"+item_color+"|"+item_size, qty_info_list)[0]
-    #print("b values : "+str(values))
-    for value in values:
-        if len(value) > 2:
-            old_qty = value[2]
-            new_qty = value[2]
-            if do_ == 0:
-                new_qty = float(old_qty)-float(item_qty_)
-            elif do_ == 1:
-                new_qty = float(old_qty)+float(item_qty_)
-            value[2] = new_qty
-                
-    #print("a values : "+str(values))
-    cvalues = change_last_same_path_list(item_shop_name+"|"+item_code+"|"+item_color+"|"+item_size, qty_info_list, values)[0]
-    print("a cvalues : "+str(cvalues))
-    return str(cvalues)
+    current = qty_info_list
+    #travetse the nested stucture based on the path
+    for key in [item_shop_name, item_code, item_color, item_size]:
+        #find the next level in nested structure
+        #print("a key : "+str(key))
+        #print("a current : "+str(current))
+        for item in current:
+            if isinstance(item, list) and item[0] == key:
+                current = item[1] # move to the next level
+                break
+        else:
+            # if the key not found exit the function by returning Null
+            return 0
+    # Now current should point tothe list 
+    if isinstance(current, list) and len(current) and len(current[0]) > 4 and isinstance(current[0], list):
+        old_qty = current[0][4]
+        new_qty = current[0][4]
+        if do_ == 0:
+            new_qty = float(old_qty)-float(item_qty_)
+        elif do_ == 1:
+            new_qty = float(old_qty)+float(item_qty_)
+        current[0][4] = str(new_qty)
+        
+    #print("a qty_info_list : "+str(qty_info_list))
+    return qty_info_list
     
 def reduc_qty(item_info, do_, item_shop_name, item_color, item_size, item_qty_):
     vs_info = "\""
@@ -63,7 +70,7 @@ def reduc_qty(item_info, do_, item_shop_name, item_color, item_size, item_qty_):
                 j = 0
                 for s_v in s_value:
                     j += 1
-                    print("j :" + str(j) + "sv :" + str(s_v.replace("|", "")))
+                    #print("j :" + str(j) + "sv :" + str(s_v.replace("|", "")))
                     if j == 1:
                         size_txt = s_v.replace("|", "")
                     if j == 4 and shop_name == item_shop_name and item_color == color_txt and item_size == size_txt:

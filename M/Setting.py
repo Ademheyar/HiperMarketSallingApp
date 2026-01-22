@@ -11,8 +11,9 @@ MAIN_dir = os.path.join(current_dir, '..')
 sys.path.append(MAIN_dir)
 from D.Getdefsize import ButtonEntryApp
 from C.List import *
+from C.Sql3 import *
 from D.printer import *
-
+from D.GetVALUE import GetvalueForm
 # Connect to the database or create it if it does not exist
 
 import os
@@ -26,9 +27,70 @@ conn.commit()
 import tkinter as tk
 from D.Getdate import GetDateForm
 from D.Chart.Chart import *
-from D.Product.PrintPriceTag import PrintPriceTagFrame
 
+from C.Settings.Shop_Setting import Shop_SettingForm
 from C.Product.selecttype import *
+
+
+slip_order_type=["*", "#", "-", "_", "=", "~", "Location", "Linkes", "Phone_No", "Receipt_no", "Extnsion_Receipt_no", "Date", "Updated_date", "Due_date", "User", "Seller", "Customer", "Item", "Payments", "Total", "Rules"]
+
+access_types=["SALLING", # 0
+              "DELETE ITEM", # 0
+              "VOIDE ORDER", # 0
+              "ADD NEW ORDER", # 0
+              "NEXT ORDER", # 0
+              "PREVEUSE ORDER", # 0
+              "SEARCH ITEM", # 0
+              "UPLOAD", # 0
+              
+              "CASH IN", # 1
+              "CREADIT", # 1
+              "SEARCH USER", # 1
+              "CREATE COSTUMER INFO", # 1
+              "MANAGER", # 1
+              "OPEN CHASH DROWER", # 1
+              "SEARCH PRODUCTES", # 1
+              "CREATE PRODUCT", # 1
+              "GIVE PRODUCT PRICE", # 1
+              "CHANGE PRODUCTE PRICE", # 1
+              "GIVE PRODUCT STOCK", # 1
+              "CREAT TOOLS", # 1
+              "EXCHANGE RECORDED DOCUMENT ITEMS TO SAME ITEM", # 1
+              "CHANGE PRODUCTS TYPE", # 1
+
+              "CHANGE PRODUCTE STOCK", # 2
+              "CREATE NEW WORKER INFO", # 2
+              "CHANGE COSTUMER INFO", # 2
+              "REMOVE COSTUMER INFO", # 2
+              "CHANGE TOOLES", # 2
+              "REMOVE TOOLES", # 2
+              "EXCHANGE RECORDED DOCUMENT PAYMENT TYPE", # 2
+              "EXCHANGE RECORDED DOCUMENT ITEM TO DEFFERNT", # 2
+              "CHANGE SLIP SETTING", # 2
+              "CHANGE TOOLS SETTING", # 2
+              "CHANGE STOCK SETTING", # 2
+              "CHANGE USER SETTING", # 2
+
+              "REMOVE PRODUCTES", # 3
+              "SHOW PRODUCTES COST", # 3
+              "SEARCH DOCUMENTS", # 3
+              "SHOW DOCUMENTS", # 3
+              "CHANGE PRODUTS", # 3
+              "DELETE PRODUTS", # 3
+              "CHANGE STOCK SETTING", # 3
+              "CHANGE DOCUMENT SETTING", # 3
+
+              "REMOVE DOCUMENT", # 4
+              "SHOW REPORTS", # 4
+              "SHOW TOTAL SALE", # 4
+              "CHANGE USER TYPE", # 4
+              "CREATE ADMINS USERS", # 4
+              "REMOVE DOCUMENTS", # 4
+              "CHANGE DOCUMENTS", # 4
+              "CHANGE USER INFO", # 4
+              "CHANGE SHOP SETTING" # 4
+              
+              ]
 
 # Function to search for documents in the doc_table SQLite database table
 def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_barcode=None, 
@@ -80,72 +142,28 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
 # Example node hierarchy
 
 class SettingForm(tk.Frame):
-    def __init__(self, master, user):
+    def __init__(self, master, user, shops):
         tk.Frame.__init__(self, master)
         self.master = master
-        self.Product_notebook = ttk.Notebook(self)
-        self.Product_notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         self.nested_list = []
         self.user_info = None
         self.user = user
+        self.Shops = shops
+        self.slip_order_list = []
+
+
+        self.setting_notebook = ttk.Notebook(self)
+        self.setting_notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         
         # Create the frame for the product details Product_stting_frame
-        self.Product_list_frame = tk.Frame(self.Product_notebook)
+        self.Product_list_frame = tk.Frame(self.setting_notebook)
         self.Product_list_frame.pack()
-        self.Product_notebook.add(self.Product_list_frame, text="Products Setting")
+        self.setting_notebook.add(self.Product_list_frame, text="Appelication Setting")
 
         # Create the frame for the search bar and buttons
         self.search_frame = tk.Frame(self.Product_list_frame)
         self.search_frame.pack(fill=tk.BOTH, padx=5, pady=5)
         
-        self.inventory = []
-        self.selected_type_path = None
-        self.selected_type_path_parent = None
-        self.tree = ttk.Treeview(self.search_frame, columns=
-                                 ("Shop Name", "Code", "Color", "Size", "Barcode",
-                                  "Qtyfirst", "Qty", "cdate", "update"))
-        self.tree.grid(row=0, column=0, sticky=tk.E, columnspan=4)
-        self.tree.bind('<<TreeviewSelect>>', self.on_path_select)
-        #self.tree.pack(side=tk.LEFT, expand=True)
-        self.tree.heading("#0", text="Shop Name", anchor=tk.W)
-        self.tree.column("#0", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#1", text="Code", anchor=tk.W)
-        self.tree.column("#1", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#2", text="Color", anchor=tk.W)
-        self.tree.column("#2", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#3", text="Size", anchor=tk.W)
-        self.tree.column("#3", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#4", text="Barcode", anchor=tk.W)
-        self.tree.column("#4", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#5", text="Qtyfirst", anchor=tk.W)
-        self.tree.column("#5", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#6", text="Qty", anchor=tk.W)
-        self.tree.column("#6", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#7", text="cdate", anchor=tk.W)
-        self.tree.column("#7", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#8", text="update", anchor=tk.W)
-        self.tree.column("#8", stretch=tk.NO, minwidth=25, width=125)
-
-        
-        self.selected_label = tk.Label(self.search_frame, text='No selected')
-        self.selected_label.grid(row=5, column=0, sticky=tk.E)
-        
-        self.type_value_label = tk.Label(self.search_frame, text='new value')
-        self.type_value_label.grid(row=6, column=0, sticky=tk.E)
-        self.type_value_entry = tk.Entry(self.search_frame)
-        self.type_value_entry.grid(row=6, column=1, sticky=tk.E)
-
-        self.add_new_button = tk.Button(self.search_frame, text='Add New', command=self.add_new_value)
-        self.add_new_button.grid(row=7, column=0, sticky=tk.E)
-        self.dele_type_button = tk.Button(self.search_frame, text='DELETE', command=self.dele_selected)
-        self.dele_type_button.grid(row=7, column=1, sticky=tk.E)
-        self.cear_button = tk.Button(self.search_frame, text='clear', command=self.clear_selected_path)
-        self.cear_button.grid(row=8, column=0, sticky=tk.E)
-        self.change_button = tk.Button(self.search_frame, text='Done', command=self.convert_to_text)
-        self.change_button.grid(row=8, column=1, sticky=tk.E)
-        
-        self.types_label = tk.Label(self.search_frame, text='No value')
-        self.types_label.grid(row=8, column=0, sticky=tk.E)
 
 
         
@@ -160,7 +178,6 @@ class SettingForm(tk.Frame):
         self.ask_seller_entry = tk.Checkbutton(self.search_frame, text='ask seller', variable=self.ask_seller_int, command=self.chacke_ask_seller)
         self.ask_seller_entry.grid(row=9, column=0, sticky=tk.E)
         
-        self.load_setting()
 
 
 
@@ -377,95 +394,22 @@ class SettingForm(tk.Frame):
 
 
 
+        # Create the frame for the Shop Info
+        self.shops_frame = tk.Frame(self.setting_notebook)
+        self.shops_frame.pack()
+        self.setting_notebook.add(self.shops_frame, text="Shop")
+        self.Shop_setting_Notebook = ttk.Notebook(self.shops_frame)
+        self.Shop_setting_Notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-
-        # Create the frame for the product details
-        self.Product_listinfo_frame = tk.Frame(self.Product_notebook)
-        self.Product_listinfo_frame.pack()
-        self.Product_notebook.add(self.Product_listinfo_frame, text="Products Info")
+        for shop_ in self.Shops:
+            Shop_setting_frame = tk.Frame(self.Shop_setting_Notebook)
+            Shop_setting_frame.pack()
+            self.Shop_setting_Notebook.add(Shop_setting_frame, text=shop_['Shop_name'])
+            self.Shop_setting_notebook = Shop_SettingForm(Shop_setting_frame, user, shop_)
+            self.Shop_setting_notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+                   
         
-        self.Product_listinfo_frame.grid_columnconfigure(0, weight=5)
-        self.Product_listinfo_frame.grid_columnconfigure(1, weight=5)
-        self.Product_listinfo_frame.grid_columnconfigure(2, weight=5)
-        self.Product_listinfo_frame.grid_columnconfigure(3, weight=5)
-        self.Product_listinfo_frame.grid_columnconfigure(4, weight=5)
-        self.Product_listinfo_frame.grid_columnconfigure(5, weight=5)
-        self.Product_listinfo_frame.grid_columnconfigure(6, weight=5)
-        self.Product_listinfo_frame.grid_columnconfigure(7, weight=5)
-        self.Product_listinfo_frame.grid_rowconfigure(0, weight=5)
-        self.Product_listinfo_frame.grid_rowconfigure(1, weight=5)
-        self.Product_listinfo_frame.grid_rowconfigure(2, weight=5)
-        self.Product_listinfo_frame.grid_rowconfigure(3, weight=5)
-        self.Product_listinfo_frame.grid_rowconfigure(4, weight=5)
-        self.Product_listinfo_frame.grid_rowconfigure(5, weight=5)
-        self.Product_listinfo_frame.grid_rowconfigure(6, weight=5)
-        self.Product_listinfo_frame.grid_rowconfigure(7, weight=5)
-        
-        def on_style_selected(*args):
-            draw_cart(int(self.style_var.get()), self.chart_canvas, self.next_button, self.prev_button, self.graph_value0, int(self.which_var.get()), 1, 0)
-            draw_cart(int(self.style_var1.get()), self.chart2_canvas, self.next_button1, self.prev_button1, self.graph_value0, int(self.which_var.get()), 2, 0)
-            self.display_products(self.graph_value0, int(self.which_var.get()))
-
-        self.chart_canvas = tk.Canvas(self.Product_listinfo_frame)
-        self.chart_canvas.grid(row=0, column=0, columnspan=3, sticky="nsew")
-        
-        self.chart2_canvas = tk.Canvas(self.Product_listinfo_frame)
-        self.chart2_canvas.grid(row=0, column=4, columnspan=3, sticky="nsew")
-        
-        self.chart1_title = tk.Label(self.Product_listinfo_frame, text="TOTAL ITEM COUNT :")
-        self.chart1_title.grid(row=1, column=0, columnspan=3)
-        
-        self.which_var = tk.StringVar()
-        self.which_var.set("0")
-        self.which_var.trace("w", on_style_selected)
-        self.which_dropdown = tk.OptionMenu(self.Product_listinfo_frame, self.which_var, "0", "1", "2", "3")
-        self.which_dropdown.grid(row=2, column=0, sticky="nsew")
-        
-        self.style_var = tk.StringVar()
-        self.style_var.set("1")
-        self.style_var.trace("w", on_style_selected)
-        self.style_dropdown = tk.OptionMenu(self.Product_listinfo_frame, self.style_var, "1", "2", "3", "4")
-        self.style_dropdown.grid(row=2, column=1, sticky="nsew")
-        
-        self.next_button = tk.Button(self.Product_listinfo_frame, text="<", font=("Arial", 12))
-        self.next_button.grid(row=2, column=2, sticky="nsew")
-        self.prev_button = tk.Button(self.Product_listinfo_frame, text=">", font=("Arial", 12))
-        self.prev_button.grid(row=2, column=3, sticky="nsew")
-        
-        self.chart1_total_title = tk.Label(self.Product_listinfo_frame, text="TOTAL ITEM COUNT :")
-        self.chart1_total_title.grid(row=1, column=4, columnspan=3)
-
-        self.style_var1 = tk.StringVar()
-        self.style_var1.set("2")
-        self.style_var1.trace("w", on_style_selected)
-        self.style_dropdown1 = tk.OptionMenu(self.Product_listinfo_frame, self.style_var1, "1", "2", "3", "4")
-        self.style_dropdown1.grid(row=2, column=4, sticky="nsew")
-        
-        self.next_button1 = tk.Button(self.Product_listinfo_frame, text="<", font=("Arial", 12))
-        self.next_button1.grid(row=2, column=5, sticky="nsew")
-        self.prev_button1 = tk.Button(self.Product_listinfo_frame, text=">", font=("Arial", 12))
-        self.prev_button1.grid(row=2, column=6, sticky="nsew")
-        
-        self.product_list = tk.Listbox(self.Product_listinfo_frame, width=30)
-        self.product_list.grid(row=3, column=0, columnspan=2, sticky="nsew")
-        
-        self.details_frame = tk.Frame(self.Product_listinfo_frame)
-        self.details_frame.grid(row=3, column=5, columnspan=3)
-        
-
-        
-        #self.fix_date()
-        # Create the label and entry for the document ID search
-        self.total_item_label = tk.Label(self.details_frame, text="TOTAL ITEM COUNT :")
-        self.total_item_label.grid(row=0, column=0)
-        self.total_qty_label = tk.Label(self.details_frame, text="TOTAL QTY COUNT :")
-        self.total_qty_label.grid(row=1, column=0)
-        self.total_cost_label = tk.Label(self.details_frame, text="TOTAL COST :")
-        self.total_cost_label.grid(row=2, column=0)
-        self.total_sale_label = tk.Label(self.details_frame, text="TOTAL AFTER SALE :")
-        self.total_sale_label.grid(row=3, column=0)
-
-        
+        self.load_setting()
         # Pack the widgets for the product tab2
         #self.update_product_listbox()
         #
@@ -475,7 +419,7 @@ class SettingForm(tk.Frame):
     def chacke_remaber_printer(self):
         print("chacke_remaber_printer")
         if int(self.Remamber_printer_int.get()):
-            b = cur.execute("SELECT * FROM setting WHERE User_id = ?", (self.user[0],)).fetchall()
+            b = cur.execute("SELECT * FROM setting WHERE User_id = ?", (self.user['User_id'],)).fetchall()
             print("user " + str(self.user[0]) + " found " +str(b))
             printers = list_available_printers()
             if b and len(b) > 0 and b[0][3] == "" or not b:
@@ -485,35 +429,215 @@ class SettingForm(tk.Frame):
                 if selected_printer:
                     if dialog.issave.get():
                         if b:
-                            cur.execute('UPDATE setting SET printer=?, Get_printer=? WHERE User_id=?', ("", int(self.ask_seller_int.get()), self.user[0]))
+                            cur.execute('UPDATE setting SET printer=?, Get_printer=? WHERE User_id=?', ("", 1, self.user['User_id']))
                             # Commit the changes to the database
                             conn.commit()
                         else:
-                            cur.execute('INSERT INTO setting (User_id, Get_printer, printer) VALUES (?, ?, ?, ?)', (self.user[0], int(self.ask_seller_int.get()), selected_printer))
+                            cur.execute('INSERT INTO setting (User_id, Get_printer, printer) VALUES (?, ?, ?, ?)', (self.user['User_id'], 1, selected_printer))
                             # Commit the changes to the database
                             conn.commit()                    
         else:
-            cur.execute('UPDATE setting SET printer=?, Get_printer=? WHERE User_id=?', ("t", int(self.ask_seller_int.get()), self.user[0]))
+            cur.execute('UPDATE setting SET printer=?, Get_printer=? WHERE User_id=?', ("", int(self.ask_seller_int.get()), self.user['User_id']))
             # Commit the changes to the database
             conn.commit()
+
+    def dele_slip_order(self):
+        current_selection = self.slip_order_list_items.curselection()
+        self.slip_order_list_items.delete(current_selection[0])
+        self.update_slip_order()
+        
+    def move_slip_order(self, direc):
+        current_selection = self.slip_order_list_items.curselection()
+        if current_selection:
+            current_index = current_selection[0]
+            if direc == "UP" and current_index > 0:
+                move = -1
+            elif direc == "DOWN" and current_index < self.slip_order_list_items.size()-1:
+                move = 1
+            else:
+                return
+            text = self.slip_order_list_items.get(current_index)
+            self.slip_order_list_items.delete(current_index)
+            self.slip_order_list_items.insert(current_index + move, text)
+            self.slip_order_list_items.selection_set(current_index + move)
+        self.update_slip_order()
+
+    def slip_width_changed(self, name, index, mode):
+        cur.execute('UPDATE setting SET Slip_width=? WHERE User_id=?', (self.slip_width_entry.get(), self.user['User_id']))
+        # Commit the changes to the database
+        conn.commit()
+    
+    def slip_hight_changed(self, name, index, mode):
+        cur.execute('UPDATE setting SET Slip_hight=? WHERE User_id=?', (self.slip_hight_entry.get(), self.user['User_id']))
+        # Commit the changes to the database
+        conn.commit()
+        
+    def update_slip_order(self):
+        ret_value = "" 
+        for r in range(self.slip_order_list_items.size()):
+            text = self.slip_order_list_items.get(r)
+            ind = slip_order_type.index(text)
+            ret_value += str(ind)+"+"
+        cur.execute('UPDATE setting SET Slip_orders=? WHERE User_id=?', (ret_value, self.user['User_id']))
+        # Commit the changes to the database
+        conn.commit()
+        
+    def on_new_order_selected(self, *arg):
+        self.slip_order_list.append(str(self.slip_option_var.get()))
+        self.slip_order_list_items.insert(tk.END, str(self.slip_option_var.get()))
+        self.update_slip_order()
+        
+    def USER_SECURITY_on_select(self, *arg):
+        results = None
+        if ":" in self.user['User_work_shop']:
+            shop_name = self.user['User_work_shop'].split(":")
+            id_ = shop_name[0]
+            name_ = shop_name[1]
+            # Search for the entered text in the code, name, short_key, and type fields of the user table
+            cur.execute("SELECT * FROM Shops WHERE Shop_id LIKE ? AND Shop_name LIKE ?", 
+                        ('%' + str(id_) + '%','%' + str(name_) + '%'))
+            results = cur.fetchall()
+            print("found shop "+str(len(results)))
+        else:
+            shop_name = self.user['User_work_shop']
+            # Search for the entered text in the code, name, short_key, and type fields of the user table
+            cur.execute("SELECT * FROM Shops WHERE Shop_name LIKE ?", 
+                        ('%' + str(shop_name) + '%',))
+            results = cur.fetchall()
+            print("found shop by name "+str(results))
+            
+        if results:
+            # Modify the quantity of the item as required
+            if len(self.USER_SECURITY_list_box.selection()) > 0:
+                for a in self.USER_SECURITY_list_box.selection():
+                    values = self.USER_SECURITY_list_box.item(a)['values']
+                    text = self.USER_SECURITY_list_box.item(a)['text']
+                    i = GetvalueForm(self, values[0], "Change Access Level of " + text)
+                    if not i.value == None and not i.value == "" and i.value > -1:
+                        values[0] = i.value
+                        self.USER_SECURITY_list_box.item(a, values=values)
+                st = ""
+                for q in self.USER_SECURITY_list_box.get_children():
+                    values = self.USER_SECURITY_list_box.item(q)['values']
+                    st += str(values[0])+"+"
+                print("saving  "+str(st))
+                cur.execute('UPDATE Shops SET Shop_Access_levels=? WHERE Shop_id=?', (st, results[0][0]))
+                # Commit the changes to the database
+                conn.commit()
+            
                 
+        
+    def load_shop_info(self):
+        print("load_shop_info user :"+str(self.user['User_work_shop']))
+        #results = None
+        if ":" in self.user['User_work_shop']:
+            shop_name = self.user['User_work_shop'].split(":")
+            id_ = shop_name[0]
+            name_ = shop_name[1]
+            # Search for the entered text in the code, name, short_key, and type fields of the user table
+            cur.execute("SELECT * FROM Shops WHERE Shop_id LIKE ? AND Shop_name LIKE ?", 
+                        ('%' + str(id_) + '%','%' + str(name_) + '%'))
+            results = cur.fetchall()
+            print("found shop "+str(len(results)))
+        else:
+            shop_name = self.user['User_work_shop']
+            # Search for the entered text in the code, name, short_key, and type fields of the user table
+            cur.execute("SELECT * FROM Shops WHERE Shop_name LIKE ?", 
+                        ('%' + str(shop_name) + '%',))
+            results = cur.fetchall()
+            print("found shop00 by name "+str(results))
+            
+        if results != None and results != []: 
+            if "+" in str(results[0][24]):
+                print("str(results[24]) "+str(str(results[0][24])))
+                k = 0
+                for order in str(results[0][24]).split("+"):
+                    if order != "" and k < len(self.USER_SECURITY_list_box.get_children()):
+                        values = self.USER_SECURITY_list_box.item(self.USER_SECURITY_list_box.get_children()[k])['values']
+                        values[0] = order
+                        self.USER_SECURITY_list_box.item(self.USER_SECURITY_list_box.get_children()[k], values=values)
+                    k+=1
+            
+            self.Shop_name_entry.delete(0, tk.END)
+            self.Shop_name_entry.insert(0, str(results[0][1]))
+            self.Shop_brand_name_entry.delete(0, tk.END)
+            self.Shop_brand_name_entry.insert(0, str(results[0][2]))
+            self.Shop_oweners_id_entry.delete(0, tk.END)
+            self.Shop_oweners_id_entry.insert(0, str(results[0][4]))
+            self.Shop_link_entry.delete(0, tk.END)
+            self.Shop_link_entry.insert(0, str(results[0][5]))
+            self.Shop_phone_num_entry.delete(0, tk.END)
+            self.Shop_phone_num_entry.insert(0, str(results[0][7]))
+            self.Shop_location_entry.delete(0, tk.END)
+            self.Shop_location_entry.insert(0, str(results[0][9]))
+            self.Shop_rules_entry.delete(0, tk.END)
+            self.Shop_rules_entry.insert(0, str(results[0][11]))
+        
+        '''self.Shop_name_entry = tk.Entry(self.Shop_listinfo_frame)
+            self.Shop_brand_name_entry = tk.Entry(self.Shop_listinfo_frame)
+            self.Shop_type_entry = tk.Entry(self.Shop_listinfo_frame)
+            self.Shop_oweners_id_entry = tk.Entry(self.Shop_listinfo_frame)
+            self.Shop_link_entry = tk.Entry(self.Shop_listinfo_frame)
+            self.Shop_email_entry = tk.Entry(self.Shop_listinfo_frame)
+            self.Shop_phone_num_entry = tk.Entry(self.Shop_listinfo_frame)
+            self.Shop_country_entry = tk.Entry(self.Shop_listinfo_frame)
+            self.Shop_location_entry = tk.Entry(self.Shop_listinfo_frame)
+            self.Shop_about_entry = tk.Entry(self.Shop_listinfo_frame)
+            self.Shop_about_entry = tk.Entry(self.Shop_listinfo_frame)
+            self.Shop_workers_entry = tk.Entry(self.Shop_listinfo_frame)
+            self.Shop_password_entry = tk.Entry(self.Shop_listinfo_frame)'''
+        
+    def save_shop_info(self):
+        results = None
+        if ":" in self.user['User_work_shop']:
+            shop_name = self.user['User_work_shop'].split(":")
+            id_ = shop_name[0]
+            name_ = shop_name[1]
+            # Search for the entered text in the code, name, short_key, and type fields of the user table
+            cur.execute("SELECT * FROM Shops WHERE Shop_id LIKE ? AND Shop_name LIKE ?", 
+                        ('%' + str(id_) + '%','%' + str(name_) + '%'))
+            results = cur.fetchall()
+            print("found shop "+str(len(results)))
+        else:
+            shop_name = self.user['User_work_shop']
+            # Search for the entered text in the code, name, short_key, and type fields of the user table
+            cur.execute("SELECT * FROM Shops WHERE Shop_name LIKE ?", 
+                        ('%' + str(shop_name) + '%',))
+            results = cur.fetchall()
+            print("found shop "+str(results[0][0]))
+        if results:
+            cur.execute('UPDATE Shops SET Shop_name=?, Shop_brand_name=?, Shop_link=?, Shop_location=?, Shop_rules=?, Shop_phone_num=? WHERE Shop_id=?',
+                        (self.Shop_name_entry.get(), self.Shop_brand_name_entry.get(), self.Shop_link_entry.get(), self.Shop_location_entry.get(), self.Shop_rules_entry.get(), self.Shop_phone_num_entry.get(), results[0][0]))
+            # Commit the changes to the database
+            conn.commit()
+    
     def load_setting(self):
         #print("load sitting of : " + str(self.user))
-        cur.execute("SELECT * FROM setting WHERE User_id = ?", (self.user[0],))
+        cur.execute("SELECT * FROM setting WHERE User_id = ?", (self.user['User_id'],))
         sittings = cur.fetchall()
         if sittings:
             print("sitting2 : " + str(sittings))
             for sitting in sittings:
-                if sitting[1] == self.user[0]:
+                if sitting[1] == self.user['User_id']:
                     self.load_type_info(sitting[4])
                     if sitting[5]:
                         self.ask_seller_int.set(int(sitting[5]))
-                    if sitting[6]:
+                    if len(sitting) > 6 and sitting[6]:
                         self.Remamber_printer_int.set(int(sitting[6]))
+                        if "+" in str(sitting[7]):
+                            print("str(sitting[7]) "+str(str(sitting[7])))
+                            for order in str(sitting[7]).split("+"):
+                                if order != "":
+                                    print("order "+str(order))
+                                    print("str(slip_order_type[int(order)]) "+str(str(slip_order_type[int(order)])))
+                                    self.slip_order_list_items.insert(tk.END, str(slip_order_type[int(order)]))
+                        self.slip_width_entry.insert(0,str(sitting[8]))
+                        self.slip_hight_entry.insert(0,str(sitting[8]))
+                        
             
     def chacke_ask_seller(self):
         print("going to make seller ask or not...")
-        cur.execute('UPDATE setting SET Get_seller=? WHERE user_id=?', (int(self.ask_seller_int.get()), self.user[0]))
+        cur.execute('UPDATE setting SET Get_seller=? WHERE user_id=?', (int(self.ask_seller_int.get()), self.user['User_id']))
         # Commit the changes to the database
         conn.commit()
 
@@ -586,7 +710,7 @@ class SettingForm(tk.Frame):
             nested_list.append([child_text, self.build_nested_list(item)])
         text = str(nested_list)
         self.types_label.config(text=text)
-        cur.execute('UPDATE setting SET Items_type=? WHERE user_name=?', (text, self.user[3]))
+        cur.execute('UPDATE setting SET Items_type=? WHERE user_name=?', (text, self.user['User_name']))
         # Commit the changes to the database
         conn.commit()
 
@@ -944,75 +1068,6 @@ class SettingForm(tk.Frame):
             if p["shop_name"] == shop_name and p["code"] == code and p["color"] == color and p["size"] == size:
                 return (p["barcode"], p["qtyfirst"], p["qty"], p["cdate"], p["update"])
         return (None, None)
-    
-    def chang_to_list(self, vs_info):
-        '''a_u_list = []
-        t = vs_info.replace("\"", "") + ","
-        main_info = t.split("},")
-        for m in range(len(main_info)-1):
-            main_value = main_info[m].split(",(")
-            shop_name = main_value[0].replace("{", "")
-            shop = [shop_name]
-            shop_node = []
-            t = main_value[1].replace(")", "") + ","
-            f_info = t.split(">,")
-            for c in range(len(f_info)-1):
-                f_value = f_info[c].split(",[")
-                color_txt = f_value[0].replace("<", "")
-                color = [color_txt]
-                color_node = []
-                t = f_value[1].replace("]", "") + ","
-                s_info = t.split("|,")
-                for s in range(len(s_info)-1):
-                    s_value = s_info[s].split(", ")
-                    s_n = []
-                    for s_v in s_value:
-                        s_n.append(s_v.replace("|", ""))
-                    color_node.append(s_n)
-                color.append(color_node)
-                shop_node.append(color)
-            shop.append(shop_node)
-            a_u_list.append(shop)
-        return a_u_list'''
-
-    def chang_to_text(self, a_u_list):
-        '''vs_info = "\""
-        si = 0
-        for s in a_u_list:
-            si += 1
-            vs_info += '{'
-            vs_info += s[0]
-            vs_info += ',('
-            ci = 0
-            for c in s[1]:
-                ci += 1
-                vs_info += '<'
-                vs_info += c[0]
-                vs_info += ',['
-                sei = 0
-                for se in c[1]:
-                    vs_info += '|'
-                    sei += 1
-                    for j in range(len(se)):
-                        vs_info += se[j]
-                        if j < len(se)-1:
-                            vs_info += ', '
-                    if sei < len(c[1])-1:
-                        vs_info += ',|'
-                    else:
-                        vs_info += '|'
-                vs_info += ']'
-                if ci < len(s[1])-1:
-                    vs_info += ',>'
-                else:
-                    vs_info += '>'
-            vs_info += ')'
-            if si < len(a_u_list)-1:
-                vs_info += ',}'
-            else:
-                vs_info += '}'
-        vs_info += "\""
-        return vs_info'''
     
     def add_product_from_nested_list(self, nested_list):
         for s in nested_list:

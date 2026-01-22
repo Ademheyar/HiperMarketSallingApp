@@ -21,134 +21,166 @@ def create_random_color():
     b = random.randint(0, 255)
     return f'#{r:02x}{g:02x}{b:02x}'
 
-def draw_cart(style, canvas, next_btn, prev_btn, main_values, mv_index, v_index, x_offset):
-    canvas.delete("all")
-    if not (mv_index < len(main_values) and main_values[mv_index]):
-        return
+# self.chart_canvas_Frame : give main fram to display
+# self.graph_value0 : give value to compare
+#  : tall wiche value to use
+#  : give style of chart 1: streag line 2: circle 3: line 
+def draw_cart(parent, main_values, deff_which, deff_style):
+    for items in parent.winfo_children():
+        items.destroy()
+    parent_fram = tk.Frame(parent)
+    parent_fram.pack(fill=tk.BOTH, expand=1)
     
-    values = main_values[mv_index]
-    total_sum = sum([value[v_index if v_index <= len(value)-1 else 1] for i, value in enumerate(values)])
-    max_value = max([value[v_index if v_index <= len(value)-1 else 1] for i, value in enumerate(values)])
-    color = [create_random_color() for _ in values]
-    if style == 1:
-        bar_width = 20
-        gap = 10
-        total_width = len(values) * (bar_width + gap)
-        if x_offset >= 0:
-            x_offset = (bar_width + gap)
-        nextr = x_offset+(bar_width + gap+1)
-        prev = x_offset-(bar_width + gap+1)
-        if next_btn:
-            next_btn.bind("<Button-1>", lambda _: draw_cart(style, canvas, next_btn, prev_btn, main_values, mv_index, v_index, nextr))
-        if prev_btn:
-            prev_btn.bind("<Button-1>", lambda _: draw_cart(style, canvas, next_btn, prev_btn, main_values, mv_index, v_index, prev))
-        for i, value in enumerate(values):
-            v_index0 = v_index if v_index <= len(value)-1 else 1
-            x_offset += (bar_width + gap)
-            x0 = x_offset + (i * (bar_width + gap))
-            y0 = int(canvas.cget('height')) - 20
-            scaled_value = value[v_index0] * (int(canvas.cget('height'))-40) /max_value
-            x1 = x_offset + (i + 1) * bar_width + (i * gap) - (bar_width + gap)
-            y1 = int(canvas.cget('height')) - scaled_value - 20
-            txt_angle = 90
-            if int(canvas.cget('height'))-40 == scaled_value or (int(canvas.cget('height'))+((y1/10)+len(str(value[1]))))-40 >= scaled_value:
-                txt_angle = 0
-            
-            canvas.create_text((x0 + x1) / 2, y1 - ((y1/10)+len(str(value[v_index0]))), text=str(value[v_index0]), anchor="center", angle=txt_angle)
-            canvas.create_text((x0 + x1) / 2, y0 + 10, text=str(value[0]), anchor="center")
-            canvas.create_rectangle(x0, y0, x1, y1, fill=color[i])            
-    elif style == 2:
+    chart_canvas_Frame = tk.Frame(parent_fram)
+    chart_canvas_Frame.pack(side=tk.TOP, fill=tk.X)
+    chart_canvas = tk.Canvas(chart_canvas_Frame)
+    chart_canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+    xscrollbar = tk.Scrollbar(chart_canvas.master, orient='horizontal', command=chart_canvas.xview)
+    xscrollbar.pack(fill=tk.X)
         
-        bar_width = 20
-        gap = 10
-        nextr = x_offset+(bar_width + gap+1)
-        prev = x_offset-(bar_width + gap+1)
-        if next_btn:
-            next_btn.bind("<Button-1>", lambda _: draw_cart(style, canvas, next_btn, prev_btn, main_values, mv_index, v_index, nextr))
-        if prev_btn:
-            prev_btn.bind("<Button-1>", lambda _: draw_cart(style, canvas, next_btn, prev_btn, main_values, mv_index, v_index, prev))
-        start_angle = 0
-        for i, value in enumerate(values):
-            v_index0 = v_index if v_index <= len(value)-1 else 1
-            angle = 360 * value[v_index0] / total_sum
+    chart_canvas.configure(xscrollcommand=xscrollbar.set)
+    #self.New_item_contener_canvas.bind('<Configure>', lambda e: self.New_item_contener_canvas.configure(scrollregion=self.New_item_contener_canvas.bbox("all")))
 
-            canvas.create_arc(50, 50, 250, 250, start=start_angle, extent=angle, fill=color[i])
+    #self.item_List_frame = tk.Frame(self.item_List_canvas)
+    #self.item_List_canvas.create_window((0, 0), window=self.item_List_frame, anchor=tk.NW)
+    chart_canvas.bind('<Configure>', lambda e: chart_canvas.configure(scrollregion=chart_canvas.bbox("all")))
 
-            start_angle += angle
-
-            canvas.create_rectangle(260, 50+i*20, 280, 70 + i *20, fill=color[i])
-            canvas.create_text(285, 60 + i * 20, text=str(value[0])+" : " + str(value[v_index0]), anchor="center")
-            
-    elif style == 3:
-        bar_width = 20
-        gap = 10
-        total_width = len(values) * (bar_width + gap)
-        if x_offset >= 0:
-            x_offset = (bar_width + gap)
-        nextr = x_offset+(bar_width + gap+1)
-        prev = x_offset-(bar_width + gap+1)
-        if next_btn:
-            next_btn.bind("<Button-1>", lambda _: draw_cart(style, canvas, next_btn, prev_btn, main_values, mv_index, v_index, nextr))
-        if prev_btn:
-            prev_btn.bind("<Button-1>", lambda _: draw_cart(style, canvas, next_btn, prev_btn, main_values, mv_index, v_index, prev))
-        offset = (int(canvas.cget('width')) - total_width)
-        scroll_by = x_offset+(offset/(len(values)-1))
+    
+    def on_style_selected(canvas, style_var, which_var):
+        canvas.delete("all")
+        canvas.configure(scrollregion=canvas.bbox("all"))
+        style = int(style_var.get())
+        print("main_values ", main_values)
+        _values = []
+        if main_values:
+            _values = main_values[0]
+        print("_values ", _values)
+        mv_index = int(which_var.get())
+        if not mv_index < len(_values):
+            mv_index = 1
+        print("mv_index ", mv_index)
         
-        for i, value in enumerate(values):
-            v_index0 = v_index if v_index <= len(value)-1 else 1
-            x_offset += (bar_width + gap)
-            x0 = x_offset + (i * (bar_width + gap))
-            y0 = int(canvas.cget('height')) - 20
+        values = [main_value[mv_index] for main_value in _values]
+        print("values ", values)
+        total_sum = sum(values)
+        print("total_sum ", total_sum)
+        max_value = 0
+        if values:
+            max_value = max(values)
+        color = [create_random_color() for _ in values]
+        
+        if style == 1:
+            bar_width = 20
+            gap = 10
+            total_width = len(values) * (bar_width + gap)
+            x_offset = (bar_width + gap)
+            for i, value in enumerate(_values):
+                x_offset += (bar_width + gap)
+                print("value ", value)
+                x0 = x_offset + (i * (bar_width + gap))
+                y0 = int(canvas.cget('height')) - 20
+                scaled_value = values[i] * (int(canvas.cget('height'))-40) /max_value
+                x1 = x_offset + (i + 1) * bar_width + (i * gap) - (bar_width + gap)
+                y1 = int(canvas.cget('height')) - scaled_value - 20
+                txt_angle = 90
+                if int(canvas.cget('height'))-40 == scaled_value or (int(canvas.cget('height'))+((y1/10)+len(str(value[1]))))-40 >= scaled_value:
+                    txt_angle = 0
+                
+                canvas.create_text((x0 + x1) / 2, y1 - ((y1/10)+len(str(value[1]))), text=str(value[1]), anchor="center", angle=txt_angle)
+                canvas.create_text((x0 + x1) / 2, y0 + 10, text=str(value[1]), anchor="center")
+                canvas.create_rectangle(x0, y0, x1, y1, fill=color[i])            
+        elif style == 2:
+            
+            bar_width = 20
+            gap = 10
+            start_angle = 0
+            for i, value in enumerate(_values):
+                angle = 360 * values[i] / total_sum
+                print("values[i] ", values[i])
+                print("start_angle ", start_angle)
+                print("angle ", angle)
 
-            scaled_value = value[v_index0] * (int(canvas.cget('height'))-40) /max_value
+                canvas.create_arc(50, 50, 250, 250, start=start_angle, extent=angle-0.1, fill=color[i])
+
+                start_angle += angle
+
+                canvas.create_rectangle(260, 50+i*20, 280, 70 + i *20, fill=color[i])
+                canvas.create_text(285, 60 + i * 20, text=str(value[1])+" : " + str(value[1]), anchor="center")
+                
+        elif style == 3:
+            bar_width = 20
+            gap = 10
+            total_width = len(_values) * (bar_width + gap)
+            x_offset = (bar_width + gap)
+            offset = (int(canvas.cget('width')) - total_width)
+            scroll_by = x_offset+(offset/(len(values)-1))
             
-            x1 = x_offset + (i + 1) * bar_width + (i * gap) - (bar_width + gap)
-            y1 = int(canvas.cget('height')) - scaled_value - 20
-            txt_angle = 90
-            if int(canvas.cget('height'))-40 == scaled_value or (int(canvas.cget('height'))+((y1/10)+len(str(value[1]))))-40 >= scaled_value:
-                txt_angle = 0
-            
-            canvas.create_text((x0 + x1) / 2, y1 - ((y1/10)+len(str(value[v_index0]))), text=str(value[v_index0]), anchor="center", angle=txt_angle)
-            canvas.create_text((x0 + x1) / 2, y0 + 10, text=str(value[0]), anchor="center")
-            canvas.create_line(x0, y0, x1, y1, fill=color[i])
-    elif style == 4:
-        bar_width = 20
-        gap = 30
-        total_width = len(values)
-        if x_offset >= 0:
+            for i, value in enumerate(_values):
+                v_index0 = v_index if v_index <= len(value)-1 else 1
+                x_offset += (bar_width + gap)
+                x0 = x_offset + (i * (bar_width + gap))
+                y0 = int(canvas.cget('height')) - 20
+
+                scaled_value = value[1] * (int(canvas.cget('height'))-40) /max_value
+                
+                x1 = x_offset + (i + 1) * bar_width + (i * gap) - (bar_width + gap)
+                y1 = int(canvas.cget('height')) - scaled_value - 20
+                txt_angle = 90
+                if int(canvas.cget('height'))-40 == scaled_value or (int(canvas.cget('height'))+((y1/10)+len(str(value[1]))))-40 >= scaled_value:
+                    txt_angle = 0
+                
+                canvas.create_text((x0 + x1) / 2, y1 - ((y1/10)+len(str(value[1]))), text=str(value[1]), anchor="center", angle=txt_angle)
+                canvas.create_text((x0 + x1) / 2, y0 + 10, text=str(value[1]), anchor="center")
+                canvas.create_line(x0, y0, x1, y1, fill=color[i])
+        elif style == 4:
+            bar_width = 20
+            gap = 30
+            total_width = len(values)
             x_offset = 30
-        nextr = x_offset+31
-        prev = x_offset-31
-        if next_btn:
-            next_btn.bind("<Button-1>", lambda _: draw_cart(style, canvas, next_btn, prev_btn, main_values, mv_index, v_index, nextr))
-        if prev_btn:
-            prev_btn.bind("<Button-1>", lambda _: draw_cart(style, canvas, next_btn, prev_btn, main_values, mv_index, v_index, prev))
-        offset = (int(canvas.cget('width')) - total_width)
-        scroll_by = x_offset+(offset/(len(values)-1))
-        for i, value in enumerate(values):
-            v_index0 = v_index if v_index <= len(value)-1 else 1
-            x_offset += (gap)
-            x0 = x_offset + (i)
-            y0 = int(canvas.cget('height')) - 20
+            offset = (int(canvas.cget('width')) - total_width)
+            scroll_by = x_offset+(offset/(len(values)-1))
+            for i, value in enumerate(values):
+                v_index0 = v_index if v_index <= len(value)-1 else 1
+                x_offset += (gap)
+                x0 = x_offset + (i)
+                y0 = int(canvas.cget('height')) - 20
 
-            scaled_value = value[v_index0] * (int(canvas.cget('height'))-40) /max_value
-            x1 = x_offset + (i + 1) * + (i)
-            y1 = int(canvas.cget('height')) - scaled_value - 20
+                scaled_value = value[1] * (int(canvas.cget('height'))-40) /max_value
+                x1 = x_offset + (i + 1) * + (i)
+                y1 = int(canvas.cget('height')) - scaled_value - 20
 
-            j =i
-            if i+1 < len(values):
-                j = i+1
-            scaled_value2 = values[j][v_index0] * (int(canvas.cget('height'))-40) /max_value
-            x2 = x_offset + gap + (j + 1) * j
-            y2 = int(canvas.cget('height')) - scaled_value2 - 20
-            txt_angle = 90
-            if int(canvas.cget('height'))-40 == scaled_value or (int(canvas.cget('height'))+((y1/10)+len(str(value[1]))))-40 >= scaled_value:
-                txt_angle = 0
-            
-            canvas.create_text((x0 + x1) / 2, y1 - ((y1/10)+len(str(value[v_index0]))), text=str(value[v_index0]), anchor="center", angle=txt_angle)
-            canvas.create_text((x0 + x1) / 2, y0 + 10, text=str(value[0]), anchor="center")
-            canvas.create_line(x1, y1, x2, y2, fill=color[i], width=2) # color "blue"
+                j =i
+                if i+1 < len(values):
+                    j = i+1
+                scaled_value2 = values[j][v_index0] * (int(canvas.cget('height'))-40) /max_value
+                x2 = x_offset + gap + (j + 1) * j
+                y2 = int(canvas.cget('height')) - scaled_value2 - 20
+                txt_angle = 90
+                if int(canvas.cget('height'))-40 == scaled_value or (int(canvas.cget('height'))+((y1/10)+len(str(value[1]))))-40 >= scaled_value:
+                    txt_angle = 0
+                
+                canvas.create_text((x0 + x1) / 2, y1 - ((y1/10)+len(str(value[1]))), text=str(value[1]), anchor="center", angle=txt_angle)
+                canvas.create_text((x0 + x1) / 2, y0 + 10, text=str(value[0]), anchor="center")
+                canvas.create_line(x1, y1, x2, y2, fill=color[i], width=2) # color "blue"
 
+    
+    style_var = tk.StringVar()
+    style_var.set(deff_style)
+
+    which_var = tk.StringVar()
+    which_var.set(deff_which)
+    
+    which_var.trace("w", lambda *arg, c=chart_canvas, s=style_var, w=which_var: on_style_selected(chart_canvas, s, w))
+    which_dropdown = tk.OptionMenu(parent_fram, which_var, "1", "2", "3")
+    which_dropdown.pack(side=tk.LEFT)
+        
+    style_var.trace("w", lambda *arg, c=chart_canvas, s=style_var, w=which_var: on_style_selected(chart_canvas, s, w))
+    style_dropdown = tk.OptionMenu(parent_fram, style_var, "1", "2", "3", "4")
+    style_dropdown.pack(side=tk.RIGHT)
+    
+    on_style_selected(chart_canvas, style_var, which_var)
+        
 def make_list(node_names):
     rr_dict = {}
 
@@ -161,26 +193,28 @@ def make_list(node_names):
                 vl[2] += 1
                 return vl[1]
         return None
-    for q, n_n in enumerate(node_names):
-        def sub_list(on, read_on, key):
-            if not read_on[on]:
+    def sub_list(on, read_on, key):
+        if not read_on[on]:
+            return None
+        if isinstance(read_on[on], float):
+            return read_on[on]
+        elif isinstance(read_on[on], str):
+            if on+1 == len(read_on):
                 return None
-            if isinstance(read_on[on], float):
-                return read_on[on]
-            elif isinstance(read_on[on], str):
-                if on+1 == len(read_on):
-                    return None
-                else:
-                    r = sub_list(on+1, read_on, key + "~" + str(read_on[on]))
-                    if r and isinstance(r, float):
-                        if on not in rr_dict:
-                            rr_dict[on] = [[key + "~" + str(read_on[on]), r, 1]]
-                        else:
-                            vr = set_value(rr_dict[on], key + "~" + str(read_on[on]), r)
-                            if vr == None:
-                               rr_dict[on].append([key + "~" + str(read_on[on]), r, 1])
+            else:
+                r = sub_list(on+1, read_on, key + "~" + str(read_on[on]))
+                if r and isinstance(r, float):
+                    if on not in rr_dict:
+                        rr_dict[on] = [[key + "~" + str(read_on[on]), r, 1]]
+                    else:
+                        vr = set_value(rr_dict[on], key + "~" + str(read_on[on]), r)
+                        if vr == None:
+                            rr_dict[on].append([key + "~" + str(read_on[on]), r, 1])
                             
-                        return r
+                    return r
+                
+    for q, n_n in enumerate(node_names):
+
         r = sub_list(1, n_n, str(n_n[0]))
         if r and isinstance(r, float):
             if 0 not in rr_dict:

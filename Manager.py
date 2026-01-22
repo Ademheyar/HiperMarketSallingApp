@@ -1,86 +1,76 @@
 import tkinter as tk
 from tkinter import ttk
+from D.Security import Chacke_Security
 from M.Doc import DocForm
 from M.Product import ProductForm
+from M.Actions import ActionsForm
 from M.Users import UserForm
 from M.Tools import ToolForm
 from M.Setting import SettingForm
 
-class ManageForm(tk.Frame):
-    def __init__(self, master, user):
-        tk.Frame.__init__(self, master)
+class ManageForm(ttk.Frame):
+    def __init__(self, master, user, Shops, Shops_info, on_Shop):
+        ttk.Frame.__init__(self, master)
         self.master = master
         self.user = user
+        self.Shops = Shops
+        self.on_Shop = on_Shop
         screen_width = self.master.winfo_screenwidth()
         screen_height = self.master.winfo_screenheight()
         self.manuframes = {}
         
-        self.manage_form = tk.Frame(self, bg="gray", height=screen_height, width=screen_width)
+        self.manage_form = ttk.Frame(self, height=screen_height, width=screen_width)
         self.manage_form.pack(side="top", fill="both", expand=True)
 
         # create left pane with manage_menus form
-        self.left_pane = tk.Frame(self.manage_form, bg="gray", width=200, height=500)
+        self.left_pane = ttk.Frame(self.manage_form, width=200, height=500)
         self.left_pane.pack(side="left", fill="y")
 
-        self.manage_menus_label = tk.Label(self.left_pane, text="Manage Menus")
+        self.manage_menus_label = ttk.Label(self.left_pane, text="Manage Menus")
         self.manage_menus_label.pack()
-
-        self.doc_form = DocForm(self.manage_form, self.user)
-        self.manuframes["DocForm"] = self.doc_form
-
-        self.Product_form = ProductForm(self.manage_form, user)
-        self.manuframes["ProductFrame"] = self.Product_form
         
-        self.user_Form = UserForm(self.manage_form)
-        self.manuframes["UserForm"] = self.user_Form
+        if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 27, f'User Has No Permission To Access DOC FRAME OR LOGIN AS ADMIN'):                        
+            self.doc_form = DocForm(self.manage_form, self.user, self.Shops)
+            self.manuframes["DocForm"] = self.doc_form
 
-        self.tool_form = ToolForm(self.manage_form)
-        self.manuframes["ToolForm"] = self.tool_form
+            # create buttons in manage_menus form
+            self.doc_btn = ttk.Button(self.left_pane, text="Doc", command=self.doc_form.show_doc_form)
+            self.doc_btn.pack(side="top", fill="both", expand=True)
 
-        self.setting_form = SettingForm(self.manage_form, user)
-        self.manuframes["SettingForm"] = self.setting_form
+        if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 28, f'User Has No Permission To Access PRODUCT FRAME OR LOGIN AS ADMIN'):                        
+            self.Product_form = ProductForm(self.manage_form, self.user, self.Shops, self.on_Shop)
+            self.manuframes["ProductFrame"] = self.Product_form
 
-        # create buttons in manage_menus form
-        self.doc_btn = tk.Button(self.left_pane, text="Doc", command=self.doc_form.show_doc_form)
-        self.doc_btn.pack(side="top", fill="both", expand=True)
+            self.product_btn = ttk.Button(self.left_pane, text="Product", command= lambda : self.show_frame("ProductFrame"))
+            self.product_btn.pack(side="top", fill="both", expand=True)
 
-        self.product_btn = tk.Button(self.left_pane, text="Product", command=self.Product_form.show_product_form)
-        self.product_btn.pack(side="top", fill="both", expand=True)
+        if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 29, f'User Has No Permission To Access USER FRAME OR LOGIN AS ADMIN'):                        
+            self.user_Form = UserForm(self.manage_form, user)
+            self.manuframes["UserForm"] = self.user_Form
 
-        #self.report_btn = tk.Button(self.left_pane, text="Report", command=self.show_report_form)
-        #self.report_btn.pack(side="top", fill="both", expand=True)
+            self.user_btn = ttk.Button(self.left_pane, text="User", command=self.user_Form.show_user_form)
+            self.user_btn.pack(side="top", fill="both", expand=True)
 
-        self.user_btn = tk.Button(self.left_pane, text="User", command=UserForm(self.manage_form).show_user_form)
-        self.user_btn.pack(side="top", fill="both", expand=True)
-
-        self.tools_btn = tk.Button(self.left_pane, text="Tools", command=ToolForm(self.manage_form).show_tools_form)
-        self.tools_btn.pack(side="top", fill="both", expand=True)
-
-        self.setting_btn = tk.Button(self.left_pane, text="Setting", command=self.setting_form.show_Setting_Form)
-        self.setting_btn.pack(side="top", fill="both", expand=True)
-
-        self.about_btn = tk.Button(self.left_pane, text="About", command=self.show_about_form)
-        self.about_btn.pack(side="top", fill="both", expand=True)
-
-        self.close_btn = tk.Button(self.left_pane, text="Close", command=self.hide_all_manager)
-        self.close_btn.pack(side="top", fill="both", expand=True)
-
-        # create frames for each form
-
-        self.report_frame = tk.Frame(self.manage_form, bg="white", width=500, height=500)
-        self.report_label = tk.Label(self.report_frame, text="Report Form")
-        self.report_label.pack()    
+        if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 30, f'User Has No Permission To Access TOOLS FRAME OR LOGIN AS ADMIN'):                        
+            self.tool_form = ToolForm(self.manage_form, user, Shops, self.on_Shop)
+            self.manuframes["ToolForm"] = self.tool_form
+            self.tools_btn = ttk.Button(self.left_pane, text="Tools", command=self.tool_form.show_tools_form)
+            self.tools_btn.pack(side="top", fill="both", expand=True)
         
-        # create main manage_form
-        self.main_frame = tk.Frame(self.manage_form, bg="white", width=500, height=500)
-        self.main_frame.pack(side="left", fill="both", expand=True)
+        if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 31, f'User Has No Permission To Access ACTIONS FRAME OR LOGIN AS ADMIN'):                        
+            self.Actions_Form = ActionsForm(self.manage_form, user, Shops, Shops_info)
+            self.manuframes["ActionsForm"] = self.Actions_Form
 
-        self.manage_form_label = tk.Label(self.main_frame, text="Manage Form")
-        self.manage_form_label.pack()
+            self.Action_btn = ttk.Button(self.left_pane, text="Promotions &\n Action", command=self.Actions_Form.show_product_form)
+            self.Action_btn.pack(side="top", fill="both", expand=True)
+    
 
-        # make the window full screen and fixed
-        self.main_frame.pack_forget()
-        #self.show_frame("InfoForm")
+        if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 54, f'User Has No Permission To Access SETTING FRAME OR LOGIN AS ADMIN'):                        
+            self.setting_form = SettingForm(self.manage_form, user, Shops)
+            self.manuframes["SettingForm"] = self.setting_form
+            
+            self.setting_btn = ttk.Button(self.left_pane, text="Setting", command=self.setting_form.show_Setting_Form)
+            self.setting_btn.pack(side="top", fill="both", expand=True)
 
     def hide_all_manager(self):
         self.master.show_frame("DisplayFrame")
@@ -89,7 +79,10 @@ class ManageForm(tk.Frame):
     def show_frame(self, frame_name):
         # hide all frames except the one to be shown
         for frame in self.manuframes.values():
-            frame.pack_forget()
+            if frame:
+                frame.pack_forget()
+        if frame_name == "ProductFrame" and not self.manuframes[frame_name]:
+            self.manuframes[frame_name] = ProductForm(self.manage_form, self.user, self.Shops)
         self.manuframes[frame_name].pack(side="top", fill="both", expand=True)
 
     def hide_all_frames(self):

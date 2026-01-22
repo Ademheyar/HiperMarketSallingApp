@@ -67,7 +67,7 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
     if doc_updated_date is not None and doc_updated_date is not '':
         query += f" AND doc_updated_date='{doc_updated_date}'"
     
-    print(query+"\n")
+    #print(query+"\n")
     # Execute the SQL query and return the results as a list of tuples
     cur.execute(query, (*given,))
     results = cur.fetchall()
@@ -296,7 +296,7 @@ class EnddayForm(tk.Tk):
         unpid = 0
         pid = 0
         for pay in self.pyment_used:
-            print("creating lable : " + str(pay[0]+" :"+str(pay[1])))
+            #print("creating lable : " + str(pay[0]+" :"+str(pay[1])))
             self.list_items.insert(tk.END, [pay[0], pay[1]])
             pid += pay[1]
         self.doc_total_unpaid.config(text="Amount UnPide : " + str(unpid))
@@ -368,7 +368,7 @@ class EnddayForm(tk.Tk):
                         pay[1] += float(pay_pid)
                         break
                 if found == 0:
-                    print("new payment :" + str([pay_type, pay_pid]))
+                    #print("new payment :" + str([pay_type, pay_pid]))
                     self.pyment_used.append([pay_type, float(pay_pid)])
                 index += 1
 

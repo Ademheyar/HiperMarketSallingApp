@@ -17,6 +17,7 @@ from D.endday import EnddayForm
 from D.Upload_ import UploadingForm
 from D.user_info import UserInfoForm
 from D.printer import PrinterForm
+from C.Sql3 import *
 
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
@@ -25,15 +26,17 @@ conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
 class ApproveFrame(tk.Frame):
-    def __init__(self, master, user, slips, left, print_slip):
+    def __init__(self, master, user, shops, slips, left, print_slip):
         tk.Frame.__init__(self, master)
         self.slips = []
         self.print_slip = print_slip
         self.left = left
+        self.shops = shops
         self.user = user
+        self.count_printed = 0
         slip = ""
         for barcode in slips:
-            doc_ = cursor.execute("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,)).fetchone()
+            doc_ = fetch_as_dict_list(cursor, "SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))[0]
             if doc_:
                 print(str(doc_))
                 slip = load_slip(doc_, 0) #TODO GET ID
@@ -142,9 +145,13 @@ class ApproveFrame(tk.Frame):
             self.on_slip.config(text=str(self.slips[i][1]))
             
     def print_item(self, a):
-        print("printing : " + str(self.print_slip) + "splip : " + str(self.on_barid.cget('text')))
-        if self.print_slip == 1:
-            PrinterForm.print_slip(self, self.user, self.on_slip.cget('text'), 1) # TODO chack in setting if paper cut allowed
+        #print("printing : " + str(self.print_slip) + "splip : " + str(self.on_barid.cget('text')))
+        answer = None
+        if self.count_printed > 0:
+            answer = tk.messagebox.askquestion("Question", "Slip orady printed " + str(self.count_printed+1)+ " times do you whant to print more?")
+        if self.print_slip == 1 and (answer == None or answer == 'yes'):
+            self.count_printed += 1
+            PrinterForm.print_slip(self, self.user, self.shops, self.on_slip.cget('text'), 1) # TODO chack in setting if paper cut allowed
     
     def undo_item(self):
         pass

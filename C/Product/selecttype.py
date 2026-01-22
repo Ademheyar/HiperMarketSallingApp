@@ -6,6 +6,8 @@ import random
 import os
 import atexit
 import sys
+import json
+import ast
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(os.path.join(current_dir, '..'), '..')
@@ -30,13 +32,14 @@ class NodeSelectorApp():
         self.node_combobox = ttk.Combobox(self.root, state="readonly")
         self.node_combobox.pack(fill=tk.X, pady=10)
         self.node_combobox.bind("<<ComboboxSelected>>", self.update_node_selection)
-        sitting = cur.execute("SELECT * FROM setting WHERE User_id = ?", (user_info[0],)).fetchall()
+        
+        sitting = cur.execute("SELECT * FROM setting WHERE User_id = ?", (user_info['User_id'],)).fetchall()
         if len(sitting) <= 0:
             #print("sitting : " + self.user)
-            cur.execute('INSERT INTO setting (User_id, barcode_count, printer) VALUES (?, ?, ?)', (int(user_info[0]), 0, ""))
+            cur.execute('INSERT INTO setting (User_id, barcode_count, printer) VALUES (?, ?, ?)', (int(user_info['User_id']), 0, ""))
             # Commit the changes to the database
             conn.commit()
-            sitting = cur.execute("SELECT * FROM setting WHERE User_id = ?", (user_info[0],)).fetchall()
+            sitting = cur.execute("SELECT * FROM setting WHERE User_id = ?", (user_info['User_id'],)).fetchall()
         sitting = sitting[0]
         print("sitting Types :"+ str(sitting[0]))
         if sitting and sitting[4] and sitting[4] != "":
@@ -45,6 +48,9 @@ class NodeSelectorApp():
         else:
             print("Deff Types :" + str(nodes))
             self.nodes = load_list(nodes)
+
+        #self.nodes = [['MANS', [['ACCESSORIES', []], ['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['WOMANS', [['ACCESSORIES', []], ['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['DRESS', [['SUNDRESS', []], ['COCKTAIL', []], ['MAXI', []], ['SHIFT', []], ['BODYCON', []], ['A-LINE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['SPORTBRA', []], ['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['KIDS', [['ACCESSORIES', []], ['GIRLS', [['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['DRESS', [['SUNDRESS', []], ['COCKTAIL', []], ['MAXI', []], ['SHIFT', []], ['BODYCON', []], ['A-LINE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['SPORTBRA', []], ['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['BOYS', [['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['FORKIDS', [['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]]]], ['FOREVERYONE', [['ACCESSORIES', []], ['SHOES', []], ['TROUSER', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []], ['TRENCHCOAT', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]]]
+        
         self.get_value = None
         self.selected_nodes = []
         
@@ -57,9 +63,52 @@ class NodeSelectorApp():
 
         self.focused_group = 0
         
+    def update_combobox_values(self):
+        #print("ss "+ str([";"] + [name[0] for name in self.node_hierarchy]))
+        self.node_combobox["values"] = [";"] + [name[0] for name in self.node_hierarchy]
+
+    def update_list(self):
+        # Clear previous widgets in the main frame
+        for widget in self.main_frame.winfo_children():
+            widget.destroy()
+        self.selected_nodes = []
+        for i2, lists in enumerate(self.get_value):
+            if not lists:
+                continue
+            fcolor = None
+            if self.focused_group == i2:
+                fcolor = "blue"
+            g_frame = tk.Frame(self.main_frame, bg=fcolor)
+            g_frame.pack(fill="x")
+            g_frame.bind("<Button-1>", lambda _, a=g_frame: self.foucsed_main(a))
+            g_frame.bind("<Button-3>", lambda _, a=g_frame: self.exit_main(a))
+            g_ = []
+            for i3, value in enumerate(lists):
+                if value == '':
+                    continue
+                print("i3 " + str(i3))
+                color = "white"
+                if self.isthere(i3, value):
+                    color = "Green"
+                elif not self.isthere(-1, value):
+                    color = "orange"
+                else:
+                    color = "white"
+                g_.append(self.get_index(i3, value))
+                #todo make def color giving
+                parent_button = tk.Button(g_frame, text=str(value), bg=color, fg="white")
+                parent_button.bind("<Button-3>", lambda _, a=parent_button: self.exit_childe(a))
+                parent_button.grid(row=0, column=len(g_frame.winfo_children())+1)
+            if len(g_) > 0:
+                self.selected_nodes.append(g_)
+                #print("parantes : " + str(g_))
+                 
     def load(self, def_value):
         get_nodes = self.nodes
-        self.get_value = def_value
+        #txt = json.dumps(self.nested_list)
+        if def_value == "":
+            def_value = "[]"
+        self.get_value = json.loads(def_value)
         self.selected_nodes = []
         
         self.node_hierarchy = get_nodes
@@ -100,7 +149,7 @@ class NodeSelectorApp():
                             return True
             return sub(self.nodes)
         elif i >= 0:
-            print("chacking value " + str(value) + "on list " + str(i))
+            #print("chacking value " + str(value) + "on list " + str(i))
             def sub(l, j):
                 for it in l:
                     if j < 0 or j > i:
@@ -136,62 +185,19 @@ class NodeSelectorApp():
         else:
             event.config(bg="red")
             
-    def update_list(self):
-        # Clear previous widgets in the main frame
-        for widget in self.main_frame.winfo_children():
-            widget.destroy()
-        self.selected_nodes = []
-        for i2, spand in enumerate((self.get_value + ';#').split(';')):
-            if spand == '#':
-                continue
-            fcolor = None
-            if self.focused_group == i2:
-                fcolor = "blue"
-            g_frame = tk.Frame(self.main_frame, bg=fcolor)
-            g_frame.pack(fill="x")
-            g_frame.bind("<Button-1>", lambda _, a=g_frame: self.foucsed_main(a))
-            g_frame.bind("<Button-3>", lambda _, a=g_frame: self.exit_main(a))
-            g_ = []
-            for i3, spluse in enumerate((spand + '+').split('+')):
-                if spluse == '':
-                    continue
-                print("i3 " + str(i3))
-                color = "white"
-                if self.isthere(i3, spluse):
-                    color = "Green"
-                elif not self.isthere(-1, spluse):
-                    color = "orange"
-                else:
-                    color = "white"
-                g_.append(self.get_index(i3, spluse))
-                #todo make def color giving
-                parent_button = tk.Button(g_frame, text=str(spluse), bg=color, fg="white")
-                parent_button.bind("<Button-3>", lambda _, a=parent_button: self.exit_childe(a))
-                parent_button.grid(row=0, column=len(g_frame.winfo_children())+1)
-            if len(g_) > 0:
-                self.selected_nodes.append(g_)
-                print("parantes : " + str(g_))
-                    
+       
     def update_values(self):
-        new_v = ""
+        main_value = []
         for j, widget in enumerate(self.main_frame.winfo_children()):
-            if new_v != "":
-                new_v += ";"
-            n_chiled = ""
+            new_v = []
             for widget_c in widget.winfo_children():
-                if not n_chiled == "":
-                    n_chiled += "+"
-                n_chiled += widget_c.cget('text')
-            new_v += n_chiled
+                new_v.append(widget_c.cget('text'))
+            main_value.append(new_v)
                 
-        self.get_value = new_v
-        print("self.get_value = " + str(self.get_value))
+        self.get_value = main_value
+        print("self.get_value = ", self.get_value)
         self.update_list()
             
-    def update_combobox_values(self):
-        print("ss "+ str([";"] + [name[0] for name in self.node_hierarchy]))
-        self.node_combobox["values"] = [";"] + [name[0] for name in self.node_hierarchy]
-
     def get_all_subnodes(self, parent_node_dict, parent_nodes, node):
         subnodes = []
         for subnode, subnode_dict in node.items():
@@ -252,8 +258,7 @@ class NodeSelectorApp():
         self.update_combobox_values()
         self.update_values()
 
-'''
-if __name__ == "__main__":
+'''if __name__ == "__main__":
     root = tk.Tk()
     root.title("Node Selector")
     seroot = tk.Frame(root, bg="white")

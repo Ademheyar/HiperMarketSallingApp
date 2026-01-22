@@ -20,22 +20,23 @@ class ItemSelectorWidget(tk.Tk):
         self.ischange_qty = ischange_qty
         self.given_qty = given_qty
         self.btns = []
-        self.def_code = def_code
+        self.def_value = 0
         self.focused_btn_index = 0
+        #print("given_qty ::" + str(given_qty))
         self.getvalue_form = tk.Toplevel(self.master)
         self.getvalue_form.bind("<Up>", self.select_button)
         self.getvalue_form.bind("<Down>", self.select_button)
         self.getvalue_form.bind("<Escape>", lambda _: self.getvalue_form.destroy())
         self.getvalue_form.title("Selector Form")
-        print("list ::" + str(self.list))
+        #print("list ::" + str(self.list))
         if self.list == "":
             return
         elif "\"{" in self.list:
-            self.def_code = str(self.def_code).replace(",", "|")
-            self.item_list = read_code(self.list, "", self.def_code, "", "")[4]
+            def_code_ = str(def_code).replace(",", "|")
+            self.item_list = read_code(self.list, "", def_code_, "", "")[4]
         else:
             self.item_list = load_list(self.list)
-        print("item_list ::" + str(self.item_list))
+        #print("item_list ::" + str(self.item_list))
         self.current_form = 0
         self.forms = [
             self.display_shop_buttons,
@@ -88,7 +89,7 @@ class ItemSelectorWidget(tk.Tk):
         self.form_frame.pack()
 
     def next_form(self):
-        print("self.current_form < len(self.forms) :"+str(len(self.forms)))
+        #print("self.current_form < len(self.forms) :"+str(len(self.forms)))
         if self.current_form < len(self.forms):
             if self.current_form > 0:
                 self.form_frame.destroy()
@@ -96,9 +97,9 @@ class ItemSelectorWidget(tk.Tk):
             else:
                 self.current_form = 0
                 self.create_form_frame()
-            print("current_form : " + str(self.current_form))
+            #print("current_form : " + str(self.current_form))
             self.forms[self.current_form]()
-            print("out forms: " + str(self.current_form))
+            #print("out forms: " + str(self.current_form))
 
     def prev_form(self):
         if self.current_form > 0:
@@ -173,9 +174,9 @@ class ItemSelectorWidget(tk.Tk):
         self.btns = []
         for code in self.get_codes():
             self.selected_code = code
-            print("code :"+str(code))
+            #print("code :"+str(code))
             ifqty = str(self.get_qtys())
-            print("ifqty in code :"+str(ifqty))
+            #print("ifqty in code :"+str(ifqty))
             self.selected_code = ""
             txt = code+"("+str(ifqty)+")"
             out = code
@@ -224,9 +225,9 @@ class ItemSelectorWidget(tk.Tk):
         self.btns = []
         for color in self.get_colors():
             self.selected_color = color
-            print("color :"+str(color))
+            #print("color :"+str(color))
             ifqty = str(self.get_qtys())
-            print("ifqty in color :"+str(ifqty))
+            #print("ifqty in color :"+str(ifqty))
             self.selected_color = ""
             txt = color+"("+str(ifqty)+")"
             out = color
@@ -273,7 +274,7 @@ class ItemSelectorWidget(tk.Tk):
         self.btns = []
         for size in self.get_sizes():
             self.selected_size = size
-            print("size :"+str(size))
+            #print("size :"+str(size))
             ifqty = str(self.get_value())
             value = self.get_values()
             self.selected_size = ""
@@ -320,10 +321,22 @@ class ItemSelectorWidget(tk.Tk):
             self.selected_qty = 0
         tk.Label(self.form_frame, text="Quantity : " + str(str(self.get_qtys()))).pack()
         tk.Label(self.form_frame, text="").pack()
-        print("self.selected_value[2] : " +str(self.selected_value))
-        if float(self.selected_value[2]) == 1 and self.ischange_qty or self.given_qty > 1:
+        #print("self.selected_value[2] : " +str(self.selected_value))
+        #print("self.ischange_qty : " +str(self.ischange_qty))
+        
+        #print("self.given_qty : " +str(self.given_qty))
+        if self.given_qty > 1 and self.def_value == 0:
             self.selected_qty = self.given_qty
             self.add_to_cart()
+            self.def_value = 1
+            return
+        
+        if self.def_value == 0 and (float(self.selected_value[2]) == 1 or self.ischange_qty):
+            self.selected_qty = 1
+            self.add_to_cart()
+            self.def_value = 1
+            return
+        
         i = GetvalueForm(self.getvalue_form, "1", "Enter Quantity")
         if i.value and float(i.value) > 0:
             self.selected_qty = float(i.value)
@@ -338,14 +351,14 @@ class ItemSelectorWidget(tk.Tk):
         
 
     def add_to_cart(self):
-        print("add_to_cart :")
+        #print("add_to_cart :")
         if self.selected_shop and self.selected_color and self.selected_size:
-            print("add_to_cart :")
+            #print("add_to_cart :")
             if self.selected_qty == 0:
                 self.selected_qty = self.qty_entry.get()
             item = [self.selected_shop, self.selected_code, self.selected_color, self.selected_size, self.selected_value, self.selected_qty]
             self.selected_items.append(item)
-            print("true :" + str(self.selected_items[0]))
+            #print("true :" + str(self.selected_items[0]))
             #tk.messagebox.showerror("Error", "Please complete the selection.")
             self.show_selected_items()
 
@@ -375,6 +388,8 @@ class ItemSelectorWidget(tk.Tk):
 
     def get_sizes(self):
         sizes = []
+        q = None
+        qq = -1
         for shop in self.item_list:
             if shop[0] == self.selected_shop:
                 for codes in shop[1]:
@@ -384,19 +399,39 @@ class ItemSelectorWidget(tk.Tk):
                                 for size in color[1]:
                                     if size[0] == self.selected_size:
                                         return size[1]
+                                if q == None:
+                                    q=0
+                                    for size in color[1]:
+                                        if not size[0] in sizes:
+                                            sizes.append(size[0])   
+                                    if qq == 0 and q == None:
+                                        q = 0
+                                    break
+                        if q == None:
+                            q=0
+                            for color in codes[1]:
+                                for size in color[1]:
+                                    if not size[0] in sizes:
+                                        sizes.append(size[0])
+                            break
+            if q == None:
+                q=0
                 for code in shop[1]:
                     for color in code[1]:
                         for size in color[1]:
                             if not size[0] in sizes:
                                 sizes.append(size[0])
+                if qq == 0 and q == None:
+                    q = 0
                 break
-        if sizes == []:
+        if q == None:
+            q=0
             for shop in self.item_list:
                 for code in shop[1]:
                     for color in code[1]:
                         for size in color[1]:
                             if not size[0] in sizes:
-                                sizes.append(size[1])
+                                sizes.append(size[0])
         return sizes
 
     def get_values(self):
@@ -410,10 +445,12 @@ class ItemSelectorWidget(tk.Tk):
                                 for size in color[1]:
                                     if size[0] == self.selected_size:
                                         return size[1]
-                for color in shop[1]:
-                    for sizes in color[1]:
-                        if not size[0] in sizes:
-                            values.append(size[0])
+                if q == None:
+                    q=0
+                    for color in shop[1]:
+                        for sizes in color[1]:
+                            if not size[0] in sizes:
+                                values.append(size[0])
                 break
         if values == []:
             for shop in self.item_list:
@@ -437,10 +474,10 @@ class ItemSelectorWidget(tk.Tk):
                                         return size[1][0][2]
                                 if q == None:
                                     q=0
-                                    print("gettting color values :"+str(color))
+                                    #print("gettting color values :"+str(color))
                                     for size in color[1]: 
                                         for value in size[1]:
-                                            print("qty1 : " + str(value) + " | " + str(value[2]) + "+" + str(q) + "="+ str(q + float(value[2])))
+                                            #print("qty1 : " + str(value) + " | " + str(value[2]) + "+" + str(q) + "="+ str(q + float(value[2])))
                                             if q != None and float(value[2]) > 0:
                                                 q += float(value[2])
                                             elif float(value[2]) > 0:
@@ -456,7 +493,7 @@ class ItemSelectorWidget(tk.Tk):
                                 for size in color[1]:
                                     for value in size[1]:
                                         if float(value[2]) > 0:
-                                            print("qty2 : " + str(value) + " | " + str(value[2]) + "+" + str(q) + "="+ str(q + float(value[2])))
+                                            #print("qty2 : " + str(value) + " | " + str(value[2]) + "+" + str(q) + "="+ str(q + float(value[2])))
                                             q += float(value[2])
                             break
             if q == None:
@@ -466,7 +503,7 @@ class ItemSelectorWidget(tk.Tk):
                         for size in color[1]:
                             for value in size[1]:
                                 if float(value[2]) > 0:
-                                    print("qty3 : " + str(value) + " | " + str(value[2]) + "+" + str(q) + "="+ str(q + float(value[2])))
+                                   # print("qty3 : " + str(value) + " | " + str(value[2]) + "+" + str(q) + "="+ str(q + float(value[2])))
                                     q += float(value[2])
                 if qq == 0 and q == None:
                     q = 0
@@ -479,9 +516,9 @@ class ItemSelectorWidget(tk.Tk):
                         for size in color[1]:
                             for value in size[1]:
                                 if float(value[2]) > 0:
-                                    print("qty4 : " + str(value) + " | " + str(value[2]) + "+" + str(q) + "="+ str(q + float(value[2])))
+                                    #print("qty4 : " + str(value) + " | " + str(value[2]) + "+" + str(q) + "="+ str(q + float(value[2])))
                                     q += float(value[2])
-        print("ggghggggggggQTY q : " + str(q))      
+        #print("ggghggggggggQTY q : " + str(q))      
         return q
 
     def get_value(self):
@@ -531,7 +568,7 @@ class ItemSelectorWidget(tk.Tk):
                                 if float(value[2]) > 0:
                                     q += float(value[2])
                             #print("qty3 : " + str(size) + " | " + str(size[3]) + "+" + str(q) + "="+ str(q + float(size[3])))
-        print("q : " + str(q))
+        #print("q : " + str(q))
                             
         return q
     
@@ -565,11 +602,13 @@ class ItemSelectorWidget(tk.Tk):
         self.focused_btn_index = 1        
         d.pack()
         d.bind("<Return>", lambda _: self.cancel_selection())
+        self.form_frame.winfo_children()[0].focus_set()
         def pp():
             self.current_form = 1
             self.prev_form()
         self.getvalue_form.bind("<Escape>", lambda _: pp())
-        self.form_frame.winfo_children()[0].focus_set()
+        #if float(self.selected_value[2]) == 1 or self.ischange_qty or self.given_qty > 1:
+        #    self.cancel_selection()
 
     def add(self):
         self.form_frame.destroy()

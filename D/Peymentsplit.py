@@ -23,32 +23,29 @@ class PaymentForm(tk.Tk):
         y = (screen_height / 2) - (500 / 2)  # 500 is the height of the Payment Form window
 
         # set the position of the Payment Form window to center
-        self.payment_form.geometry(f"500x500+{int(x)}+{int(y)}")
+        self.payment_form.geometry(f"500x550+{int(x)}+{int(y)}")
         
         # New frame at the top of the main frame
-        self.top_extantion_frame = tk.Frame(self.payment_form, bg="white", height=screen_height * 0.10, width=screen_width)
-        self.top_extantion_frame.grid(row=0, column=0, sticky="nsew", columnspan=4)
+        self.top_extantion_frame = tk.Frame(self.payment_form, bg="white", height=100)
+        self.top_extantion_frame.grid(row=0, column=0, sticky="nsew", columnspan=6)
         
         # New frame at the top of the main frame
-        self.top_frame = tk.Frame(self.payment_form, bg="red", height=screen_height * 0.10, width=screen_width)
+        self.top_frame = tk.Frame(self.payment_form, bg="red", height=100)
         self.top_frame.grid(row=1, column=0, sticky="nsew", columnspan=4)
 
         # Create a label and an entry widget for the search box
-        self.search_label = tk.Label(self.top_frame, text="Search:", width=int(self.top_frame.winfo_width() * 0.10), bg="red", fg="white", font=("Arial", 12))
+        self.search_label = tk.Label(self.top_frame, text="Search:", bg="red", fg="white", font=("Arial", 12))
         self.search_label.grid(row=0, column=0, sticky="nsew")
         # create a variable to store the selected value
         self.selected_value = tk.StringVar()
 
-        cursor.execute("SELECT * FROM tools")
-        rows = cursor.fetchall()
         # create the combo box
         self.search_entry = ttk.Combobox(self.top_frame, width=20, font=("Arial", 12), textvariable=self.selected_value)
         #tk.Entry
-        print("row = " + str(rows))
         self.search_entry.grid(row=0, column=1, sticky="nsew", columnspan=2)
         options = []
-        for row in rows:
-            options.append(row[1])
+        for spt, row in enumerate(self.master.Shop_Payment_Tools):
+            options.append(row[0])
         # set the list of options
         self.search_entry['values'] = options
         #combo_box['values'] = options
@@ -68,11 +65,36 @@ class PaymentForm(tk.Tk):
         self.button4 = tk.Button(self.top_frame, text="remove", bg="red", fg="white", font=("Arial", 12), command=self.remove_payment)
         self.button4.grid(row=1, column=3, sticky="nsew")
         
+
+        self.Frame_contaner_frame = tk.Frame(self.payment_form, bg="black")
+        self.Frame_contaner_frame.grid(row=2, column=0, columnspan=6)
         
+        self.List_Frame_contaner_frame = tk.Frame(self.Frame_contaner_frame, bg="red")
+        self.List_Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        self.List_Frame = tk.Frame(self.List_Frame_contaner_frame, bg="blue")
+        self.List_Frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        
+        self.item_List_canvas = tk.Canvas(self.List_Frame)
+        self.item_List_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
+        
+        self.item_List_yscrollbar = tk.Scrollbar(self.List_Frame, orient='vertical', command=self.item_List_canvas.yview)
+        self.item_List_yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.item_List_xscrollbar = tk.Scrollbar(self.List_Frame_contaner_frame, orient='horizontal', command=self.item_List_canvas.xview)
+        self.item_List_xscrollbar.pack(side=tk.TOP, fill=tk.X)
+        
+        self.item_List_canvas.configure(xscrollcommand=self.item_List_xscrollbar.set, yscrollcommand=self.item_List_yscrollbar.set)
+        #self.New_item_contener_canvas.bind('<Configure>', lambda e: self.New_item_contener_canvas.configure(scrollregion=self.New_item_contener_canvas.bbox("all")))
+
+        self.item_List_frame = tk.Frame(self.item_List_canvas, bg="green")
+        self.item_List_canvas.create_window((0, 0), window=self.item_List_frame, anchor=tk.NW)
+        self.item_List_frame.bind('<Configure>', lambda e: self.item_List_canvas.configure(scrollregion=self.item_List_canvas.bbox("all")))
+
 
         # New listbox in the main frame
-        self.list_payment = ttk.Treeview(self.payment_form, columns=("Peyment Type", "Paid", "Paid Date", "Updated Date", "User", "Paid", "Extantion Bracodes"))
-        self.list_payment.grid(row=0, column=0, columnspan=4, sticky="nsew")
+        self.list_payment = ttk.Treeview(self.item_List_frame, columns=("Peyment Type", "Paid", "Paid Date", "Updated Date", "User", "Paid", "Extantion Bracodes"))
+        self.list_payment.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.list_payment.heading("#0", text="ID", anchor=tk.W)
         self.list_payment.column("#0", stretch=tk.NO, width=50)
         self.list_payment.heading("#1", text="Peyment Type", anchor=tk.W)
@@ -93,7 +115,7 @@ class PaymentForm(tk.Tk):
 
         # New frame next to list_items in the main frame
         self.midel_frame = tk.Frame(self.payment_form, height=int(screen_height * 0.90))
-        self.midel_frame.grid(row=4, column=0, sticky="nsew", columnspan=4)
+        self.midel_frame.grid(row=4, column=0, sticky="nsew", columnspan=6)
 
         self.total_items_label = tk.Label(self.midel_frame, text="Price : " + str(self.master.total))
         self.total_items_label.grid(row=0, column=0, sticky="nsew")
@@ -121,19 +143,21 @@ class PaymentForm(tk.Tk):
     def continue_pyment(self):
         #self.master.pid_peyment.clear()
         # TODO: SHOW MSG DIALOG IF PAYMENT IS LESS THAN PID
-        print("self.master.pid_peyment = " + str(self.master.pid_peyment))
-        if self.left <= 0:
-
-            self.master.process_payment()
-            self.payment_form.destroy()
+        #print("self.master.pid_peyment = " + str(self.master.pid_peyment))
+        self.master.process_payment()
+        self.payment_form.destroy()
 
     def update_info(self):
         self.list_payment.delete(*self.list_payment.get_children())
         
         pid_i = 0
+        ex_doc_ = []
+        for it in self.top_extantion_frame.winfo_children():
+            it.grid_forget()
+            
         for pay_pid in self.master.pid_peyment:
             p1, p2,  p3, p4, p5, p6, p7 = ['','','','','','','']
-            print("pay_pid : " +  str(len(pay_pid)))
+            #print("pay_pid : " +  str(len(pay_pid)))
             if len(pay_pid) > 1 and pay_pid[1]:
                 p1 =  pay_pid[1]
             if len(pay_pid) > 2  and pay_pid[2]:
@@ -149,8 +173,8 @@ class PaymentForm(tk.Tk):
             if len(pay_pid) > 7 and pay_pid[7]:
                 p7 =  pay_pid[7]
                 #self.master.ex_pid_peyment
-                if not pay_pid[7] in self.ex_pid:
-                    self.ex_pid.append(pay_pid[7])
+                if not pay_pid[7] in ex_doc_:
+                    ex_doc_.append(pay_pid[7])
                     ch = len(self.top_extantion_frame.winfo_children())
 
                     ex_bar_frame = tk.Frame(self.top_extantion_frame, bg="green")
@@ -160,13 +184,13 @@ class PaymentForm(tk.Tk):
                     update_button = tk.Button(ex_bar_frame, text="X", bg="red", fg="white", font=("Arial", 12), command=lambda: self.remove_ex_items(ex_bar_frame, search_label))
                     update_button.grid(row=0, column=1, sticky="nsew")
             pid_i += float(p2)
-            print("Amount Pide+ : " +str(pid_i)+"  "+ str(float(p2)))
+            #print("Amount Pide+ : " +str(pid_i)+"  "+ str(float(p2)))
             self.list_payment.insert("", 'end', text=pay_pid[0], values=(p1, p2,  p3, p4, p5, p6, p7))
         total_qty, total_discount, total_tax, all_total_price = self.master.chack_list()
         total = (all_total_price - self.master.tax) - self.master.disc
         self.master.pid = pid_i
-        print("Amount Pide : " + str(self.master.pid))
-        print("Amount total : " + str(total))
+        #print("Amount Pide : " + str(self.master.pid))
+        #print("Amount total : " + str(total))
         
         self.total_items_label.config(text="Total Items : " + str(total_qty))
         self.Price_label.config(text="Total Price : " + str(all_total_price))
@@ -183,25 +207,14 @@ class PaymentForm(tk.Tk):
             self.Amount_Left_form_label.config(text="Left : " + str(total - self.master.pid))
             self.get_amount_entry.insert(0, str(total - self.master.pid))
             self.continue_btn.config(state=tk.DISABLED)
-        
-
+            
     def remove_ex_items(self, ex_bar_frame, search_label):
-        p1 = 0
-        while p1 < len(self.master.pid_peyment):
-            if len(self.master.pid_peyment[p1]) > 7 and self.master.pid_peyment[p1][7]:
-                print(str(search_label.cget("text"))+"search_label pay_pid[7] = " + str(self.master.pid_peyment[p1][7]))
-                if str(self.master.pid_peyment[p1][7]) == search_label.cget("text"):
-                    self.master.pid_peyment.remove(self.master.pid_peyment[p1])
-                else:
-                    p1+=1
-                    
-        for ex in self.master.ex_pid_peyment:
-            if str(ex) == search_label.cget("text"):
-                self.master.ex_pid_peyment.remove(ex)
-                ex_bar_frame.grid_forget()
-
+        for pay_pid in self.master.pid_peyment:
+            if pay_pid[7] == search_label.cget("text"):
+                self.master.pid_peyment.remove(pay_pid)
         self.update_info()
-        
+        ex_bar_frame.grid_forget()
+            
     def add_payment(self):
         if self.selected_value.get() == '':
             print("payment not selected")
@@ -210,7 +223,7 @@ class PaymentForm(tk.Tk):
                 print("amount not given")
             else:
                 self.list_payment.insert("", 'end', text="", values=(self.selected_value.get(), self.get_amount_entry.get(), self.get_extantion_barcode.get()))
-                self.master.pid_peyment.append(["", self.selected_value.get(), self.get_amount_entry.get(), self.get_extantion_barcode.get()])
+                self.master.pid_peyment.append([len(self.master.pid_peyment), self.selected_value.get(), self.get_amount_entry.get(), "", "", "", "", self.get_extantion_barcode.get()])
                 self.master.pid = self.master.pid + float(self.get_amount_entry.get())
                 self.update_info()
             
@@ -220,8 +233,8 @@ class PaymentForm(tk.Tk):
             t = self.list_payment.item(a)["text"]
             p1 = 0
             while p1 < len(self.master.pid_peyment):
-                print("payment not selected ,"+str(self.master.pid_peyment[p1]))
-                print("payment not selected ."+str(aa))
+                #print("payment not selected ,"+str(self.master.pid_peyment[p1]))
+                #print("payment not selected ."+str(aa))
                 if len(aa) == 7 and len(self.master.pid_peyment[p1]) == 8 and str(t) == str(self.master.pid_peyment[p1][0]) and str(aa[0]) == str(self.master.pid_peyment[p1][1]) and \
                    str(aa[1]) == str(self.master.pid_peyment[p1][2]) and str(aa[2]) == str(self.master.pid_peyment[p1][3]) and \
                    str(aa[3]) == str(self.master.pid_peyment[p1][4]) and str(aa[4]) == str(self.master.pid_peyment[p1][5]) and \

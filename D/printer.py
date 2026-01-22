@@ -1,17 +1,21 @@
-#import win32print
+import win32print
 import tkinter as tk
 from tkinter import ttk
 import sqlite3, os
 from tkinter import simpledialog
 
+import json
+import ast
+
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
+
 printer_name = ""
 def list_available_printers():
     printers = []
-    '''
+    #'''
     printer_info = win32print.EnumPrinters(win32print.PRINTER_ENUM_LOCAL, None, 1)
     for printer in printer_info:
         printers.append(printer[2])
@@ -56,7 +60,7 @@ class PrinterForm(tk.Tk):
 
     def list_available_printers(self):
         printers = []
-        '''
+        #'''
         printer_info = win32print.EnumPrinters(win32print.PRINTER_ENUM_LOCAL, None, 1)
         for printer in printer_info:
             printers.append(printer[2])  # Extract printer names from the tuple
@@ -76,9 +80,10 @@ class PrinterForm(tk.Tk):
     def load_printer(self, user_info):
         selected_printer = "DEFALUET"
         printers = list_available_printers()
-        cursor.execute("SELECT * FROM setting WHERE User_id = ?", (int(user_info[0]),))
+        print("user " + str(user_info) + "found ")
+        cursor.execute("SELECT * FROM setting WHERE User_id = ?", (int(user_info['User_id']),))
         b = cursor.fetchall()
-        print("user " + str(user_info[3]) + "found " +str(b))
+        print("user " + str(user_info['User_name']) + "found " +str(b))
         if b and len(b) > 0 and b[0][3] != "" and b[0][3] in printers:
             selected_printer = b[0][3] # getting printer
         else:
@@ -89,20 +94,20 @@ class PrinterForm(tk.Tk):
             if selected_printer:
                 if dialog.issave.get():
                     if b:
-                        cursor.execute('UPDATE setting SET printer=? WHERE User_id=?', (selected_printer, int(self.user[0])))
-                        # Commit the changes to the database
-                        conn.commit()
+                        cursor.execute('UPDATE setting SET printer=? WHERE User_id=?', (selected_printer, user_info['User_id']))
+                        pass
                     else:
-                        cursor.execute('INSERT INTO setting (User_id, printer) VALUES (?, ?, ?)', (int(self.user[0]), selected_printer))
-                        # Commit the changes to the database
-                        conn.commit()
+                        cursor.execute('INSERT INTO setting (User_id, printer) VALUES (?, ?)', (self.user['User_id'], selected_printer))
+                        pass
+                    # Commit the changes to the database
+                    conn.commit()
         return selected_printer
                 
     def open_drower(self, user_info):
         printer_name = PrinterForm.load_printer(self, user_info)
         print("printer : " + str(printer_name))
         # Prepare the printer properties
-        '''
+        #'''
         printer_props = {
             "DesiredAccess": win32print.PRINTER_ALL_ACCESS,
             "PrinterName": printer_name,
@@ -119,7 +124,12 @@ class PrinterForm(tk.Tk):
             
             print("Start the print job\n")
             # Start the print job
-            job_handle = win32print.StartDocPrinter(printer_handle, 1, doc_info)
+            try:
+                job_handle = win32print.StartDocPrinter(printer_handle, 1, doc_info)
+            except Exception as e:
+                print("Error starting document: " + str(e))
+                return
+
 
             try:
                 print("Start a new page\n")
@@ -144,13 +154,18 @@ class PrinterForm(tk.Tk):
             win32print.ClosePrinter(printer_handle)
             # '''
     
-    def print_slip(self, user, text, cut):
+    def print_slip(self, user, at_shop, text, cut):
         printer_name = PrinterForm.load_printer(self, user)
         if printer_name == "":
             return
+        hight = 5
+        if at_shop and at_shop['Shop_Slip_Settings']:
+            sittings = json.loads(at_shop['Shop_Slip_Settings'])
+            hight = sittings[0][1]
+        print("printer : " + str(hight))
         print("printer : " + str(printer_name))
         # Prepare the printer properties
-        '''
+        #'''
         printer_props = {
             "DesiredAccess": win32print.PRINTER_ALL_ACCESS,
             "PrinterName": printer_name,
@@ -178,7 +193,7 @@ class PrinterForm(tk.Tk):
                 # Send the text to the printer
                 win32print.WritePrinter(printer_handle, text.encode("utf-8"))
     
-                for _ in range(20): # TODO get how how mach space to live befor cuting to change 20 ranges
+                for _ in range(int(hight)):
                     paper_cut_where = b'\x0A'
                     win32print.WritePrinter(printer_handle, paper_cut_where)
 
@@ -202,7 +217,7 @@ class PrinterForm(tk.Tk):
     
     def print_text_with_dialog(self, text):
         # Load the saved printer driver choice
-        '''
+        #'''
         with open('printer.txt', 'r') as f:
             printer_name = f.read().strip()
         # Get the default printer name

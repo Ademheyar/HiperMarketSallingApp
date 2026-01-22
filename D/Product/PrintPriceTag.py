@@ -25,7 +25,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 #from reportlab.lib.pagesizes import letter
 #from reportlab.pdfgen import canvas
-import barcode
+#import barcode
 #from barcode.writer import ImageWriter
 #from PIL import Image, ImageTk
 import io

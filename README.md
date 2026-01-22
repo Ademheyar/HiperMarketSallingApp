@@ -46,6 +46,10 @@ Contributions to the Point of Sale application are welcome. If you would like to
 
 4. Participate in the review process by addressing any feedback or questions raised during the review.
 
+
+
+Morinfo [barcode, type, single_price, fqty, qty, sock_patern, images, date, ""]
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE.md).

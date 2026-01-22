@@ -7,6 +7,20 @@ db_path = os.path.join(data_dir, 'my_database.db')
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
+import sqlite3
+import shutil
+import datetime
+import os
+import atexit
+import sys
+import random
+
+current_dir = os.path.abspath(os.path.dirname(__file__))
+MAIN_dir = os.path.join(current_dir, '..')
+sys.path.append(MAIN_dir)
+
+from D.GetVALUE import GetvalueForm
+
 class CreateWorkerDialog(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
@@ -102,36 +116,41 @@ class CreateWorkerDialog(tk.Toplevel):
         self.master.username_var.set(name)
         self.destroy()
 
-class WorkerManagementApp(tk.Toplevel):
-    def __init__(self, parent):
-        super().__init__(parent)
+class WorkerManagementApp(tk.Tk):
+    def __init__(self, master, doc_bar, T_qty):
+        #super().__init__(parent)
+        
+        self.getvalue_form = tk.Toplevel(master)
+        self.getvalue_form.title("Choose Worker")
 
-        self.parent = parent
+        self.master = master
 
         self.user_details = {}
-        
+        self.T_qty = T_qty
+        self._qty = 0
+        self.doc_bar = doc_bar
         self.username_var = tk.StringVar()
 
-        username_label = tk.Label(self, text="Worker name", font=("Arial", 14))
+        username_label = tk.Label(self.getvalue_form, text="Worker name", font=("Arial", 14))
         username_label.grid(row=0, column=0, padx=10, pady=10)
 
-        self.username_entry = tk.Entry(self, textvariable=self.username_var, font=("Arial", 14))
+        self.username_entry = tk.Entry(self.getvalue_form, textvariable=self.username_var, font=("Arial", 14))
         self.username_entry.grid(row=0, column=1, padx=10, pady=10)
         
-        search_button = tk.Button(self, text="Search", command=self.search, font=("Arial", 14))
+        search_button = tk.Button(self.getvalue_form, text="Search", command=self.search, font=("Arial", 14))
         search_button.grid(row=0, column=2, sticky="w", padx=10, pady=10)
         
-        self.user_listbox = tk.Listbox(self, font=("Arial", 14), width=30)
+        self.user_listbox = tk.Listbox(self.getvalue_form, font=("Arial", 14), width=30)
         self.user_listbox.grid(row=1, column=0, columnspan=5, rowspan=5, padx=10, pady=10)
         self.user_listbox.bind("<<ListboxSelect>>", self.on_user_select)
 
-        self.create_user_button = tk.Button(self, text="Create User", command=self.create_user_dialog, font=("Arial", 14))
+        self.create_user_button = tk.Button(self.getvalue_form, text="Create User", command=self.create_user_dialog, font=("Arial", 14))
         self.create_user_button.grid(row=6, column=0, sticky="w", padx=10, pady=10)
 
-        self.create_user_button = tk.Button(self, text="Ok", command=self.done_selecting, font=("Arial", 14))
+        self.create_user_button = tk.Button(self.getvalue_form, text="Ok", command=self.done_selecting, font=("Arial", 14))
         self.create_user_button.grid(row=6, column=2, sticky="w", padx=10, pady=10)
         
-        self.details_panel = tk.Frame(self)
+        self.details_panel = tk.Frame(self.getvalue_form)
         self.details_panel.grid(row=7, column=0, columnspan=3, rowspan=3, padx=10, pady=10, sticky="n")
 
         self.fill_user_listbox()
@@ -141,13 +160,19 @@ class WorkerManagementApp(tk.Toplevel):
         self.search()
         
         self.username_var.trace('w', self.entry_changed)
-        self.bind("<Up>", self.select_button)
-        self.bind("<Down>", self.select_button)
-        self.bind("<Return>", lambda _:self.done_selecting())
+        
         # show the Payment Form window
-        self.transient(self.master)
-        self.grab_set()
-        self.master.wait_window(self)
+        self.getvalue_form.transient(self.master)
+        self.getvalue_form.grab_set()
+        self.getvalue_form.focus_set()
+        self.getvalue_form.transient(self.master)
+        self.getvalue_form.bind("<Up>", self.select_button)
+        self.getvalue_form.bind("<Down>", self.select_button)
+        self.getvalue_form.bind("<Escape>", lambda _: self.getvalue_form.destroy())
+        self.getvalue_form.bind("<Return>", lambda _: self.done_selecting())
+
+        
+        self.master.wait_window(self.getvalue_form)
         
     def select_button(self, event):
         current_selection = self.user_listbox.curselection()
@@ -228,18 +253,44 @@ class WorkerManagementApp(tk.Toplevel):
             widget.destroy()
 
     def on_user_select(self, event):
-        print("self.user_listbox.curselection() " + str(self.user_listbox.curselection()))
-        print("self.user_listbox.get( " + str(self.user_listbox.get(self.user_listbox.curselection())))
+        #print("self.user_listbox.curselection() " + str(self.user_listbox.curselection()))
+        #print("self.user_listbox.get( " + str(self.user_listbox.get(self.user_listbox.curselection())))
         selected_username = self.user_listbox.get(self.user_listbox.curselection())[0]
         self.show_user_details(selected_username)
 
     def done_selecting(self):
-        selected_username = self.user_listbox.get(self.user_listbox.curselection())[0]
+        #print("aaaa")
         if self.user_details:
-            if selected_username == self.user_details["User_id"]:
-                self.destroy()
-            
-
+            selected_username = self.user_listbox.get(self.user_listbox.curselection())[0]
+            #print("aaab")
+            DATE = datetime.datetime.now().strftime('%Y-%m-%d')
+            m = GetvalueForm(self, self.T_qty-self._qty, str(self.user_details["User_name"]) + "ITEM SELLED")
+            i = float(m.value)
+            if self._qty + i > self.T_qty:
+                i = self.T_qty-self._qty
+            self._qty += i
+            cursor.execute("INSERT INTO COUNT_SELL (SELLER_ID, SELLER_NAME, DOC_BARCODE, ITEM_COUNTED, DATE) VALUES (?, ?, ?, ?, ?)",
+                           (self.user_details["User_id"], self.user_details["User_name"], self.doc_bar, i, DATE))
+            conn.commit()
+            if self.T_qty != self._qty:
+                return
+            else:
+                if selected_username == self.user_details["User_id"]:
+                    self.getvalue_form.destroy()
+        else:
+            #print("aaac")
+            self.user_details = {
+                "User_id": None,
+                "User_name": "It-Salf",
+                "User_address": "",
+                "User_id_pp_num": "",
+                "User_phone_num": "",
+                "Email": "",
+                "type": "",
+                "password": "",
+                "acsess": ""
+            }
+            self.getvalue_form.destroy()
     def entry_changed(self, *args):
         self.search()
         

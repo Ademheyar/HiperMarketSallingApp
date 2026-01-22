@@ -7,6 +7,8 @@ db_path = os.path.join(data_dir, 'my_database.db')
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
+from D.Security import *
+
 class CreateUserDialog(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
@@ -103,10 +105,13 @@ class CreateUserDialog(tk.Toplevel):
         self.destroy()
         
 class UserManagementApp(tk.Toplevel):
-    def __init__(self, parent, def_cm_id):
+    def __init__(self, parent, def_cm_id, user, Shops, on_Shop):
         super().__init__(parent)
 
         self.parent = parent
+        self.user = user
+        self.Shops = Shops
+        self.on_Shop = on_Shop
 
         self.user_details = {}
         it = cursor.execute("SELECT * FROM Users WHERE User_id=?", (def_cm_id,)).fetchone()
@@ -179,7 +184,7 @@ class UserManagementApp(tk.Toplevel):
         self.clear_details_panel()
 
         if row:
-            print("row : "+str(row))
+            # print("row : "+str(row))
             user_id = row[0]
             name  = row[3]
             addres  = row[4]
@@ -257,7 +262,8 @@ class UserManagementApp(tk.Toplevel):
             self.user_listbox.insert(tk.END, [row[0], row[3]])
 
     def create_user_dialog(self):
-        CreateUserDialog(self)
+        if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 20, f'User Not allowed to Create New Costumer'):
+            CreateUserDialog(self)
 
     def close_connection(self):
         cursor.close()

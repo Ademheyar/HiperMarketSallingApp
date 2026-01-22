@@ -5,6 +5,150 @@ import sys
 import os
 import sys
 
+# for prudoct
+def Add_new_on_nested(on_list, given_path, new_value):
+    #print("Add_new_on_nested new_value : " + str(new_value))
+    def loop_on_nasted_list(ls, pi):
+        sub_up = []
+        for li, l in enumerate(ls):
+            #print("li : " + str(li))
+            #print("l : " + str(l))
+            #print("given_path l : " + str(len(given_path)))
+            #print("given_path : " + str(given_path))
+            if pi < len(given_path) and l[0] == given_path[pi]:
+                if len(l[1][0]) > 3:
+                    #print("Found Mauch main info")
+                    #print("pi : " + str(pi))
+                    if pi+2 < len(given_path):
+                        found = 0
+                        for infoi, info in enumerate(l[1]):
+                            #print("info : " + str(info))
+                            if info[0] == given_path[pi+1] and info[1] == given_path[pi+2]:
+                               # print("Found Mauch info going to chang it to new")
+                                l[1][infoi] = new_value
+                                found = 1
+                                break
+                        if found == 0:
+                            l[1].append(new_value)
+                    else:
+                        l[1].append(new_value)
+                    return 1
+                else:
+                    #print("Found Mauch next list")
+                    ret = loop_on_nasted_list(l[1], pi+1)
+                    if not ret:
+                        def listt(i):
+                            isnewlist = 0
+                            ll = None
+                            if len(given_path) > 0:
+                                ll = [given_path[i]]
+                                #print("ll : " + str(ll))
+                                isnewlist = 1
+                                i+=1
+                                if i < len(given_path):
+                                    isnewlist, i, ll1 = listt(i)
+                                    ll.append([ll1])
+                                else:
+                                    #add value
+                                    ll.append([new_value])
+                            return isnewlist, i, ll
+                            
+                        isnewlist, pi, new_list = listt(pi+1) 
+                        #print("new_list : " + str(new_list))           
+                        if isnewlist:
+                            l[1].append(new_list)
+                    return 1
+        return 0
+    newls = loop_on_nasted_list(on_list, 0)
+    return on_list
+
+def add_new_list(_list, paths, value, do_what):
+    clist, left_path, fpath = get_last_same_path_list(paths, _list)
+    if not fpath:
+        left_path = paths
+    new_list = []
+    def listt(i):
+        isnewlist = 0
+        l0 = left_path
+        ll = None
+        if len(l0) > 0:
+            ll = [l0[i]]
+            #print("ll : " + str(ll))
+            isnewlist = 1
+            i+=1
+            if i < len(l0):
+                isnewlist, i, ll1 = listt(i)
+                ll.append([ll1])
+            else:
+                #add value
+                ll.append([value])
+        return isnewlist, i, ll
+        
+    isnewlist, i, new_list = listt(0) 
+    #print("new_list : " + str(new_list))           
+    if isnewlist:
+        if not fpath:
+            #print("not fpath : " + str(new_list))
+            clist.append(new_list)
+        else:
+            #print("paths, _list, new_list : " + str([paths, _list, new_list]))
+            clist = Add_new_on_nested(_list, paths, value)
+    return isnewlist, clist
+
+
+def dele_on_nested(on_list, given_path, new_value):
+    #print("new_value : " + str(new_value))
+    def loop_on_nasted_list(ls, pi):
+        sub_up = []
+        for li, l in enumerate(ls):
+            #print("li : " + str(li))
+            #print("l : " + str(l))
+            #print("given_path l : " + str(len(given_path)))
+            #print("given_path : " + str(given_path))
+            if l[0] == given_path[pi]:
+                if l[1] and len(l[1][0]) > 3:
+                    #print("Found Mauch main info")
+                    #print("pi : " + str(pi))
+                    if pi+2 < len(given_path):
+                        found = 0
+                        for infoi, info in enumerate(l[1]):
+                            #print("info : " + str(info))
+                            if info[0] == given_path[pi+1] and info[1] == given_path[pi+2]:
+                                #print("Found Mauch info going to chang it to new")
+                                l[1].remove(l[1][infoi])
+                                found = 1
+                                break
+                        if found == 0:
+                            l = []
+                            return 1
+                    else:
+                        l = []
+                    return 1
+                
+                elif pi+1 < len(given_path):
+                    #print("Found Mauch next list")
+                    ret = loop_on_nasted_list(l[1], pi+1)
+                    if ret:
+                        return 1
+                else:
+                    ls.remove(ls[li])
+        return 0
+    newls = loop_on_nasted_list(on_list, 0)
+    return on_list
+
+    
+def dele_list(_list, paths, value):
+    leng = len(paths)
+    clist = _list
+    if leng != 0:
+        if leng >= 2:
+            clist = dele_on_nested(_list, paths, value)
+        else:
+            for i, l in enumerate(_list):
+                if l[0] == paths[0]:
+                    clist.remove(_list[i])
+    return 1, clist
+
 # this will convert text old list saving to new listnode
 def read_code(vs_info, shop_s, code_s, color_s, size_s):
     a_u_list = []
@@ -156,7 +300,7 @@ def get_last_same_path_list(paths, _list):
     left_path = ""
     get_left_path = 0
     found_path = 0
-    for path in paths.split("|"):
+    for path in paths:
         if left_path:
             left_path += "|" + path
         else:
@@ -167,7 +311,7 @@ def get_last_same_path_list(paths, _list):
             else:
                 get_left_path = 1
                 left_path += path
-    return corrontl, left_path, found_path
+    return corrontl, paths, found_path
 
 def change_last_same_path_list(paths, _list, new_list):
     corrontl = _list
@@ -188,11 +332,50 @@ def change_last_same_path_list(paths, _list, new_list):
     corrontl = new_list
     return _list, left_path, found_path
 
+def get_semilar_paths(given_path, on_list):
+    found_p = []
+    def loop_on_nasted_list(ls, pi):
+        sub_up = []
+        for li, l in enumerate(ls):
+            ppi = 0
+            #print("l : " + str(l))
+            #print("pf : " + str(pf))
+            #print("pl : " + str(pl))
+            #if pi < len(path):
+                #print(str(len(given_path))+"given_path["+str(pi)+"] : " + str(given_path[pi]))
+            if pi < len(given_path) and l[0] == given_path[pi]:
+                found_p.append(pl)
+                #print("l[0] == given_path[pi] : " + str(given_path[pi]))
+                
+            if len(l) <= 2:
+                sub_sub_up = [l[0]]
+                #print("sub_sub_up : " + str(sub_sub_up))
+                ret = loop_on_nasted_list(l[1], pi+1)
+                sub_sub_up.append(ret)
+                if pi >= len(given_path) and ppi:
+                    sub_sub_up.append(new_l)
+                    #print("new sub_up : " + str(sub_sub_up))
+                else:
+                    sub_up.append(sub_sub_up)
+                    #print("copy sub_up : " + str(sub_sub_up))
+            else:
+                if pi >= len(given_path):
+                    sub_up.append(new_l)
+                    #print("new2 sub_up : " + str(sub_up))
+                else:
+                    sub_up.append(l)
+                    #print("copy2 sub_up : " + str(sub_up))
+        return sub_up
+    loop_on_nasted_list(on_list, 0)
+    return found_p
 
-def add_at_last_same_path_list(paths, _list, new_l):
+
+    
+def add_at_last_same_path_list(paths, _list, new_l, do_what):
     up = []
     found_p = []
-    path = paths.split("|")
+    path = paths
+    
     def copy_list(ls, pf, pi, pl):
         sub_up = []
         for li, l in enumerate(ls):
@@ -228,19 +411,32 @@ def add_at_last_same_path_list(paths, _list, new_l):
                     #print("copy2 sub_up : " + str(sub_up))
         return sub_up
     
+    
     def add_s(mlist, path, new_sub):
         current = mlist
+        onc = -1
         #print("path : " + str(path))
         for c, index in enumerate(path):
             #print("in list  : " + str(current))
             if index < len(current):
                 current = current[index][1]
+                if len(current[0]) > 2:
+                    onc = c
+                    break  
             else:
                 #print("filed : " + str(c) +" v "+ str(index))
                 return mlist
         #print("current : " + str(current))
         if len(current[0]) > 2:
-            current[0] = new_sub[1][0]
+            if onc >= 0 and onc+1 < len(path):
+                for ind, item in enumerate(current):
+                    if current[ind] == path[onc+1] and current[ind] == path[onc+2]:
+                        current[ind] = new_sub[1][0]
+                        break
+            elif do_what == 0: # change
+                current[0] = new_sub[1][0]
+            else: # add new one
+                current.append(new_sub[1][0])    
             #print("current1 : " + str(current))
         else:
             current.append(new_sub)
@@ -265,123 +461,6 @@ def add_at_last_same_path_list(paths, _list, new_l):
     #print("up : " + str(sub))
     return sub
 
-    
-def add_new_list(_list, paths, value):
-    clist, left_path, fpath = get_last_same_path_list(paths, _list)
-    if not fpath:
-        left_path = paths
-    new_list = []
-    def listt(i):
-        isnewlist = 0
-        l0 = left_path.split("|")
-        ll = None
-        if len(l0) > 0:
-            ll = [l0[i]]
-            #print("ll : " + str(ll))
-            isnewlist = 1
-            i+=1
-            if i < len(l0):
-                isnewlist, i, ll1 = listt(i)
-                ll.append([ll1])
-            else:
-                #add value
-                ll.append([value])
-        return isnewlist, i, ll
-        
-    isnewlist, i, new_list = listt(0) 
-    #print("new_list : " + str(new_list))           
-    if isnewlist:
-        if not fpath:
-            #print("not fpath : " + str(new_list))
-            clist.append(new_list)
-        else:
-            #print("paths, _list, new_list : " + str([paths, _list, new_list]))
-            clist = add_at_last_same_path_list(paths, _list, new_list)
-    return isnewlist, clist
-
-def dele_at_last_same_path_list(paths, _list, new_l):
-    up = []
-    found_p = []
-    print("paths : " + str(paths))
-    path = paths.split("|")
-    def copy_list(ls, pf, pi, pl):
-        for li, l in enumerate(ls):
-            ppi = 0
-            print("l : " + str(l))
-            print("pf : " + str(pf))
-            print("pl : " + str(pl))
-            if pi < len(path):
-                print(str(len(path))+"path["+str(pi)+"] : " + str(path[pi]))
-            if pf and pi < len(path) and l[0] == path[pi]:
-                ppi = 1
-                pl = pl+[li]
-                found_p.append(pl)
-                print("l[0] == path[pi] : " + str(path[pi]))
-                
-            if len(l) == 2 :
-                copy_list(l[1], ppi, pi+1, pl)
-    
-    def add_s(mlist, path, on_p):
-        if len(path) == 1:
-            mlist.remove(mlist[path[0]])
-        else:
-            current = mlist
-            parent = mlist
-            print("path : " + str(path))
-            for c, index in enumerate(path):
-                print("in list  : " + str(current))
-                on_p = c
-                if index < len(current):
-                    if len(path)-1 == c+1:
-                        parent = current[index]
-                    if len(current[index][1]) > 0 and len(current[index][1][0]) >= 2:
-                        parent = current[index]
-                        current = current[index][1]
-                    elif len(current) > 2:
-                        current = current
-                    else:
-                        current = current[index]
-                else:
-                    print("filed : " + str(c) +" v "+ str(index))
-                    return mlist
-            print("parent : " + str(parent))
-            print("current : " + str(current))
-            if len(current[0]) == 2:
-                parent[1].remove(current[0])
-                print("current1 : " + str(current))
-            elif isinstance(current[0], list) and len(current[0]) > 2:
-                parent[1].remove(current[0])
-                print("current1.2 : " + str(current))
-            else:
-                parent[1].remove(current)
-                print("current2 : " + str(current))
-        return mlist
-    
-    copy_list(_list, 1, 0, [])
-    
-    fpi = 0
-    fpl = 0
-    #print("found_p : " + str(found_p))
-    for j, fp in enumerate(found_p):
-        #print("\n\n\nfound_p["+str(j)+"] : " + str(fp))
-        if len(fp) > fpl:
-            #print("found long")
-            fpi = j
-            fpl = len(fp)
-            
-    #print("sub : " + str(_list))
-    #up.append()
-    _list = add_s(_list, found_p[fpi], 0)
-    #print("up : " + str(_list))
-    return _list
-
-    
-def dele_list(_list, paths, value):
-    clist, left_path, fpath = get_last_same_path_list(paths, _list)
-    if not fpath:
-        left_path = paths
-    clist = dele_at_last_same_path_list(paths, _list, [])
-    return 1, clist
 
 def change_at_last_same_path_list(paths, _list, new_l):
     up = []
