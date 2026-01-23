@@ -14,6 +14,40 @@ This is a Point of Sale (POS) application designed to help businesses manage sal
 
 - **Integration Capabilities**: Integrate with other software and hardware systems such as payment gateways, accounting systems, barcode scanners, and receipt printers for a comprehensive retail management solution.
 
+- **User Management**: Role-based access control with support for administrators, managers, and cashiers with customizable permissions.
+
+- **Multi-Store Support**: Manage multiple store locations with centralized inventory and sales tracking.
+
+- **Discount and Promotion Management**: Create and apply discounts, coupons, and promotional offers.
+
+- **Audit Trail**: Track all transactions and system activities for security and compliance purposes.
+
+- **Offline Mode**: Continue operations during network connectivity issues with automatic synchronization.
+
+- **Mobile-Friendly Interface**: Responsive design for tablet and mobile device support.
+
+### TODO Features (Not Yet Implemented)
+
+- [ ] Advanced search and filtering capabilities
+- [ ] Email and SMS notifications
+- [ ] Supplier management system
+- [ ] Return and exchange processing
+- [ ] Employee performance metrics
+- [ ] Data backup and recovery system
+- [ ] API documentation and SDKs
+- [ ] Multi-language support
+- [ ] Dark mode interface option
+- [ ] Real-time inventory sync across locations
+- [ ] Customer feedback and review system
+- [ ] Automated invoice scheduling
+- [ ] Tax calculation and compliance reporting
+- [ ] Gift card and store credit management
+- [ ] Queue management system
+- [ ] Weather-based inventory forecasting
+- [ ] Two-factor authentication
+- [ ] Advanced sales forecasting with machine learning
+
+
 ## Getting Started
 
 To get started with the Point of Sale application, follow these steps:
