@@ -11,6 +11,8 @@ import sqlite3, os
 import base64
 import json
 
+from C.API import API
+
 current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(os.path.join(current_dir, '..'), '..')
 sys.path.append(MAIN_dir)
@@ -34,6 +36,27 @@ from C.API.API import *
 
 # THIS WILL GET User BY ITS GIVEN VALUES
 # NAME AND PASSWORD IS RQUERDE FOR FACHING ALL INFO
+
+def Get_WORKER(Link, ARG, VALUE):
+    
+    
+    url = Link
+    entry = {'Do': "GET USER", 'User_name': User_name, 'User_password' : User_password }
+    while 1:
+        response_data = Sand_API(url, entry)
+        if not response_data == []:
+            if response_data['status'] == 'success':
+                if response_data['Value']:
+                    print("USER FOUND")
+                    return response_data['Value']
+                else:
+                    print("USER NOT FOUND")
+                    return []
+            else:
+                print("There is Error FOUND")
+                return False
+        break
+
 # FOR FACING ANY USER, COSTUMER EVEN WORKER BASIC INFO
 # AT LIST NAME AND USER NAME IS RQUERDE
 def Get_User(Link, ARG, VALUE):
@@ -48,7 +71,8 @@ def Get_User(Link, ARG, VALUE):
                 value = (VALUE[a], )
             if a+1 < len(ARG):
                 query += " AND"
-    if Link:
+                
+    if Link and islinked(Link):
         url = Link
         entry = {'Do': "GET USER", 'QUERYS': query, 'QUERYVALUES' : value }
         response_data = Sand_API(url, entry)
@@ -62,6 +86,10 @@ def Get_User(Link, ARG, VALUE):
                     return []
             else:
                 print("There is Error FOUND")
+    else:
+        print("API Error")
+
+
     print("query ", query)
     print("value ", value)
     users = fetch_as_dict_list(cursor, "SELECT * FROM USERS WHERE" + query, value)

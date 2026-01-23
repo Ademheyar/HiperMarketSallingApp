@@ -29,29 +29,7 @@ sys.path.append(MAIN_dir)
 
 
 # API Connection 
-def Sand_API(url, entry):
-    response_data = None
-    try:
-        # Send the data to the API
-        print('Chacke_Connection Data  ', entry)
-        print('Chacke_Connection Data send to ', url)
-        
-        response = requests.post(url, json=entry)
 
-        if response.status_code == 200:
-            print('Chacke_Connection Data sent successfully.')
-            print('Chacke_Connection Data sent response.', response)
-            try:
-                response_data = response.json()
-            except requests.exceptions.RequestException as e:
-                print('Chacke_Connection Failed to read data:', e)
-            return response_data
-        else:
-            print('Chacke_Connection Failed to retrieve data from the website.')
-    except requests.exceptions.RequestException as e:
-        print('Chacke_Connection Failed to send data:', e)
-    return None
-    
 def Chacke_Connection(Link):
     url = Link
     entry = {'Do': "Testing Connection", 'shop': 0, 'user' : 0, 'ISNEW_USER' : 0 , 'ISNEW_SHOP' : 0 }
@@ -75,3 +53,39 @@ def Chacke_Connection(Link):
                 #self.found_linke_list_box.insert('', 'end', text="Failed Reading Data", values=(shop['Shop_name'], shop['Shop_link']))
                 break
         break
+
+def islinked(link):
+        if not link == "":
+            resulet = Chacke_Connection(link)
+            if resulet:
+                print("Connection OK")
+                return True
+            else:
+                print("Connection Failed")
+        else:
+            print("Empty Link")
+        return False
+    
+def Sand_API(url, entry):
+    response_data = None
+    try:
+        # Send the data to the API
+        print('Chacke_Connection Data  ', entry)
+        print('Chacke_Connection Data send to ', url)
+        
+        response = requests.post(url, json=entry)
+
+        if response.status_code == 200:
+            print('Chacke_Connection Data sent successfully.')
+            print('Chacke_Connection Data sent response.', response)
+            try:
+                response_data = response.json()
+            except requests.exceptions.RequestException as e:
+                print('Chacke_Connection Failed to read data:', e)
+            return response_data
+        else:
+            print('Chacke_Connection Failed to retrieve data from the website.')
+    except requests.exceptions.RequestException as e:
+        print('Chacke_Connection Failed to send data:', e)
+    return None
+    
