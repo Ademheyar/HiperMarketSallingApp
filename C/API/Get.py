@@ -34,27 +34,6 @@ from C.API.API import *
 
 # THIS WILL GET User BY ITS GIVEN VALUES
 # NAME AND PASSWORD IS RQUERDE FOR FACHING ALL INFO
-
-def Get_WORKER(Link, ARG, VALUE):
-    
-    
-    url = Link
-    entry = {'Do': "GET USER", 'User_name': User_name, 'User_password' : User_password }
-    while 1:
-        response_data = Sand_API(url, entry)
-        if not response_data == []:
-            if response_data['status'] == 'success':
-                if response_data['Value']:
-                    print("USER FOUND")
-                    return response_data['Value']
-                else:
-                    print("USER NOT FOUND")
-                    return []
-            else:
-                print("There is Error FOUND")
-                return False
-        break
-
 # FOR FACING ANY USER, COSTUMER EVEN WORKER BASIC INFO
 # AT LIST NAME AND USER NAME IS RQUERDE
 def Get_User(Link, ARG, VALUE):

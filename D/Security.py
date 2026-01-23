@@ -188,7 +188,7 @@ class SecurityForm(tk.Toplevel):
             relief=tk.FLAT,
             bd=2
         )
-        self.master.link_entry.insert(0, "http://localhost/a/API/Get.php")
+        self.master.link_entry.insert(0, "http://localhost/HiperMarketSit/API/Get.php")
         self.master.link_entry.grid(row=8, column=0, columnspan=4, sticky="we", padx=12, pady=8)
 
         # Buttons with Android Material style
