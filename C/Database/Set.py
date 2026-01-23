@@ -28,6 +28,32 @@ sys.path.append(MAIN_dir)
 
 from D.Security import *
 
+
+
+# this will fetch data as dict list from data base
+# query : str = the sql query
+# values : tuple = the values to be used in the query
+def fetch_as_dict_list(query, values):
+    cur.execute(query, values)
+    items = cur.fetchall()
+    #print("items len", len(items))
+    columns = [col[0] for col in cur.description]
+    #print("columns")
+    #print(str(columns))
+    #print("items len", len(items))
+    results = []
+    for row in items:
+        #print("row")
+        #print(str(row))
+        #print("items len", len(items))
+        if len(columns) != len(row):
+            raise ValueError("Mismatch between number of columns and rows "+ str(len(columns)) + ", "+ str(len(row)))
+            
+        results.append(dict(zip(columns, row)))
+    return results
+
+
+
 # this function will add new user to system data base all data must be given
 def Add_new_user(User_id, user_fname, user_lname, user_name, user_gender, user_country, user_phone_No, user_email, user_contact, user_home_No, user_ID_Pp_ID, user_password, user_type, user_about, user_shops, User_work_shop, user_likes, user_following_shop, user_favoraite_items, user_rate, user_access, User_pimg, User_following_shop):
     User_id = ""
@@ -40,11 +66,13 @@ def Add_new_user(User_id, user_fname, user_lname, user_name, user_gender, user_c
         cur.execute('INSERT INTO Users(User_id, user_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_id_pp_num, User_password, User_type, User_about, User_shop, User_work_shop, User_likes, User_following_shop, User_favoraite_items, User_rate, User_access, User_pimg, User_following_shop) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',(User_id, user_fname, user_lname, user_name, user_gender, user_country, user_phone_No, user_email, user_contact, user_home_No, user_ID_Pp_ID, user_password, user_type, user_about, user_shops, User_work_shop, user_likes, user_following_shop, user_favoraite_items, user_rate, user_access, User_pimg, User_following_shop))
     # Commit the changes to the database
     conn.commit()     
+    return cur.lastrowid
 
 # this will add user data to system database user data mast be given dict list key : value
 def Add_User_data_From_list(User_data):
     #print("Add_User_data_From_list User_data ", User_data)
-    Add_new_user(User_data['User_id'], User_data['user_fname'], User_data['user_lname'], User_data['user_name'], User_data['user_gender'], User_data['user_country'], User_data['user_phone_No'], User_data['user_email'], User_data['user_contact'], User_data['user_home_No'], User_data['user_ID_Pp_ID'], User_data['user_password'], User_data['user_type'], User_data['user_about'], User_data['user_shops'], User_data['User_work_shop'], User_data['user_likes'], User_data['user_following_shop'], User_data['user_favoraite_items'], User_data['user_rate'], User_data['user_access'], User_data['User_pimg'], User_data['User_following_shop'])
+    return Add_new_user(User_data['User_id'], User_data['user_fname'], User_data['user_lname'], User_data['user_name'], User_data['user_gender'], User_data['user_country'], User_data['user_phone_No'], User_data['user_email'], User_data['user_contact'], User_data['user_home_No'], User_data['user_ID_Pp_ID'], User_data['user_password'], User_data['user_type'], User_data['user_about'], User_data['user_shops'], User_data['User_work_shop'], User_data['user_likes'], User_data['user_following_shop'], User_data['user_favoraite_items'], User_data['user_rate'], User_data['user_access'], User_data['User_pimg'], User_data['User_following_shop'])
+
 
 # this function will add new Shop to system data base all data must be given
 def Add_new_Shop(Shop_id, Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions):

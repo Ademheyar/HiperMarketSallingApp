@@ -223,7 +223,7 @@ cur.execute('''CREATE TABLE IF NOT EXISTS Shops
               Shop_Access_levels TEXT)''')
               
 
-#cur.execute("ALTER TABLE Shops ADD COLUMN Shop_Settings TEXT AFTER Shop_link")
+#cur.execute("ALTER TABLE Id ADD COLUMN Shop_Settings TEXT AFTER Shop_link")
 
 #cur.execute("""
 #   INSERT INTO Shops (Shop_name, Shop_brand_name, Shop_oweners_id)
@@ -232,6 +232,8 @@ cur.execute('''CREATE TABLE IF NOT EXISTS Shops
 
 #query = f"DROP TABLE IF EXISTS Users"
 #cur.execute(query)
+
+#cur.execute("ALTER TABLE Users ADD COLUMN Id INTEGER BEFORE User_id")
 
 cur.execute('''CREATE TABLE IF NOT EXISTS Users
              (Id INTEGER PRIMARY KEY AUTOINCREMENT,

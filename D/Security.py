@@ -383,14 +383,19 @@ class SecurityForm(tk.Toplevel):
             for user in users:
                 print("User : ", user)
                 if not 'Id' in user:
+                    lb = tk.Label(self.master.Error_list_frame, text="Online Login Secsesfull", fg="green")
+                    lb.pack(side=tk.TOP, fill=tk.X, expand=True)
                     answer = tk.messagebox.askquestion("Question", "User Data found on online database. for more ifection use it is better to download user datas. Do you what to download user data?")
                     if answer == 'yes':
-                        Add_Shop_data_From_list(user)
-                        lb = tk.Label(self.master.Error_list_frame, text="Online Login Secsesfull", fg="green")
+                        lb = tk.Label(self.master.Error_list_frame, text="Data Saved Will be Readen Online And Offline", bg="#3ce76f", fg="green")
                         lb.pack(side=tk.TOP, fill=tk.X, expand=True)
+                        user = Add_Shop_data_From_list(user)
                     else:
-                        lb = tk.Label(self.master.Error_list_frame, text="Online Login Is Not Working", bg="#e74c3c", fg="white")
+                        lb = tk.Label(self.master.Error_list_frame, text="Data Will be Readen Online", bg="#c2e73c", fg="white")
                         lb.pack(side=tk.TOP, fill=tk.X, expand=True)
+                else:     
+                    lb = tk.Label(self.master.Error_list_frame, text="Offline Login Secsesfull", bg="#e7cb3c", fg="green")
+                    lb.pack(side=tk.TOP, fill=tk.X, expand=True)
     
                 select_User_Company_State_Frame = Select_User_Company_State_Frame(self.Security_form, self._hide_credentials_page, user)
                 select_User_Company_State_Frame.grid(row=0, column=0, sticky="nsew")
@@ -399,8 +404,6 @@ class SecurityForm(tk.Toplevel):
 
                 self.update_logged_user(user['User_name'], user['User_id'])
                 
-                lb = tk.Label(self.master.Error_list_frame, text="Offline Login Secsesfull", bg="#e74c3c", fg="green")
-                lb.pack(side=tk.TOP, fill=tk.X, expand=True)
                 
                 # hide credentials frame and restore user selection canvas + scrollbar
                 try:
@@ -415,7 +418,6 @@ class SecurityForm(tk.Toplevel):
                     pass
                 self._credentials_shown = False
                 self.button_BACK_close['text'] = "Back"
-
         else:
             tk.Label(self.master.Error_list_frame, text="Online Login Filed", bg="#e74c3c", fg="red").pack(side=tk.TOP, fill=tk.X, expand=True)
             tk.Label(self.master.Error_list_frame, text="User Name("+str(entered_username)+") Or Password Incorrect.", bg="#e74c3c", fg="white").pack(side=tk.TOP, fill=tk.X, expand=True)

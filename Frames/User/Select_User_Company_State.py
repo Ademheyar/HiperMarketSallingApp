@@ -7,24 +7,12 @@ import json
 
 import os
 import os, sys
-current_dir = os.path.abspath(os.path.dirname(__file__))
-MAIN_dir = os.path.join(os.path.join(current_dir, '..'), '..')
-sys.path.append(MAIN_dir)
-
-data_dir = os.path.join(MAIN_dir, 'data')
-db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cur = conn.cursor()
-
-conn.commit()
-
 from C.List import *
 # from D.docediterform import DocEditForm
 from D.printer import PrinterForm
 from C.slipe import load_slip
 # from M.Display import DisplayFrame
 
-from C.Sql3 import *
 from C.API.Get import *
 from C.API.API import *
 from C.Database.Set import *
@@ -207,15 +195,10 @@ class Select_User_Company_State_Frame(tk.Frame):
                     pass  
         #print("User_work_shops ", User_work_shops)
         
-        Shops = []
-        if User_work_shops:
-            for Shop in User_work_shops:
-                s = fetch_as_dict_list(cur, "SELECT * FROM Shops WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
-                        (str(Shop[0]), str(Shop[1]), str(Shop[2])))
-                if s:
-                    Shops.append(s[0])
-                    #print("s : " + str(s))
-                    #print("Shops : " + str(Shops))  
+        # Get all Worker shops info
+        Link = self.master.link_entry.get()
+        Shops = Get_all_User_work_shops_info(Link, self.User_data, User_work_shops)
+
                 
         def login(i):
             for frame in self.frames.values():
@@ -248,8 +231,8 @@ class Select_User_Company_State_Frame(tk.Frame):
                 new_item_brandname = tk.Label(new_item_fram, text=str(User_work_shop[2]), font=("Arial", 11), bg="#0d47a1", fg="#ffffff")
                 new_item_brandname.grid(row=1, column=1, columnspan=6, sticky="nsew")
                 
-                a = fetch_as_dict_list(cur, "SELECT * FROM Shops", ())
-                find_shop_in_sysdb = fetch_as_dict_list(cur, "SELECT * FROM Shops WHERE Shop_name=? AND Shop_brand_name=?", 
+                a = fetch_as_dict_list("SELECT * FROM Shops", ())
+                find_shop_in_sysdb = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_name=? AND Shop_brand_name=?", 
                     (str(User_work_shop[1]), str(User_work_shop[2])))
                     
             def Get_Shop_Data(index, frame, uws):

@@ -71,7 +71,7 @@ def Get_User(Link, ARG, VALUE):
                 value = (VALUE[a], )
             if a+1 < len(ARG):
                 query += " AND"
-                
+
     if Link and islinked(Link):
         url = Link
         entry = {'Do': "GET USER", 'QUERYS': query, 'QUERYVALUES' : value }
@@ -92,7 +92,7 @@ def Get_User(Link, ARG, VALUE):
 
     print("query ", query)
     print("value ", value)
-    users = fetch_as_dict_list(cursor, "SELECT * FROM USERS WHERE" + query, value)
+    users = fetch_as_dict_list("SELECT * FROM USERS WHERE" + query, value)
     if users:
         return users
    
@@ -100,10 +100,25 @@ def Get_User(Link, ARG, VALUE):
 # Shop Get
 
 # this will get user shop data with its name and brand name the user must be connected to that shop
-def Get_Shop(Link, User_name, User_password, Shop_name, Shop_brand_name):
-    url = Link
-    entry = {'Do': "GET SHOP", 'Shop_name': Shop_name, 'Shop_brand_name' : Shop_brand_name, 'User_name': User_name, 'User_password' : User_password }
-    while 1:
+# FOR FACING ANY Shop, COSTUMER EVEN WORKER BASIC INFO
+# AT LIST NAME AND Shop NAME IS RQUERDE
+def Get_Shop(Link, user, ARG, ShopsVALUE):
+    query = ""
+    value = None
+    Shop = None
+    for a, arg in  enumerate(ARG):
+        if len(ShopsVALUE) > a:
+            query += " " + arg + "=?"
+            if value:
+                value = value + (ShopsVALUE[a],)
+            else:
+                value = (ShopsVALUE[a], )
+            if a+1 < len(ARG):
+                query += " AND"
+
+    if Link and islinked(Link):
+        url = Link
+        entry = {'Do': "GET SHOP", 'User': user, 'QUERYS': query, 'QUERYVALUES' : value }
         response_data = Sand_API(url, entry)
         if not response_data == []:
             if response_data['status'] == 'success':
@@ -112,11 +127,33 @@ def Get_Shop(Link, User_name, User_password, Shop_name, Shop_brand_name):
                     return response_data['Value']
                 else:
                     print("SHOP NOT FOUND")
-                    return []
+                    Shop = None
             else:
                 print("There is Error FOUND")
-                return False
-        break
+                Shop = None
+    else:
+        print("API Error")
+
+    print("shop query ", query)
+    print("shop value ", value)
+    Shops = fetch_as_dict_list("SELECT * FROM Shops WHERE" + query, value)
+    if Shops:
+        return Shops
+
+
+# GET USER WORK SHOPS FROM LOCAL DATABASE Or Online
+def Get_all_User_work_shops_info(Link, user, User_work_shops):
+    Shops = []
+    if User_work_shops and user:
+        for Shop in User_work_shops:
+            s = Get_Shop(Link, user, ["Shop_id", "Shop_name", "Shop_brand_name"]
+            [str(Shop[0]), str(Shop[1]), str(Shop[2])])
+
+            if s:
+                Shops.append(s[0])
+                #print("s : " + str(s))
+                #print("Shops : " + str(Shops))  
+    return Shops
 
 
 
