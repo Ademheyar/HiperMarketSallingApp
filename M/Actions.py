@@ -16,7 +16,8 @@ MAIN_dir = os.path.join(current_dir, '..')
 sys.path.append(MAIN_dir)
 from D.Getdefsize import ButtonEntryApp
 from C.List import *
-from C.Sql3 import *
+
+from C.API.Get import *
 from D.searchbox import search_entry
 
 # Connect to the database or create it if it does not exist
@@ -410,7 +411,7 @@ class ActionsForm(tk.Frame):
             if self.Selected_Shop != "" and shop['Shop_name'] != self.Selected_Shop:
                 continue
 
-            Shop = fetch_as_dict_list(cur, "SELECT * FROM Shops WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
+            Shop = fetch_as_dict_list( "SELECT * FROM Shops WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
                                 (str(shop['Shop_id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
             if Shop and Shop[0] and Shop[0]['Shop_Actions'] and Shop[0]['Shop_Actions'] != "":
                 print("Shop[0]['Shop_Actions'] ", Shop[0]['Shop_Actions'])
@@ -948,7 +949,7 @@ class ActionsForm(tk.Frame):
                     # Commit the changes to the database
                     conn.commit()
                 else:
-                    Shop0 = fetch_as_dict_list(cur, "SELECT * FROM Shops WHERE Shop_id=? AND Shop_name=?", 
+                    Shop0 = fetch_as_dict_list( "SELECT * FROM Shops WHERE Shop_id=? AND Shop_name=?", 
                                         (str(self.selected_shop_id), str(self.selected_shop_name)))
                     if Shop0 and Shop0[0] and Shop0[0]['Shop_Actions'] and Shop0[0]['Shop_Actions'] != "":
                         

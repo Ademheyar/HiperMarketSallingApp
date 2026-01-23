@@ -23,7 +23,8 @@ conn.commit()
 
 from D.Getdefsize import ButtonEntryApp
 from C.List import *
-from C.Sql3 import *
+
+from C.API.Get import *
 from D.printer import *
 from D.GetVALUE import GetvalueForm
 # Connect to the database or create it if it does not exist

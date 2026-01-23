@@ -16,7 +16,7 @@ MAIN_dir = os.path.join(current_dir, '..')
 sys.path.append(MAIN_dir)
 from D.Getdefsize import ButtonEntryApp
 from C.List import *
-from C.Sql3 import *
+from C.API.Get import *
 
 # Connect to the database or create it if it does not exist
 
@@ -279,7 +279,7 @@ class ProductForm(ttk.Frame):
                 #print("Shop items --> ", found_shop_items)
                 if found_shop_items:
                     for item in found_shop_items:
-                        value = fetch_as_dict_list(cur, 'SELECT * FROM product WHERE id=?', (str(item[0]),))
+                        value = fetch_as_dict_list( 'SELECT * FROM product WHERE id=?', (str(item[0]),))
                         if value and not len(value) == 0:
                             self.master.master.master.master.Shops_info['Shop_items'].append([value[0], [], "", "", "", "", "", "", "", "", "", "", ""])
         
@@ -468,7 +468,7 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
         if newinfo_list and not newinfo_list == 0:            
             cur.execute('UPDATE product SET name=?, price=?, more_info=? WHERE id=?', (data[9].get(), data[7].get(), json.dumps(newinfo_list), self.master.master.master.master.Shops_info['Shop_items'][index][0]['id']))
             data[8].config(text="Price "+data[7].get())
-            it2 = fetch_as_dict_list(cur, 'SELECT * FROM product WHERE id=?', (str(self.master.master.master.master.Shops_info['Shop_items'][index][0]['id']),))
+            it2 = fetch_as_dict_list( 'SELECT * FROM product WHERE id=?', (str(self.master.master.master.master.Shops_info['Shop_items'][index][0]['id']),))
             if it2 and not len(it2) == 0:
                 self.master.master.master.master.Shops_info['Shop_items'][index][0] = it2[0]
                 self.master.master.master.master.Shops_info['Shop_items'][index][1] = newinfo_list

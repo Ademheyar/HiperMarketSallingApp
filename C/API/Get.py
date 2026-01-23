@@ -32,6 +32,30 @@ from D.Security import *
 from C.API.API import *
 
 
+
+# this will fetch data as dict list from data base
+# query : str = the sql query
+# values : tuple = the values to be used in the query
+def fetch_as_dict_list(query, values):
+    cur.execute(query, values)
+    items = cur.fetchall()
+    #print("items len", len(items))
+    columns = [col[0] for col in cur.description]
+    #print("columns")
+    #print(str(columns))
+    #print("items len", len(items))
+    results = []
+    for row in items:
+        #print("row")
+        #print(str(row))
+        #print("items len", len(items))
+        if len(columns) != len(row):
+            raise ValueError("Mismatch between number of columns and rows "+ str(len(columns)) + ", "+ str(len(row)))
+            
+        results.append(dict(zip(columns, row)))
+    return results
+
+
 # USER
 
 # THIS WILL GET User BY ITS GIVEN VALUES
@@ -120,7 +144,7 @@ def Get_Shop(Link, user, ARG, ShopsVALUE):
         url = Link
         entry = {'Do': "GET SHOP", 'User': user, 'QUERYS': query, 'QUERYVALUES' : value }
         response_data = Sand_API(url, entry)
-        if not response_data == []:
+        if response_data and not response_data == []:
             if response_data['status'] == 'success':
                 if response_data['Value']:
                     print("SHOP FOUND", response_data['Value'])
@@ -143,16 +167,17 @@ def Get_Shop(Link, user, ARG, ShopsVALUE):
 
 # GET USER WORK SHOPS FROM LOCAL DATABASE Or Online
 def Get_all_User_work_shops_info(Link, user, User_work_shops):
+    print("Link : " + str(Link))
     Shops = []
     if User_work_shops and user:
         for Shop in User_work_shops:
-            s = Get_Shop(Link, user, ["Shop_id", "Shop_name", "Shop_brand_name"]
-            [str(Shop[0]), str(Shop[1]), str(Shop[2])])
+            print("Shop : " + str(Shop))
+            s = Get_Shop(Link, user, ["Shop_id", "Shop_name", "Shop_brand_name"], [str(Shop[0]), str(Shop[1]), str(Shop[2])])
 
             if s:
                 Shops.append(s[0])
-                #print("s : " + str(s))
-                #print("Shops : " + str(Shops))  
+                print("s : " + str(s))
+                print("Shops : " + str(Shops))  
     return Shops
 
 
@@ -283,7 +308,7 @@ class UploadingForm(tk.Toplevel):
                 found_shop_items = json.loads(shop['Shop_items'])
                 if found_shop_items:
                     for item in found_shop_items:
-                        value = fetch_as_dict_list(cur, 'SELECT * FROM product WHERE id=?', (str(item[0]),))
+                        value = fetch_as_dict_list( 'SELECT * FROM product WHERE id=?', (str(item[0]),))
                         if not value or len(value) == 0:
                             item_toupgraded.append(item)
                 Total_Upgrade_Activetis += len(where_info['Product_to_upgrade'])

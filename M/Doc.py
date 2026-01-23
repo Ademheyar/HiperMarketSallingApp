@@ -18,7 +18,8 @@ sys.path.append(MAIN_dir)
 from D.docediterform import DocEditForm
 from D.printer import PrinterForm
 from C.slipe import load_slip
-from C.Sql3 import *
+
+from C.API.Get import *
 
 from C.List import *
 
@@ -96,7 +97,7 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
     
     #print(str([query, (*given,)])+"\n")
     # Execute the SQL query and return the results as a list of tuples
-    results = fetch_as_dict_list(cur, query, (given))
+    results = fetch_as_dict_list( query, (given))
     return results
 
 class DocForm(tk.Frame):
@@ -214,7 +215,7 @@ class DocForm(tk.Frame):
         
         
         # Create the label and entry for the user ID search
-        user_info = fetch_as_dict_list(cur, 'SELECT * FROM USERS', ())  
+        user_info = fetch_as_dict_list('SELECT * FROM USERS', ())  
         # prepare names lists with a blank first entry for null selection
         self.user_names = [''] + [u['User_name'] for u in user_info] if user_info else ['']
         self.customer_names = [''] + [u['User_name'] for u in user_info] if user_info else ['']
@@ -365,7 +366,7 @@ class DocForm(tk.Frame):
         if user_id is None or user_id == '':
             user_name = "All Users"
         else:
-            user_info = fetch_as_dict_list(cur, 'SELECT * FROM USERS WHERE User_id=?', (str(user_id)))    
+            user_info = fetch_as_dict_list('SELECT * FROM USERS WHERE User_id=?', (str(user_id)))    
             if user_info:
                 user = user_info[0]['User_name']
                 user_name = user + " Sales Info"
@@ -1272,7 +1273,7 @@ class DocForm(tk.Frame):
             item_text = self.listbox.item(item, "values")  # Get the text values of the item
             doc_id = self.listbox.item(item, "text")
             barcode = item_text[0]
-            doc_ = fetch_as_dict_list(cur, "SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))[0]
+            doc_ = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))[0]
             if doc_:
                 answer = tk.messagebox.askquestion("Question", "Do you what to print "+str(barcode)+" ?")
                 if answer == 'yes':
@@ -1407,7 +1408,7 @@ class DocForm(tk.Frame):
                         # item[0] = pid
                         # item[7] = qty
                         if not item[0] == "" or not item[0] == None or not str(item[0]) == "-1":
-                            it = fetch_as_dict_list(cur, "SELECT * FROM product WHERE id=?", (item[0],))
+                            it = fetch_as_dict_list( "SELECT * FROM product WHERE id=?", (item[0],))
                             if it and len(item) > 8:
                                 it = it[0]
                                 print("item for profit item[8] : " + str(item[8]))
@@ -1637,7 +1638,7 @@ class DocForm(tk.Frame):
     def get_documents(self, doc_barcodes):
         docs = []
         for doc_barcode in doc_barcodes:
-            doc = fetch_as_dict_list(cur, "SELECT * FROM doc_table WHERE doc_barcode=?", (doc_barcode,))
+            doc = fetch_as_dict_list( "SELECT * FROM doc_table WHERE doc_barcode=?", (doc_barcode,))
             if doc:
                 docs.append(doc[0])
         return docs

@@ -14,11 +14,7 @@ sys.path.append(MAIN_dir)
 from D.printer import PrinterForm
 from C.slipe import load_slip
 
-from C.Sql3 import *
-data_dir = os.path.join(MAIN_dir, 'data')
-db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cur = conn.cursor()
+from C.API.Get import *
 
 conn.commit()
 

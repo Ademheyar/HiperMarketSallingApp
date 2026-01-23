@@ -8,7 +8,6 @@ db_path = os.path.join(data_dir, 'my_database.db')
 conn = sqlite3.connect(db_path)
 cur = conn.cursor()
 
-from C.Sql3 import *
 from C.List import *
 from C.API.Get import *
 from C.API.API import *
@@ -397,8 +396,9 @@ class SecurityForm(tk.Toplevel):
                     lb = tk.Label(self.master.Error_list_frame, text="Offline Login Secsesfull", bg="#e7cb3c", fg="green")
                     lb.pack(side=tk.TOP, fill=tk.X, expand=True)
     
-                select_User_Company_State_Frame = Select_User_Company_State_Frame(self.Security_form, self._hide_credentials_page, user)
+                select_User_Company_State_Frame = Select_User_Company_State_Frame(self.Security_form, self._hide_credentials_page, user, link)
                 select_User_Company_State_Frame.grid(row=0, column=0, sticky="nsew")
+                select_User_Company_State_Frame.Link = link
                 select_User_Company_State_Frame.User_data = user
                 self.Security_form.Loged_User = user
 

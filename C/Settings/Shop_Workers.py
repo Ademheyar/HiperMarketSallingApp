@@ -22,7 +22,8 @@ conn.commit()
 
 from D.Getdefsize import ButtonEntryApp
 from C.List import *
-from C.Sql3 import *
+
+from C.API.Get import *
 from D.printer import *
 from D.GetVALUE import GetvalueForm
 # Connect to the database or create it if it does not exist
@@ -30,7 +31,8 @@ from D.GetVALUE import GetvalueForm
 from C.List import *
 from D.Getdate import GetDateForm
 from D.Chart.Chart import *
-from C.Sql3 import *
+
+from C.API.Get import *
 
 from C.Product.selecttype import *
 
@@ -280,7 +282,7 @@ class WorkersForm(tk.Frame):
             
             user_id = self.worker_docinfo_listbox.item(selected_product)['text']
             usid, User_Fullname, User_name, typ, shop_name, shop_brand_name, acsess_level = [a for a in self.Shop_workers if a[0] == user_id][0]
-            users = fetch_as_dict_list(cur, 'SELECT * FROM USERS WHERE User_id=?', (user_id,))
+            users = fetch_as_dict_list( 'SELECT * FROM USERS WHERE User_id=?', (user_id,))
             if users:
                 user = users[0]
                 self.selected_shop_id = user['User_id']
@@ -410,7 +412,7 @@ class WorkersForm(tk.Frame):
                         Shop_workers_copy.append(Shop_worker)
                     users = None
                     if not shop_worker_id == "":
-                        users = fetch_as_dict_list(cur, 'SELECT * FROM USERS WHERE User_id=?', (str(shop_worker_id)))
+                        users = fetch_as_dict_list( 'SELECT * FROM USERS WHERE User_id=?', (str(shop_worker_id)))
                     
                     if users:
                         user = users[0]

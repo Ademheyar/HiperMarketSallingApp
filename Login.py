@@ -4,7 +4,8 @@ import sqlite3
 
 import json
 
-from C.Sql3 import *
+
+from C.API.Get import *
 
 import os
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data'))

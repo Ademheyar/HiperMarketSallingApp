@@ -32,7 +32,8 @@ from D.Doc.Loaddoc import *
 from D.Security import *
 from C.List import *
 
-from C.Sql3 import *
+
+from C.API.Get import *
 
 from Manager import ManageForm
 

@@ -24,7 +24,7 @@ sys.path.append(MAIN_dir)
 
 from D.Security import *
 
-from C.Sql3 import *
+from C.API.Get import *
 from C.API.Get import *
 
 class UploadingForm(tk.Toplevel):
@@ -152,7 +152,7 @@ class UploadingForm(tk.Toplevel):
                 found_shop_items = json.loads(shop['Shop_items'])
                 if found_shop_items:
                     for item in found_shop_items:
-                        value = fetch_as_dict_list(cur, 'SELECT * FROM product WHERE id=?', (str(item[0]),))
+                        value = fetch_as_dict_list( 'SELECT * FROM product WHERE id=?', (str(item[0]),))
                         if not value or len(value) == 0:
                             item_toupgraded.append(item)
                 Total_Upgrade_Activetis += len(where_info['Product_to_upgrade'])

@@ -14,7 +14,8 @@ sys.path.append(MAIN_dir)
 from D.ItemSelector import ItemSelectorWidget
 from D.Doc.Loaddoc import *
 from C.List import *
-from C.Sql3 import *
+
+from C.API.Get import *
 from D.Security import *
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
@@ -81,7 +82,7 @@ class search_entry(ttk.Entry):
                 #print("Shop items --> ", found_shop_items)
                 if found_shop_items:
                     for item in found_shop_items:
-                        value = fetch_as_dict_list(cur, 'SELECT * FROM product WHERE id=?', (str(item[0]),))
+                        value = fetch_as_dict_list( 'SELECT * FROM product WHERE id=?', (str(item[0]),))
                         if value and not len(value) == 0:
                             self.homemaster.Shops_info['Shop_items'].append([value[0], []])
         

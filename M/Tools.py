@@ -16,7 +16,8 @@ cur = conn.cursor()
 conn.commit()
 
 from C.List import *
-from C.Sql3 import *
+
+from C.API.Get import *
 
 class ToolForm(tk.Frame):
     def __init__(self, master, User, Shops, on_Shop):
@@ -251,7 +252,7 @@ class ToolForm(tk.Frame):
             if self.Selected_Shop != "" and shop['Shop_name'] != self.Selected_Shop:
                 continue
 
-            Shop = fetch_as_dict_list(cur, "SELECT * FROM Shops WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
+            Shop = fetch_as_dict_list( "SELECT * FROM Shops WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
                                 (str(shop['Shop_id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
             if Shop and Shop[0] and Shop[0]['Shop_Payment_Tools'] and Shop[0]['Shop_Payment_Tools'] != "":
                 print("Shop[0]['Shop_Payment_Tools'] ", Shop[0]['Shop_Payment_Tools'])
@@ -311,7 +312,7 @@ class ToolForm(tk.Frame):
                     conn.commit()
                     self.master.master.master.master.Shop_Payment_Tools = Shop_Payment_Tools
                 else:
-                    Shop0 = fetch_as_dict_list(cur, "SELECT * FROM Shops WHERE Shop_id=? AND Shop_name=?", 
+                    Shop0 = fetch_as_dict_list( "SELECT * FROM Shops WHERE Shop_id=? AND Shop_name=?", 
                                         (str(self.selected_shop_id), str(self.selected_shop_name)))
                     if Shop0 and Shop0[0] and Shop0[0]['Shop_Payment_Tools'] and Shop0[0]['Shop_Payment_Tools'] != "":
                         

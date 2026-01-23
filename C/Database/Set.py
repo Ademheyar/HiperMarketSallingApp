@@ -28,32 +28,6 @@ sys.path.append(MAIN_dir)
 
 from D.Security import *
 
-
-
-# this will fetch data as dict list from data base
-# query : str = the sql query
-# values : tuple = the values to be used in the query
-def fetch_as_dict_list(query, values):
-    cur.execute(query, values)
-    items = cur.fetchall()
-    #print("items len", len(items))
-    columns = [col[0] for col in cur.description]
-    #print("columns")
-    #print(str(columns))
-    #print("items len", len(items))
-    results = []
-    for row in items:
-        #print("row")
-        #print(str(row))
-        #print("items len", len(items))
-        if len(columns) != len(row):
-            raise ValueError("Mismatch between number of columns and rows "+ str(len(columns)) + ", "+ str(len(row)))
-            
-        results.append(dict(zip(columns, row)))
-    return results
-
-
-
 # this function will add new user to system data base all data must be given
 def Add_new_user(User_id, user_fname, user_lname, user_name, user_gender, user_country, user_phone_No, user_email, user_contact, user_home_No, user_ID_Pp_ID, user_password, user_type, user_about, user_shops, User_work_shop, user_likes, user_following_shop, user_favoraite_items, user_rate, user_access, User_pimg, User_following_shop):
     User_id = ""
@@ -252,7 +226,7 @@ class UploadingForm(tk.Toplevel):
                 found_shop_items = json.loads(shop['Shop_items'])
                 if found_shop_items:
                     for item in found_shop_items:
-                        value = fetch_as_dict_list(cur, 'SELECT * FROM product WHERE id=?', (str(item[0]),))
+                        value = fetch_as_dict_list( 'SELECT * FROM product WHERE id=?', (str(item[0]),))
                         if not value or len(value) == 0:
                             item_toupgraded.append(item)
                 Total_Upgrade_Activetis += len(where_info['Product_to_upgrade'])

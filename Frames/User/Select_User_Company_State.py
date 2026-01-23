@@ -23,10 +23,11 @@ from Frames.Company.Request_Company import Request_Company_Frame
 
 
 class Select_User_Company_State_Frame(tk.Frame):
-    def __init__(self, parent, Canceal_callback, User_data):
+    def __init__(self, parent, Canceal_callback, User_data, Link):
         tk.Frame.__init__(self, parent, bg="#0d47a1")  # Set background to deep blue
         self.Canceal_callback = Canceal_callback
         self.User_data = User_data
+        self.Link = Link
         self.Shops = []
         
         # print("self.User_data : ", self.User_data)
@@ -196,8 +197,7 @@ class Select_User_Company_State_Frame(tk.Frame):
         #print("User_work_shops ", User_work_shops)
         
         # Get all Worker shops info
-        Link = self.master.link_entry.get()
-        Shops = Get_all_User_work_shops_info(Link, self.User_data, User_work_shops)
+        Shops = Get_all_User_work_shops_info(self.Link, self.User_data, User_work_shops)
 
                 
         def login(i):
@@ -353,7 +353,7 @@ class Select_User_Company_State_Frame(tk.Frame):
         # Get the values from the user details widgets
         company_name = self.company_name_entry.get()
         company_brandname = self.company_brandname_entry.get()
-        self.found_Shops_result = fetch_as_dict_list(cur, 'SELECT * FROM Shops', ()) # WHERE Shop_name=? AND Shop_brand_name=?', (company_name, company_brandname))
+        self.found_Shops_result = fetch_as_dict_list( 'SELECT * FROM Shops', ()) # WHERE Shop_name=? AND Shop_brand_name=?', (company_name, company_brandname))
         if self.found_Shops_result:
             print("company_name : " + str(company_name))
             print("company_brandname : " + str(company_brandname))

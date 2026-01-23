@@ -17,7 +17,8 @@ from D.endday import EnddayForm
 from D.Upload_ import UploadingForm
 from D.user_info import UserInfoForm
 from D.printer import PrinterForm
-from C.Sql3 import *
+
+from C.API.Get import *
 
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))

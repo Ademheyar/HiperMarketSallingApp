@@ -22,7 +22,7 @@ from D.Security import *
 from D.printer import PrinterForm
 
 
-from C.Sql3 import *
+from C.API.Get import *
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
 conn = sqlite3.connect(db_path)
