@@ -72,17 +72,21 @@ def Sand_API(url, entry):
         # Send the data to the API
         print('Chacke_Connection Data  ', entry)
         print('Chacke_Connection Data send to ', url)
-        
         response = requests.post(url, json=entry)
-
-        if response.status_code == 200:
-            print('Chacke_Connection Data sent successfully.')
-            print('Chacke_Connection Data sent response.', response)
-            try:
-                response_data = response.json()
-            except requests.exceptions.RequestException as e:
-                print('Chacke_Connection Failed to read data:', e)
-            return response_data
+        if response is not None:
+            if response.status_code == 200:
+                print('Chacke_Connection Data sent successfully.')
+                print('Chacke_Connection Data sent response.', response)
+                try:
+                    response_data = response.json()
+                    print('Chacke_Connection Response data:', response_data)
+                except requests.exceptions.RequestException as e:
+                    print('Chacke_Connection Failed to read data:', e)
+                    print(f'Chacke_Connection Error response: {response.text}')
+                return response_data
+            else:
+                print(f'Chacke_Connection API Error: Status code {response.status_code}')
+                print(f'Chacke_Connection Error response: {response.text}')
         else:
             print('Chacke_Connection Failed to retrieve data from the website.')
     except requests.exceptions.RequestException as e:

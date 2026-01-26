@@ -194,7 +194,7 @@ class SecurityForm(tk.Toplevel):
         self.link_button = tk.Button(
             self.Security_form,
             text="Check",
-            command=lambda: islinked(self.master.link_entry.get()),
+            command=lambda: self.cacke_linked(),
             bg=accent_blue,
             fg=text_light,
             font=("Roboto", 10, "bold"),
@@ -350,10 +350,19 @@ class SecurityForm(tk.Toplevel):
 
         # self.master.show_frame("User_Forget_Info_Frame")
         pass
-      
+
+    def cacke_linked(self):
+        link = self.master.link_entry.get()
+        if islinked(link):
+            lb = tk.Label(self.master.Error_list_frame, text="Connection Secsesfull", fg="green")
+            lb.pack(side=tk.TOP, fill=tk.X, expand=True)
+        else:
+            lb = tk.Label(self.master.Error_list_frame, text="Connection Filed", bg="#fcfafb", fg="red")
+            lb.pack(side=tk.TOP, fill=tk.X, expand=True)
+
     def Create_new_user(self, event):
        # we going to chack connection befor creating new user
-        # islinked(self.master.link_entry.get())
+        # 
         # create_frame = self.master.show_frame("User_Info_Frame")
         
         # hide credentials frame and restore user selection canvas + scrollbar
@@ -377,49 +386,51 @@ class SecurityForm(tk.Toplevel):
         entered_username = self.entered_username_entry.get()
         entered_password = self.entered_password_entry.get()
         link = self.master.link_entry.get()
-        users = Get_User(link, ["User_name", "User_password"], [entered_username, entered_password])
-        if users:
-            for user in users:
-                print("User : ", user)
-                if not 'Id' in user:
-                    lb = tk.Label(self.master.Error_list_frame, text="Online Login Secsesfull", fg="green")
+        user = Get_User(link, ["User_name", "User_password"], [entered_username, entered_password])
+        if isinstance(user, list) and len(user) > 0 and user[0] != 'User_id':
+            user = user[0]
+        if user:
+            print("User : ", user)
+            if not 'Id' in user:
+                lb = tk.Label(self.master.Error_list_frame, text="Online Login Secsesfull", fg="green")
+                lb.pack(side=tk.TOP, fill=tk.X, expand=True)
+                answer = tk.messagebox.askquestion("Question", "User Data found on online database. for more ifection use it is better to download user datas. Do you what to download user data?")
+                if answer == 'yes':
+                    lb = tk.Label(self.master.Error_list_frame, text="Data Saved Will be Readen Online And Offline", bg="#3ce76f", fg="green")
                     lb.pack(side=tk.TOP, fill=tk.X, expand=True)
-                    answer = tk.messagebox.askquestion("Question", "User Data found on online database. for more ifection use it is better to download user datas. Do you what to download user data?")
-                    if answer == 'yes':
-                        lb = tk.Label(self.master.Error_list_frame, text="Data Saved Will be Readen Online And Offline", bg="#3ce76f", fg="green")
-                        lb.pack(side=tk.TOP, fill=tk.X, expand=True)
-                        user = Add_Shop_data_From_list(user)
-                    else:
-                        lb = tk.Label(self.master.Error_list_frame, text="Data Will be Readen Online", bg="#c2e73c", fg="white")
-                        lb.pack(side=tk.TOP, fill=tk.X, expand=True)
-                else:     
-                    lb = tk.Label(self.master.Error_list_frame, text="Offline Login Secsesfull", bg="#e7cb3c", fg="green")
+                    user = Add_Shop_data_From_list(user)
+                else:
+                    lb = tk.Label(self.master.Error_list_frame, text="Data Will be Readen Online", bg="#c2e73c", fg="white")
                     lb.pack(side=tk.TOP, fill=tk.X, expand=True)
-    
-                select_User_Company_State_Frame = Select_User_Company_State_Frame(self.Security_form, self._hide_credentials_page, user, link)
-                select_User_Company_State_Frame.grid(row=0, column=0, sticky="nsew")
-                select_User_Company_State_Frame.Link = link
-                select_User_Company_State_Frame.User_data = user
-                self.Security_form.Loged_User = user
+            else:     
+                lb = tk.Label(self.master.Error_list_frame, text="Offline Login Secsesfull", bg="#e7cb3c", fg="green")
+                lb.pack(side=tk.TOP, fill=tk.X, expand=True)
+            
+            print("Logged User : ", user)
+            select_User_Company_State_Frame = Select_User_Company_State_Frame(self.Security_form, self._hide_credentials_page, user, link)
+            select_User_Company_State_Frame.grid(row=0, column=0, sticky="nsew")
+            select_User_Company_State_Frame.Link = link
+            select_User_Company_State_Frame.User_data = user
+            self.Security_form.Loged_User = user
 
-                self.update_logged_user(user['User_name'], user['User_id'])
-                
-                
-                # hide credentials frame and restore user selection canvas + scrollbar
-                try:
-                    self.credentials_frame.grid_remove()
-                except Exception:
-                    pass
-                
-                # disable login until a user is chosen again (existing handlers will enable it)
-                try:
-                    self.log_in_button.configure(state='disabled')
-                except Exception:
-                    pass
-                self._credentials_shown = False
-                self.button_BACK_close['text'] = "Back"
+            self.update_logged_user(user['User_name'], user['User_id'])
+            
+            
+            # hide credentials frame and restore user selection canvas + scrollbar
+            try:
+                self.credentials_frame.grid_remove()
+            except Exception:
+                pass
+            
+            # disable login until a user is chosen again (existing handlers will enable it)
+            try:
+                self.log_in_button.configure(state='disabled')
+            except Exception:
+                pass
+            self._credentials_shown = False
+            self.button_BACK_close['text'] = "Back"
         else:
-            tk.Label(self.master.Error_list_frame, text="Online Login Filed", bg="#e74c3c", fg="red").pack(side=tk.TOP, fill=tk.X, expand=True)
+            tk.Label(self.master.Error_list_frame, text="Online Login Filed", bg="#fcfafb", fg="red").pack(side=tk.TOP, fill=tk.X, expand=True)
             tk.Label(self.master.Error_list_frame, text="User Name("+str(entered_username)+") Or Password Incorrect.", bg="#e74c3c", fg="white").pack(side=tk.TOP, fill=tk.X, expand=True)
     
     def _create_user_buttons_container(self):

@@ -185,6 +185,7 @@ class Select_User_Company_State_Frame(tk.Frame):
     def update_user_work_shop(self):
         #print("update_user_work_shop ")
         User_work_shops = []
+        print("self.User_data ", self.User_data)
         if self.User_data and not self.User_data['User_work_shop'] == None and not self.User_data['User_work_shop'] == 'None':
             try:
                 User_work_shops = json.loads(self.User_data['User_work_shop'])
