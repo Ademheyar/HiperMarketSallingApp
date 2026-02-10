@@ -11,7 +11,7 @@ cur = conn.cursor()
 from C.List import *
 from C.API.Get import *
 from C.API.API import *
-from C.Database.Set import *
+from C.API.Set import *
 
 from Frames.User.Select_User_Company_State import Select_User_Company_State_Frame
 #from Login import Loging_Frame
@@ -187,7 +187,7 @@ class SecurityForm(tk.Toplevel):
             relief=tk.FLAT,
             bd=2
         )
-        self.master.link_entry.insert(0, "http://localhost/HiperMarketSit/API/Get.php")
+        self.master.link_entry.insert(0, "http://localhost/HiperMarketSit/API/API.php")
         self.master.link_entry.grid(row=8, column=0, columnspan=4, sticky="we", padx=12, pady=8)
 
         # Buttons with Android Material style
@@ -338,7 +338,7 @@ class SecurityForm(tk.Toplevel):
         except Exception:
             pass
         self.user_Forget_Info_Frame = User_Forget_Info_Frame(self.Security_form, self._hide_credentials_page, None)
-        self.user_Forget_Info_Frame.grid(row=0, column=0, sticky="nsew")
+        self.user_Forget_Info_Frame.grid(row=2, column=0, sticky="nsew")
 
         # disable login until a user is chosen again (existing handlers will enable it)
         try:
@@ -370,9 +370,9 @@ class SecurityForm(tk.Toplevel):
             self.credentials_frame.grid_remove()
         except Exception:
             pass
-        
-        self.user_Info_Frame = User_Info_Frame(self.Security_form, self._hide_credentials_page, None)
-        self.user_Info_Frame.grid(row=0, column=0, sticky="nsew")
+
+        self.user_Info_Frame = User_Info_Frame(self.Security_form, self._hide_credentials_page, None, self.master.link_entry.get())
+        self.user_Info_Frame.grid(row=2, column=0, sticky="nsew")
 
         # disable login until a user is chosen again (existing handlers will enable it)
         try:
@@ -394,21 +394,19 @@ class SecurityForm(tk.Toplevel):
             if not 'Id' in user:
                 lb = tk.Label(self.master.Error_list_frame, text="Online Login Secsesfull", fg="green")
                 lb.pack(side=tk.TOP, fill=tk.X, expand=True)
-                answer = tk.messagebox.askquestion("Question", "User Data found on online database. for more ifection use it is better to download user datas. Do you what to download user data?")
+                answer = tk.messagebox.askquestion("Question", "User Data has been found online. for fast performance better to download datas. Do you what to download user data?", parent=self.Security_form)
                 if answer == 'yes':
-                    lb = tk.Label(self.master.Error_list_frame, text="Data Saved Will be Readen Online And Offline", bg="#3ce76f", fg="green")
-                    lb.pack(side=tk.TOP, fill=tk.X, expand=True)
-                    user = Add_Shop_data_From_list(user)
+                    user = Add_User_data_From_list(user)
+                    if user:
+                        lb = tk.Label(self.master.Error_list_frame, text="Data Downloaded Successfully", bg="#1565c0", fg="Green").pack(side=tk.TOP, fill=tk.X, expand=True)
                 else:
-                    lb = tk.Label(self.master.Error_list_frame, text="Data Will be Readen Online", bg="#c2e73c", fg="white")
-                    lb.pack(side=tk.TOP, fill=tk.X, expand=True)
+                    lb = tk.Label(self.master.Error_list_frame, text="User Data Found Online", bg="#1565c0", fg="Green").pack(side=tk.TOP, fill=tk.X, expand=True)
             else:     
-                lb = tk.Label(self.master.Error_list_frame, text="Offline Login Secsesfull", bg="#e7cb3c", fg="green")
-                lb.pack(side=tk.TOP, fill=tk.X, expand=True)
+                lb = tk.Label(self.master.Error_list_frame, text="Offline Login Secsesfull", bg="#1565c0", fg="Green").pack(side=tk.TOP, fill=tk.X, expand=True)
             
             print("Logged User : ", user)
-            select_User_Company_State_Frame = Select_User_Company_State_Frame(self.Security_form, self._hide_credentials_page, user, link)
-            select_User_Company_State_Frame.grid(row=0, column=0, sticky="nsew")
+            select_User_Company_State_Frame = Select_User_Company_State_Frame(self.Security_form, self._show_credentials_page, user, link)
+            select_User_Company_State_Frame.grid(row=2, column=1, columnspan=8, sticky="nsew")
             select_User_Company_State_Frame.Link = link
             select_User_Company_State_Frame.User_data = user
             self.Security_form.Loged_User = user
@@ -632,6 +630,7 @@ class SecurityForm(tk.Toplevel):
         self.button_BACK_close['text'] = "Back"
 
     def _hide_credentials_page(self):
+        print("Hiding credentials page...")
         # hide credentials frame and restore user selection canvas + scrollbar
         if not self._credentials_shown:
             return
@@ -643,6 +642,7 @@ class SecurityForm(tk.Toplevel):
         try:
             self.user_buttons_canvas.grid(row=1, column=0, columnspan=4, sticky="nsew", padx=8, pady=(0, 0))
         except Exception:
+            print("Error restoring user buttons canvas")
             pass
         try:
             if hasattr(self, "user_buttons_scrollbar") and self.user_buttons_scrollbar:

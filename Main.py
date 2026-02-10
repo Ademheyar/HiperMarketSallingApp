@@ -184,9 +184,10 @@ cur.execute('''CREATE TABLE IF NOT EXISTS product
 # `Company_Started_Date`, `Shop_likes`, `Shop_rules`, `Shop_link`, `Shop_Settings`,
 # `Shop_profile_img`, `Shop_banner_imgs`, `Shop_payment_info`, `Shop_isenabled`,
 #  `Shop_Slip_Settings`, `Shop_Expenses`, `Shop_Actions`
+cur.execute('ALTER TABLE Shops RENAME COLUMN Shop_id TO Shop_Id')
 cur.execute('''CREATE TABLE IF NOT EXISTS Shops
-             (Shop_id INTEGER PRIMARY KEY AUTOINCREMENT,
-              Shop_online_id INTEGER,
+             (Id INTEGER PRIMARY KEY AUTOINCREMENT,
+              Shop_Id INTEGER,
               Shop_name TEXT,
               Shop_brand_name TEXT,
               Shop_oweners_id TEXT,
@@ -347,13 +348,13 @@ class MainApplication(tk.Tk):
 
         # create the display frame with Android styling
         self.display_frame = DisplayFrame(self, None, None, None, None)
-        self.display_frame.configure(bg=self.bg_dark)
-        self.display_frame.grid(row=0, column=0, sticky="nsew")
+        # self.display_frame.configure(bg=self.bg_dark)
+        # self.display_frame.grid(row=0, column=0, sticky="nsew")
         self.frames["DisplayFrame"] = self.display_frame
 
         self.frames["Select_User_Company_State_Frame"] = None
         
-        self.show_frame("DisplayFrame")
+        #self.show_frame("DisplayFrame")
 
     def login(self, i, Shops, User_data, User_work_shops):
             # hide all frames except the one to be shown

@@ -160,7 +160,10 @@ def Get_Shop(Link, user, ARG, ShopsVALUE):
 
     print("shop query ", query)
     print("shop value ", value)
-    Shops = fetch_as_dict_list("SELECT * FROM Shops WHERE" + query, value)
+    if query == "":
+        Shops = fetch_as_dict_list("SELECT * FROM Shops", ())
+    else:
+        Shops = fetch_as_dict_list("SELECT * FROM Shops WHERE" + query, value)
     if Shops:
         return Shops
 

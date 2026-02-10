@@ -10,10 +10,6 @@ current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(os.path.join(current_dir, '..'), '..')
 sys.path.append(MAIN_dir)
 
-#from D.docediterform import DocEditForm
-from D.printer import PrinterForm
-from C.slipe import load_slip
-
 data_dir = os.path.join(MAIN_dir, 'data')
 db_path = os.path.join(data_dir, 'my_database.db')
 conn = sqlite3.connect(db_path)
@@ -21,14 +17,20 @@ cur = conn.cursor()
 
 conn.commit()
 
+#from D.docediterform import DocEditForm
+from D.printer import PrinterForm
+from C.slipe import load_slip
+from C.API.Set import *
+
+
 class User_Info_Frame(tk.Frame):
-    def __init__(self, parent, Canceal_callback, User_data):
+    def __init__(self, parent, Canceal_callback, User_data, link):
         tk.Frame.__init__(self, parent, bg="#0d47a1")
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         self.Canceal_callback = Canceal_callback
         self.User_data = User_data
-
+        self.Link = link
         self.User_Info_Frame = tk.Frame(self, bg="#0d47a1", height=screen_height, width=screen_width)
         self.User_Info_Frame.pack()
         
@@ -139,6 +141,25 @@ class User_Info_Frame(tk.Frame):
         else:
            self.add_button.config(text="Create")
 
+        # Fill fake test data for each entry widget
+        self.fname_entry.insert(0, "John")
+        self.lname_entry.insert(0, "Doe")
+        self.name_entry.insert(0, "JD John")
+        self.password_num0_entry.insert(0, "password123")
+        self.password_num1_entry.insert(0, "password123")
+        self.gender_entry.insert(0, "Male")
+        self.cuntry_entry.insert(0, "USA")
+        self.phone_num_entry.insert(0, "+1-555-1234")
+        self.email_entry.insert(0, "john.doe@example.com")
+        self.addres_entry.insert(0, "123 Main St")
+        self.id_num_entry.insert(0, "ID123456")
+        self.home_no_entry.insert(0, "Apt 5B")
+        self.type_entry.insert(0, "Customer")
+        self.about_entry.insert(0, "Test user account")
+        self.pimg_entry.insert(0, "/path/to/image.jpg")
+        self.shops_entry.insert(0, "Shop A")
+        self.work_shop_entry.insert(0, "Workshop B")
+        self.acsess_entry.insert(0, "Admin")
         self.add_button.grid(row=17, column=0, padx=5, pady=5, sticky=tk.W)
         self.cancle_button.grid(row=17, column=1, padx=5, pady=5, sticky=tk.W)
     def canceal_callback(self):
@@ -234,8 +255,18 @@ class User_Info_Frame(tk.Frame):
                   User_following_shop = ""
                   User_favoraite_items = ""
                   User_rate = ""
-                  cur.execute('INSERT INTO Users(User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_type, User_password, User_about, User_shop, User_work_shop, User_likes, User_following_shop, User_favoraite_items, User_rate, User_access, User_pimg) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',(User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_type, User_password0, User_about, User_shop, User_work_shop, User_likes, User_following_shop, User_favoraite_items, User_rate, User_access, User_pimg))
-                  self.Secc.config(text="Created Secccesfully", fg="Green")
+                  user = Set_User(self.Link, ['User_fname', 'User_Lname', 'User_name', 'User_gender', 'User_country', 'User_phone_num', 'User_email', 'User_address', 'User_home_no', 'User_type', 'User_password', 'User_about', 'User_shop', 'User_work_shop', 'User_likes', 'User_following_shop', 'User_favoraite_items', 'User_rate', 'User_access', 'User_pimg'], [User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_type, User_password0, User_about, User_shop, User_work_shop, User_likes, User_following_shop, User_favoraite_items, User_rate, User_access, User_pimg])
+                  if user:
+                    if not 'Id' in user or user['Id'] == 0 or user['Id'] == None:
+                        tk.Label(self.master.master.Error_list_frame, text="Online User Created Secccesfully", bg="#1565c0", fg="Green").pack(side=tk.TOP, fill=tk.X, expand=True)
+                    elif 'Id' in user and user['Id'] != 0 and not user['Id'] == None and (user['User_id'] == 0 or user['User_id'] == None):
+                        tk.Label(self.master.master.Error_list_frame, text="Offline User Created Secccesfully", bg="#1565c0", fg="Green").pack(side=tk.TOP, fill=tk.X, expand=True)
+                    else:
+                        tk.Label(self.master.master.Error_list_frame, text="User Created Secccesfully", bg="#1565c0", fg="Green").pack(side=tk.TOP, fill=tk.X, expand=True)
+                    self.Canceal_callback()
+                    self.destroy()
+                  else:
+                    self.Secc.config(text="Failed to Create User", fg="red")
               else:
                   item_id = int(self.Found_User_id_var)
                   print("item_id : " + str(item_id))

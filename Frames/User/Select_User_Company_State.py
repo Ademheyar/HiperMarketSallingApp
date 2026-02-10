@@ -15,7 +15,7 @@ from C.slipe import load_slip
 
 from C.API.Get import *
 from C.API.API import *
-from C.Database.Set import *
+from C.API.Set import *
 
 from Frames.Company.View_Company import Company_Info_Frame
 from Frames.Company.Company_Forget_Info import Company_Forget_Info_Frame
@@ -67,14 +67,15 @@ class Select_User_Company_State_Frame(tk.Frame):
         # Create a label and an entry widget for the search box
         self.company_name_label = tk.Label(self.details_frame, text='Company Name :', bg="#1565c0", fg="#ffffff")
         self.company_name_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
-        
+        self.company_name_entry.insert(0, "Test_Shop_Name")
         self.company_brandname_label = tk.Label(self.details_frame, text='Company Brand Name :', bg="#1565c0", fg="#ffffff")
         self.company_brandname_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
+        self.company_brandname_entry.insert(0, "test_shop_brand_name")
         self.Search_button = tk.Button(self.details_frame, text='Search', command=self.Search_shops, bg="#1976d2", fg="#ffffff")
         
         # * New frame next to list_items in the main frame
         self.selecte_work_midel_frame = tk.Frame(self.details_frame, bg="#1565c0")
-        self.selecte_work_midel_frame.grid(row=1, column=0, columnspan=2 , sticky="nsew")
+        self.selecte_work_midel_frame.grid(row=2, column=0, columnspan=2 , sticky="nsew")
         
         self.selecte_work_extrnal_frame = tk.Frame(self.selecte_work_midel_frame, bg="#1565c0")
         self.selecte_work_extrnal_frame.pack(side="top", fill="x")
@@ -134,11 +135,11 @@ class Select_User_Company_State_Frame(tk.Frame):
 
         def show_request():
             self.company_name_label.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W) 
-            self.company_name_entry.grid(row=0, column=2, padx=5, pady=5, sticky=tk.W)
-            self.company_brandname_label.grid(row=0, column=3, padx=5, pady=5, sticky=tk.W)
-            self.company_brandname_entry.grid(row=0, column=4, padx=5, pady=5, sticky=tk.W) 
-            self.Search_button.grid(row=0, column=5, padx=6, pady=5, sticky=tk.W)              
-            self.search_shops_midel_frame.grid(row=1, column=3, columnspan=2, sticky="nsew")
+            self.company_name_entry.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
+            self.company_brandname_label.grid(row=0, column=2, padx=5, pady=5, sticky=tk.W)
+            self.company_brandname_entry.grid(row=1, column=2, padx=5, pady=5, sticky=tk.W) 
+            self.Search_button.grid(row=0, column=3, padx=6, pady=5, sticky=tk.W)              
+            self.search_shops_midel_frame.grid(row=2, column=2, columnspan=2, sticky="nsew")
             self.Send_requestshow_button.grid_remove()
             self.Send_requesthid_button.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
     
@@ -244,7 +245,7 @@ class Select_User_Company_State_Frame(tk.Frame):
                         Whiting_Label = tk.Label(frame, text="Online Login Failed", font=("Arial", 11), bg="#0d47a1", fg="#ffffff")
                         Whiting_Label.grid(row=1, column=7, columnspan=6, sticky="nsew")
                     else:
-                        answer = tk.messagebox.askquestion("Question", "Shop Data found on online database. Do you want to download data?")
+                        answer = tk.messagebox.askquestion("Question", "Shop Data found on online database. Do you want to download data?", parent=self.master)
                         if answer == 'yes':
                             Add_Shop_data_From_list(shop_result[0])
                             Whiting_Label = tk.Label(frame, text="Online Login Successful", font=("Arial", 11), bg="#0d47a1", fg="#ffffff")
@@ -278,6 +279,7 @@ class Select_User_Company_State_Frame(tk.Frame):
             else:
                 LogIn_button = tk.Button(new_item_fram, text="LogIn", font=("Arial", 12), command= lambda j=i: login(j), bg="#1976d2", fg="#ffffff")
                 LogIn_button.grid(row=0, column=7, sticky="e")
+    
     def update_search_shops(self):        
         for items in self.search_shops_Selected_item_Display_frame.winfo_children():
             items.destroy()
@@ -291,7 +293,11 @@ class Select_User_Company_State_Frame(tk.Frame):
             # TODO ADD IMAGE 
             def remove_item(index, frame):
                 if self.found_Shops_result:
-                    Shops = self.found_Shops_result[index]
+                    # chake if self.found_Shops_result is list or dict
+                    if isinstance(self.found_Shops_result, list):
+                        Shops = self.found_Shops_result[index]
+                    else:
+                        Shops = self.found_Shops_result
                     print("company_name : " + str(Shops['Shop_name']))
                     print("company_brandname : " + str(Shops['Shop_brand_name']))
                     print("Shop_workers : " + str(Shops['Shop_workers']))
@@ -307,11 +313,12 @@ class Select_User_Company_State_Frame(tk.Frame):
                     # e.g [2, 'Abdul Kedir', 'AK Abdul', 'OWNER', 'BELLEMA FASHION', 'ADOT', '10']        
                     if found_worker_inshop == 0:
                         print("self.User_data : ", self.User_data)
+                        print("Adding worker to shop workers list ", Shop_workers)
                         Shop_workers.append([self.User_data['User_id'], self.User_data['User_fname'] + " "+ self.User_data['User_Lname'], self.User_data['User_name'], "WORKER", Shops['Shop_name'], Shops['Shop_brand_name'], -2])
-                        cur.execute('UPDATE Shops SET Shop_workers=? WHERE Shop_id=?', (json.dumps(Shop_workers), Shops['Shop_id']))
-                        # Commit the changes to the database
-                        conn.commit()
+                        # Update the shop workers in the database
+                        shop = Update_Shop(self.Link, self.User_data, ['Shop_workers'], Shop_workers, ['Shop_Id'], [Shops['Shop_Id']])
                     
+                    # Now update the User_work_shop field in Users table
                     User_work_shops = []
                     if self.User_data and not self.User_data['User_work_shop'] == None and not self.User_data['User_work_shop'] == 'None':                            
                         try:
@@ -330,9 +337,8 @@ class Select_User_Company_State_Frame(tk.Frame):
                             
                     if found_shop_inworkes == 0:
                         User_work_shops.append([Shops['Shop_id'], Shops['Shop_name'], Shops['Shop_brand_name'], [-1]])
-                        cur.execute('UPDATE Users SET User_work_shop=? WHERE User_id=?', (json.dumps(User_work_shops), self.User_data['User_id']))
-                        # Commit the changes to the database
-                        conn.commit()
+                        # Update the Users table in the database
+                        User = Update_User(self.Link, self.User_data, ['User_work_shop'], [json.dumps(User_work_shops)], ['User_id'], [self.User_data['User_id']])
                         self.User_data['User_work_shop'] = json.dumps(User_work_shops)
                         
                     self.update_user_work_shop()
@@ -352,22 +358,27 @@ class Select_User_Company_State_Frame(tk.Frame):
         
     def Search_shops(self):
         # Get the values from the user details widgets
-        company_name = self.company_name_entry.get()
-        company_brandname = self.company_brandname_entry.get()
-        self.found_Shops_result = fetch_as_dict_list( 'SELECT * FROM Shops', ()) # WHERE Shop_name=? AND Shop_brand_name=?', (company_name, company_brandname))
+        self.found_shops = []
+        self.found_Shops_result = Get_Shop(self.Link, self.User_data, ['Shop_name', 'Shop_brand_name'], [self.company_name_entry.get(), self.company_brandname_entry.get()])
         if self.found_Shops_result:
-            print("company_name : " + str(company_name))
-            print("company_brandname : " + str(company_brandname))
-            for shop in self.found_Shops_result:
-                print("Shop_workers : " + str(shop['Shop_workers']))
-                if shop['Shop_name'] == company_name and shop['Shop_brand_name'] == company_brandname:
-                    self.found_shops.append(shop)
-                    self.Msg_label.grid(row=1, column=2, padx=5, pady=5, sticky=tk.W)
-                    self.Msg_label.config(text="Company Found!", fg="Green")
-            if len(self.found_shops) == 0:                
-                self.Msg_label.grid(row=1, column=2, padx=5, pady=5, sticky=tk.W)
-                self.Msg_label.config(text="Company Not Found!", fg="red")
-            self.update_search_shops()
+            # chake if self.found_Shops_result is list or dict
+            if isinstance(self.found_Shops_result, list):
+                print("company_name : " + str(self.found_Shops_result[0]['Shop_name']))
+                print("company_brandname : " + str(self.found_Shops_result[0]['Shop_brand_name']))
+                print("Shop_workers : " + str(self.found_Shops_result[0]['Shop_workers']))
+                self.found_shops.append(self.found_Shops_result)
+            else:
+                print("company_name : " + str(self.found_Shops_result['Shop_name']))
+                print("company_brandname : " + str(self.found_Shops_result['Shop_brand_name']))
+                print("Shop_workers : " + str(self.found_Shops_result['Shop_workers']))
+                self.found_shops.append(self.found_Shops_result)
+            self.Msg_label.grid(row=1, column=2, padx=5, pady=5, sticky=tk.W)
+            self.Msg_label.config(text="Company Found!", fg="Green")
+
+        else:
+            self.Msg_label.grid(row=1, column=2, padx=5, pady=5, sticky=tk.W)
+            self.Msg_label.config(text="Company Not Found!", fg="Red")
+        self.update_search_shops()
                     
     def clear_user_details_widget(self):
         self.company_name_entry.delete(0, "end")
