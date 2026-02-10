@@ -418,7 +418,7 @@ class WorkersForm(tk.Frame):
                         user = users[0]
                         print("Shop_workers_copy ", Shop_workers_copy)
                         print("user ", user)
-                        cur.execute('UPDATE Shops SET Shop_workers=? WHERE Shop_id=?', (json.dumps(Shop_workers_copy), shop['Shop_id']))
+                        cur.execute('UPDATE Shops SET Shop_workers=? WHERE Shop_id=?', (json.dumps(Shop_workers_copy), shop['Shop_Id']))
                         # Commit the changes to the database
                         conn.commit()
                         self.Shops[s]['Shop_workers'] = json.dumps(Shop_workers_copy)
@@ -428,9 +428,9 @@ class WorkersForm(tk.Frame):
                             User_work_shops = json.loads(user['User_work_shop'])
                         print("User_work_shops ", User_work_shops)
                         User_work_shops_copy = []
-                        # [Shops['Shop_id'], Shops['Shop_name'], Shops['Shop_brand_name'], [-1]]
+                        # [Shops['Shop_Id'], Shops['Shop_name'], Shops['Shop_brand_name'], [-1]]
                         for uws, User_work_shop in enumerate(User_work_shops):
-                            if User_work_shop[0] == shop['Shop_id'] and  User_work_shop[1] == shop['Shop_name'] and  User_work_shop[2] == shop['Shop_brand_name']:
+                            if User_work_shop[0] == shop['Shop_Id'] and  User_work_shop[1] == shop['Shop_name'] and  User_work_shop[2] == shop['Shop_brand_name']:
                                 if User_work_shop[3] and len(User_work_shop[3]):
                                     User_work_shop[3][0] = acsess
                                 else:

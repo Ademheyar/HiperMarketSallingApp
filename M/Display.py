@@ -237,7 +237,9 @@ class DisplayFrame(tk.Frame):
         
         self.at_shop_name = ""
         if(len(self.Shops_Names) == 1):
-            self.At_Shop_id = self.Shops[0]['Shop_id']
+            print("Only one shop found, selecting it by default.")
+            print("Shop Name: ", self.Shops)
+            self.At_Shop_id = self.Shops[0]['Shop_Id']
             at_shop_name = self.Shops[0]['Shop_name']
             self.on_Shop = 0
         else:
@@ -290,10 +292,11 @@ class DisplayFrame(tk.Frame):
         # THIS WILL CHECK IF THE USER HAS PERMISSION TO ACCESS THE DISPLAY FRAME
         # IF NOT, THE APPLICATION WILL CLOSE THE MASTER WINDOW
         # THE PERMISSION LEVEL IS SET TO 0 FOR DISPLAY FRAME ACCESS
-        # ADJUST THE PERMISSION LEVEL AS NEEDED FOR DIFFERENT FRAMES        
+        # ADJUST THE PERMISSION LEVEL AS NEEDED FOR DIFFERENT FRAMES 
         if not Chacke_Security(self, self.user, self.Shops[self.on_Shop], 0, "USER NEEDED PERMISSION OR LOGIN AS ADMIN"):
             self.master.destroy()
             return
+
 
         self.chackeqyu = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 14, f'User Not allowed to Change QTY')
         self.chackeprice = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 15, f'User Not allowed to Change Price')
@@ -317,6 +320,7 @@ class DisplayFrame(tk.Frame):
         # ADJUST THE PERMISSION LEVEL AS NEEDED FOR DIFFERENT FEATURES
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 1, 'LISTING PAYMENT TOOLS NEEDED ACCESS PERMISSION OR LOGIN AS ADMIN'):
             self.Load_payment_buttons()
+        self.load()
             
     def Veaw_Notifications(self):
         pass
@@ -1592,13 +1596,10 @@ class DisplayFrame(tk.Frame):
 
     # loading all setting 
     def load_setting(self):
-        cursor.execute("SELECT * FROM setting WHERE User_id=?", (int(self.user['User_id']),))
-        b = cursor.fetchall()
-        if len(b) <= 0:
-            #print("sitting : " + self.user)
-            cursor.execute('INSERT INTO setting (User_id, barcode_count,#printer) VALUES (?, ?, ?)', (int(self.user['User_id']), 0, ""))
-            # Commit the changes to the database
-            conn.commit()
+        setting = Get_Setting(self.user, ["User_id"], [self.user['User_id']])
+       
+        if not setting or len(setting) == 0:
+            Set_Setting(self.user, ["User_id", "barcode_count", "printer"], [self.user['User_id'], 0, ""])
         else:
             #print("sitting : " + str(b))
             pass

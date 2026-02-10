@@ -35,7 +35,7 @@ class Veaw_Notifications(tk.Tk):
         #self.User_Shopes_Combobox.bind("<Button-1>",lambda _: self.Add_Custumer())
         self.at_shop_name = ""
         if(len(self.Shops_Names) == 1):
-            self.At_Shop_id = self.Shops[0]['Shop_id']
+            self.At_Shop_id = self.Shops[0]['Shop_Id']
             at_shop_name = self.Shops[0]['Shop_name']
             self.on_Shop = 0
         else:

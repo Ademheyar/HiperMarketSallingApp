@@ -199,7 +199,7 @@ class Select_User_Company_State_Frame(tk.Frame):
         #print("User_work_shops ", User_work_shops)
         
         # Get all Worker shops info
-        Shops = Get_all_User_work_shops_info(self.Link, self.User_data, User_work_shops)
+        self.Shops = []
 
                 
         def login(i):
@@ -208,19 +208,23 @@ class Select_User_Company_State_Frame(tk.Frame):
                     frame.grid_remove()
                 except:
                     pass
-                Shops_info = {'Selected_Shop': Shops[i], 'Shops': Shops, 'User': self.User_data, 'User_Shops_List': User_work_shops, 'Shop_items': [], 'Shop_Actions': ""}
-                if not self.master.title == "Security Elevation":
-                    self.master.master.user = self.User_data
-                    self.master.master.Shops_info = Shops_info
-                    self.master.master.Shops = Shops
-                    self.master.master.User_Shops_List = User_work_shops
-                    self.master.master.load()
-                    self.master.destroy()
-                    #self.master.tklevelwin.destroy()
-            
+                if self.Shops and len(self.Shops) > i:
+                    Shops_info = {'Selected_Shop': self.Shops[i], 'Shops': self.Shops, 'User': self.User_data, 'User_Shops_List': User_work_shops, 'Shop_items': [], 'Shop_Actions': ""}
+                    if not self.master.title == "Security Elevation":
+                        self.master.master.user = self.User_data
+                        self.master.master.Shops_info = Shops_info
+                        self.master.master.Shops = self.Shops
+                        self.master.master.User_Shops_List = User_work_shops
+                        self.master.master.load()
+                        self.master.destroy()
+                        self.master.master.grid(row=0, column=0, sticky="nsew")
+                        self.master.master.master.show_frame("Display_Frame")
+                        print("Login Successfully")
+                        #self.master.tklevelwin.destroy()
+                        
         for items in self.selecte_work_Selected_item_Display_frame.winfo_children():
             items.destroy()
-            
+                        
         self.show_frame("Select_User_Company_State_Frame")
         if len(User_work_shops): 
             for i, User_work_shop in enumerate(User_work_shops):
@@ -233,13 +237,13 @@ class Select_User_Company_State_Frame(tk.Frame):
                 new_item_brandname = tk.Label(new_item_fram, text=str(User_work_shop[2]), font=("Arial", 11), bg="#0d47a1", fg="#ffffff")
                 new_item_brandname.grid(row=1, column=1, columnspan=6, sticky="nsew")
                 
-                a = fetch_as_dict_list("SELECT * FROM Shops", ())
-                find_shop_in_sysdb = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_name=? AND Shop_brand_name=?", 
-                    (str(User_work_shop[1]), str(User_work_shop[2])))
+                find_shop_in_sysdb = Get_Shop(self.Link, self.User_data, ['Shop_name', 'Shop_brand_name'], [User_work_shop[1], User_work_shop[2]])
+                if find_shop_in_sysdb:
+                    self.Shops.append(find_shop_in_sysdb[0])
                     
             def Get_Shop_Data(index, frame, uws):
                 Link = self.master.link_entry.get()
-                shop_result = Get_Shop(Link, self.User_data['User_name'], self.User_data['User_password'], uws[1], uws[2])
+                shop_result = Get_Shop(Link, self.User_data, ['Shop_name', 'Shop_brand_name'], [uws[1], uws[2]])
                 if shop_result:
                     if shop_result == []:
                         Whiting_Label = tk.Label(frame, text="Online Login Failed", font=("Arial", 11), bg="#0d47a1", fg="#ffffff")
@@ -250,10 +254,11 @@ class Select_User_Company_State_Frame(tk.Frame):
                             Add_Shop_data_From_list(shop_result[0])
                             Whiting_Label = tk.Label(frame, text="Online Login Successful", font=("Arial", 11), bg="#0d47a1", fg="#ffffff")
                             Whiting_Label.grid(row=1, column=7, columnspan=6, sticky="nsew")
-                            self.update_user_work_shop()
                         else:
                             Whiting_Label = tk.Label(frame, text="Data Not Found. Login Online", font=("Arial", 11), bg="#0d47a1", fg="#ffffff")
                             Whiting_Label.grid(row=1, column=7, columnspan=6, sticky="nsew")
+                        #self.Shops.append(shop_result[0])
+                        self.update_user_work_shop()
                 else:
                     Whiting_Label = tk.Label(frame, text="API Error", font=("Arial", 11), bg="#0d47a1", fg="#ffffff")
                     Whiting_Label.grid(row=1, column=7, columnspan=6, sticky="nsew")
@@ -298,9 +303,9 @@ class Select_User_Company_State_Frame(tk.Frame):
                         Shops = self.found_Shops_result[index]
                     else:
                         Shops = self.found_Shops_result
-                    print("company_name : " + str(Shops['Shop_name']))
-                    print("company_brandname : " + str(Shops['Shop_brand_name']))
-                    print("Shop_workers : " + str(Shops['Shop_workers']))
+                    print("company_name : ", Shops['Shop_name'])
+                    print("company_brandname : ", Shops['Shop_brand_name'])
+                    print("Shop_workers : ", Shops['Shop_workers'])
                     
                     Shop_workers = []
                     if Shop_workers == None or Shop_workers == 'None':
@@ -311,16 +316,23 @@ class Select_User_Company_State_Frame(tk.Frame):
                             found_worker_inshop = 1
                             Shop_workers[sw] = [self.User_data['User_id'], self.User_data['User_fname'] + " "+ self.User_data['User_Lname'], self.User_data['User_name'], "WORKER", Shops['Shop_name'], Shops['Shop_brand_name'], -2]
                     # e.g [2, 'Abdul Kedir', 'AK Abdul', 'OWNER', 'BELLEMA FASHION', 'ADOT', '10']        
+                    # e.g [User Id, 'User Full Name', 'User Name', 'OWNER', 'Shop Name', 'Shop Brand', User permission in shop As (WORKER -2, OWNER -1, CUSTOMER 0, NOT WORKING 1)]
                     if found_worker_inshop == 0:
                         print("self.User_data : ", self.User_data)
-                        print("Adding worker to shop workers list ", Shop_workers)
                         Shop_workers.append([self.User_data['User_id'], self.User_data['User_fname'] + " "+ self.User_data['User_Lname'], self.User_data['User_name'], "WORKER", Shops['Shop_name'], Shops['Shop_brand_name'], -2])
+                        print("Adding worker to shop workers list ", Shop_workers)
                         # Update the shop workers in the database
-                        shop = Update_Shop(self.Link, self.User_data, ['Shop_workers'], Shop_workers, ['Shop_Id'], [Shops['Shop_Id']])
-                    
+                        jsonShop_workers = json.dumps(Shop_workers)
+                        Shops = Update_Shop(self.Link, self.User_data, ['Shop_workers'], [jsonShop_workers], ['Shop_Id'], [Shops['Shop_Id']])
+                        if Shops:
+                            print("Shop workers Updated Secessfuly", Shops)
+                            Shops = Shops[0]
+                            self.Shops.append(Shops)
+
                     # Now update the User_work_shop field in Users table
                     User_work_shops = []
                     if self.User_data and not self.User_data['User_work_shop'] == None and not self.User_data['User_work_shop'] == 'None':                            
+                        print("self.User_data['User_work_shop'] ", self.User_data['User_work_shop'])
                         try:
                             User_work_shops = json.loads(self.User_data['User_work_shop'])
                         except:
@@ -329,17 +341,23 @@ class Select_User_Company_State_Frame(tk.Frame):
                             except:
                                 print("user_work_shop json, load_list can not read it")
                                 pass  
+
                     found_shop_inworkes = 0
                     for uws, User_work_shop in enumerate(User_work_shops):
-                        if User_work_shop[0] == Shops['Shop_id']:
+                        if User_work_shop[0] == Shops['Shop_Id']:
                             found_shop_inworkes = 1
-                            User_work_shops[uws] = [Shops['Shop_id'], Shops['Shop_name'], Shops['Shop_brand_name'], -1]
-                            
+                            User_work_shops[uws] = [Shops['Shop_Id'], Shops['Shop_name'], Shops['Shop_brand_name'], -1]
+                    # e.g [id, 'Shop Name', 'Shop Brand', User permission in shop As (WORKER -2, OWNER -1, CUSTOMER 0, NOT WORKING 1)]
+
                     if found_shop_inworkes == 0:
-                        User_work_shops.append([Shops['Shop_id'], Shops['Shop_name'], Shops['Shop_brand_name'], [-1]])
+                        print("Adding shop to user work shops list ", User_work_shops)
+                        User_work_shops.append([Shops['Shop_Id'], Shops['Shop_name'], Shops['Shop_brand_name'], [-1]])
                         # Update the Users table in the database
+                        print("Updating user work shops list ", User_work_shops)
                         User = Update_User(self.Link, self.User_data, ['User_work_shop'], [json.dumps(User_work_shops)], ['User_id'], [self.User_data['User_id']])
+                        print("User : ", User)
                         self.User_data['User_work_shop'] = json.dumps(User_work_shops)
+                        
                         
                     self.update_user_work_shop()
                     

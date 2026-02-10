@@ -37,12 +37,10 @@ from C.Product.selecttype import *
 # Connect to the database or create it if it does not exist
 
 
-data_dir = os.path.abspath(os.path.join(MAIN_dir, 'data'))
-db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cur = conn.cursor()
+from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
 
-conn.commit()
 
 
 def is_float(value):

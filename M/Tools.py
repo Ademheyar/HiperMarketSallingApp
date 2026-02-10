@@ -253,7 +253,7 @@ class ToolForm(tk.Frame):
                 continue
 
             Shop = fetch_as_dict_list( "SELECT * FROM Shops WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
-                                (str(shop['Shop_id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
+                                (str(shop['Shop_Id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
             if Shop and Shop[0] and Shop[0]['Shop_Payment_Tools'] and Shop[0]['Shop_Payment_Tools'] != "":
                 print("Shop[0]['Shop_Payment_Tools'] ", Shop[0]['Shop_Payment_Tools'])
                 Shop_Payment_Tools = load_list(Shop[0]['Shop_Payment_Tools'])
@@ -261,7 +261,7 @@ class ToolForm(tk.Frame):
                 # Add the products to the product listbox
                 for Shop_Payment_Tool in Shop_Payment_Tools:
                     self.Shop_Payment_Tools.append(Shop_Payment_Tool)
-                    results.append([shop['Shop_id'], shop['Shop_name']] + [len(self.Shop_Payment_Tools)-1] + Shop_Payment_Tool)
+                    results.append([shop['Shop_Id'], shop['Shop_name']] + [len(self.Shop_Payment_Tools)-1] + Shop_Payment_Tool)
         self.Add_tool_listbox(results)
         # Hide the product details frame
         self.hide_add_forme()
@@ -307,7 +307,7 @@ class ToolForm(tk.Frame):
                     # "Tool Name", "Tool Method", "Tool ID", "Tool Short cut", "Tool Acsess key", "Tool enabel", "Tool Quick_pay","Tool Markpad", "Tool Customer_required", "Tool Open_drower", "Tool Printslip"
                     Shop_Payment_Tools.append([name, typ, code, short_key, acsess, enable, quick_pay , markaspad, customer_required, open_drower, print_slip, change_allowed])
                     cur.execute("UPDATE Shops SET Shop_Payment_Tools=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
-                                    (json.dumps(Shop_Payment_Tools), str(shop['Shop_id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
+                                    (json.dumps(Shop_Payment_Tools), str(shop['Shop_Id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
                     # Commit the changes to the database
                     conn.commit()
                     self.master.master.master.master.Shop_Payment_Tools = Shop_Payment_Tools
@@ -324,7 +324,7 @@ class ToolForm(tk.Frame):
 
                         print("Shop_Payment_Tools ", Shop_Payment_Tools)
                         cur.execute("UPDATE Shops SET Shop_Payment_Tools=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
-                                    (json.dumps(Shop_Payment_Tools), str(shop['Shop_id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
+                                    (json.dumps(Shop_Payment_Tools), str(shop['Shop_Id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
                         # Commit the changes to the database
                         conn.commit()
                         self.master.master.master.master.Shop_Payment_Tools = Shop_Payment_Tools
@@ -360,7 +360,7 @@ class ToolForm(tk.Frame):
                 for s, shop in enumerate(self.Shops):
                     if self.Selected_Shop != "" and shop['Shop_name'] != self.Selected_Shop:
                         continue
-                    if str(shop['Shop_id']) != str(shop_id_text):
+                    if str(shop['Shop_Id']) != str(shop_id_text):
                         continue
                     # load existing tools
                     Shop_Payment_Tools = []
@@ -371,7 +371,7 @@ class ToolForm(tk.Frame):
                         if 0 <= int(idx) < len(Shop_Payment_Tools):
                             Shop_Payment_Tools.pop(int(idx))
                             cur.execute("UPDATE Shops SET Shop_Payment_Tools=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?",
-                                        (json.dumps(Shop_Payment_Tools), str(shop['Shop_id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
+                                        (json.dumps(Shop_Payment_Tools), str(shop['Shop_Id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
                             conn.commit()
                             self.master.master.master.master.Shop_Payment_Tools = Shop_Payment_Tools
                     except Exception:

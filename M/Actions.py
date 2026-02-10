@@ -412,11 +412,11 @@ class ActionsForm(tk.Frame):
                 continue
 
             Shop = fetch_as_dict_list( "SELECT * FROM Shops WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
-                                (str(shop['Shop_id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
+                                (str(shop['Shop_Id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
             if Shop and Shop[0] and Shop[0]['Shop_Actions'] and Shop[0]['Shop_Actions'] != "":
                 print("Shop[0]['Shop_Actions'] ", Shop[0]['Shop_Actions'])
                 '''cur.execute("UPDATE Shops SET Shop_Actions=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
-                                (str(json.dumps([])), str(shop['Shop_id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
+                                (str(json.dumps([])), str(shop['Shop_Id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
                 # Commit the changes to the database
                 conn.commit()'''
                 Shop_Actions = json.loads(Shop[0]['Shop_Actions'])
@@ -472,7 +472,7 @@ class ActionsForm(tk.Frame):
                                     shop_actionscopy.append(Shop_Action)
                             Shop_Actions = shop_actionscopy
                             cur.execute("UPDATE Shops SET Shop_Actions=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
-                                            (str(Shop_Actions), str(shop['Shop_id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
+                                            (str(Shop_Actions), str(shop['Shop_Id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
                             # Commit the changes to the database
                             conn.commit()
                 # Update the product listbox
@@ -945,7 +945,7 @@ class ActionsForm(tk.Frame):
                 if self.add_button.cget("text") == "New":
                     Shop_Actions.append([len(Shop_Actions), Action_titel, created_date, from_date, to_date, if_conditions, Do_makes])
                     cur.execute("UPDATE Shops SET Shop_Actions=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
-                                    (json.dumps(Shop_Actions), str(shop['Shop_id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
+                                    (json.dumps(Shop_Actions), str(shop['Shop_Id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
                     # Commit the changes to the database
                     conn.commit()
                 else:
@@ -961,7 +961,7 @@ class ActionsForm(tk.Frame):
 
                         print("Shop_Actions ", Shop_Actions)
                         cur.execute("UPDATE Shops SET Shop_Actions=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
-                                    (str(json.dumps(Shop_Actions)), str(shop['Shop_id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
+                                    (str(json.dumps(Shop_Actions)), str(shop['Shop_Id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
                         # Commit the changes to the database
                         conn.commit()
                                 

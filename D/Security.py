@@ -710,19 +710,24 @@ def Security_get_user(self):
 def Chacke_Security(self, user, Shop, onlevel, Whatfor=""):
     # user: expected to be a dict-like object earlier in code; keep original logic but improve fallback
     print("Chacke_Security ", Whatfor)
-    #print("load_shop_info user :"+str(user))
-    #print("load_shop_info Shop :"+str(Shop))
+    print("load_shop_info user :"+str(user))
+    print("load_shop_info Shop :"+str(Shop))
     results = None
     self.User_work_shops = []
-    
+    if not Shop.get('Shop_Security_Levels'):
+        try:
+            Shop_Security_Levels = json.loads(Shop['Shop_Security_Levels'])
+        except Exception:
+            Shop_Security_Levels = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4]
+    else:
+        Shop_Security_Levels = json.loads(Shop['Shop_Security_Levels'])
+    print("load_shop_info Shop_Security_Levels :"+str(Shop_Security_Levels))
     # fallback to original logic used earlier (if user is dict-like)
-    if user and isinstance(user, dict) and user.get('User_work_shop') and user.get('User_work_shop') != "" and Shop.get('Shop_Security_Levels'):
+    if user and isinstance(user, dict) and user.get('User_work_shop') and user.get('User_work_shop') != "" and Shop_Security_Levels:
         User_work_shops = json.loads(user['User_work_shop'])
         for User_work_shop in User_work_shops:
             print("load_shop_info User_work_shop :"+str(User_work_shop))
             if User_work_shop[1] == Shop['Shop_name'] and User_work_shop[2] == Shop['Shop_brand_name']:
-                Shop_Security_Levels = json.loads(Shop['Shop_Security_Levels'])
-                print("load_shop_info Shop_Security_Levels :"+str(Shop_Security_Levels))
                 try:
                     user_level = float(User_work_shop[3][0])
                 except Exception:

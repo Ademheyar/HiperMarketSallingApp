@@ -9,21 +9,14 @@ import sys
 import json
 import ast
 
-current_dir = os.path.abspath(os.path.dirname(__file__))
-MAIN_dir = os.path.join(os.path.join(current_dir, '..'), '..')
-sys.path.append(MAIN_dir)
 from C.List import *
 import os
-data_dir = os.path.abspath(os.path.join(MAIN_dir, 'data'))
-db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cur = conn.cursor()
-
-conn.commit()
 
 nodes = [["a"]]
 
 nodes = "[['MANS', [['ACCESSORIES', []], ['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['WOMANS', [['ACCESSORIES', []], ['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['DRESS', [['SUNDRESS', []], ['COCKTAIL', []], ['MAXI', []], ['SHIFT', []], ['BODYCON', []], ['A-LINE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['SPORTBRA', []], ['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['KIDS', [['ACCESSORIES', []], ['GIRLS', [['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['DRESS', [['SUNDRESS', []], ['COCKTAIL', []], ['MAXI', []], ['SHIFT', []], ['BODYCON', []], ['A-LINE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['SPORTBRA', []], ['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['BOYS', [['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['FORKIDS', [['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]]]], ['FOREVERYONE', [['ACCESSORIES', []], ['SHOES', []], ['TROUSER', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []], ['TRENCHCOAT', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]]]"
+
+from C.API.Get import *
 
 class NodeSelectorApp():
     def __init__(self, frame, user_info):
@@ -32,16 +25,14 @@ class NodeSelectorApp():
         self.node_combobox = ttk.Combobox(self.root, state="readonly")
         self.node_combobox.pack(fill=tk.X, pady=10)
         self.node_combobox.bind("<<ComboboxSelected>>", self.update_node_selection)
-        
-        sitting = cur.execute("SELECT * FROM setting WHERE User_id = ?", (user_info['User_id'],)).fetchall()
-        if len(sitting) <= 0:
-            #print("sitting : " + self.user)
-            cur.execute('INSERT INTO setting (User_id, barcode_count, printer) VALUES (?, ?, ?)', (int(user_info['User_id']), 0, ""))
-            # Commit the changes to the database
-            conn.commit()
-            sitting = cur.execute("SELECT * FROM setting WHERE User_id = ?", (user_info['User_id'],)).fetchall()
-        sitting = sitting[0]
-        print("sitting Types :"+ str(sitting[0]))
+        sitting = None
+        if not user_info or 'User_id' not in user_info:
+            sitting = Get_Setting(user_info, ['User_id'], [user_info['User_id']])[0]
+            if len(sitting) <= 0:
+                Set_Setting(user_info, ["User_id", "barcode_count", "printer"], [user_info['User_id'], 0, ""])
+                sitting = Get_Setting(user_info, ['User_id'], [user_info['User_id']])[0]
+            sitting = sitting[0]
+            print("sitting Types :"+ str(sitting[0]))
         if sitting and sitting[4] and sitting[4] != "":
             print("Users Types :"+ str(sitting[4]))
             self.nodes = load_list(sitting[4])

@@ -35,6 +35,10 @@ from C.Product.selecttype import *
 from C.Settings.Shop_Expenses import *
 from C.Settings.Shop_Workers import *
 
+from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
+
 Shop_deff_type = "[['MANS', [['ACCESSORIES', []], ['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['WOMANS', [['ACCESSORIES', []], ['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['DRESS', [['SUNDRESS', []], ['COCKTAIL', []], ['MAXI', []], ['SHIFT', []], ['BODYCON', []], ['A-LINE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['SPORTBRA', []], ['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['KIDS', [['ACCESSORIES', []], ['GIRLS', [['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['DRESS', [['SUNDRESS', []], ['COCKTAIL', []], ['MAXI', []], ['SHIFT', []], ['BODYCON', []], ['A-LINE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['SPORTBRA', []], ['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['BOYS', [['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['FORKIDS', [['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]]]], ['FOREVERYONE', [['ACCESSORIES', []], ['SHOES', []], ['TROUSER', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []], ['TRENCHCOAT', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]]]"
 slip_order_type=["*", "#", "-", "_", "=", "~", "Location", "Linkes", "Phone_No", "Receipt_no", "Extnsion_Receipt_no", "Date", "Updated_date", "Due_date", "User", "Seller", "Customer", "Item", "Rules"]
 
@@ -410,15 +414,10 @@ class Shop_SettingForm(ttk.Notebook):
         self.USER_SECURITY_list_box.heading("#0", text="Access")
         self.USER_SECURITY_list_box.heading("#1", text="Level")
         Shop_Security_Levels = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4]
-        if self.Shop['Shop_Security_Levels']:
+        if self.Shop and self.Shop['Shop_Security_Levels']:
             Shop_Security_Levels = json.loads(self.Shop['Shop_Security_Levels'])
         else:
-            cur.execute('UPDATE Shops SET Shop_Security_Levels=? WHERE Shop_id=?',
-                        (json.dumps(Shop_Security_Levels), self.Shop['Shop_id']))
-            # Commit the changes to the database
-            conn.commit()
-            s = fetch_as_dict_list(cursor, "SELECT * FROM Shops WHERE Shop_id=?", 
-                                (str(self.Shop['Shop_id'])))
+            s = Update_Shop(self.Shop['Shop_link'], self.user, ['Shop_Security_Levels'], [json.dumps(Shop_Security_Levels)], ['Shop_Id'], [self.Shop['Shop_Id']])
             if s:
                 # TODO : CHANGE SHOP SELECTED ONLY
                 self.Shops = s
@@ -555,7 +554,7 @@ class Shop_SettingForm(ttk.Notebook):
         shop_ = self.Shops[0]
         if shop_:
             shop_['Shop_Items_type'] = Shop_deff_type
-            cur.execute('UPDATE Shops SET Shop_Items_type=? WHERE Shop_id=?', (Shop_deff_type, shop_['Shop_id']))
+            cur.execute('UPDATE Shops SET Shop_Items_type=? WHERE Shop_id=?', (Shop_deff_type, shop_['Shop_Id']))
             # Commit the changes to the database
             conn.commit()
             self.load_type_info()
@@ -569,7 +568,7 @@ class Shop_SettingForm(ttk.Notebook):
         self.types_label.config(text=text)
         shop_ = self.Shops[0]
         if shop_:
-            cur.execute('UPDATE Shops SET Shop_Items_type=? WHERE Shop_id=?', (text, shop_['Shop_id']))
+            cur.execute('UPDATE Shops SET Shop_Items_type=? WHERE Shop_id=?', (text, shop_['Shop_Id']))
             # Commit the changes to the database
             conn.commit()
 
@@ -636,7 +635,7 @@ class Shop_SettingForm(ttk.Notebook):
                 
                 
                 cur.execute('UPDATE Shops SET Shop_Security_Levels=? WHERE Shop_id=?',
-                        (json.dumps(Shop_Security_Levels), self.Shop['Shop_id']))
+                        (json.dumps(Shop_Security_Levels), self.Shop['Shop_Id']))
                 # Commit the changes to the database
                 conn.commit()
                 
@@ -645,11 +644,11 @@ class Shop_SettingForm(ttk.Notebook):
         if shop_:
             shop_info =  "Phone Number="+self.Shop_phone_num_entry.get()+"+Location="+self.Shop_location_entry.get()
             cur.execute('UPDATE Shops SET Shop_name=?, Shop_brand_name=?, Shop_link=?, Shop_location=?, Shop_rules=?, Shop_about=? WHERE Shop_id=?',
-                        (self.Shop_name_entry.get(), self.Shop_brand_name_entry.get(), self.Shop_link_entry.get(), shop_info, self.Shop_rules_entry.get(), self.Shop_about_entry.get(), shop_['Shop_id']))
+                        (self.Shop_name_entry.get(), self.Shop_brand_name_entry.get(), self.Shop_link_entry.get(), shop_info, self.Shop_rules_entry.get(), self.Shop_about_entry.get(), shop_['Shop_Id']))
             # Commit the changes to the database
             conn.commit()
             s = fetch_as_dict_list(cursor, "SELECT * FROM Shops WHERE Shop_id=?", 
-                                (str(shop_['Shop_id'])))
+                                (str(shop_['Shop_Id'])))
             if s:
                 # TODO : CHANGE SHOP SELECTED ONLY
                 self.Shops[0] = s[0]
@@ -685,7 +684,7 @@ class Shop_SettingForm(ttk.Notebook):
         selected_shop_index = self.User_Shopes_Combobox.current()
         slip_order_list_str = json.dumps(self.slip_order_list)
         self.Shops[selected_shop_index]['Shop_Slip_Settings'] = slip_order_list_str
-        cur.execute('UPDATE Shops SET Shop_Slip_Settings=? WHERE Shop_id=?', (slip_order_list_str, self.Shops[selected_shop_index]['Shop_id']))
+        cur.execute('UPDATE Shops SET Shop_Slip_Settings=? WHERE Shop_id=?', (slip_order_list_str, self.Shops[selected_shop_index]['Shop_Id']))
         # Commit the changes to the database
         conn.commit()
         print("updated self.slip_order_list[1] ", self.slip_order_list[1])

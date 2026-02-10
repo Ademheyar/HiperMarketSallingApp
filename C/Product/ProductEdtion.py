@@ -32,17 +32,11 @@ from C.List import *
 from D.Getdate import GetDateForm
 from D.Chart.Chart import *
 
+from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
+
 from C.Product.selecttype import *
-
-# Connect to the database or create it if it does not exist
-
-
-data_dir = os.path.abspath(os.path.join(MAIN_dir, 'data'))
-db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cur = conn.cursor()
-
-conn.commit()
 
 
 def is_float(value):
@@ -874,7 +868,7 @@ class ProductFullEditionForm(ttk.Notebook):
             print("Selected s ", self.master.master.shop_name_Combobox.current())
             print("Selected Shop ", self.master.master.shop_name_Combobox.get())
             if (shop['Shop_name'] == "" or (s == self.master.master.shop_name_Combobox.current() and self.master.master.shop_name_Combobox.get() == shop['Shop_name'])):
-                at_shop = shop['Shop_id']
+                at_shop = shop['Shop_Id']
                 print(" Found ", at_shop)
                 if shop['Shop_items']:
                     print("Shop items = ", shop['Shop_items'])
@@ -945,7 +939,7 @@ class ProductFullEditionForm(ttk.Notebook):
                 print("Selected s ", self.master.master.shop_name_Combobox.current())
                 print("Selected Shop ", self.master.master.shop_name_Combobox.get())
                 if (shop['Shop_name'] == "" or (s == self.master.master.shop_name_Combobox.current() and self.master.master.shop_name_Combobox.get() == shop['Shop_name'])):
-                    at_shop = shop['Shop_id']
+                    at_shop = shop['Shop_Id']
                     print(" Found ", at_shop)
                     shop['Shop_items'] = ITEM
         elif self.product_id != -1:
@@ -1349,7 +1343,7 @@ class ProductQueckEditionForm(ttk.Notebook):
                 if (shop.get('Shop_name', "") == "" or
                     (s == self.master.master.shop_name_Combobox.current() and
                     self.master.master.shop_name_Combobox.get() == shop.get('Shop_name', ""))):
-                    at_shop = shop.get('Shop_id')
+                    at_shop = shop.get('Shop_Id')
                     if shop.get('Shop_items'):
                         try:
                             found_shop_items = json.loads(shop['Shop_items'])
@@ -1433,7 +1427,7 @@ class ProductQueckEditionForm(ttk.Notebook):
                     print("Selected s ", self.master.master.shop_name_Combobox.current())
                     print("Selected Shop ", self.master.master.shop_name_Combobox.get())
                     if (shop['Shop_name'] == "" or (s == self.master.master.shop_name_Combobox.current() and self.master.master.shop_name_Combobox.get() == shop['Shop_name'])):
-                        at_shop = shop['Shop_id']
+                        at_shop = shop['Shop_Id']
                         print(" Found ", at_shop)
                         shop['Shop_items'] = ITEM
         

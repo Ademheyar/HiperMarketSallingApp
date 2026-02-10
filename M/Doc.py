@@ -629,6 +629,7 @@ class DocForm(tk.Frame):
                 return current_start
 
             shop_daily_total = 0.0
+            exp = None
             # shop_exp is a list of expense records: [name, desc, amount, category, start_date, resp, notes, freq_combo, isrepeats, interval, end_date]
             for i_exp, exp in enumerate(shop_exp):
                 try:
@@ -813,6 +814,9 @@ class DocForm(tk.Frame):
                 except Exception:
                     pass
                 return parsed_date
+            if not exp or not isinstance(exp, (list, tuple)):
+                print(f"  skipping invalid expense format: {repr(exp)}")
+                continue
 
             # apply fixes to both start_date and end_date where appropriate
             start_date = _fix_two_digit_year(exp[4] if len(exp) > 4 else None, start_date)

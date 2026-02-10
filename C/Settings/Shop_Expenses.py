@@ -319,7 +319,7 @@ class ExpensesForm(tk.Frame):
                 hay = " ".join([name, description, typ, short_key, acsess, ref, notes, freq_combo, isrepeats, interval, end_date]).lower()
                 if s == "" or s in hay:
                     results.append((name, description, typ, short_key, acsess, ref, notes, freq_combo, isrepeats, interval, end_date,
-                                    shop.get('Shop_id'), shop.get('Shop_name'), shop.get('Shop_brand_name')))
+                                    shop.get('Shop_Id'), shop.get('Shop_name'), shop.get('Shop_brand_name')))
         return results
 
     def Add_tool_listbox(self, results):
@@ -381,7 +381,7 @@ class ExpensesForm(tk.Frame):
                 # update DB and local shops list
                 print("Adding expense to shop:", shop.get('Shop_name'))
                 cur.execute("UPDATE Shops SET Shop_Expenses=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?",
-                            (json.dumps(shop_exp), str(shop.get('Shop_id')), str(shop.get('Shop_name')), str(shop.get('Shop_brand_name'))))
+                            (json.dumps(shop_exp), str(shop.get('Shop_Id')), str(shop.get('Shop_name')), str(shop.get('Shop_brand_name'))))
                 conn.commit()
                 shop['Shop_Expenses'] = json.dumps(shop_exp)
             else:
@@ -396,7 +396,7 @@ class ExpensesForm(tk.Frame):
                         shop_exp[idx] = [name, description, typ, short_key, date, ref, notes, freq_combo, isrepeats, interval, end_date]
                         # update DB and local shops list
                         cur.execute("UPDATE Shops SET Shop_Expenses=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?",
-                                        (json.dumps(shop_exp), str(shop.get('Shop_id')), str(shop.get('Shop_name')), str(shop.get('Shop_brand_name'))))
+                                        (json.dumps(shop_exp), str(shop.get('Shop_Id')), str(shop.get('Shop_name')), str(shop.get('Shop_brand_name'))))
                         conn.commit()
                         shop['Shop_Expenses'] = json.dumps(shop_exp)
                         break
@@ -427,7 +427,7 @@ class ExpensesForm(tk.Frame):
                     # delete this entry
                     shop_exp.pop(idx)
                     cur.execute("UPDATE Shops SET Shop_Expenses=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?",
-                                (json.dumps(shop_exp), str(shop.get('Shop_id')), str(shop.get('Shop_name')), str(shop.get('Shop_brand_name'))))
+                                (json.dumps(shop_exp), str(shop.get('Shop_Id')), str(shop.get('Shop_name')), str(shop.get('Shop_brand_name'))))
                     conn.commit()
                     shop['Shop_Expenses'] = json.dumps(shop_exp)
 

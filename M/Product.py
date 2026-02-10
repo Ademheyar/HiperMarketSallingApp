@@ -604,7 +604,7 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
             new_item_Shop_Label.grid(row=1, column=3, sticky="nsew")
             new_item_Shop_Combobox = ttk.Combobox(new_item_fram, values=[], width=10)
             new_item_Shop_Combobox.grid(row=2, column=3, padx=5, pady=5, sticky=tk.W)
-            itemshop = [shop['Shop_name'] for shop in self.Shops if str(shop['Shop_id']) == str(selected_item['at_shop'])]
+            itemshop = [shop['Shop_name'] for shop in self.Shops if str(shop['Shop_Id']) == str(selected_item['at_shop'])]
             if len(itemshop) > 0:
                 new_item_Shop_Combobox.set(itemshop[0])
             new_item_Code_Label = ttk.Label(new_item_fram, text="Code :" )
@@ -672,9 +672,9 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
         product_id = selected_item = self.master.master.master.master.Shops_info['Shop_items'][index][0]['id']
         answer = tk.messagebox.askquestion("Question", "Do you what to delete "+str(product_id)+" ?")
         if answer == 'yes':
-            itemshop = [[shop, i] for i, shop in enumerate(self.Shops) if str(shop['Shop_id']) == str(self.master.master.master.master.Shops_info['Shop_items'][index][0]['at_shop'])]
+            itemshop = [[shop, i] for i, shop in enumerate(self.Shops) if str(shop['Shop_Id']) == str(self.master.master.master.master.Shops_info['Shop_items'][index][0]['at_shop'])]
             if itemshop:
-                at_shop = itemshop[0][0]['Shop_id']
+                at_shop = itemshop[0][0]['Shop_Id']
                 found_shop_items = json.loads(itemshop[0][0]['Shop_items'])
                 if found_shop_items:
                     for si, sitem in enumerate(found_shop_items):
