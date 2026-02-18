@@ -602,7 +602,7 @@ class DocEditForm(tk.Frame):
         print("tiems : " + str(self.items[14]))
         items = json.loads(self.items[14])
         for item in items:
-            it = fetch_as_dict_list(cursor, "SELECT * FROM product WHERE id=?", 
+            it = fetch_as_dict_list("SELECT * FROM product WHERE id=?", 
                                     (str(item[0]),))[0]
             if it:
                     doc_item_info = {'values': it, 'type': 'DOCUMENT', 'item_list':[]}
@@ -627,7 +627,7 @@ class DocEditForm(tk.Frame):
         if (item_info['type'] == "DOCUMENT"):
             items = json.loads(item_info['values']['item'])
             for item in items:
-                it = fetch_as_dict_list(cursor, "SELECT * FROM product WHERE id=?", 
+                it = fetch_as_dict_list("SELECT * FROM product WHERE id=?", 
                                 (item[0],))[0]
                 if it:
                     doc_item_info = {'values': it, 'type': 'DOCUMENT', 'item_list':[]}
@@ -800,7 +800,7 @@ class DocEditForm(tk.Frame):
                     doc_found[found_index]['count_new_items'] += 1
                     print(str(iv[1]))
                     print("item id " + str(iv[0]['values']['id']) + " to item")
-                    it = fetch_as_dict_list(cursor, "SELECT * FROM product WHERE id=?", (iv[0]['values']['id'],))
+                    it = fetch_as_dict_list("SELECT * FROM product WHERE id=?", (iv[0]['values']['id'],))
                     print("item it " + str(it) + " to item")
                     if it:
                         it = it[0]

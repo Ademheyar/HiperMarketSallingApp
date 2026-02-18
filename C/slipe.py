@@ -19,14 +19,14 @@ from C.API.Get import *
 def find_user(v):
     it = None
     if v and v.isdigit():
-        it = fetch_as_dict_list(cursor, "SELECT * FROM users WHERE User_id=?", (v,))
+        it = fetch_as_dict_list("SELECT * FROM users WHERE User_id=?", (v,))
     elif  v:
-        it = fetch_as_dict_list(cursor, "SELECT * FROM users WHERE User_name=?", (v,))
+        it = fetch_as_dict_list("SELECT * FROM users WHERE User_name=?", (v,))
     if it:
         return it[0]
     
 def find_shop(id):
-    results = fetch_as_dict_list(cursor, "SELECT * FROM Shops WHERE Shop_id=?", (id,))[0]
+    results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_id=?", (id,))[0]
     print("found shop ", results)
     return results
 

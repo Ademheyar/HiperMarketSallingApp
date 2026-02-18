@@ -32,6 +32,13 @@ from C.API.Get import *
 from C.API.Set import *
 
 
+# this will add Document data to system database Document data mast be given dict list key : value
+def Update_table_database(query, value):
+    cur.execute(query, value)
+    # Commit the changes to the database
+    conn.commit()
+    return True
+
 # USER
 # THIS WILL SET User BY ITS GIVEN VALUES
 # this function will add new user to system data base all data must be given
@@ -78,17 +85,25 @@ def Set_User(Link, ARG, VALUE, parent=None):
         if answer == 'yes':
             User_data = Set_User(None, ['User_id', 'User_fname', 'User_Lname', 'User_name', 'User_gender', 'User_country', 'User_phone_num', 'User_email', 'User_address', 'User_home_no', 'User_id_pp_num', 'User_password', 'User_type', 'User_about', 'User_shop', 'User_work_shop', 'User_likes', 'User_following_shop', 'User_favoraite_items', 'User_rate', 'User_access', 'User_pimg', 'User_following_shop'], [User_data['User_id'], User_data['User_fname'], User_data['User_Lname'], User_data['User_name'], User_data['User_gender'], User_data['User_country'], User_data['User_phone_num'], User_data['User_email'], User_data['User_address'], User_data['User_home_no'], User_data['User_id_pp_num'], User_data['User_password'], User_data['User_type'], User_data['User_about'], User_data['User_shop'], User_data['User_work_shop'], User_data['User_likes'], User_data['user_following_shop'], User_data['user_favoraite_items'], User_data['user_rate'], User_data['user_access'], User_data['user_pimg'], User_data['user_following_shop']], parent=parent)
     else:
+        print("User data is going to be added")
+        print("user query ", query)
+        print("user value ", value)
         # Insert the new user into the database
         query = query.replace("`", "")
         cur.execute('INSERT INTO Users' + query, value)
         Id = cur.lastrowid
         # Commit the changes to the database
         conn.commit()
-        cur.execute('SELECT * FROM Users WHERE Id=?', (Id,))
+        
+        if User_data and 'User_id' in User_data:
+            cur.execute('SELECT * FROM Users WHERE User_id=?', (User_data['User_id'],))
+        else:
+            cur.execute('SELECT * FROM Users WHERE Id=?', (Id,))
         row = cur.fetchone()
         if row:
             columns = [col[0] for col in cur.description]
             User_data = dict(zip(columns, row))
+        
     return User_data
 
 # this will add user data to system database user data mast be given dict list key : value
@@ -322,6 +337,8 @@ def Update_Shop(Link, user, ARG, ShopsVALUE, find_Arg, find_Value):
         if row:
             columns = [col[0] for col in cur.description]
             Shop = dict(zip(columns, row))
+        else:
+            return None
     return Shop
 
 
@@ -380,3 +397,230 @@ def Set_Setting(user, ARG, VALUE):
             return setting_data
         
     return None
+
+
+
+
+# product Get
+
+# this will get user product data with its name and brand name the user must be connected to that product
+# FOR FACING ANY product, COSTUMER EVEN WORKER BASIC INFO
+# AT LIST NAME AND product NAME IS RQUERDE
+# product_find_Arg = [ "product_id", "product_name", "product_brand_name" ]
+def Update_Producte(Link, user, ARG, ProducteVALUE, find_Arg, find_Value):
+    query = ""
+    value = None
+    fquery = ""
+    fvalue = None
+    
+    product = None
+
+    for a, arg in  enumerate(find_Arg):
+        if len(find_Value) > a:
+            fquery += " " + arg + "=?"
+            if fvalue:
+                fvalue = fvalue + (find_Value[a],)
+            else:
+                fvalue = (find_Value[a], )
+            if a+1 < len(find_Arg):
+                fquery += " AND"
+
+    for a, arg in  enumerate(ARG):
+        if len(ProducteVALUE) > a:
+            query += " " + arg + "=?"
+            if value:
+                value = value + (ProducteVALUE[a],)
+            else:
+                value = (ProducteVALUE[a], )
+            if a+1 < len(ARG):
+                query += " AND"
+
+    if Link and islinked(Link):
+        url = Link
+        entry = {'Do': "UPDATE PRODUCT", 'User': user, 'QUERYS': query, 'QUERYVALUES' : value,  'FIND_ARG': fquery, 'FIND_VALUE': fvalue}
+        print("Update_Producte entry ", entry)
+        response_data = Sand_API(url, entry)
+        if response_data and not response_data == []:
+            if response_data['status'] == 'success':
+                if response_data['Value']:
+                    print("Product Updated Secessfuly", response_data['Value'])
+                    return response_data['Value']
+                else:
+                    print("Faild To Update Product Data")
+                    product = None
+            else:
+                if response_data['Value']:
+                    print("There is Error in Update Product Data", response_data['Value'])
+                    product = response_data['Value']
+                else:
+                    print("There is Error in Update Product Data")
+                    product = None
+    else:
+        print("API Error")
+
+    print("product query ", query)
+    print("product value ", value)
+    if query != "" and product == None:
+        # Update the product into the database                
+        cur.execute('UPDATE product SET ' + query + ' WHERE '+fquery, value + fvalue)
+        # Commit the changes to the database
+        conn.commit()
+        cur.execute('SELECT * FROM product WHERE '+fquery, fvalue)
+        row = cur.fetchone()
+        if row:
+            columns = [col[0] for col in cur.description]
+            product = dict(zip(columns, row))
+        else:
+            return None
+    return product
+
+
+
+# Document Get
+
+# USER
+# THIS WILL SET User BY ITS GIVEN VALUES
+# this function will add new user to system data base all data must be given
+def Set_Document(Link, ARG, VALUE, parent=None):
+    query = "("
+    value = None
+    user_name = ""
+    for a, arg in enumerate(ARG):
+        if len(VALUE) > a:
+            query += "`" + arg + "`, "
+            if value:
+                value = value + (VALUE[a],)
+            else:
+                value = (VALUE[a], )
+            if arg == 'user_name':
+                user_name = VALUE[a]
+    if query != "(":    
+        if query.endswith(", "):
+            query = query[:-2]
+        query += ") "
+        query += "VALUES (" + ("?, " * len(ARG)).rstrip(", ") + ")"
+    print("Set_Document query ", query)
+    Document_data = None
+    if Link and islinked(Link):
+        url = Link
+        entry = {'Do': "SET DOCUMENT", 'QUERYS': query, 'QUERYVALUES' : value , 'user_name': user_name}
+        response_data = Sand_API(url, entry)
+        if not response_data == [] and response_data:
+            if response_data['status'] == 'success':
+                if response_data['Value']:
+                    print("DOCUMENT DATA UPLODED Secessfully")
+                    User_data = response_data['Value']
+                else:
+                    print("Faild To Upload DOCUMENT Data")
+                    return "Faild To Upload DOCUMENT Data"
+            else:
+                print("There is Error FOUND")
+                return "There is Error FOUND"
+    else:
+        print("API Error")
+
+    if Document_data:
+        answer = tk.messagebox.askquestion("Question", "Document Created Online Secccesfully. for fast performance better to download datas. Do you what to download document data?", parent=parent)
+        if answer == 'yes':
+            Document_data = Set_Document(None, ['Document_id', 'Document_name', 'Document_brand_name', 'Document_price', 'Document_quantity', 'Document_description', 'Document_category', 'Document_image'], [Document_data['Document_id'], Document_data['Document_name'], Document_data['Document_brand_name'], Document_data['Document_price'], Document_data['Document_quantity'], Document_data['Document_description'], Document_data['Document_category'], Document_data['Document_image']], parent=parent)
+    else:
+        print("Document data is going to be added")
+        print("Document query ", query)
+        print("Document value ", value)
+        # Insert the new Document into the database
+        query = query.replace("`", "")
+        cur.execute('INSERT INTO doc_table' + query, value)
+        Id = cur.lastrowid
+                                
+        # Commit the changes to the database
+        conn.commit()
+        
+        if Document_data and 'Document_id' in Document_data:
+            cur.execute('SELECT * FROM doc_table WHERE Document_id=?', (Document_data['Document_id'],))
+        else:
+            cur.execute('SELECT * FROM doc_table WHERE Id=?', (Id,))
+        #cur.execute('INSERT INTO upload_doc_table' + query, value)
+        row = cur.fetchone()
+        if row:
+            columns = [col[0] for col in cur.description]
+            Document_data = dict(zip(columns, row))
+        
+    return Document_data
+
+
+# this will get user Document data with its name and brand name the user must be connected to that Document
+# FOR FACING ANY Document, COSTUMER EVEN WORKER BASIC INFO
+# AT LIST NAME AND Document NAME IS RQUERDE
+# Document_find_Arg = [ "Document_id", "Document_name", "Document_brand_name" ]
+def Update_Documente(Link, user, ARG, DocumenteVALUE, find_Arg, find_Value):
+    query = ""
+    value = None
+    fquery = ""
+    fvalue = None
+    
+    Document = None
+
+    for a, arg in  enumerate(find_Arg):
+        if len(find_Value) > a:
+            fquery += " " + arg + "=?"
+            if fvalue:
+                fvalue = fvalue + (find_Value[a],)
+            else:
+                fvalue = (find_Value[a], )
+            if a+1 < len(find_Arg):
+                fquery += " AND"
+
+    for a, arg in  enumerate(ARG):
+        if len(DocumenteVALUE) > a:
+            query += " " + arg + "=?"
+            if value:
+                value = value + (DocumenteVALUE[a],)
+            else:
+                value = (DocumenteVALUE[a], )
+            if a+1 < len(ARG):
+                query += " AND"
+
+    if Link and islinked(Link):
+        url = Link
+        entry = {'Do': "UPDATE DOCUMENT", 'User': user, 'QUERYS': query, 'QUERYVALUES' : value,  'FIND_ARG': fquery, 'FIND_VALUE': fvalue}
+        print("Update_Documente entry ", entry)
+        response_data = Sand_API(url, entry)
+        if response_data and not response_data == []:
+            if response_data['status'] == 'success':
+                if response_data['Value']:
+                    print("Document Updated Secessfuly", response_data['Value'])
+                    return response_data['Value']
+                else:
+                    print("Faild To Update Document Data")
+                    Document = None
+            else:
+                if response_data['Value']:
+                    print("There is Error in Update Document Data", response_data['Value'])
+                    Document = response_data['Value']
+                else:
+                    print("There is Error in Update Document Data")
+                    Document = None
+    else:
+        print("API Error")
+
+    print("Document query ", query)
+    print("Document value ", value)
+    if query != "" and Document == None:
+        # Update the Document into the database                
+        cur.execute('UPDATE upload_doc SET ' + query + ' WHERE '+fquery, value + fvalue)
+        cur.execute('UPDATE doc_table SET ' + query + ' WHERE '+fquery, value + fvalue)
+        # Commit the changes to the database
+        conn.commit()
+        cur.execute('SELECT * FROM upload_doc WHERE '+fquery, fvalue)
+        row = cur.fetchone()
+        if row:
+            columns = [col[0] for col in cur.description]
+            Document = dict(zip(columns, row))
+        else:
+            return None
+    return Document
+
+
+
+
+

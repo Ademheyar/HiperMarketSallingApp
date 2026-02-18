@@ -907,7 +907,7 @@ class ActionsForm(tk.Frame):
         if (item_info['type'] == "DOCUMENT"):
             items = json.loads(item_info['values']['item'])
             for item in items:
-                it = fetch_as_dict_list(cursor, "SELECT * FROM product WHERE id=?", 
+                it = fetch_as_dict_list("SELECT * FROM product WHERE id=?", 
                                 (item[0],))[0]
                 if it:
                     doc_item_info = {'values': it, 'type': 'DOCUMENT', 'item_list':[]}

@@ -37,7 +37,7 @@ class ApproveFrame(tk.Frame):
         self.count_printed = 0
         slip = ""
         for barcode in slips:
-            doc_ = fetch_as_dict_list(cursor, "SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))[0]
+            doc_ = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))[0]
             if doc_:
                 print(str(doc_))
                 slip = load_slip(doc_, 0) #TODO GET ID

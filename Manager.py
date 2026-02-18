@@ -36,14 +36,14 @@ class ManageForm(ttk.Frame):
             # create buttons in manage_menus form
             self.doc_btn = ttk.Button(self.left_pane, text="Doc", command=self.doc_form.show_doc_form)
             self.doc_btn.pack(side="top", fill="both", expand=True)
-
+        
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 28, f'User Has No Permission To Access PRODUCT FRAME OR LOGIN AS ADMIN'):                        
             self.Product_form = ProductForm(self.manage_form, self.user, self.Shops, self.on_Shop)
             self.manuframes["ProductFrame"] = self.Product_form
 
             self.product_btn = ttk.Button(self.left_pane, text="Product", command= lambda : self.show_frame("ProductFrame"))
             self.product_btn.pack(side="top", fill="both", expand=True)
-
+        
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 29, f'User Has No Permission To Access USER FRAME OR LOGIN AS ADMIN'):                        
             self.user_Form = UserForm(self.manage_form, user)
             self.manuframes["UserForm"] = self.user_Form
@@ -64,7 +64,6 @@ class ManageForm(ttk.Frame):
             self.Action_btn = ttk.Button(self.left_pane, text="Promotions &\n Action", command=self.Actions_Form.show_product_form)
             self.Action_btn.pack(side="top", fill="both", expand=True)
     
-
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 54, f'User Has No Permission To Access SETTING FRAME OR LOGIN AS ADMIN'):                        
             self.setting_form = SettingForm(self.manage_form, user, Shops)
             self.manuframes["SettingForm"] = self.setting_form

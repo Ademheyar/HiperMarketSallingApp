@@ -417,13 +417,19 @@ class Shop_SettingForm(ttk.Notebook):
         if self.Shop and self.Shop['Shop_Security_Levels']:
             Shop_Security_Levels = json.loads(self.Shop['Shop_Security_Levels'])
         else:
-            s = Update_Shop(self.Shop['Shop_link'], self.user, ['Shop_Security_Levels'], [json.dumps(Shop_Security_Levels)], ['Shop_Id'], [self.Shop['Shop_Id']])
+            pass
+            # TODO : SAVE DEFAULT SECURITY LEVELS TO SHOP OR ALL WEBSITES HAS TO GIVE DEFAULT SECURITY LEVELS
+            '''s = Update_Shop(self.Shop['Shop_link'], self.user, ['Shop_Security_Levels'], [json.dumps(Shop_Security_Levels)], ['Shop_Id'], [self.Shop['Shop_Id']])
             if s:
                 # TODO : CHANGE SHOP SELECTED ONLY
-                self.Shops = s
-                self.Shop = s[0]
-                self.master.master.master.master.master.Shops[0] = s[0]
-            
+                if isinstance(s, list) and len(s) > 0:
+                    self.Shops = s
+                    self.Shop = s[0]
+                else:
+                    self.Shops = [s]
+                    self.Shop = s
+                self.master.master.master.master.master.Shops[0] = self.Shop
+            ''' 
         for l, Level in enumerate(access_types):
             if len(Shop_Security_Levels) > l:
                 self.USER_SECURITY_list_box.insert('', 'end', text=Level, values=(str(Shop_Security_Levels[l])))
@@ -647,7 +653,7 @@ class Shop_SettingForm(ttk.Notebook):
                         (self.Shop_name_entry.get(), self.Shop_brand_name_entry.get(), self.Shop_link_entry.get(), shop_info, self.Shop_rules_entry.get(), self.Shop_about_entry.get(), shop_['Shop_Id']))
             # Commit the changes to the database
             conn.commit()
-            s = fetch_as_dict_list(cursor, "SELECT * FROM Shops WHERE Shop_id=?", 
+            s = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_id=?", 
                                 (str(shop_['Shop_Id'])))
             if s:
                 # TODO : CHANGE SHOP SELECTED ONLY

@@ -436,14 +436,11 @@ class search_entry(ttk.Entry):
         if self.debounce_id is not None:
                 self.after_cancel(self.debounce_id)
                 
-        if self.var.get() == '':
+        if self.var.get() == '' and self.main_frame:
             self.main_frame.destroy()
             self.lb_up = False
         else:
-            conn = sqlite3.connect(db_path)
-            # Connect to database
-            cursor = conn.cursor()
-            words = self.comparison(cursor)
+            words = self.comparison()
             w = self.grid_size()[0]
             h = self.grid_size()[1]
             
@@ -541,12 +538,22 @@ class search_entry(ttk.Entry):
                         if(isinstance(ls, list)):
                             for l in ls:
                                 if len(l) > 4 and l[4] != ""and l[4] != " ":
-                                    ischar = any(char.isalpha() for char in l[4])
-                                    if not ischar and (isinstance(float(l[4]), float) or isinstance(int(l[4]), int)):
-                                        if comen_qty == 0:
-                                            comen_qty = float(l[4])
-                                        # TODO: FOR 2ps and more than one ps what to do
-                                        qty += float(l[4])
+                                    try:
+                                        if isinstance(float(l[4]), float) or isinstance(int(l[4]), int):
+                                            if comen_qty == 0:
+                                                comen_qty = float(l[4])
+                                            # TODO: FOR 2ps and more than one ps what to do
+                                            qty += float(l[4])  
+                                        '''
+                                        ischar = any(char.isalpha() for char in l[4])
+                                        if not ischar and (isinstance(float(l[4]), float) or isinstance(int(l[4]), int)):
+                                            if comen_qty == 0:
+                                                comen_qty = float(l[4])
+                                            # TODO: FOR 2ps and more than one ps what to do
+                                            qty += float(l[4])
+                                        '''
+                                    except Exception:
+                                        print(f"Error processing item {l}")
                                 elif len(l) == 2:
                                     #main_name.append(l[0])
                                     qty = sub_list(l[1], qty)
@@ -581,7 +588,7 @@ class search_entry(ttk.Entry):
                     #tk.Button(f, text='Remove', command=lambda i=item['id'], v=None: self.Selectd_item_remove(i, v)).grid(row=1, column=4, padx=5, pady=5, sticky=tk.W)
                                 
                         
-    def comparison(self, cursor):
+    def comparison(self):
         query = self.var.get()
         if query:
             #print("word: " + str(query) + " search_type: " + str(self.search_type))
@@ -635,7 +642,7 @@ class search_entry(ttk.Entry):
 
             if self.perm_docs:
                 # single DB query for documents
-                rows = fetch_as_dict_list(cursor, "SELECT * FROM doc_table WHERE doc_barcode LIKE ?", (f"%{query}%",))
+                rows = [] # fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode LIKE ?", (f"%{query}%",))
                 for row in rows:
                     barcode = row['doc_barcode']
                     if barcode not in unique_barcode_results:
@@ -794,8 +801,8 @@ class search_entry(ttk.Entry):
                 self.homemaster.qty = 0
                 self.homemaster.update_info()
         if (selected_type == "DOCUMENT"):
-            self.cursor.execute("SELECT * FROM doc_table WHERE "+ self.search_type+ "=?", (selected_id,))
-            result = self.cursor.fetchone()
+            #self.cursor.execute("SELECT * FROM doc_table WHERE "+ self.search_type+ "=?", (selected_id,))
+            result = [] #self.cursor.fetchone()
             self.search_type = ""
             if result:
                 self.homemaster.get_ex_doc_items(result[1])

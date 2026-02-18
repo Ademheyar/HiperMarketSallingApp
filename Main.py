@@ -184,7 +184,8 @@ cur.execute('''CREATE TABLE IF NOT EXISTS product
 # `Company_Started_Date`, `Shop_likes`, `Shop_rules`, `Shop_link`, `Shop_Settings`,
 # `Shop_profile_img`, `Shop_banner_imgs`, `Shop_payment_info`, `Shop_isenabled`,
 #  `Shop_Slip_Settings`, `Shop_Expenses`, `Shop_Actions`
-cur.execute('ALTER TABLE Shops RENAME COLUMN Shop_id TO Shop_Id')
+#cur.execute('ALTER TABLE Shops RENAME COLUMN Shop_id TO Shop_Id')
+#cur.execute('ALTER TABLE Shops ADD COLUMN Id INTEGER')
 cur.execute('''CREATE TABLE IF NOT EXISTS Shops
              (Id INTEGER PRIMARY KEY AUTOINCREMENT,
               Shop_Id INTEGER,

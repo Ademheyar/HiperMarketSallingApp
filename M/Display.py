@@ -34,6 +34,7 @@ from C.List import *
 
 
 from C.API.Get import *
+from C.API.Set import *
 
 from Manager import ManageForm
 
@@ -86,12 +87,19 @@ class DisplayFrame(tk.Frame):
         self.on_Shop = -1         
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
-
+        print("Display Frame Initialized with screen size: {}x{}".format(screen_width, screen_height))
+        
         if Shops_info is None or user is None or User_Shops_List is None or Shops is None:
             if not Security_get_user(self):
+                print("No user data found, closing application.")
                 self.master.destroy()
                 return
+            else:
+                self.grid(row=0, column=0, sticky="nsew")
+                self.master.show_frame("Display_Frame")
+          
             
+        
         self.main_Notebook = ttk.Notebook(self)
         self.main_Notebook.pack(side="top", fill="both", expand=True)
 
@@ -235,6 +243,7 @@ class DisplayFrame(tk.Frame):
         self.User_Shopes_Combobox = ttk.Combobox(self.total_frame, values=self.Shops_Names, width=10)
         self.User_Shopes_Combobox.grid(row=0, column=2, sticky="nsew", padx=5, pady=5)
         
+
         self.at_shop_name = ""
         if(len(self.Shops_Names) == 1):
             print("Only one shop found, selecting it by default.")
@@ -284,9 +293,10 @@ class DisplayFrame(tk.Frame):
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 26, f'User Has No Permission To Access MANAGE FRAME OR LOGIN AS ADMIN'):    
             self.manage_form.pack(side="top", fill="both", expand=True)
             self.main_Notebook.add(self.manage_form, text='MANAGE')
-
+        
         self.max_backups = 4     # Maximum number of backup files to keep
         atexit.register(self.backup_database)
+        
         
         # Security Check
         # THIS WILL CHECK IF THE USER HAS PERMISSION TO ACCESS THE DISPLAY FRAME
@@ -294,9 +304,10 @@ class DisplayFrame(tk.Frame):
         # THE PERMISSION LEVEL IS SET TO 0 FOR DISPLAY FRAME ACCESS
         # ADJUST THE PERMISSION LEVEL AS NEEDED FOR DIFFERENT FRAMES 
         if not Chacke_Security(self, self.user, self.Shops[self.on_Shop], 0, "USER NEEDED PERMISSION OR LOGIN AS ADMIN"):
+            
             self.master.destroy()
             return
-
+        
 
         self.chackeqyu = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 14, f'User Not allowed to Change QTY')
         self.chackeprice = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 15, f'User Not allowed to Change Price')
@@ -320,6 +331,7 @@ class DisplayFrame(tk.Frame):
         # ADJUST THE PERMISSION LEVEL AS NEEDED FOR DIFFERENT FEATURES
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 1, 'LISTING PAYMENT TOOLS NEEDED ACCESS PERMISSION OR LOGIN AS ADMIN'):
             self.Load_payment_buttons()
+        
         self.load()
             
     def Veaw_Notifications(self):
@@ -461,25 +473,26 @@ class DisplayFrame(tk.Frame):
             query = f"SELECT id FROM pre_doc_table WHERE id = {self.chart_index}"
 
             # Execute the query and fetch the results
-            cursor.execute(query)
-            result = cursor.fetchone()
+            results = fetch_as_dict_list(query, ())
             # Check if the query returned a result
-            if result is not None:
+            if results and len(results) > 0:
                 #print(str([doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States, ex_item, ex_pay]))
                 # Insert the new product into the database
-                cursor.execute('UPDATE pre_doc_table SET doc_created_date=?, doc_expire_date=?, doc_updated_date=?, AT_SHOP=?, user_id=?, customer_id=?, type=?, ITEM=?, PRICE=?, Disc=?, TAX=?, States=?, exitems_doc_barcode=?, expayment_doc_barcode=? WHERE id=?', (doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States, ex_item, ex_pay, self.chart_index))
+                #cursor.execute('UPDATE pre_doc_table SET doc_created_date=?, doc_expire_date=?, doc_updated_date=?, AT_SHOP=?, user_id=?, customer_id=?, type=?, ITEM=?, PRICE=?, Disc=?, TAX=?, States=?, exitems_doc_barcode=?, expayment_doc_barcode=? WHERE id=?', (doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States, ex_item, ex_pay, self.chart_index))
 
                 #print(f"Record with ID {self.chart_index} has been UPDATE into the table\n\n1\n\n")                
                 #print(str([doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States, self.chart_index, ex_item, ex_pay]))
+                pass
             else:
                 #print(f"Record with ID {self.chart_index} does not exist in the table\n\n2\n\n")
                 #print(str([doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States, ex_item, ex_pay]))
                 # Insert the new product into the database
-                cursor.execute('INSERT INTO pre_doc_table (id, doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States, exitems_doc_barcode, expayment_doc_barcode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (self.chart_index, doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States, ex_item, ex_pay))
+                #cursor.execute('INSERT INTO pre_doc_table (id, doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States, exitems_doc_barcode, expayment_doc_barcode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (self.chart_index, doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States, ex_item, ex_pay))
 
                 #print(str(["doc_barcode", "extension_barcode", "user_id", "customer_id", "type", ITEM, Disc, TAX, "doc_created_date", "doc_expire_date", "doc_updated_date", ex_item, ex_pay]))
+                pass
             # Commit the changes to the database
-            conn.commit()
+            #conn.commit()
             
     # this will
     def chack_list(self):
@@ -832,13 +845,12 @@ class DisplayFrame(tk.Frame):
     def update_list_items(self):
         # Define the SQL query to fetch the product information based on doc_created_date
         # Execute the query and fetch the results
-        cursor.execute("SELECT * FROM pre_doc_table")
-        res = cursor.fetchall()
+        res = fetch_as_dict_list("SELECT * FROM pre_doc_table", ())
         if len(res) > 1 and hasattr(self, 'prevlist_button'):
             self.prevlist_button.config(state=tk.NORMAL)
             
-        cursor.execute("SELECT * FROM pre_doc_table WHERE id=?", (self.chart_index,))
-        results = cursor.fetchall()
+        results = fetch_as_dict_list("SELECT * FROM pre_doc_table WHERE id=?", (self.chart_index,))
+        
        #print("update_list_items" + str(results))
         
         # Clear the existing items in the list
@@ -888,8 +900,7 @@ class DisplayFrame(tk.Frame):
         if not Chacke_Security(self, self.user, self.Shops[self.on_Shop], 12, f'User Not allowed to Use Multy Order'):
             return
         #print("in prev func with" + towhere +"\n\n")
-        cursor.execute("SELECT id FROM pre_doc_table")
-        results = cursor.fetchall()
+        results = fetch_as_dict_list("SELECT id FROM pre_doc_table", ())
         p = self.chart_index
         l = -1
         n = 0
@@ -958,7 +969,7 @@ class DisplayFrame(tk.Frame):
             if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 10, f'User Not allowed to Use Multy Order'):
                 index = 0
                 while(True):
-                    res = cursor.execute(f"SELECT id FROM pre_doc_table WHERE id = {index}").fetchall()
+                    res = fetch_as_dict_list(f"SELECT id FROM pre_doc_table WHERE id = {index}", ())
                     if not res:
                         break
                     else:
@@ -988,9 +999,7 @@ class DisplayFrame(tk.Frame):
     def void_items(self):
         self.clear_items()
         # delete this list on db
-        cursor.execute("DELETE FROM pre_doc_table WHERE id=?", (self.chart_index,))
-        # Commit the changes to the database
-        conn.commit()
+        Update_table_database("DELETE FROM pre_doc_table WHERE id=?", (self.chart_index,))
         # self.update_info() will be called in next_prev_chart 
         self.next_prev_chart("prev")
         
@@ -1057,7 +1066,7 @@ class DisplayFrame(tk.Frame):
         if (item_info['type'] == "DOCUMENT"):
             items = json.loads(item_info['values']['item'])
             for item in items:
-                it = fetch_as_dict_list(cursor, "SELECT * FROM product WHERE id=?", 
+                it = fetch_as_dict_list("SELECT * FROM product WHERE id=?", 
                                 (item[0],))[0]
                 if it:
                     doc_item_info = {'values': it, 'type': 'DOCUMENT', 'item_list':[]}
@@ -1267,7 +1276,7 @@ class DisplayFrame(tk.Frame):
                        #print("adding " + str(iv) + " to item")
                        #print("adding " + str(iv[7]) + " to item_tobechanged")
                     else:
-                        it = fetch_as_dict_list(cursor, "SELECT * FROM product WHERE id=?", (iv[0]['values']['id'],))
+                        it = fetch_as_dict_list("SELECT * FROM product WHERE id=?", (iv[0]['values']['id'],))
                        #print("item it " + str(it) + " to item")
                         if it:
                             it = it[0]
@@ -1432,13 +1441,13 @@ class DisplayFrame(tk.Frame):
             for i, d in enumerate(doc_found):
                #print("--Barcode = " + str(d['Barcode']))
                 if d['Barcode'] != '':
-                    fdoc = fetch_as_dict_list(cursor, "SELECT * FROM doc_table WHERE doc_barcode=?", (d['Barcode'],))
+                    fdoc = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (d['Barcode'],))
                    #print("fdoc " + str(fdoc) + " to item")
                     if fdoc:
                         fdoc = fdoc[0]
                         items = json.loads(fdoc['item'])
                         for item in items:
-                            it = fetch_as_dict_list(cursor, "SELECT * FROM product WHERE id=?", (item[0],))
+                            it = fetch_as_dict_list("SELECT * FROM product WHERE id=?", (item[0],))
                             itemqty = item[7]
                             if it:
                                 it = it[0]
@@ -1497,10 +1506,11 @@ class DisplayFrame(tk.Frame):
                #print("item info befor  : " + str(it_info))
                 #while True:
                 #    continue
-                cursor.execute('UPDATE product SET more_info=? WHERE id=?', (json.dumps(it_info), change_item[0]))
+                Update_Producte(None, self.user, ['more_info'], [json.dumps(it_info)], ['id'], [change_item[0]])
+                #cursor.execute('UPDATE product SET more_info=? WHERE id=?', (json.dumps(it_info), change_item[0]))
 
                 
-                it2 = fetch_as_dict_list(cursor, 'SELECT * FROM product WHERE id=?', (str(change_item[0]),))
+                it2 = fetch_as_dict_list('SELECT * FROM product WHERE id=?', (str(change_item[0]),))
                 if it2 and not len(it2) == 0:
                     for i3, it3 in enumerate(self.Shops_info['Shop_items']):
                         if it3[0]['id'] == it2[0]['id']:
@@ -1530,42 +1540,49 @@ class DisplayFrame(tk.Frame):
                 if d['payments_'] != [] or float(d['count_new_items']) != 0:
                         if d["Barcode"] != "":
                                #print("d[Barcode] = " + str(d["Barcode"]))
-                                rows = cursor.execute("SELECT * FROM doc_table WHERE doc_barcode=?", (d["Barcode"],)).fetchall()
-                                if rows and rows[0][4]:
-                                    old_cm_id = rows[0][4]
+                                # Get_Document(None, self.user, ['doc_barcode'], [d["Barcode"]])
+                                rows = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (d["Barcode"],))
+                                # cursor.execute("SELECT * FROM doc_table WHERE doc_barcode=?", (d["Barcode"],)).fetchall()
+                                if rows and rows[0]['customer_id']: # if doc found
+                                    old_cm_id = rows[0]['customer_id']
                                 
                                #print("cmd old id = " + str(rows[0]) + " new id " + str(cm_id))
                                 if cm_id and old_cm_id != str(cm_id):
                                     #[each item [barcode, isitem, ispay, ex_item, ex_item_items, payments, ex_payment_count, ex_item_pric, ex_item_T_disc, ex_item_T_tax, ex_pid]
-                                    cursor.execute('UPDATE doc_table SET customer_id=? WHERE doc_barcode=?', (cm_id, d["Barcode"]))
+                                    Update_Documente(None, self.user, ['customer_id'], [cm_id], ['doc_barcode'], [d["Barcode"]])
+
+                                    # cursor.execute('UPDATE doc_table SET customer_id=? WHERE doc_barcode=?', (cm_id, d["Barcode"]))
                                     # Commit the changes to the database
-                                    conn.commit()
+                                    # conn.commit()
                                 if Seller_id != None:
                                     #[each item [barcode, isitem, ispay, ex_item, ex_item_items, payments, ex_payment_count, ex_item_pric, ex_item_T_disc, ex_item_T_tax, ex_pid]
-                                    cursor.execute('UPDATE doc_table SET Seller_id=? WHERE doc_barcode=?', (Seller_id, d["Barcode"]))
+                                    Update_Documente(None, self.user, ['Seller_id'], [Seller_id], ['doc_barcode'], [d["Barcode"]])
+                                    # cursor.execute('UPDATE doc_table SET Seller_id=? WHERE doc_barcode=?', (Seller_id, d["Barcode"]))
                                     # Commit the changes to the database
-                                    conn.commit()
+                                    # conn.commit()
                                     
                                 if d['payments_']:
                                     #todo if needed add pid in doc e_doc_info[10]
-                                    cursor.execute('UPDATE doc_table SET pid=?, payments=?, doc_updated_date=? WHERE doc_barcode=?', (str(d['pid']), json.dumps(d['payments_']), today_date, d["Barcode"]))
+                                    Update_Documente(None, self.user, ['pid', 'payments', 'doc_updated_date'], [str(d['pid']), json.dumps(d['payments_']), today_date], ['doc_barcode'], [d["Barcode"]])
+                                    # cursor.execute('UPDATE doc_table SET pid=?, payments=?, doc_updated_date=? WHERE doc_barcode=?', (str(d['pid']), json.dumps(d['payments_']), today_date, d["Barcode"]))
                                     # Commit the changes to the database
-                                    conn.commit()
+                                    #conn.commit()
 
                                 #[each item [barcode, isitem, ispay, ex_item, ex_item_items, payments, ex_payment_count, ex_item_pric, ex_item_T_disc, ex_item_T_tax, ex_pid]
-                                cursor.execute('UPDATE doc_table SET item=?, qty=?, price=?, Profite=?, discount=?, tax=?, doc_updated_date=? WHERE doc_barcode=?', (json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], today_date, d["Barcode"]))
+                                Update_Documente(None, self.user, ['item', 'qty', 'price', 'Profite', 'discount', 'tax', 'doc_updated_date'], [json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], today_date], ['doc_barcode'], [d["Barcode"]])
+                                # cursor.execute('UPDATE doc_table SET item=?, qty=?, price=?, Profite=?, discount=?, tax=?, doc_updated_date=? WHERE doc_barcode=?', (json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], today_date, d["Barcode"]))
                                 # Commit the changes to the database
-                                conn.commit()
+                                # conn.commit()
                                 
                                 slip_doc_code.append(d["Barcode"])
                         elif d["Barcode"] == "":
                                #print("custemer : " + str(self.custemr) + "isneded : " + str(payment_customer_required))
                                 # TODO: chacke if self.At_Shop_Id is selected if not make user selecte one
-                                        
-                                cursor.execute('INSERT INTO upload_doc (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", self.At_Shop_id, self.user['User_id'], self.custemr, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date))
-                                cursor.execute('INSERT INTO doc_table (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, Profite, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", self.At_Shop_id, self.user['User_id'], self.custemr, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date))
+                                Set_Document(None, ["doc_barcode", "extension_barcode", "At_Shop_Id", "user_id", "customer_id", "Seller_id", "type", "item", "qty", "price", "discount", "tax", "payments", "pid", "doc_created_date", "doc_expire_date", "doc_updated_date"], [str(brcod), "extension_barcode", self.At_Shop_id, self.user['User_id'], self.custemr, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date])
+                                #cursor.execute('INSERT INTO upload_doc (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", self.At_Shop_id, self.user['User_id'], self.custemr, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date))
+                                #cursor.execute('INSERT INTO doc_table (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, Profite, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", self.At_Shop_id, self.user['User_id'], self.custemr, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date))
                                 # Commit the changes to the database
-                                conn.commit()
+                                #conn.commit()
                                 slip_doc_code.append(brcod)
                                 
             # call void         

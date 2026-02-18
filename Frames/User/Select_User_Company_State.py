@@ -209,16 +209,14 @@ class Select_User_Company_State_Frame(tk.Frame):
                 except:
                     pass
                 if self.Shops and len(self.Shops) > i:
-                    Shops_info = {'Selected_Shop': self.Shops[i], 'Shops': self.Shops, 'User': self.User_data, 'User_Shops_List': User_work_shops, 'Shop_items': [], 'Shop_Actions': ""}
+                    Shops_info = {'Selected_Shop': self.Shops[i], 'Shops': self.Shops, 'User': self.User_data, 'User_Shops_List': User_work_shops, 'Shop_items': [], 'Shop_Actions': "" }
                     if not self.master.title == "Security Elevation":
                         self.master.master.user = self.User_data
                         self.master.master.Shops_info = Shops_info
                         self.master.master.Shops = self.Shops
+                        self.master.master.on_Shop = i
                         self.master.master.User_Shops_List = User_work_shops
-                        self.master.master.load()
                         self.master.destroy()
-                        self.master.master.grid(row=0, column=0, sticky="nsew")
-                        self.master.master.master.show_frame("Display_Frame")
                         print("Login Successfully")
                         #self.master.tklevelwin.destroy()
                         
@@ -384,7 +382,7 @@ class Select_User_Company_State_Frame(tk.Frame):
                 print("company_name : " + str(self.found_Shops_result[0]['Shop_name']))
                 print("company_brandname : " + str(self.found_Shops_result[0]['Shop_brand_name']))
                 print("Shop_workers : " + str(self.found_Shops_result[0]['Shop_workers']))
-                self.found_shops.append(self.found_Shops_result)
+                self.found_shops.append(self.found_Shops_result[0])
             else:
                 print("company_name : " + str(self.found_Shops_result['Shop_name']))
                 print("company_brandname : " + str(self.found_Shops_result['Shop_brand_name']))

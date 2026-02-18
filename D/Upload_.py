@@ -186,7 +186,7 @@ class UploadingForm(tk.Toplevel):
                 isuploadproduct = 0
                 if len(where_info['Product_to_upload']) > 0:
                     for Prod in where_info['Product_to_upload']:
-                        value = fetch_as_dict_list(cursor, 'SELECT * FROM product WHERE id=?', (str(Prod[0]),))
+                        value = fetch_as_dict_list('SELECT * FROM product WHERE id=?', (str(Prod[0]),))
                         if value and not len(value) == 0:
                             entry = {
                                 'On': "Upload",
@@ -240,7 +240,7 @@ class UploadingForm(tk.Toplevel):
             if self.User_Shopes_Combobox.get() == where_info['shop']['Shop_name'] or self.User_Shopes_Combobox.get() == "":
                 # Fetch data from the database
                 url = where_info['shop']['Shop_link']
-                b = fetch_as_dict_list(cursor, 'SELECT * FROM upload_doc', ())
+                b = fetch_as_dict_list('SELECT * FROM upload_doc', ())
                 if len(b) > 0:
                     ind = -1
                     # Convert the fetched data to a list of dictionaries

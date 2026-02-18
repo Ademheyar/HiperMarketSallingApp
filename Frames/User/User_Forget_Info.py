@@ -1,3 +1,40 @@
+# For example, you can check if the email is in a valid format, if the phone number contains only digits, etc.
+# For simplicity, this example does not include validation
+# You can also add error handling for database operations, such as catching exceptions when inserting or updating data
+# For simplicity, this example does not include error handling
+# You can also add a confirmation dialog before updating data, to prevent accidental changes
+# For simplicity, this example does not include a confirmation dialog
+# You can also add a success message after adding or updating data, to inform the user that the operation was successful
+# For simplicity, this example does not include a success message
+# You can also add a function to clear the user details widgets after adding or updating data, to prepare for the next entry
+# For simplicity, this example does not include a function to clear the user details widgets
+# You can also add a function to refresh the user list after adding or updating data, to show the latest changes
+# For simplicity, this example does not include a function to refresh the user list 
+# You can also add a function to search for users based on the entered details, to find existing accounts
+# For simplicity, this example does not include a function to search for users
+# You can also add a function to handle the case when no user is found, to inform the user that the search was unsuccessful
+# For simplicity, this example does not include a function to handle the case when no user is found
+# You can also add a function to handle the case when multiple users are found, to allow the user to select the correct account
+# For simplicity, this example does not include a function to handle the case when multiple users
+# are found
+# You can also add a function to handle the case when the entered details are incomplete, to inform the user that more information is needed
+# For simplicity, this example does not include a function to handle the case when the entered
+# details are incomplete
+# You can also add a function to handle the case when the entered details are incorrect, to inform the user that the search was unsuccessful
+# For simplicity, this example does not include a function to handle the case when the entered details are incorrect
+# You can also add a function to handle the case when the entered details are valid but do not match any existing account, to inform the user that no account was found
+# For simplicity, this example does not include a function to handle the case when the entered details are valid but
+# do not match any existing account
+# You can also add a function to handle the case when the entered details are valid and match an existing account, to inform the user that the account was found and provide options for resetting the password or accessing the account
+# For simplicity, this example does not include a function to handle the case when the entered details are valid and match an existing account
+# You can also add a function to handle the case when the entered details are valid and match multiple existing accounts, to inform the user that multiple accounts were found and provide options for selecting the correct account or refining the search criteria
+# For simplicity, this example does not include a function to handle the case when the entered details are valid and match multiple existing accounts
+# You can also add a function to handle the case when the entered details are valid and match an existing account but the password is incorrect, to inform the user that the password is incorrect and provide options for resetting the password or trying again
+# For simplicity, this example does not include a function to handle the case when the entered details are valid and match an existing account but the password is incorrect
+# You can also add a function to handle the case when the entered details are valid and match an existing account and the password is correct, to inform the user that the login was successful and provide options for accessing the account or logging out
+# For simplicity, this example does not include a function to handle the case when the entered details are valid and match an existing account and the password is correct 
+
+
 import tkinter as tk
 from tkinter import ttk
 import sqlite3
@@ -33,6 +70,7 @@ class User_Forget_Info_Frame(tk.Frame):
         bg_dark = "#0d47a1"      # Deep blue
         bg_light = "#1565c0"     # Darker blue
         accent_blue = "#1976d2"  # Medium blue
+        accent_red = "#d32f2f"   # Red for errors or important messages
         text_light = "#ffffff"
 
         self.User_Info_Frame = tk.Frame(self, bg=bg_dark, height=screen_height, width=screen_width)
@@ -43,7 +81,7 @@ class User_Forget_Info_Frame(tk.Frame):
 
         # Create the widgets for the user details
         tk.Label(self.details_frame,
-             text="Hello! Please Fill Your Profile To Find Your Account.",
+             text="Hello! Please Fill Your Profile Information To Find Your Account.",
              bg=bg_dark, fg=text_light, font=("Arial", 12, "bold")
              ).grid(row=0, column=0, columnspan=4, padx=5, pady=10, sticky=tk.W)
              
@@ -126,15 +164,16 @@ class User_Forget_Info_Frame(tk.Frame):
         self.lname_entry.bind('<KeyRelease>', self.on_name_entry)
         self.name_entry.bind('<KeyRelease>', self.on_name_entry)
         
-        self.forget_password_label = tk.Label(self.details_frame, text="User Found! Did You Forget Password?", fg=accent_blue, bg=bg_dark, cursor="hand2", font=("Arial", 10, "underline"))
+        self.forget_password_label = tk.Label(self.details_frame, text="", fg=accent_red, bg=bg_dark, cursor="hand2", font=("Arial", 10, "underline"))
+        self.forget_password_label.grid(row=17, column=0, columnspan=3, padx=5, pady=5, sticky=tk.W)
         self.forget_password_label.bind("<Button-1>", self.forget_password_fuc)
         self.Found_User_id_var = ""
         
-        self.add_button = tk.Button(self.details_frame, text='Find', command=self.add_user, bg=accent_blue, fg=text_light, font=("Arial", 10, "bold"), padx=10, pady=5)
+        self.find_button = tk.Button(self.details_frame, text='Find', command=self.find_user, bg=accent_blue, fg=text_light, font=("Arial", 10, "bold"), padx=10, pady=5)
         self.cancle_button = tk.Button(self.details_frame, text='Cancel', command=self.canceal_callback, bg=bg_light, fg=text_light, font=("Arial", 10, "bold"), padx=10, pady=5)
 
-        self.add_button.grid(row=17, column=0, padx=5, pady=10, sticky=tk.W)
-        self.cancle_button.grid(row=17, column=1, padx=5, pady=10, sticky=tk.W)
+        self.find_button.grid(row=18, column=0, padx=5, pady=10, sticky=tk.W)
+        self.cancle_button.grid(row=18, column=1, padx=5, pady=10, sticky=tk.W)
         
     def set_back_function(self, back_function):
         self.Canceal_callback = back_function
@@ -169,11 +208,12 @@ class User_Forget_Info_Frame(tk.Frame):
         if users:
             for user in users:
                if user[1] == self.name_entry.get():
-                  self.forget_password_label.grid(row=1, column=2, padx=5, pady=5, sticky=tk.W)
+                  self.forget_password_label.grid(row=17, column=0, columnspan=3, padx=5, pady=5, sticky=tk.W)
                   self.Found_User_id_var = user[0];
                   self.add_button.config(text="Find")
                   return
         else:
+            
             self.forget_password_label.grid_remove()
             self.add_button.config(text="Find")
 
@@ -199,45 +239,84 @@ class User_Forget_Info_Frame(tk.Frame):
         self.pimg_entry.delete(0, "end")
 
     # Define the function for adding a new user
-    def add_user(self):
+    def find_user(self):
         # Get the values from the user details widgets
+        # get Main information this most be filled to find the user account, if the user found fill the rest of the information and show the forget password label to allow the user to reset his password if he forget it
         User_fname = self.fname_entry.get()
         User_Lname = self.lname_entry.get()
-        User_name = self.name_entry.get()
-        User_gender = self.gender_entry.get()
+        User_id_pp_num = self.id_num_entry.get()
+        User_home_no = self.home_no_entry.get()
         User_country = self.cuntry_entry.get()
+        # those abouve are the main information to fill check if it is filled
+        if User_fname == "" or User_Lname == "" or (User_id_pp_num == "" and User_home_no == "" and User_country == ""):
+            self.forget_password_label.config(text="Please At least fill the first and last name and one of the id number, home number, or country.")
+            self.forget_password_label.grid(row=17, column=0, columnspan=3, padx=5, pady=5, sticky=tk.W)
+            return
+        main_information = {'User_fname': User_fname, 'User_Lname': User_Lname, 'User_id_pp_num': User_id_pp_num, 'User_home_no': User_home_no, 'User_country': User_country}
+        
+        # get the rest of the information if the user found to fill the user details widgets and allow the user to reset his password if he forget it
+        User_name = self.name_entry.get()
+        User_password0 = self.password_num0_entry.get()
+        User_gender = self.gender_entry.get()
         User_phone_num = self.phone_num_entry.get()
         User_email = self.email_entry.get()
         User_address = self.addres_entry.get()
-        User_home_no = self.home_no_entry.get()
-        User_id_pp_num = self.id_num_entry.get()
         User_type = self.type_entry.get()
-        
-        User_password0 = self.password_num0_entry.get()
-        User_password1 = self.password_num1_entry.get()
-        
         User_about = self.about_entry.get()
         User_shop = self.shops_entry.get()
         User_work_shop = self.work_shop_entry.get()
         User_access = self.acsess_entry.get()
-        User_pimg =  self.pimg_entry.get()
-        if User_fname == "" or User_Lname == "" or User_name == "" or User_password0 == "" or User_password1 == "":
-           pass
-        else:
-           if User_password0 == User_password1:
-              if self.add_button.cget("text") == "Find":        
-                  # Insert the new user into the database
-                  User_likes = ""
-                  User_following_shop = ""
-                  User_favoraite_items = ""
-                  User_rate = ""
-                  cur.execute('INSERT INTO Users(User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_type, User_password, User_about, User_shop, User_work_shop, User_likes, User_following_shop, User_favoraite_items, User_rate, User_access, User_pimg) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',(User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_type, User_password0, User_about, User_shop, User_work_shop, User_likes, User_following_shop, User_favoraite_items, User_rate, User_access, User_pimg))
-                    
-              else:
-                  item_id = int(self.Found_User_id_var)
-                  print("item_id : " + str(item_id))
-                  # UPDATE the new user into the database
-                  cur.execute('UPDATE Users SET User_fname=?, User_Lname=?, User_name=?, User_gender=?, User_country=?, User_phone_num=?, User_email=?, User_address=?, User_home_no=?, User_id_pp_num=?, User_type=?, User_password=?, User_about=?, User_shop=?, User_work_shop=?, User_access=?, User_pimg=? WHERE User_id=?', (User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_id_pp_num, User_type, User_password0, User_about, User_shop, User_work_shop, User_access, User_pimg, item_id))
-              
-              # Commit the changes to the database
-              conn.commit()
+        # at list fill 3 of the main information to find the user account
+        randum_informations = {'User_name': User_name, 'User_password': User_password0, 'User_gender': User_gender, 'User_phone_num': User_phone_num, 'User_email': User_email, 'User_address': User_address, 'User_type': User_type, 'User_about': User_about, 'User_shop': User_shop, 'User_work_shop': User_work_shop, 'User_access': User_access}
+        randum_informations_filled = 0
+        for key, value in randum_informations.items():
+            # only add the information that is filled to the randum_informations_filled dictionary to use it to fill the user details widgets if the user found
+            if value != "":
+                randum_informations_filled += 1
+                main_information[key] = value
+        if randum_informations_filled < 3:
+            self.forget_password_label.config(text="Please fill at least 3 of the randum information to find your account.")
+            self.forget_password_label.grid(row=17, column=0, columnspan=3, padx=5, pady=5, sticky=tk.W)
+            return
+        
+        if main_information:
+            if self.find_button.cget("text") == "Find":  
+
+                main_information_query = " AND ".join([f"{key}=?" for key in main_information.keys()])
+                main_information_values = tuple(main_information.values())
+                cur.execute(f'SELECT * FROM Users WHERE {main_information_query}', main_information_values)
+                user = cur.fetchone()
+                if user:
+
+                    self.forget_password_label.config(text="User found! You can now reset your password if you forget it.")
+                    self.forget_password_label.grid(row=17, column=0, columnspan=3, padx=5, pady=5, sticky=tk.W)
+                    self.Found_User_id_var = user[0]
+                    self.add_button.config(text="Reset Password")
+                    # fill the user details widgets with the rest of the information if it is filled
+                    # TODO: only fill the user details widgets with the information that is filled in the randum_informations dictionary to avoid filling the user details widgets with empty values if the user found but some of the randum information is not filled
+                    # TODO: SAND INFORAMATION TO OUT EMAIL IF THE USER FORGET HIS PASSWORD AND HE WANT TO RESET IT or see
+                    for key in randum_informations.keys():
+                        if key in main_information:
+                            value = main_information[key]
+                            if key == "User_name":
+                                self.name_entry.delete(0, tk.END)
+                                self.name_entry.insert(0, value)
+                            elif key == "User_password":
+                                self.password_num0_entry.delete(0, tk.END)
+                                self.password_num0_entry.insert(0, value)
+            if self.find_button.cget("text") == "Reset Password":
+                if self.Found_User_id_var != "":
+                    new_password = self.password_num0_entry.get()
+                    if new_password == "":
+                        self.forget_password_label.config(text="Please enter a new password to reset your password.")
+                        self.forget_password_label.grid(row=17, column=0, columnspan=3, padx=5, pady=5, sticky=tk.W)
+                        return
+                    cur.execute('UPDATE Users SET User_password=? WHERE User_id=?', (new_password, self.Found_User_id_var))
+                    conn.commit()
+                    self.forget_password_label.config(text="Password reset successfully! You can now log in with your new password.")
+                    self.forget_password_label.grid(row=17, column=0, columnspan=3, padx=5, pady=5, sticky=tk.W)
+                    self.clear_user_details_widget()
+                    self.add_button.config(text="Find")
+                else:
+                    self.forget_password_label.config(text="No user found to reset the password for. Please find your account first.")
+                    self.forget_password_label.grid(row=17, column=0, columnspan=3, padx=5, pady=5, sticky=tk.W)
