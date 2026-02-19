@@ -16,7 +16,6 @@ from C.slipe import load_slip
 
 from C.API.Get import *
 
-conn.commit()
 
 class Request_Company_Frame(tk.Frame):
     def __init__(self, parent, Canceal_callback, User_data, Shop_data):

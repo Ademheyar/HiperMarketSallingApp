@@ -17,10 +17,6 @@ from C.slipe import load_slip
 
 data_dir = os.path.join(MAIN_dir, 'data')
 db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cur = conn.cursor()
-
-conn.commit()
 
 class Company_Info_Frame(tk.Frame):
     def __init__(self, parent, Canceal_callback, User_data, Shop_data):
@@ -200,8 +196,7 @@ class Company_Info_Frame(tk.Frame):
                       Shop_location TEXT,
                       Shop_email TEXT,
                       Shop_contact TEXT,
-                      Shop_password TEXT,
-                      Shop_Page TEXT,
+                      Shop_password TEXT,                     Shop_Page TEXT,
                       Shop_rate TEXT,
                       Shop_items TEXT,
                       Shop_followers TEXT,

@@ -15,11 +15,6 @@ sys.path.append(MAIN_dir)
 
 data_dir = os.path.abspath(os.path.join(MAIN_dir, 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cur = conn.cursor()
-
-conn.commit()
-
 from D.Getdefsize import ButtonEntryApp
 from C.List import *
 from D.printer import *

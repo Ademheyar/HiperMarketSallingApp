@@ -20,10 +20,6 @@ from D.GetVALUE import GetvalueForm
 import os
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cur = conn.cursor()
-
-conn.commit()
 
 import tkinter as tk
 from D.Getdate import GetDateForm
@@ -614,8 +610,8 @@ class SettingForm(tk.Frame):
     
     def load_setting(self):
         #print("load sitting of : " + str(self.user))
-        cur.execute("SELECT * FROM setting WHERE User_id = ?", (self.user['User_id'],))
-        sittings = cur.fetchall()
+        #cur.execute("SELECT * FROM setting WHERE User_id = ?", (self.user['User_id'],))
+        sittings = []#cur.fetchall()
         if sittings:
             print("sitting2 : " + str(sittings))
             for sitting in sittings:
@@ -711,9 +707,9 @@ class SettingForm(tk.Frame):
             nested_list.append([child_text, self.build_nested_list(item)])
         text = str(nested_list)
         self.types_label.config(text=text)
-        cur.execute('UPDATE setting SET Items_type=? WHERE user_name=?', (text, self.user['User_name']))
+        #cur.execute('UPDATE setting SET Items_type=? WHERE user_name=?', (text, self.user['User_name']))
         # Commit the changes to the database
-        conn.commit()
+        #conn.commit()
 
 
 

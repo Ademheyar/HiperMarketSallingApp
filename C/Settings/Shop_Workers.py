@@ -15,10 +15,6 @@ sys.path.append(MAIN_dir)
 
 data_dir = os.path.abspath(os.path.join(MAIN_dir, 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cur = conn.cursor()
-
-conn.commit()
 
 from D.Getdefsize import ButtonEntryApp
 from C.List import *
@@ -361,8 +357,8 @@ class WorkersForm(tk.Frame):
             if shop['Shop_oweners_id'] and shop['Shop_oweners_id'] != "":
                 print("shop['Shop_oweners_id'] ", shop['Shop_oweners_id'])
                 # Fetch the user details for the shop owner
-                cur.execute('SELECT * FROM USERS WHERE User_id=?', (shop['Shop_oweners_id'],))
-                users = cur.fetchall()
+                #cur.execute('SELECT * FROM USERS WHERE User_id=?', (shop['Shop_oweners_id'],))
+                users =[] #cur.fetchall()
                 if users:
                     self.Shop_workers.append([users[0][0], users[0][1] +" "+users[0][2], users[0][3], "OWNER", shop['Shop_name'], shop['Shop_brand_name'], "10"])
                     results.append([users[0][0], users[0][1] +" "+users[0][2], users[0][3], "OWNER", shop['Shop_name'], shop['Shop_brand_name'], "10"])

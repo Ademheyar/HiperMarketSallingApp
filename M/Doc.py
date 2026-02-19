@@ -27,78 +27,10 @@ import os
 # Create a connection to the SQLite database
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-# Create a table to store the document records
-cur = conn.cursor()
-
-conn.commit()
 
 from D.Getdate import GetDateForm
 from D.Chart.Chart import *
 import re
-
-# Function to search for documents in the doc_table SQLite database table
-def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_barcode=None, 
-                    item=None, user_id=None, customer_id=None, sold_item_info=None, discount=None, 
-                    seller_id=None, date_from=None, date_to=None, doc_created_date=None, doc_expire_date=None, doc_updated_date=None):
-    given = []
-    # Build the SQL query based on the provided attributes
-    query = 'SELECT * FROM doc_table WHERE'
-    q, d = '', ''
-    if doc_id is not None and doc_id is not '':
-        q += f" AND id='{doc_id}'" if q != '' else f" id='{doc_id}'"
-    if doc_type is not None and doc_type != '':
-        q += f" AND type='{doc_type}'" if q != '' else f" type='{doc_type}'"
-    if doc_barcode is not None and doc_barcode is not '':
-        q += f" AND doc_barcode='{doc_barcode}'" if q != '' else f" doc_barcode='{doc_barcode}'"
-    if extension_barcode is not None and extension_barcode is not '':
-        q += f" AND extension_barcode='{extension_barcode}'" if q != '' else f" extension_barcode='{extension_barcode}'"
-    if item is not None and item is not '':
-        q += f" AND item LIKE ?" if q != '' else f" item LIKE ?"
-        if given == None:
-            given.append(f'%{item}%')
-        else:
-            given.append(f'%{item}%')
-    if user_id is not None and user_id is not '':
-        q += f" AND user_id='{user_id}'" if q != '' else f" user_id='{user_id}'"
-    if customer_id is not None and customer_id is not '':
-        q += f" AND customer_id='{customer_id}'" if q != '' else f" customer_id='{customer_id}'"
-    if sold_item_info is not None and sold_item_info is not '':
-        q += f" AND sold_item_info='{sold_item_info}'" if q != '' else f" sold_item_info='{sold_item_info}'"
-    if discount is not None and discount is not '':
-        q += f" AND discount='{discount}'" if q != '' else f" discount='{discount}'"
-    if seller_id is not None and seller_id is not '':
-        q += f" AND Seller_id='{seller_id}'" if q != '' else f" Seller_id='{seller_id}'"
-
-    if doc_created_date is not None and doc_created_date:
-        d += f" OR strftime('%Y-%m-%d', doc_created_date) BETWEEN ? AND ?" if d != '' else f" strftime('%Y-%m-%d', doc_created_date) BETWEEN ? AND ?"
-        given.append(f'{date_from}')
-        given.append(f'{date_to}')
-    if doc_expire_date is not None and doc_expire_date:
-        d += f" OR strftime('%Y-%m-%d', doc_expire_date) BETWEEN ? AND ?" if d != '' else f" strftime('%Y-%m-%d', doc_expire_date) BETWEEN ? AND ?"
-        given.append(f'{date_from}')
-        given.append(f'{date_to}')
-    if doc_updated_date is not None and doc_updated_date:
-        d += f" OR strftime('%Y-%m-%d', doc_updated_date) BETWEEN ? AND ?" if d != '' else f" strftime('%Y-%m-%d', doc_updated_date) BETWEEN ? AND ?"
-        given.append(f'{date_from}')
-        given.append(f'{date_to}')
-    r = ''
-    if q != '':
-        if r != '':
-            r += " AND (" + q + ")"
-        else:
-            r = q
-    if d != '':
-        if r != '':
-            r += " AND (" + d + ")"
-        else:
-            r = d
-    query += r
-    
-    #print(str([query, (*given,)])+"\n")
-    # Execute the SQL query and return the results as a list of tuples
-    results = fetch_as_dict_list( query, (given))
-    return results
 
 class DocForm(tk.Frame):
     def __init__(self, master, user, shop):
@@ -501,12 +433,9 @@ class DocForm(tk.Frame):
         # self.total_doc_ITEM_counted = tk.Label(self.home_tab, text="TOTAL DOC : 0 ITEMS : 0 COUNTED", font=("Arial", 11))
         # self.total_doc_ITEM_counted.grid(row=5, column=0)
         
-        self.product_list = tk.Listbox(self.home_tab, width=30)
-        self.product_list.grid(row=5, column=0, rowspan=7, columnspan=1, sticky=tk.N)
-        
         # New listbox in the main frame
         self.list_items = tk.Listbox(self.home_tab)
-        self.list_items.grid(row=5, column=1, rowspan=7, columnspan=1, sticky=tk.N)
+        self.list_items.grid(row=5, column=0, rowspan=7, columnspan=1, sticky=tk.N)
 
         # Summary labels
         # Column 2 Counteing
@@ -516,23 +445,23 @@ class DocForm(tk.Frame):
         # Column 2 CashIn 
         
         self.Total_Cash_paid_doc = tk.Label(self.home_tab, text="Cash pid :", font=("Arial", 11))
-        self.Total_Cash_paid_doc.grid(row=6, column=2)
+        self.Total_Cash_paid_doc.grid(row=6, column=1)
 
         self.Total_Card_paid_doc = tk.Label(self.home_tab, text="Card pid :", font=("Arial", 11))
-        self.Total_Card_paid_doc.grid(row=7, column=2)
+        self.Total_Card_paid_doc.grid(row=7, column=1)
 
         self.Total_Card_IN_doc = tk.Label(self.home_tab, text="Card pid : 0.00", font=("Arial", 11))
-        self.Total_Card_IN_doc.grid(row=8, column=2)
+        self.Total_Card_IN_doc.grid(row=8, column=1)
 
         self.Total_paid_doc = tk.Label(self.home_tab, text="Total pid:", font=("Arial", 11))
-        self.Total_paid_doc.grid(row=10, column=2)
+        self.Total_paid_doc.grid(row=10, column=1)
 
         # Column 4 CashOut
         self.Total_Cash_Outs_doc = tk.Label(self.home_tab, text="Cash Outs: 0.00", font=("Arial", 11))
-        self.Total_Cash_Outs_doc.grid(row=6, column=3)
+        self.Total_Cash_Outs_doc.grid(row=6, column=2)
 
         self.Total_Card_Outs_doc = tk.Label(self.home_tab, text="Card Outs : 0.00", font=("Arial", 11))
-        self.Total_Card_Outs_doc.grid(row=7, column=3)
+        self.Total_Card_Outs_doc.grid(row=7, column=2)
         # ensure accumulator exists (do not reset each shop iteration)
         if not hasattr(self, '_accumulated_expenses'):
             self._accumulated_expenses = 0.0
@@ -833,37 +762,44 @@ class DocForm(tk.Frame):
             self.Total_Expense_doc.grid(row=8, column=3)
 
         self.Total_Out_doc = tk.Label(self.home_tab, text="Total Out:", font=("Arial", 11))
-        self.Total_Out_doc.grid(row=10, column=3)
+        self.Total_Out_doc.grid(row=10, column=2)
 
 
         self.doc_totalprofit_ = tk.Label(self.home_tab, text="Totale Profit :", font=("Arial", 11))
-        self.doc_totalprofit_.grid(row=6, column=4)
+        self.doc_totalprofit_.grid(row=6, column=3)
         self.doc_totalprofit_afterout = tk.Label(self.home_tab, text="Totale Profit After Outs :", font=("Arial", 11))
-        self.doc_totalprofit_afterout.grid(row=7, column=4)
+        self.doc_totalprofit_afterout.grid(row=7, column=3)
         self.doc_total_afterout = tk.Label(self.home_tab, text="Totale Pid After Outs :", font=("Arial", 11))
-        self.doc_total_afterout.grid(row=8, column=4)
+        self.doc_total_afterout.grid(row=8, column=3)
 
         # Column 5 Stock
         self.Total_Cash_Stock_doc = tk.Label(self.home_tab, text="Cash Stock:", font=("Arial", 11))
-        self.Total_Cash_Stock_doc.grid(row=6, column=5)
+        self.Total_Cash_Stock_doc.grid(row=6, column=4)
 
         self.Total_Card_Stock_doc = tk.Label(self.home_tab, text="Card Stock:", font=("Arial", 11))
-        self.Total_Card_Stock_doc.grid(row=7, column=5)
+        self.Total_Card_Stock_doc.grid(row=7, column=4)
 
         self.Total_Credit_Stock_doc = tk.Label(self.home_tab, text="Credit Stock:", font=("Arial", 11))
-        self.Total_Credit_Stock_doc.grid(row=8, column=5)
+        self.Total_Credit_Stock_doc.grid(row=8, column=4)
 
         self.Total_Stock_doc = tk.Label(self.home_tab, text="Total Stock:", font=("Arial", 11))
-        self.Total_Stock_doc.grid(row=10, column=5)
+        self.Total_Stock_doc.grid(row=10, column=4)
 
         self.Total_Unpaid_doc = tk.Label(self.home_tab, text="Amount Unpaid:", font=("Arial", 11))
-        self.Total_Unpaid_doc.grid(row=10, column=6)
+        self.Total_Unpaid_doc.grid(row=10, column=5)
         self.doc_total_ = tk.Label(self.home_tab, text="Totale :", font=("Arial", 15))
-        self.doc_total_.grid(row=10, column=6)
+        self.doc_total_.grid(row=10, column=5)
         self.doc_gtotal_ = tk.Label(self.home_tab, text="GRAND Totale :", font=("Arial", 15))
-        self.doc_gtotal_.grid(row=10, column=6)
+        self.doc_gtotal_.grid(row=10, column=5)
+
+        self.doc_endday_btn = tk.Button(self.home_tab, text="End Day", font=("Arial", 12), command=self.perform_endday)
+        self.doc_endday_btn.grid(row=9, column=5, sticky="nsew")        
         
         
+        self.product_list = tk.Listbox(self.home_tab, width=30)
+        self.product_list.grid(row=5, column=6, rowspan=7, columnspan=1, sticky=tk.N)
+        
+
         self.chart_canvas = tk.Canvas(self.home_tab)
         self.chart_canvas.grid(row=13, column=0, columnspan=3, rowspan=3)
         
@@ -1049,6 +985,28 @@ class DocForm(tk.Frame):
 
         #tk.Label(self.info_tab, text=" :"+str(pay[1])).pack()
       
+    def perform_endday(self):
+        # Implement end day logic here
+        # create top level window for end day confirmation
+        top = tk.Toplevel(self.master, bg="white")
+        top.title("End Day Confirmation")
+        top.geometry("500x300")  # Set a fixed size for the window
+        top.resizable(False, False)  # Prevent resizing
+        
+        # Create a frame for better layout
+        frame = tk.Frame(top, bg="white")
+        frame.pack(padx=20, pady=20)
+
+
+        # Show summary of today's totals for confirmation
+        tk.Label(frame, text="", bg="white", font=("Arial", 14, "bold")).pack(pady=10)
+        tk.Label(frame, text='Cash :        ' + self.Total_Cash_paid_doc.cget("text").split(": ")[1], bg="white", font=("Arial", 12)).pack(pady=5)
+        tk.Label(frame, text='Card :        ' + self.Total_Card_paid_doc.cget("text").split(": ")[1], bg="white", font=("Arial", 12)).pack(pady=5)
+        tk.Label(frame, text='Cash Outs:        ' + str(float(self.Total_Cash_Outs_doc.cget("text").split(": ")[1]) + float(self.Total_Card_Outs_doc.cget("text").split(": ")[1])), bg="white", fg="red", font=("Arial", 12, "bold")).pack(pady=5)
+        tk.Label(frame, text="-----------------------------", bg="white", font=("Arial", 14)).pack(pady=5)
+        tk.Label(frame, text='Total:        ' + str(float(self.Total_paid_doc.cget("text").split(": ")[1]) - float(self.Total_Cash_Outs_doc.cget("text").split(": ")[1]) - float(self.Total_Card_Outs_doc.cget("text").split(": ")[1])), bg="white", font=("Arial", 16)).pack(pady=5)
+        #tk.Label(frame, text="Total Profit: " + self.doc_totalprofit_.cget("text"), bg="white", font=("Arial", 10)).pack(pady=5)
+    
     def load_payment(self, p_text, from_d, to_d):
         try:
             load_payment = json.loads(p_text)
@@ -1608,8 +1566,8 @@ class DocForm(tk.Frame):
 
         self.info_notebook.add(self.T_tab, text='IN')
 
-        cur.execute("SELECT * FROM COUNT_SELL WHERE strftime('%Y-%m-%d', DATE) BETWEEN ? AND ?", (f'{self.date_from_Entry.get()}', f'{self.date_to_Entry.get()}',))
-        results = cur.fetchall()
+        #cur.execute("SELECT * FROM COUNT_SELL WHERE strftime('%Y-%m-%d', DATE) BETWEEN ? AND ?", (f'{self.date_from_Entry.get()}', f'{self.date_to_Entry.get()}',))
+        results = []#cur.fetchall()
         l = []
         
         for result in results:

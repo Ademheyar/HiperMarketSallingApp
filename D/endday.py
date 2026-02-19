@@ -19,11 +19,7 @@ from D.Upload_ import UploadingForm
 # Create a connection to the SQLite database
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-# Create a table to store the document records
-cur = conn.cursor()
 
-conn.commit()
 
 # Function to search for documents in the doc_table SQLite database table
 def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_barcode=None, 

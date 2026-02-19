@@ -50,62 +50,7 @@ def is_float(value):
         return True
     except ValueError:
         return False
-# Search if product is added or not 
-def search_n_c_b_products(search_text):
-    # Search for the entered text in the code, name, barcode, and type fields of the product table
-    cur.execute("SELECT * FROM product WHERE code LIKE ? OR name LIKE ? OR barcode LIKE ?", 
-                ('%' + search_text + '%', '%' + search_text + '%', '%' + search_text + '%'))
-    results = cur.fetchall()
-    return results
     
-# Function to search for documents in the doc_table SQLite database table
-def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_barcode=None, 
-                    item=None, user_id=None, customer_id=None, sold_item_info=None, discount=None, 
-                    tax=None, doc_created_date=None, doc_expire_date=None, doc_updated_date=None):
-    given = []
-    # Build the SQL query based on the provided attributes
-    query = 'SELECT * FROM doc_table WHERE 1=1'
-    if doc_id is not None and doc_id is not '':
-        query += f" AND id='{doc_id}'"
-    if doc_type is not None and doc_type != '':
-        query += f" AND type='{doc_type}'"
-    if doc_barcode is not None and doc_barcode is not '':
-        query += f" AND doc_barcode='{doc_barcode}'"
-    if extension_barcode is not None and extension_barcode is not '':
-        query += f" AND extension_barcode='{extension_barcode}'"
-    if item is not None and item is not '':
-        query += f" AND item LIKE ?"
-        if given == None:
-            given.append(f'%{item}%')
-        else:
-            given.append(f'%{item}%')
-    if user_id is not None and user_id is not '':
-        query += f" AND user_id='{user_id}'"
-    if customer_id is not None and customer_id is not '':
-        query += f" AND customer_id='{customer_id}'"
-    if sold_item_info is not None and sold_item_info is not '':
-        query += f" AND sold_item_info='{sold_item_info}'"
-    if discount is not None and discount is not '':
-        query += f" AND discount='{discount}'"
-    if tax is not None and tax is not '':
-        query += f" AND tax='{tax}'"
-    if doc_created_date is not None and doc_created_date is not '':
-        query += f" AND doc_created_date LIKE ?"
-        if given == None:
-            given.append(f'%{doc_created_date}%')
-        else:
-            given.append(f'%{doc_created_date}%')
-    if doc_expire_date is not None and doc_expire_date is not '':
-        query += f" AND doc_expire_date='{doc_expire_date}'"
-    if doc_updated_date is not None and doc_updated_date is not '':
-        query += f" AND doc_updated_date='{doc_updated_date}'"
-    
-    print(query+"\n")
-    # Execute the SQL query and return the results as a list of tuples
-    cur.execute(query, (*given,))
-    results = cur.fetchall()
-    return results
-# Example node hierarchy
 
 class ProductFullInfoForm(ttk.Notebook):
     def __init__(self, master, user, Shops, given_value):

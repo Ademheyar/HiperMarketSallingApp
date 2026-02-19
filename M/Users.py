@@ -8,10 +8,6 @@ import json
 import os
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cur = conn.cursor()
-
-conn.commit()
 import os, sys
 current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(current_dir, '..')
@@ -499,8 +495,8 @@ class UserForm(tk.Frame):
     # Define the function for updating the user listbox
     def update_user_listbox(self):
         # Get the users from the database
-        cur.execute('SELECT * FROM USERS')
-        users = cur.fetchall()
+        #cur.execute('SELECT * FROM USERS')
+        users = []#cur.fetchall()
         self.update_results(users)
         
     # Define the function for adding a new user

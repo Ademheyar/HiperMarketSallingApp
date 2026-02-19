@@ -19,8 +19,7 @@ sys.path.append(MAIN_dir)
 
 data_dir = os.path.join(MAIN_dir, 'data')
 db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cursor = conn.cursor()
+
 
 import requests
 
@@ -38,10 +37,12 @@ from C.API.API import *
 # values : tuple = the values to be used in the query
 def fetch_as_dict_list(query, values):
     try:
-        cur.execute(query, values)
-        items = cur.fetchall()
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute(query, values)
+        items = cursor.fetchall()
          #print("items len", len(items))
-        columns = [col[0] for col in cur.description]
+        columns = [col[0] for col in cursor.description]
         #print("columns")
         #print(str(columns))
         #print("items len", len(items))
@@ -54,8 +55,11 @@ def fetch_as_dict_list(query, values):
                 raise ValueError("Mismatch between number of columns and rows "+ str(len(columns)) + ", "+ str(len(row)))
                 
             results.append(dict(zip(columns, row)))
+            
+        conn.commit()
+        conn.close()
         return results
-    except Exception as e:
+    except Exception as e:   
         print("Error executing query:", e)
         return []
 
@@ -115,7 +119,7 @@ def Get_User(Link, ARG, VALUE):
             else:
                 print("There is Error FOUND")
     else:
-        print("API Error")
+        print("API Error Geting user")
 
 
     print("query ", query)
@@ -213,3 +217,67 @@ def Get_Setting(user, ARG, VALUE):
         return None
     
 # END OF FILE
+
+
+# Function to search for documentsin the doc_table SQLite database table
+def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_barcode=None, 
+                    item=None, user_id=None, customer_id=None, sold_item_info=None, discount=None, 
+                    seller_id=None, date_from=None, date_to=None, doc_created_date=None, doc_expire_date=None, doc_updated_date=None):
+    given = []
+    # Build the SQL query based on the provided attributes
+    query = 'SELECT * FROM doc_table WHERE'
+    q, d = '', ''
+    if doc_id is not None and doc_id is not '':
+        q += f" AND id='{doc_id}'" if q != '' else f" id='{doc_id}'"
+    if doc_type is not None and doc_type != '':
+        q += f" AND type='{doc_type}'" if q != '' else f" type='{doc_type}'"
+    if doc_barcode is not None and doc_barcode is not '':
+        q += f" AND doc_barcode='{doc_barcode}'" if q != '' else f" doc_barcode='{doc_barcode}'"
+    if extension_barcode is not None and extension_barcode is not '':
+        q += f" AND extension_barcode='{extension_barcode}'" if q != '' else f" extension_barcode='{extension_barcode}'"
+    if item is not None and item is not '':
+        q += f" AND item LIKE ?" if q != '' else f" item LIKE ?"
+        if given == None:
+            given.append(f'%{item}%')
+        else:
+            given.append(f'%{item}%')
+    if user_id is not None and user_id is not '':
+        q += f" AND user_id='{user_id}'" if q != '' else f" user_id='{user_id}'"
+    if customer_id is not None and customer_id is not '':
+        q += f" AND customer_id='{customer_id}'" if q != '' else f" customer_id='{customer_id}'"
+    if sold_item_info is not None and sold_item_info is not '':
+        q += f" AND sold_item_info='{sold_item_info}'" if q != '' else f" sold_item_info='{sold_item_info}'"
+    if discount is not None and discount is not '':
+        q += f" AND discount='{discount}'" if q != '' else f" discount='{discount}'"
+    if seller_id is not None and seller_id is not '':
+        q += f" AND Seller_id='{seller_id}'" if q != '' else f" Seller_id='{seller_id}'"
+
+    if doc_created_date is not None and doc_created_date:
+        d += f" OR strftime('%Y-%m-%d', doc_created_date) BETWEEN ? AND ?" if d != '' else f" strftime('%Y-%m-%d', doc_created_date) BETWEEN ? AND ?"
+        given.append(f'{date_from}')
+        given.append(f'{date_to}')
+    if doc_expire_date is not None and doc_expire_date:
+        d += f" OR strftime('%Y-%m-%d', doc_expire_date) BETWEEN ? AND ?" if d != '' else f" strftime('%Y-%m-%d', doc_expire_date) BETWEEN ? AND ?"
+        given.append(f'{date_from}')
+        given.append(f'{date_to}')
+    if doc_updated_date is not None and doc_updated_date:
+        d += f" OR strftime('%Y-%m-%d', doc_updated_date) BETWEEN ? AND ?" if d != '' else f" strftime('%Y-%m-%d', doc_updated_date) BETWEEN ? AND ?"
+        given.append(f'{date_from}')
+        given.append(f'{date_to}')
+    r = ''
+    if q != '':
+        if r != '':
+            r += " AND (" + q + ")"
+        else:
+            r = q
+    if d != '':
+        if r != '':
+            r += " AND (" + d + ")"
+        else:
+            r = d
+    query += r
+    
+    #print(str([query, (*given,)])+"\n")
+    # Execute the SQL query and return the results as a list of tuples
+    results = fetch_as_dict_list( query, (given))
+    return results

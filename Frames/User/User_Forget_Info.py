@@ -53,11 +53,6 @@ from C.slipe import load_slip
 
 data_dir = os.path.join(MAIN_dir, 'data')
 db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cur = conn.cursor()
-
-conn.commit()
-
 class User_Forget_Info_Frame(tk.Frame):
     def __init__(self, parent, Canceal_callback, User_data):
         tk.Frame.__init__(self, parent)

@@ -40,8 +40,6 @@ from Manager import ManageForm
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cursor = conn.cursor()
 
 
 class DisplayFrame(tk.Frame):
@@ -1192,8 +1190,9 @@ class DisplayFrame(tk.Frame):
             while True:
                 candidate = doc_code + suffix
                 # use existing cursor 'cur'
-                ex_doc = cur.execute("SELECT * FROM doc_table WHERE doc_barcode=?", (candidate,)).fetchone()
+                ex_doc = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (candidate,))
                 if ex_doc:
+                    ex_doc = ex_doc[0]
                     # fallback: increment numeric suffix until unique
                     try:
                         suffix = str(int(suffix) + 1)
@@ -1396,7 +1395,7 @@ class DisplayFrame(tk.Frame):
            #print("\n\n payments collect than doc_found :" + str(doc_found)+"\n\n")
             
                 
-            f_user_s = cursor.execute("SELECT * FROM setting WHERE User_id=?", (int(self.user['User_id']),)).fetchall()
+            f_user_s = fetch_as_dict_list("SELECT * FROM setting WHERE User_id=?", (int(self.user['User_id']),))
             #print("f_user_s "+str(f_user_s))
             Seller_id = None
 
@@ -1467,15 +1466,14 @@ class DisplayFrame(tk.Frame):
                                 if itemqty > 0:
                                     item_tobechanged.append([item[0], it['more_info'], 1, str(item[4]), str(item[1]), str(item[5]),str(item[6]), str(itemqty)])
                                     #print("--removeing all old qty = " + str([item[1], it['more_info'], 0, str(item[4]), str(item[1]), str(item[5]),str(item[6]), str(item[7])]))
-
-            if f_user_s and f_user_s[0] and f_user_s[0][5]:
-               #print("opning worker dialog")
-                app = WorkerManagementApp(self, str(brcod), float(count_new_items))
-                if app.user_details:
-                   #print("app.user_details['User_id'] "+str(app.user_details['User_id']))
-                    Seller_id = app.user_details['User_id']
-                else:
-                    return
+            if f_user_s and f_user_s[0] and f_user_s[0]['Get_seller']:
+                   #print("opning worker dialog")
+                    app = WorkerManagementApp(self, str(brcod), float(count_new_items))
+                    if app.user_details:
+                       #print("app.user_details['User_id'] "+str(app.user_details['User_id']))
+                        Seller_id = app.user_details['User_id']
+                    else:
+                        return
            #print("--item_tobechanged : " + str(item_tobechanged))
             
             name = ""
@@ -1488,13 +1486,13 @@ class DisplayFrame(tk.Frame):
                 continue'''
            #print("item_tobechanged  : " + str(item_tobechanged))
             for change_item in item_tobechanged:
-               #print("item : " + str(change_item[1]), change_item[2], str(change_item[3]), str(change_item[4]),str(change_item[5]), str(change_item[6]))
-               #print("item info befor : " + str(change_item[1]))
+                #print("item : " + str(change_item[1]), change_item[2], str(change_item[3]), str(change_item[4]),str(change_item[5]), str(change_item[6]))
+                #print("item info befor : " + str(change_item[1]))
                 qty_info_list = []
-               #print("change_item[1]  : " + str(change_item[1]))
+                #print("change_item[1]  : " + str(change_item[1]))
                 if change_item[1]:
                     qty_info_list = json.loads(change_item[1])
-               #print("qty_info_list[1]  : " + str(qty_info_list))
+                #print("qty_info_list[1]  : " + str(qty_info_list))
                 it_info = change_qty(qty_info_list, change_item[2], str(change_item[3]), str(change_item[4]), str(change_item[5]),str(change_item[6]), str(change_item[7]))
 
                 if not it_info:
@@ -1503,7 +1501,7 @@ class DisplayFrame(tk.Frame):
                         if erroriteminfoanswer != 'yes':
                                 return
                                 
-               #print("item info befor  : " + str(it_info))
+                #print("item info befor  : " + str(it_info))
                 #while True:
                 #    continue
                 Update_Producte(None, self.user, ['more_info'], [json.dumps(it_info)], ['id'], [change_item[0]])

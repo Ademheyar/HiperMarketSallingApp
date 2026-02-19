@@ -22,11 +22,6 @@ from C.API.Get import *
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cur = conn.cursor()
-
-conn.commit()
-
 from D.Getdate import GetDateForm
 from D.Chart.Chart import *
 #from D.Product.PrintPriceTag import PrintPriceTagFrame
@@ -274,14 +269,26 @@ class ProductForm(ttk.Frame):
             #print("Loop Shop ", shop['Shop_name'])
             #print("Selected Shop ", self.shop_name_Combobox.get())
             #print("Shop items = ", shop['Shop_items'])
+            FOUND = []
             if shop['Shop_items'] and (shop['Shop_name'] == "" or s == self.shop_name_Combobox.current()):
                 found_shop_items = json.loads(shop['Shop_items'])
                 #print("Shop items --> ", found_shop_items)
                 if found_shop_items:
                     for item in found_shop_items:
+                        #print('item -- > ', item)
+                        if item[0] in FOUND:
+                            print("SAME ITEM COUNTERD ", item[0])
+                        else:
+                            FOUND.append(item[0])
                         value = fetch_as_dict_list( 'SELECT * FROM product WHERE id=?', (str(item[0]),))
+                        #print("Shop items value --> ", value[0])
                         if value and not len(value) == 0:
                             self.master.master.master.master.Shops_info['Shop_items'].append([value[0], [], "", "", "", "", "", "", "", "", "", "", ""])
+                            
+                            #print('items = ', self.master.master.master.master.Shops_info['Shop_items'])
+                            #print("self.master.master.master.master.Shops_in['Shop_items'] = ", len(self.master.master.master.master.Shops_info['Shop_items']))
+                    #while True:
+                        #continue
         
         for i, item in enumerate(self.master.master.master.master.Shops_info['Shop_items']):
             product = selected_item = item[0]

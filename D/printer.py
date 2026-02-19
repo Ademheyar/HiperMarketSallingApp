@@ -7,10 +7,11 @@ from tkinter import simpledialog
 import json
 import ast
 
+from C.API import *
+from C.API.Get import *
+from C.API.Set import *
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cursor = conn.cursor()
 
 printer_name = ""
 def list_available_printers():
@@ -81,11 +82,10 @@ class PrinterForm(tk.Tk):
         selected_printer = "DEFALUET"
         printers = list_available_printers()
         print("user " + str(user_info) + "found ")
-        cursor.execute("SELECT * FROM setting WHERE User_id = ?", (int(user_info['User_id']),))
-        b = cursor.fetchall()
+        b = fetch_as_dict_list("SELECT * FROM setting WHERE User_id = ?", (int(user_info['User_id']),))
         print("user " + str(user_info['User_name']) + "found " +str(b))
-        if b and len(b) > 0 and b[0][3] != "" and b[0][3] in printers:
-            selected_printer = b[0][3] # getting printer
+        if b and len(b) > 0 and b[0]['printer'] != "" and b[0]['printer'] in printers:
+            selected_printer = b[0]['printer'] # getting printer
         else:
             print("sitting : " + str(b))
             dialog = PrinterSelectionDialog(self, printers)
@@ -94,13 +94,11 @@ class PrinterForm(tk.Tk):
             if selected_printer:
                 if dialog.issave.get():
                     if b:
-                        cursor.execute('UPDATE setting SET printer=? WHERE User_id=?', (selected_printer, user_info['User_id']))
+                        Update_table_database('UPDATE setting SET printer=? WHERE User_id=?', (selected_printer, user_info['User_id']))
                         pass
                     else:
-                        cursor.execute('INSERT INTO setting (User_id, printer) VALUES (?, ?)', (self.user['User_id'], selected_printer))
+                        Update_table_database('INSERT INTO setting (User_id, printer) VALUES (?, ?)', (self.user['User_id'], selected_printer))
                         pass
-                    # Commit the changes to the database
-                    conn.commit()
         return selected_printer
                 
     def open_drower(self, user_info):

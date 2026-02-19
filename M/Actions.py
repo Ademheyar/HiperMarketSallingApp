@@ -25,10 +25,6 @@ from D.searchbox import search_entry
 import os
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cur = conn.cursor()
-
-conn.commit()
 
 import tkinter as tk
 from D.Getdate import GetDateForm

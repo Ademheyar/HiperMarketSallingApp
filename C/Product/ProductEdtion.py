@@ -46,62 +46,6 @@ def is_float(value):
         return True
     except ValueError:
         return False
-# Search if product is added or not 
-def search_n_c_b_products(search_text):
-    # Search for the entered text in the code, name, barcode, and type fields of the product table
-    cur.execute("SELECT * FROM product WHERE code LIKE ? OR name LIKE ? OR barcode LIKE ?", 
-                ('%' + search_text + '%', '%' + search_text + '%', '%' + search_text + '%'))
-    results = cur.fetchall()
-    return results
-    
-# Function to search for documents in the doc_table SQLite database table
-def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_barcode=None, 
-                    item=None, user_id=None, customer_id=None, sold_item_info=None, discount=None, 
-                    tax=None, doc_created_date=None, doc_expire_date=None, doc_updated_date=None):
-    given = []
-    # Build the SQL query based on the provided attributes
-    query = 'SELECT * FROM doc_table WHERE 1=1'
-    if doc_id is not None and doc_id is not '':
-        query += f" AND id='{doc_id}'"
-    if doc_type is not None and doc_type != '':
-        query += f" AND type='{doc_type}'"
-    if doc_barcode is not None and doc_barcode is not '':
-        query += f" AND doc_barcode='{doc_barcode}'"
-    if extension_barcode is not None and extension_barcode is not '':
-        query += f" AND extension_barcode='{extension_barcode}'"
-    if item is not None and item is not '':
-        query += f" AND item LIKE ?"
-        if given == None:
-            given.append(f'%{item}%')
-        else:
-            given.append(f'%{item}%')
-    if user_id is not None and user_id is not '':
-        query += f" AND user_id='{user_id}'"
-    if customer_id is not None and customer_id is not '':
-        query += f" AND customer_id='{customer_id}'"
-    if sold_item_info is not None and sold_item_info is not '':
-        query += f" AND sold_item_info='{sold_item_info}'"
-    if discount is not None and discount is not '':
-        query += f" AND discount='{discount}'"
-    if tax is not None and tax is not '':
-        query += f" AND tax='{tax}'"
-    if doc_created_date is not None and doc_created_date is not '':
-        query += f" AND doc_created_date LIKE ?"
-        if given == None:
-            given.append(f'%{doc_created_date}%')
-        else:
-            given.append(f'%{doc_created_date}%')
-    if doc_expire_date is not None and doc_expire_date is not '':
-        query += f" AND doc_expire_date='{doc_expire_date}'"
-    if doc_updated_date is not None and doc_updated_date is not '':
-        query += f" AND doc_updated_date='{doc_updated_date}'"
-    
-    print(query+"\n")
-    # Execute the SQL query and return the results as a list of tuples
-    cur.execute(query, (*given,))
-    results = cur.fetchall()
-    return results
-# Example node hierarchy
 
 class ProductFullEditionForm(ttk.Notebook):
     def __init__(self, master, user, Shops):
@@ -442,8 +386,9 @@ class ProductFullEditionForm(ttk.Notebook):
             item_text = self.user_docinfo_listbox.item(item, "values")  # Get the text values of the item
             id = self.user_docinfo_listbox.item(item, "text")
             barcode = item_text[0]
-            doc_ = cur.execute("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,)).fetchone()
+            doc_ = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))
             if doc_:
+                doc_= doc_[0]
                 answer = tk.messagebox.askquestion("Question", "Do you what to print "+str(barcode)+" ?")
                 if answer == 'yes':
                     #print(str(doc_))
@@ -458,9 +403,10 @@ class ProductFullEditionForm(ttk.Notebook):
         start_value = self.date_from_Entry.get()
         end_value = self.date_to_Entry.get()
         
-        cur.execute("SELECT * FROM doc_table WHERE item LIKE ? AND strftime('%Y-%m-%d', doc_created_date) BETWEEN ? AND ?", ('%' + item_code + '%', start_value, end_value,))
-        df = cur.fetchall()
         
+        df = fetch_as_dict_list("SELECT * FROM doc_table WHERE item LIKE ? AND strftime('%Y-%m-%d', doc_created_date) BETWEEN ? AND ?", ('%' + item_code + '%', start_value, end_value,))
+        if df:
+            df = dfp[0]
         print("doc search"+str(item_code)+"from"+str(start_value)+"to"+str(end_value)+" found "+str(len(df)))
         self.user_docinfo_listbox.delete(*self.user_docinfo_listbox.get_children())
 
@@ -1325,8 +1271,9 @@ class ProductQueckEditionForm(ttk.Notebook):
         suffix = datetime.datetime.now().strftime('%f')
         while True:
             candidate = base_doc_code + suffix
-            ex_doc = cur.execute("SELECT 1 FROM doc_table WHERE doc_barcode=?", (candidate,)).fetchone()
+            ex_doc = fetch_as_dict_list("SELECT 1 FROM doc_table WHERE doc_barcode=?", (candidate,))
             if ex_doc:
+                ex_doc = ex_doc[0]
                 try:
                     suffix = str(int(suffix) + 1)
                 except Exception:
@@ -1404,31 +1351,27 @@ class ProductQueckEditionForm(ttk.Notebook):
 
             # Insert product row
             try:
-                cur.execute(
-                    'INSERT INTO product (name, code, type, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    (name, code, json.dumps(typ), barcode, at_shop, quantity_f, cost, 0.0, price, include_tax, price_change, more_info, images, description, service, default_quantity, active)
-                )
-                cur.execute("SELECT last_insert_rowid()")
-                new_item_id = cur.fetchone()[0]
-                created_ids.append(new_item_id)
+                newidedproduct = Set_product(None, ['name', 'code', 'type', 'barcode', 'at_shop', 'quantity', 'cost', 'tax', 'price', 'include_tax', 'price_change', 'more_info', 'images', 'description', 'service', 'default_quantity', 'active'],[name, code, json.dumps(typ), barcode, at_shop, quantity_f, cost, 0.0, price, include_tax, price_change, more_info, images, description, service, default_quantity, active])
+                new_item_id = newidedproduct['id']
+                created_ids.append(newidedproduct['id'])
                 # update shop items
                 found_shop_items.append([new_item_id, 1, date_now, date_now, date_now])
                 ITEM = json.dumps(found_shop_items)
-                cur.execute('UPDATE Shops SET Shop_items=? WHERE Shop_id=?', (ITEM, at_shop))
+                Update_Shop(None, self.user_info, ['Shop_items'], [ITEM], ['Shop_id'], [at_shop])
                 # record for doc_table
                 doc_items.append([new_item_id, code, "Barcode", name, "Color", "Size", cost, quantity_f, price, 0, more_info])
                 
-                print("ITEM : " + str(ITEM))
-                print("at_shop : " + str(at_shop))
-                cur.execute('UPDATE Shops SET Shop_items=? WHERE Shop_id=?', (ITEM, at_shop))
+                #print("ITEM : " + str(ITEM))
+                #print("at_shop : " + str(at_shop))
+                Update_Documente(None, ['Shop_items'], [ITEM], ['Shop_id=?'], [at_shop])
                 for s, shop in enumerate(self.Shops):
-                    print("Loop s ", s)
-                    print("Loop Shop ", shop['Shop_name'])
-                    print("Selected s ", self.master.master.shop_name_Combobox.current())
-                    print("Selected Shop ", self.master.master.shop_name_Combobox.get())
+                    #print("Loop s ", s)
+                    #print("Loop Shop ", shop['Shop_name'])
+                    #print("Selected s ", self.master.master.shop_name_Combobox.current())
+                    #print("Selected Shop ", self.master.master.shop_name_Combobox.get())
                     if (shop['Shop_name'] == "" or (s == self.master.master.shop_name_Combobox.current() and self.master.master.shop_name_Combobox.get() == shop['Shop_name'])):
                         at_shop = shop['Shop_Id']
-                        print(" Found ", at_shop)
+                        #print(" Found ", at_shop)
                         shop['Shop_items'] = ITEM
         
             except Exception as e:
@@ -1484,14 +1427,11 @@ class ProductQueckEditionForm(ttk.Notebook):
 
         # Insert a single doc_table record representing this batch (store payments)
         try:
-            cur.execute(
-            'INSERT INTO doc_table (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, Profite, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            (brcod, "extension_barcode", at_shop, user_id, customer_id, "", "Stocked_Items", json.dumps(doc_items), count_new_items, total_price, total_profit, 0, 0, payments_json, "", date_now, date_now, date_now)
-            )
-            conn.commit()
+            Set_Document(None, ['doc_barcode', 'extension_barcode', 'At_Shop_Id', 'user_id', 'customer_id', 'Seller_id', 'type', 'item', 'qty', 'price', 'Profite', 'discount', 'tax', 'payments', 'pid', 'doc_created_date', 'doc_expire_date', 'doc_updated_date'], [brcod, "extension_barcode", at_shop, user_id, customer_id, "", "Stocked_Items", json.dumps(doc_items), count_new_items, total_price, total_profit, 0, 0, payments_json, "", date_now, date_now, date_now])
+            
         except Exception as e:
             print("Error inserting doc_table:", e)
-            conn.commit()
+            
 
         # Clear the product details widgets
         #self.clear_product_details_widget()

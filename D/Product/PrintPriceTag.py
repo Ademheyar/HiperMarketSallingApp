@@ -18,8 +18,6 @@ from D.user_info import UserInfoForm
 
 
 db_path = os.path.join(MAIN_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cursor = conn.cursor()
 
 import tkinter as tk
 from tkinter import filedialog, messagebox

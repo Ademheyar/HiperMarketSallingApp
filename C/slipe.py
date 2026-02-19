@@ -11,9 +11,6 @@ sys.path.append(MAIN_dir)
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cursor = conn.cursor()
-
 from C.API.Get import *
 
 def find_user(v):

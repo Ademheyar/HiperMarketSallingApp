@@ -11,6 +11,11 @@ import sqlite3, os
 import base64
 import json
 
+import requests
+
+from C.API import *
+from C.API.Get import *
+from C.API.Set import *
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(os.path.join(current_dir, '..'), '..')
@@ -18,25 +23,21 @@ sys.path.append(MAIN_dir)
 
 data_dir = os.path.join(MAIN_dir, 'data')
 db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cur = conn.cursor()
+#conn = sqlite3.connect(db_path)
+#cur = conn.cursor()
 
-import requests
 
-current_dir = os.path.abspath(os.path.dirname(__file__))
-MAIN_dir = os.path.join(current_dir, '..')
-sys.path.append(MAIN_dir)
-
-from C.API import *
-from C.API.Get import *
-from C.API.Set import *
 
 
 # this will add Document data to system database Document data mast be given dict list key : value
 def Update_table_database(query, value):
-    cur.execute(query, value)
+    Update_table_database_conn = sqlite3.connect(db_path)
+    Update_table_database_cur = Update_table_database_conn.cursor()
+        
+    Update_table_database_cur.execute(query, value)
     # Commit the changes to the database
-    conn.commit()
+    Update_table_database_conn.commit()
+    Update_table_database_conn.close()
     return True
 
 # USER
@@ -170,14 +171,20 @@ def Update_User(Link, user, ARG, UserVALUE, find_Arg, find_Value):
     print("user query ", query)
     print("user value ", value)
     if query != "" and User == None:
-        # Update the user into the database                
-        cur.execute('UPDATE Users SET ' + query + ' WHERE '+fquery, value + fvalue)
+        # Update the user into the database
+        SETSHOP_conn = sqlite3.connect(db_path)
+        SETSHOP_cur = SETSHOP_conn.cursor()                       
         # Commit the changes to the database
-        conn.commit()
-        cur.execute('SELECT * FROM Users WHERE '+fquery, fvalue)
-        row = cur.fetchone()
+        SETSHOP_cur.execute('UPDATE Shops SET ' + query + ' WHERE '+fquery, value + fvalue)
+        # Commit the changes to the database
+        
+        SETSHOP_conn.commit()
+        SETSHOP_cur.execute('SELECT * FROM Shops WHERE '+fquery, fvalue)
+        row = SETSHOP_cur.fetchone()
+        column = SETSHOP_cur.description
+        SETSHOP_conn.close()
         if row:
-            columns = [col[0] for col in cur.description]
+            columns = [col[0] for col in column]
             User = dict(zip(columns, row))
     return User
 
@@ -328,14 +335,21 @@ def Update_Shop(Link, user, ARG, ShopsVALUE, find_Arg, find_Value):
     print("shop query ", query)
     print("shop value ", value)
     if query != "" and Shop == None:
-        # Update the shop into the database                
-        cur.execute('UPDATE Shops SET ' + query + ' WHERE '+fquery, value + fvalue)
+        # Update the shop into the database
+        
+        UPDATSHOP_conn = sqlite3.connect(db_path)
+        UPDATSHOP_cur = UPDATSHOP_conn.cursor()                       
         # Commit the changes to the database
-        conn.commit()
-        cur.execute('SELECT * FROM Shops WHERE '+fquery, fvalue)
-        row = cur.fetchone()
+        UPDATSHOP_cur.execute('UPDATE Shops SET ' + query + ' WHERE '+fquery, value + fvalue)
+        # Commit the changes to the database
+        
+        UPDATSHOP_conn.commit()
+        UPDATSHOP_cur.execute('SELECT * FROM Shops WHERE '+fquery, fvalue)
+        row = UPDATSHOP_cur.fetchone()
+        column = UPDATSHOP_cur.description
+        UPDATSHOP_conn.close()
         if row:
-            columns = [col[0] for col in cur.description]
+            columns = [col[0] for col in column]
             Shop = dict(zip(columns, row))
         else:
             return None
@@ -385,14 +399,20 @@ def Set_Setting(user, ARG, VALUE):
         print("Set_Setting query ", query)
         print("Set_Setting value ", value)
         # Insert the new user into the database
-        cur.execute('INSERT INTO setting ' + query, value)
-        Id = cur.lastrowid
+        
+        SET_SETTING_conn = sqlite3.connect(db_path)
+        SET_SETTING_cur = SET_SETTING_conn.cursor()                       
         # Commit the changes to the database
-        conn.commit()
-        cur.execute('SELECT * FROM setting WHERE Id=?', (Id,))
-        row = cur.fetchone()
+        SET_SETTING_cur.execute('INSERT INTO setting ' + query, value)
+        Id = SET_SETTING_cur.lastrowid
+        # Commit the changes to the database
+        SET_SETTING_conn.commit()
+        SET_SETTING_cur.execute('SELECT * FROM setting WHERE Id=?', (Id,))
+        row = SET_SETTING_cur.fetchone()
+        column = set_product_cur.description
+        SET_SETTING_conn.close()
         if row:
-            columns = [col[0] for col in cur.description]
+            columns = [col[0] for col in column]
             setting_data = dict(zip(columns, row))
             return setting_data
         
@@ -407,6 +427,76 @@ def Set_Setting(user, ARG, VALUE):
 # FOR FACING ANY product, COSTUMER EVEN WORKER BASIC INFO
 # AT LIST NAME AND product NAME IS RQUERDE
 # product_find_Arg = [ "product_id", "product_name", "product_brand_name" ]
+def Set_product(Link, ARG, VALUE, parent=None):
+    query = "("
+    value = None
+    user_name = ""
+    for a, arg in enumerate(ARG):
+        if len(VALUE) > a:
+            query += "`" + arg + "`, "
+            if value:
+                value = value + (VALUE[a],)
+            else:
+                value = (VALUE[a], )
+            if arg == 'user_name':
+                user_name = VALUE[a]
+    if query != "(":    
+        if query.endswith(", "):
+            query = query[:-2]
+        query += ") "
+        query += "VALUES (" + ("?, " * len(ARG)).rstrip(", ") + ")"
+    print("Set_product query ", query)
+    product_data = None
+    if Link and islinked(Link):
+        url = Link
+        entry = {'Do': "SET PRODUCT", 'QUERYS': query, 'QUERYVALUES' : value , 'user_name': user_name}
+        response_data = Sand_API(url, entry)
+        if not response_data == [] and response_data:
+            if response_data['status'] == 'success':
+                if response_data['Value']:
+                    print("DOCUMENT DATA PRODUCT Secessfully")
+                    User_data = response_data['Value']
+                else:
+                    print("Faild To Upload PRODUCT Data")
+                    return "Faild To Upload PRODUCT Data"
+            else:
+                print("There is Error FOUND")
+                return "There is Error FOUND"
+    else:
+        print("API Error PRODUCT")
+
+    if product_data:
+        answer = tk.messagebox.askquestion("Question", "Document Created Online Secccesfully. for fast performance better to download datas. Do you what to download document data?", parent=parent)
+        if answer == 'yes':
+            product_data = Set_product(None, ['Document_id', 'Document_name', 'Document_brand_name', 'Document_price', 'Document_quantity', 'Document_description', 'Document_category', 'Document_image'], [Document_data['Document_id'], Document_data['Document_name'], Document_data['Document_brand_name'], Document_data['Document_price'], Document_data['Document_quantity'], Document_data['Document_description'], Document_data['Document_category'], Document_data['Document_image']], parent=parent)
+    else:
+        print("PRODUCT data is going to be added")
+        print("PRODUCT query ", query)
+        print("PRODUCT value ", value)
+        # Insert the new Document into the database
+        set_product_conn = sqlite3.connect(db_path)
+        set_product_cur = set_product_conn.cursor()
+        query = query.replace("`", "")
+        set_product_cur.execute('INSERT INTO product' + query, value)
+        Id = set_product_cur.lastrowid
+                                
+        # Commit the changes to the database
+        set_product_conn.commit()
+        
+        if product_data and 'Document_id' in product_data:
+            set_product_cur.execute('SELECT * FROM product WHERE id=?', (product_data['id'],))
+        else:
+            set_product_cur.execute('SELECT * FROM product WHERE Id=?', (Id,))
+        #cur.execute('INSERT INTO upload_doc_table' + query, value)
+        row = set_product_cur.fetchone()
+        column = set_product_cur.description
+        set_product_conn.close()
+        if row:
+            columns = [col[0] for col in column]
+            product_data = dict(zip(columns, row))
+        
+    return product_data
+
 def Update_Producte(Link, user, ARG, ProducteVALUE, find_Arg, find_Value):
     query = ""
     value = None
@@ -461,17 +551,22 @@ def Update_Producte(Link, user, ARG, ProducteVALUE, find_Arg, find_Value):
     print("product query ", query)
     print("product value ", value)
     if query != "" and product == None:
+        update_product_conn = sqlite3.connect(db_path)
+        update_product_cur = update_product_conn.cursor()
         # Update the product into the database                
-        cur.execute('UPDATE product SET ' + query + ' WHERE '+fquery, value + fvalue)
+        update_product_cur.execute('UPDATE product SET ' + query + ' WHERE '+fquery, value + fvalue)
         # Commit the changes to the database
-        conn.commit()
-        cur.execute('SELECT * FROM product WHERE '+fquery, fvalue)
-        row = cur.fetchone()
+        update_product_conn.commit()
+        update_product_cur.execute('SELECT * FROM product WHERE '+fquery, fvalue)
+        row = update_product_cur.fetchone()
+        colume = update_product_cur.description
+        update_product_conn.close()
         if row:
-            columns = [col[0] for col in cur.description]
+            columns = [col[0] for col in colume]
             product = dict(zip(columns, row))
         else:
             return None
+        
     return product
 
 
@@ -528,21 +623,25 @@ def Set_Document(Link, ARG, VALUE, parent=None):
         print("Document query ", query)
         print("Document value ", value)
         # Insert the new Document into the database
+        set_doc_conn = sqlite3.connect(db_path)
+        set_doc_cur = set_doc_conn.cursor()
         query = query.replace("`", "")
-        cur.execute('INSERT INTO doc_table' + query, value)
-        Id = cur.lastrowid
+        set_doc_cur.execute('INSERT INTO doc_table' + query, value)
+        Id = set_doc_cur.lastrowid
                                 
         # Commit the changes to the database
-        conn.commit()
+        set_doc_conn.commit()
         
         if Document_data and 'Document_id' in Document_data:
-            cur.execute('SELECT * FROM doc_table WHERE Document_id=?', (Document_data['Document_id'],))
+            set_doc_cur.execute('SELECT * FROM doc_table WHERE Document_id=?', (Document_data['Document_id'],))
         else:
-            cur.execute('SELECT * FROM doc_table WHERE Id=?', (Id,))
+            set_doc_cur.execute('SELECT * FROM doc_table WHERE Id=?', (Id,))
         #cur.execute('INSERT INTO upload_doc_table' + query, value)
-        row = cur.fetchone()
+        row = set_doc_cur.fetchone()
+        column = set_doc_cur.description
+        set_doc_conn.close()
         if row:
-            columns = [col[0] for col in cur.description]
+            columns = [col[0] for col in column]
             Document_data = dict(zip(columns, row))
         
     return Document_data
@@ -606,15 +705,19 @@ def Update_Documente(Link, user, ARG, DocumenteVALUE, find_Arg, find_Value):
     print("Document query ", query)
     print("Document value ", value)
     if query != "" and Document == None:
+        update_doc_conn = sqlite3.connect(db_path)
+        update_doc_cur = update_doc_conn.cursor()
         # Update the Document into the database                
-        cur.execute('UPDATE upload_doc SET ' + query + ' WHERE '+fquery, value + fvalue)
-        cur.execute('UPDATE doc_table SET ' + query + ' WHERE '+fquery, value + fvalue)
+        update_doc_cur.execute('UPDATE upload_doc SET ' + query + ' WHERE '+fquery, value + fvalue)
+        update_doc_cur.execute('UPDATE doc_table SET ' + query + ' WHERE '+fquery, value + fvalue)
         # Commit the changes to the database
-        conn.commit()
-        cur.execute('SELECT * FROM upload_doc WHERE '+fquery, fvalue)
-        row = cur.fetchone()
+        update_doc_conn.commit()
+        update_doc_cur.execute('SELECT * FROM upload_doc WHERE '+fquery, fvalue)
+        row = update_doc_cur.fetchone()
+        column = update_doc_cur.description
+        update_doc_conn.close()
         if row:
-            columns = [col[0] for col in cur.description]
+            columns = [col[0] for col in column]
             Document = dict(zip(columns, row))
         else:
             return None
