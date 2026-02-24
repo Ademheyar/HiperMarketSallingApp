@@ -21,6 +21,9 @@ from D.Getdefsize import ButtonEntryApp
 from C.List import *
 
 from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
+
 from D.printer import *
 from D.GetVALUE import GetvalueForm
 # Connect to the database or create it if it does not exist
@@ -376,7 +379,7 @@ class ExpensesForm(tk.Frame):
                 shop_exp.append([name, description, typ, short_key, date, ref, notes, freq_combo, isrepeats, interval, end_date])
                 # update DB and local shops list
                 print("Adding expense to shop:", shop.get('Shop_name'))
-                cur.execute("UPDATE Shops SET Shop_Expenses=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?",
+                Update_table_database("UPDATE Shops SET Shop_Expenses=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?",
                             (json.dumps(shop_exp), str(shop.get('Shop_Id')), str(shop.get('Shop_name')), str(shop.get('Shop_brand_name'))))
                 conn.commit()
                 shop['Shop_Expenses'] = json.dumps(shop_exp)
@@ -391,7 +394,7 @@ class ExpensesForm(tk.Frame):
                         print("Updating shop expenses:", shop_exp)
                         shop_exp[idx] = [name, description, typ, short_key, date, ref, notes, freq_combo, isrepeats, interval, end_date]
                         # update DB and local shops list
-                        cur.execute("UPDATE Shops SET Shop_Expenses=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?",
+                        Update_table_database("UPDATE Shops SET Shop_Expenses=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?",
                                         (json.dumps(shop_exp), str(shop.get('Shop_Id')), str(shop.get('Shop_name')), str(shop.get('Shop_brand_name'))))
                         conn.commit()
                         shop['Shop_Expenses'] = json.dumps(shop_exp)
@@ -422,7 +425,7 @@ class ExpensesForm(tk.Frame):
                 if title == str(exp[0]) and description == str(exp[1]) and amount == str(exp[2]) and date == str(exp[3]):
                     # delete this entry
                     shop_exp.pop(idx)
-                    cur.execute("UPDATE Shops SET Shop_Expenses=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?",
+                    Update_table_database("UPDATE Shops SET Shop_Expenses=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?",
                                 (json.dumps(shop_exp), str(shop.get('Shop_Id')), str(shop.get('Shop_name')), str(shop.get('Shop_brand_name'))))
                     conn.commit()
                     shop['Shop_Expenses'] = json.dumps(shop_exp)
@@ -431,7 +434,7 @@ class ExpensesForm(tk.Frame):
 
     def on_title_entry(self, event):
         # simple helper: if name matches existing in tools table, switch to Update else New
-        cur.execute('SELECT * FROM tools')
+        Update_table_database('SELECT * FROM tools')
         products = cur.fetchall()
         for product in products:
             if product[1] == self.title_entry.get():

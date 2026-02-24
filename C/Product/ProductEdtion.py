@@ -17,7 +17,6 @@ from C.List import *
 
 from D.Getdefsize import ButtonEntryApp
 from C.List import *
-from D.printer import *
 from D.GetVALUE import GetvalueForm
 # Connect to the database or create it if it does not exist
 
@@ -35,6 +34,8 @@ from D.Chart.Chart import *
 from C.API.Get import *
 from C.API.API import *
 from C.API.Set import *
+
+from D.printer import *
 
 from C.Product.selecttype import *
 
@@ -405,13 +406,11 @@ class ProductFullEditionForm(ttk.Notebook):
         
         
         df = fetch_as_dict_list("SELECT * FROM doc_table WHERE item LIKE ? AND strftime('%Y-%m-%d', doc_created_date) BETWEEN ? AND ?", ('%' + item_code + '%', start_value, end_value,))
-        if df:
-            df = dfp[0]
         print("doc search"+str(item_code)+"from"+str(start_value)+"to"+str(end_value)+" found "+str(len(df)))
         self.user_docinfo_listbox.delete(*self.user_docinfo_listbox.get_children())
 
-        '''cur.execute("SELECT * FROM COUNT_SELL WHERE strftime('%Y-%m-%d', DATE) BETWEEN ? AND ?", (f'{self.date_from_Entry.get()}', f'{self.date_to_Entry.get()}',))
-        results = cur.fetchall()
+        '''results = fetch_as_dict_list("SELECT * FROM COUNT_SELL WHERE strftime('%Y-%m-%d', DATE) BETWEEN ? AND ?", (f'{self.date_from_Entry.get()}', f'{self.date_to_Entry.get()}',))
+        
         l = []
         
         for result in results:
@@ -431,54 +430,11 @@ class ProductFullEditionForm(ttk.Notebook):
         count = 0
         TQTY = 0
         for index in df:
-            item = self.user_docinfo_listbox.insert('', 'end', text=index[0], values=(index[1], index[2], index[3], index[4], index[5], index[6], index[7], index[8], index[9], index[10], index[11], index[12], index[13], index[14]))
-            TQTY += 1
-            '''ispayed = self.load_payment(index[11], self.date_from_Entry.get(), self.date_to_Entry.get()) # LOAD PYMENT AND IT TOTAL 
-            if ispayed:
-                count+=1
-            #print("df : " + str(index)
-            #print("df : " + str(index[12]))
-            dateandtime = index[12].split(" ") if " " in index[12] else index[12].split("_")
-            hour = dateandtime[1].split(":")[0] if ":" in dateandtime[1] else dateandtime[1].split("-")[0]
-            date = dateandtime[0].split("-")
-            day = date[2]
-            month = date[1]
-            year = date[0]
-            vv.append([year, month, day, hour, float(index[8])-float(index[9])])
-
-            
-            id = self.listbox.item(item, "text")
-            item_text = self.listbox.item(item, "values")
-
-            if item:
-                # Detect double-click
-                print("Double-clicked item:", item_text)
-
-                # Add tabs to the self.center_notebook
-                if item_text[0]:
-                    tab_exist = any(self.center_notebook.tab(tab_id, "text") == item_text[0] for tab_id in self.center_notebook.tabs())
-                    if not tab_exist:
-                        test_tab = ttk.Frame(self.center_notebook)
-                        self.center_notebook.add(test_tab, text=item_text[0])
-                        # Create a close button and position it at the top next to the tab title
-                        close_button1 = tk.Button(test_tab, text="X", command=lambda : self.close_tab(test_tab))
-                        close_button1.pack(side="top", anchor="ne", padx=5, pady=2)
-                        doc_edit_form = DocEditForm(test_tab, item_text, id)
-                    else:
-                        for a in self.center_notebook.tabs():
-                            print("Tab already exists!")
-                            print(str(self.center_notebook.tab(a, "text")))
-
-        if len(vv) > 0:
-            #print(" v : " + str(vv))
-            self.graph_value, self.graph_value0, tilte = make_list(vv)
-        
-            #print("self.graph_value0 :" + str(self.graph_value0))
-            draw_cart(int(self.style_var.get()), self.chart_canvas, self.next_button, self.prev_button, self.graph_value0, int(self.which_var.get()), 1, 0)
-            draw_cart(int(self.style_var.get()), self.chart2_canvas, None, None, self.graph_value0, int(self.which_var.get()), 2, 0)
-            self.display_products(self.graph_value0, int(self.which_var.get()))
-      
-        self.creat_info(count)'''
+            try:
+                self.user_docinfo_listbox.insert('', 'end', text=index['id'], values=(index['doc_barcode'], index['extension_barcode'], index['user_id'], index['customer_id'], index['type'], index['item'], index['qty'], index['price'], index['discount'], index['tax'], index['payments'], index['doc_created_date'], index['doc_expire_date'], index['doc_updated_date']))
+                TQTY += 1
+            except Exception as e:
+                print("Error inserting item: " + str(e))
         self.total_doc_qty_label.config(text="TOTAL QTY COUNT : " + str(TQTY))
         
     #
@@ -565,15 +521,14 @@ class ProductFullEditionForm(ttk.Notebook):
         self.more_info_label.insert(0, txt)
 
     def perform_search_Item_size_chack(self):
-        cur.execute('SELECT * FROM product')
-        item = cur.fetchall()
+        item = fetch_as_dict_list('SELECT * FROM product')
         for it in item:
-            print("item["+str(it[0])+"]  : " + str(it[12]))
+            print("item["+str(it['id'])+"]  : " + str(it['more_info']))
             qty_info_list = []
-            if "\"{" in str(it[12]):
-                qty_info_list = read_code(it[12], "", str(it[2]), "", "")[4]
+            if "\"{" in str(it['more_info']):
+                qty_info_list = read_code(it['more_info'], "", str(it['code']), "", "")[4]
             else:
-                qty_info_list = load_list(it[12])
+                qty_info_list = load_list(it['more_info'])
             
             def sub_list(ls):
                 main_name = []
@@ -581,7 +536,7 @@ class ProductFullEditionForm(ttk.Notebook):
                     if len(l) > 2:
                         # chacke size has problame
                         if float(l[2]) < 0:
-                            self.Item_To_Update_tab_listbox.insert("", 'end', text="Size", values=(it[1], it[2], it[3], it[4], it[5], it[6], it[7], it[8], it[9], it[10], it[11], it[12], it[13], it[14]))
+                            self.Item_To_Update_tab_listbox.insert("", 'end', text="Size", values=(it['name'], it['code'], it['color'], it['size'], it['barcode'], it['price'], it['qtyfirst'], it['qty'], it['patern'], it['imgs'], it['cdate'], it['update']))
                         
                     elif len(l) == 2:
                         #main_name.append(l[0])
@@ -750,7 +705,7 @@ class ProductFullEditionForm(ttk.Notebook):
             self.name_list.place_forget()
             return
         
-        products = search_n_c_b_products(query)
+        products = [] #search_n_c_b_products(query)
         if products:
             self.name_list.config(width=self.name_entry.winfo_width())
             self.name_list.place(x=self.name_entry.winfo_x(), y=self.name_entry.winfo_y()+self.name_entry.winfo_height()+25)
@@ -855,7 +810,7 @@ class ProductFullEditionForm(ttk.Notebook):
         doc_code = datetime.datetime.now().strftime('%y:%m') + "-11"
         b = 0
         while True:
-            ex_doc = cur.execute("SELECT * FROM upload_doc WHERE doc_barcode=?", (doc_code+str(b),)).fetchone()
+            ex_doc = fetch_as_dict_list("SELECT * FROM upload_doc WHERE doc_barcode=?", (doc_code+str(b),)).fetchone()
             if ex_doc:
                 b = random.randint(0, 10000)
             else:
@@ -866,9 +821,9 @@ class ProductFullEditionForm(ttk.Notebook):
             # Insert the new product into the database
             doc_type = "Add_Items"
             # Get the ID of the most recently added item
-            cur.execute('INSERT INTO product (name, code, type, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active))
-            cur.execute("SELECT last_insert_rowid()")
-            new_item_id = cur.fetchone()[0]
+            Update_table_database('INSERT INTO product (name, code, type, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active))
+            new_item_id = fetch_as_dict_list("SELECT last_insert_rowid()")
+            
             print("new_product_id : " + str(new_item_id) + " barcode : " + str(brcod))
             item += f"(:{new_item_id}:,:{name}:,:{code}:,:{typ}:,:{barcode}:,:{at_shop}:,:{quantity}:,:{cost}:,:{tax}:,:{price}:,:{include_tax}:,:{price_change}:,:{more_info}:,:{images}:,:{description}:,:{service}:,:{default_quantity}:,:{active}:)"
             print("item : " + str(item))
@@ -878,7 +833,7 @@ class ProductFullEditionForm(ttk.Notebook):
             ITEM = json.dumps(found_shop_items)
             print("ITEM : " + str(ITEM))
             print("at_shop : " + str(at_shop))
-            cur.execute('UPDATE Shops SET Shop_items=? WHERE Shop_id=?', (ITEM, at_shop))
+            Update_Shop(None, None, 'Shop_items', [ITEM], ['Shop_id'], [at_shop])
             for s, shop in enumerate(self.Shops):
                 print("Loop s ", s)
                 print("Loop Shop ", shop['Shop_name'])
@@ -894,26 +849,7 @@ class ProductFullEditionForm(ttk.Notebook):
             item += f"(:{self.product_id}:,:{name}:,:{code}:,:{typ}:,:{barcode}:,:{at_shop}:,:{quantity}:,:{cost}:,:{tax}:,:{price}:,:{include_tax}:,:{price_change}:,:{more_info}:,:{images}:,:{description}:,:{service}:,:{default_quantity}:,:{active}:)"
             print("item : " + str(item))
             # Update the product in the database
-            cur.execute('UPDATE product SET name=?, code=?, type=?, barcode=?, at_shop=?, quantity=?, cost=?, tax=?, price=?, include_tax=?, price_change=?, more_info=?, images=?, description=?, service=?, default_quantity=?, active=? WHERE id=?', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active, self.product_id))
-        # Commit the changes to the database
-        conn.commit()
-
-        try:
-            # Insert the record into the upload_doc table
-            cur.execute('INSERT INTO upload_doc (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("23-200-" + str(brcod), "extension_barcode", self.user_info['id'], "", doc_type, item, 1, 0, 0, 0, "payments_", "doc_created_date", "doc_expire_date", "doc_updated_date"))
-
-            # Commit the changes to the database
-            conn.commit()
-            
-            print("Data inserted successfully into the upload_doc table.")
-        except Exception as e:
-            print("Error occurred while inserting data into the upload_doc table:")
-            print(str(e))
-
-
-        # Commit the changes to the database
-        conn.commit()
-
+            Update_Producte(None, None, ['name', 'code', 'type', 'barcode', 'at_shop', 'quantity', 'cost', 'tax', 'price', 'include_tax', 'price_change', 'more_info', 'images', 'description', 'service', 'default_quantity', 'active'], [name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active], ['id'], [self.product_id])
         # Clear the product details widgets
         self.clear_product_details_widget()
         self.master.master.Load_Shop_items() # refrash items
@@ -1140,7 +1076,7 @@ class ProductQueckEditionForm(ttk.Notebook):
                 name_list.place_forget()
                 return
             
-            products = search_n_c_b_products(query)
+            products = [] #search_n_c_b_products(query)
             if products:
                 name_list.config(width=name_entry.winfo_width())
                 name_list.place(x=name_entry.winfo_x(), y=name_entry.winfo_y()+name_entry.winfo_height()+25)
@@ -1246,12 +1182,11 @@ class ProductQueckEditionForm(ttk.Notebook):
         self.After_label.config(text='Total Profit : '+str(price-cost))
         
     def on_name_entry(self, event):
-        cur.execute('SELECT * FROM product')
-        products = cur.fetchall()
+        products = fetch_as_dict_list('SELECT * FROM product')
         for product in products:
             #TODO MAKE IT EASY BY ID
             #print("on_name_entry\n"+str(product[1]))
-            if product[1] == self.name_entry.get():
+            if product['name'] == self.name_entry.get():
                 self.add_button.config(text="Update")    
                 return
         if self.main_name == self.name_entry.get() and not self.main_name == "":
@@ -1284,18 +1219,28 @@ class ProductQueckEditionForm(ttk.Notebook):
 
         for new_item in self.New_Item_Contener:
             # Resolve shop and existing shop items
-            at_shop = ""
+            online_shop_id = ""
+            offline_shop_id = ""
             found_shop_items = []
+            if not self.Shops:
+                continue
             for s, shop in enumerate(self.Shops):
                 if (shop.get('Shop_name', "") == "" or
                     (s == self.master.master.shop_name_Combobox.current() and
                     self.master.master.shop_name_Combobox.get() == shop.get('Shop_name', ""))):
-                    at_shop = shop.get('Shop_Id')
+                    online_shop_id = shop.get('Shop_Id')
+                    offline_shop_id = shop.get('Id')
+                    selected = s
                     if shop.get('Shop_items'):
                         try:
                             found_shop_items = json.loads(shop['Shop_items'])
+                            break
                         except Exception:
                             found_shop_items = []
+            if online_shop_id == "":
+                online_shop_id = self.Shops[0].get('Shop_Id')  # fallback to first shop if none selected
+                offline_shop_id = self.Shops[0].get('Id')
+                selected = 0
 
             # Read fields with safe fallbacks
             name = new_item[1].get() if hasattr(new_item[1], 'get') else ""
@@ -1351,35 +1296,30 @@ class ProductQueckEditionForm(ttk.Notebook):
 
             # Insert product row
             try:
-                newidedproduct = Set_product(None, ['name', 'code', 'type', 'barcode', 'at_shop', 'quantity', 'cost', 'tax', 'price', 'include_tax', 'price_change', 'more_info', 'images', 'description', 'service', 'default_quantity', 'active'],[name, code, json.dumps(typ), barcode, at_shop, quantity_f, cost, 0.0, price, include_tax, price_change, more_info, images, description, service, default_quantity, active])
+                newidedproduct = Set_product(None, ['name', 'code', 'type', 'barcode', 'at_shop', 'quantity', 'cost', 'tax', 'price', 'include_tax', 'price_change', 'more_info', 'images', 'description', 'service', 'default_quantity', 'active'],[name, code, json.dumps(typ), barcode, online_shop_id, quantity_f, cost, 0.0, price, include_tax, price_change, more_info, images, description, service, default_quantity, active])
                 new_item_id = newidedproduct['id']
+                print("newidedproduct : " + str(newidedproduct) + " barcode : " + str(brcod))
                 created_ids.append(newidedproduct['id'])
                 # update shop items
                 found_shop_items.append([new_item_id, 1, date_now, date_now, date_now])
                 ITEM = json.dumps(found_shop_items)
-                Update_Shop(None, self.user_info, ['Shop_items'], [ITEM], ['Shop_id'], [at_shop])
+                print("ITEM : " + str(ITEM))
+                print("online_shop_id : " + str(online_shop_id))
+                if not online_shop_id == None:
+                    Update_Shop(None, self.user_info, ['Shop_items'], [ITEM], ['Shop_Id'], [online_shop_id])
+                elif not offline_shop_id == None:
+                    Update_Shop(None, self.user_info, ['Shop_items'], [ITEM], ['Id'], [offline_shop_id])
                 # record for doc_table
                 doc_items.append([new_item_id, code, "Barcode", name, "Color", "Size", cost, quantity_f, price, 0, more_info])
                 
-                #print("ITEM : " + str(ITEM))
-                #print("at_shop : " + str(at_shop))
-                Update_Documente(None, ['Shop_items'], [ITEM], ['Shop_id=?'], [at_shop])
-                for s, shop in enumerate(self.Shops):
-                    #print("Loop s ", s)
-                    #print("Loop Shop ", shop['Shop_name'])
-                    #print("Selected s ", self.master.master.shop_name_Combobox.current())
-                    #print("Selected Shop ", self.master.master.shop_name_Combobox.get())
-                    if (shop['Shop_name'] == "" or (s == self.master.master.shop_name_Combobox.current() and self.master.master.shop_name_Combobox.get() == shop['Shop_name'])):
-                        at_shop = shop['Shop_Id']
-                        #print(" Found ", at_shop)
-                        shop['Shop_items'] = ITEM
+                #Update_Documente(None, ['Shop_items'], [ITEM], ['Shop_Id'], [online_shop_id])
+                self.Shops[selected]['Shop_items'] = ITEM
         
             except Exception as e:
                 print("Error inserting product:", e)
 
         # If no items created, skip doc insert
         if not doc_items:
-            conn.commit()
             return
 
         # Compute totals for the doc entry
@@ -1427,10 +1367,10 @@ class ProductQueckEditionForm(ttk.Notebook):
 
         # Insert a single doc_table record representing this batch (store payments)
         try:
-            Set_Document(None, ['doc_barcode', 'extension_barcode', 'At_Shop_Id', 'user_id', 'customer_id', 'Seller_id', 'type', 'item', 'qty', 'price', 'Profite', 'discount', 'tax', 'payments', 'pid', 'doc_created_date', 'doc_expire_date', 'doc_updated_date'], [brcod, "extension_barcode", at_shop, user_id, customer_id, "", "Stocked_Items", json.dumps(doc_items), count_new_items, total_price, total_profit, 0, 0, payments_json, "", date_now, date_now, date_now])
+            Set_Document(None, ['doc_barcode', 'extension_barcode', 'At_Shop_Id', 'user_id', 'customer_id', 'Seller_id', 'type', 'item', 'qty', 'price', 'Profite', 'discount', 'tax', 'payments', 'pid', 'doc_created_date', 'doc_expire_date', 'doc_updated_date'], [brcod, "extension_barcode", online_shop_id, user_id, customer_id, "", "Stocked_Items", json.dumps(doc_items), count_new_items, total_price, total_profit, 0, 0, payments_json, "", date_now, date_now, date_now])
             
         except Exception as e:
-            print("Error inserting doc_table:", e)
+            print("Error inserting recurde new products on doc_table:", e)
             
 
         # Clear the product details widgets

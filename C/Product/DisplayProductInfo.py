@@ -354,14 +354,14 @@ class ProductFullInfoForm(ttk.Notebook):
         start_value = self.date_from_Entry.get()
         end_value = self.date_to_Entry.get()
         
-        cur.execute("SELECT * FROM doc_table WHERE item LIKE ? AND strftime('%Y-%m-%d', doc_created_date) BETWEEN ? AND ?", ('%' + item_code + '%', start_value, end_value,))
-        df = cur.fetchall()
+        df = fetch_as_dict_list("SELECT * FROM doc_table WHERE item LIKE ? AND strftime('%Y-%m-%d', doc_created_date) BETWEEN ? AND ?", ('%' + item_code + '%', start_value, end_value,))
+        
         
         print("doc search"+str(item_code)+"from"+str(start_value)+"to"+str(end_value)+" found "+str(len(df)))
         self.user_docinfo_listbox.delete(*self.user_docinfo_listbox.get_children())
 
-        '''cur.execute("SELECT * FROM COUNT_SELL WHERE strftime('%Y-%m-%d', DATE) BETWEEN ? AND ?", (f'{self.date_from_Entry.get()}', f'{self.date_to_Entry.get()}',))
-        results = cur.fetchall()
+        '''results = fetch_as_dict_list("SELECT * FROM COUNT_SELL WHERE strftime('%Y-%m-%d', DATE) BETWEEN ? AND ?", (f'{self.date_from_Entry.get()}', f'{self.date_to_Entry.get()}',))
+        
         l = []
         
         for result in results:
@@ -392,7 +392,7 @@ class ProductFullInfoForm(ttk.Notebook):
             item_text = self.user_docinfo_listbox.item(item, "values")  # Get the text values of the item
             id = self.user_docinfo_listbox.item(item, "text")
             barcode = item_text[0]
-            doc_ = cur.execute("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,)).fetchone()
+            doc_ = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))
             if doc_:
                 answer = tk.messagebox.askquestion("Question", "Do you what to print "+str(barcode)+" ?")
                 if answer == 'yes':

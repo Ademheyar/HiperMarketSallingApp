@@ -14,6 +14,8 @@ db_path = os.path.join(data_dir, 'my_database.db')
 from C.List import *
 
 from C.API.Get import *
+from C.API.Set import *
+from C.API.API import *
 
 class ToolForm(tk.Frame):
     def __init__(self, master, User, Shops, on_Shop):
@@ -224,7 +226,9 @@ class ToolForm(tk.Frame):
 
         # Add the products to the product listbox
         for product in results:
-            self.list_box.insert('', 'end', text=product[0], values=(product[1], product[2], product[3], product[4], product[5], product[6], product[7], product[8], product[9], product[10], product[11], product[12], product[13], product[14]))
+            shop_id = product[0] if product[0] else ""
+
+            self.list_box.insert('', 'end', text=shop_id, values=(product[1], product[2], product[3], product[4], product[5], product[6], product[7], product[8], product[9], product[10], product[11], product[12], product[13], product[14]))
         self.master.master.master.master.create_payment_buttons()
 
     # create a function to update the search results whenever the search box changes
@@ -247,9 +251,15 @@ class ToolForm(tk.Frame):
         for s, shop in enumerate(self.Shops):
             if self.Selected_Shop != "" and shop['Shop_name'] != self.Selected_Shop:
                 continue
-
-            Shop = fetch_as_dict_list( "SELECT * FROM Shops WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
-                                (str(shop['Shop_Id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
+            
+            if shop['Shop_Id']:
+                shopid = 'Shop_Id'
+                shopidv = str(shop['Shop_Id'])
+            elif shop['Id']:
+                shopid = 'Id'
+                shopidv = str(shop['Id'])
+            Shop = fetch_as_dict_list( "SELECT * FROM Shops WHERE " + shopid + "=? AND Shop_name=? AND Shop_brand_name=?", 
+                                (shopidv, str(shop['Shop_name']), str(shop['Shop_brand_name'])))
             if Shop and Shop[0] and Shop[0]['Shop_Payment_Tools'] and Shop[0]['Shop_Payment_Tools'] != "":
                 print("Shop[0]['Shop_Payment_Tools'] ", Shop[0]['Shop_Payment_Tools'])
                 Shop_Payment_Tools = load_list(Shop[0]['Shop_Payment_Tools'])
@@ -298,18 +308,24 @@ class ToolForm(tk.Frame):
             if shop:
                 if shop['Shop_Payment_Tools'] and shop['Shop_Payment_Tools'] != "":
                     Shop_Payment_Tools = load_list(shop['Shop_Payment_Tools']) 
+
+                if shop['Shop_Id']:
+                    shopid = 'Shop_Id'
+                    shopidv = str(shop['Shop_Id'])
+                elif shop['Id']:
+                    shopid = 'Id'
+                    shopidv = str(shop['Id'])
                 
                 if self.add_button.cget("text") == "New":
                     # "Tool Name", "Tool Method", "Tool ID", "Tool Short cut", "Tool Acsess key", "Tool enabel", "Tool Quick_pay","Tool Markpad", "Tool Customer_required", "Tool Open_drower", "Tool Printslip"
                     Shop_Payment_Tools.append([name, typ, code, short_key, acsess, enable, quick_pay , markaspad, customer_required, open_drower, print_slip, change_allowed])
-                    cur.execute("UPDATE Shops SET Shop_Payment_Tools=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
-                                    (json.dumps(Shop_Payment_Tools), str(shop['Shop_Id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
-                    # Commit the changes to the database
-                    conn.commit()
+                    Update_Shop(None, None, ['Shop_Payment_Tools'], [json.dumps(Shop_Payment_Tools)], [shopid, 'Shop_name', 'Shop_brand_name'], 
+                                    [shopidv, str(shop['Shop_name']), str(shop['Shop_brand_name'])])
                     self.master.master.master.master.Shop_Payment_Tools = Shop_Payment_Tools
                 else:
-                    Shop0 = fetch_as_dict_list( "SELECT * FROM Shops WHERE Shop_id=? AND Shop_name=?", 
-                                        (str(self.selected_shop_id), str(self.selected_shop_name)))
+
+                    Shop0 = fetch_as_dict_list( "SELECT * FROM Shops WHERE " + shopid + "=? AND Shop_name=?", 
+                                        (shopidv, str(self.selected_shop_name)))
                     if Shop0 and Shop0[0] and Shop0[0]['Shop_Payment_Tools'] and Shop0[0]['Shop_Payment_Tools'] != "":
                         
                         Shop_Payment_Tools = load_list(Shop0[0]['Shop_Payment_Tools'])
@@ -319,10 +335,8 @@ class ToolForm(tk.Frame):
                             Shop_Payment_Tools[int(self.selected_id)] = [name, typ, code, short_key, acsess, enable, quick_pay , markaspad, customer_required, open_drower, print_slip, change_allowed]
 
                         print("Shop_Payment_Tools ", Shop_Payment_Tools)
-                        cur.execute("UPDATE Shops SET Shop_Payment_Tools=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
-                                    (json.dumps(Shop_Payment_Tools), str(shop['Shop_Id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
-                        # Commit the changes to the database
-                        conn.commit()
+                        Update_Shop(None, None, ['Shop_Payment_Tools'], [json.dumps(Shop_Payment_Tools)], [shopid, 'Shop_name', 'Shop_brand_name'], 
+                                    [shopidv, str(shop['Shop_name']), str(shop['Shop_brand_name'])])
                         self.master.master.master.master.Shop_Payment_Tools = Shop_Payment_Tools
                                 
         self.master.master.master.master.create_payment_buttons()
@@ -366,9 +380,15 @@ class ToolForm(tk.Frame):
                     try:
                         if 0 <= int(idx) < len(Shop_Payment_Tools):
                             Shop_Payment_Tools.pop(int(idx))
-                            cur.execute("UPDATE Shops SET Shop_Payment_Tools=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?",
-                                        (json.dumps(Shop_Payment_Tools), str(shop['Shop_Id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
-                            conn.commit()
+                            if shop['Shop_Id']:
+                                shopid = 'Shop_Id'
+                                shopidv = str(shop['Shop_Id'])
+                            elif shop['Id']:
+                                shopid = 'Id'
+                                shopidv = str(shop['Id'])
+
+                            Update_Shop(None, None, ['Shop_Payment_Tools'], [json.dumps(Shop_Payment_Tools)], [shopid, 'Shop_name', 'Shop_brand_name'], 
+                                        [shopidv, str(shop['Shop_name']), str(shop['Shop_brand_name'])])
                             self.master.master.master.master.Shop_Payment_Tools = Shop_Payment_Tools
                     except Exception:
                         # ignore errors and continue
@@ -393,10 +413,9 @@ class ToolForm(tk.Frame):
 
 
     def on_name_entry(self, event):
-        cur.execute('SELECT * FROM tools')
-        products = cur.fetchall()
+        products = fetch_as_dict_list('SELECT * FROM tools', ())
         for product in products:
-            if product[1] == self.name_entry.get():
+            if product['name'] == self.name_entry.get():
                 self.add_button.config(text="Update")    
                 return
         if self.main_name == self.name_entry.get() and not self.main_name == "":

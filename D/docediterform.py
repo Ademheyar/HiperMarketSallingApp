@@ -23,6 +23,9 @@ from D.printer import PrinterForm
 
 
 from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
+
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
 
@@ -67,8 +70,8 @@ class DocEditForm(tk.Frame):
         label_customer.grid(row=0, column=0)
         self.selected_user = tk.StringVar()
         self.selected_user = items[3]
-        cursor.execute("SELECT * FROM users")
-        rows = cursor.fetchall()
+        rows = fetch_as_dict_list("SELECT * FROM users")
+        
         # create the combo box
         self.entry_customer = ttk.Combobox(top_form, width=20, font=("Arial", 12), textvariable=self.selected_user)
         self.entry_customer.grid(row=0, column=1)
@@ -228,8 +231,8 @@ class DocEditForm(tk.Frame):
         payment_tools_label_type = tk.Label(payment_tools, text="Type")
         payment_tools_label_type.grid(row=0, column=0)
         self.selected_pay_type = tk.StringVar()
-        cursor.execute("SELECT * FROM tools")
-        rows = cursor.fetchall()
+        rows = fetch_as_dict_list("SELECT * FROM tools")
+        
         # create the combo box
         self.payment_tools_entry_type = ttk.Combobox(payment_tools, width=20, font=("Arial", 12), textvariable=self.selected_pay_type)
         self.payment_tools_entry_type.grid(row=0, column=1)
@@ -737,7 +740,7 @@ class DocEditForm(tk.Frame):
             doc_code = datetime.datetime.now().strftime('%y:%m') + "-11"
             b = 0
             while True:
-                ex_doc = cursor.execute("SELECT * FROM doc_table WHERE doc_barcode=?", (doc_code+str(b),)).fetchone()
+                ex_doc = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (doc_code+str(b),))
                 if ex_doc:
                     b = random.randint(0, 10000)
                 else:
@@ -904,7 +907,7 @@ class DocEditForm(tk.Frame):
                 print("\n\n payments_extra pid collect :" + str(payments_extra)+"\n\n")
             
                 
-            f_user_s = cursor.execute("SELECT * FROM setting WHERE User_id=?", (int(self.user['User_id']),)).fetchall()
+            f_user_s = fetch_as_dict_list("SELECT * FROM setting WHERE User_id=?", (int(self.user['User_id']),))
             print("f_user_s "+str(f_user_s))
             Seller_id = None
 
@@ -969,10 +972,10 @@ class DocEditForm(tk.Frame):
                 print("item info befor  : " + str(it_info))
                 #while True:
                 #    continue
-                cursor.execute('UPDATE product SET more_info=? WHERE id=?', (json.dumps(it_info), change_item[0]))
+                Update_table_database('UPDATE product SET more_info=? WHERE id=?', (json.dumps(it_info), change_item[0]))
                         
-                cursor.execute("SELECT * FROM product WHERE id=?", (change_item[0],))
-                it2 = cursor.fetchone()
+                it2 = fetch_as_dict_list("SELECT * FROM product WHERE id=?", (change_item[0],))
+                
                         
                 print("item info updated : " + str(it2[12]))
                 
@@ -995,29 +998,29 @@ class DocEditForm(tk.Frame):
                 print("--payments_ : " + str(d['payments_']))
                 if d['payments_'] != [] or float(d['count_new_items']) != 0:
                         if d["Barcode"] != "":
-                                rows = cursor.execute("SELECT * FROM doc_table WHERE doc_barcode=?", (d["Barcode"],)).fetchall()
+                                rows = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (d["Barcode"],)).fetchall()
                                 if rows and rows[0][4]:
                                     old_cm_id = rows[0][4]
                                 
                                 print("cmd old id = " + str(rows[0]) + " new id " + str(cm_id))
                                 if cm_id and old_cm_id != str(cm_id):
                                     #[each item [barcode, isitem, ispay, ex_item, ex_item_items, payments, ex_payment_count, ex_item_pric, ex_item_T_disc, ex_item_T_tax, ex_pid]
-                                    cursor.execute('UPDATE doc_table SET customer_id=? WHERE doc_barcode=?', (cm_id, d["Barcode"]))
+                                    Update_table_database('UPDATE doc_table SET customer_id=? WHERE doc_barcode=?', (cm_id, d["Barcode"]))
                                     # Commit the changes to the database
                                     conn.commit()
                                 if Seller_id != None:
                                     #[each item [barcode, isitem, ispay, ex_item, ex_item_items, payments, ex_payment_count, ex_item_pric, ex_item_T_disc, ex_item_T_tax, ex_pid]
-                                    cursor.execute('UPDATE doc_table SET Seller_id=? WHERE doc_barcode=?', (Seller_id, d["Barcode"]))
+                                    Update_table_database('UPDATE doc_table SET Seller_id=? WHERE doc_barcode=?', (Seller_id, d["Barcode"]))
                                     # Commit the changes to the database
                                     conn.commit()
                                 if float(d['count_new_items']):
                                     #[each item [barcode, isitem, ispay, ex_item, ex_item_items, payments, ex_payment_count, ex_item_pric, ex_item_T_disc, ex_item_T_tax, ex_pid]
-                                    cursor.execute('UPDATE doc_table SET item=?, qty=?, price=?, discount=?, tax=?, doc_updated_date=? WHERE doc_barcode=?', (json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['disc'], d['tax'], date, d["Barcode"]))
+                                    Update_table_database('UPDATE doc_table SET item=?, qty=?, price=?, discount=?, tax=?, doc_updated_date=? WHERE doc_barcode=?', (json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['disc'], d['tax'], date, d["Barcode"]))
                                     # Commit the changes to the database
                                     conn.commit()
                                 if d['payments_']:
                                     #todo if needed add pid in doc e_doc_info[10]
-                                    cursor.execute('UPDATE doc_table SET pid=?, payments=?, doc_updated_date=? WHERE doc_barcode=?', (str(d['pid']), json.dumps(d['payments_']), date, d["Barcode"]))
+                                    Update_table_database('UPDATE doc_table SET pid=?, payments=?, doc_updated_date=? WHERE doc_barcode=?', (str(d['pid']), json.dumps(d['payments_']), date, d["Barcode"]))
                                     # Commit the changes to the database
                                     conn.commit()
                                 slip_doc_code.append(d["Barcode"])
@@ -1025,8 +1028,8 @@ class DocEditForm(tk.Frame):
                                 print("custemer : " + str(self.custemr) + "isneded : " + str(payment_customer_required))
                                 # TODO: chacke if self.At_Shop_Id is selected if not make user selecte one
                                         
-                                cursor.execute('INSERT INTO upload_doc (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", self.At_Shop_id, self.user['User_id'], self.custemr, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['disc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, date))
-                                cursor.execute('INSERT INTO doc_table (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", self.At_Shop_id, self.user['User_id'], self.custemr, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['disc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, date))
+                                Update_table_database('INSERT INTO upload_doc (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", self.At_Shop_id, self.user['User_id'], self.custemr, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['disc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, date))
+                                Update_table_database('INSERT INTO doc_table (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", self.At_Shop_id, self.user['User_id'], self.custemr, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['disc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, date))
                                 # Commit the changes to the database
                                 conn.commit()
                                 slip_doc_code.append(brcod)

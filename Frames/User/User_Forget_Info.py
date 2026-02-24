@@ -51,6 +51,11 @@ sys.path.append(MAIN_dir)
 from D.printer import PrinterForm
 from C.slipe import load_slip
 
+from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
+
+
 data_dir = os.path.join(MAIN_dir, 'data')
 db_path = os.path.join(data_dir, 'my_database.db')
 class User_Forget_Info_Frame(tk.Frame):
@@ -197,7 +202,7 @@ class User_Forget_Info_Frame(tk.Frame):
         else:
             self.name_entry.delete(0, tk.END)
             
-        cur.execute('SELECT * FROM Users WHERE (User_fname=? AND User_Lname=? AND User_name=?) OR User_name=?',
+        Update_table_database('SELECT * FROM Users WHERE (User_fname=? AND User_Lname=? AND User_name=?) OR User_name=?',
                     (self.fname_entry.get(), self.lname_entry.get(), self.name_entry.get(), self.name_entry.get()))
         users = cur.fetchall()
         if users:
@@ -279,7 +284,7 @@ class User_Forget_Info_Frame(tk.Frame):
 
                 main_information_query = " AND ".join([f"{key}=?" for key in main_information.keys()])
                 main_information_values = tuple(main_information.values())
-                cur.execute(f'SELECT * FROM Users WHERE {main_information_query}', main_information_values)
+                Update_table_database(f'SELECT * FROM Users WHERE {main_information_query}', main_information_values)
                 user = cur.fetchone()
                 if user:
 
@@ -306,7 +311,7 @@ class User_Forget_Info_Frame(tk.Frame):
                         self.forget_password_label.config(text="Please enter a new password to reset your password.")
                         self.forget_password_label.grid(row=17, column=0, columnspan=3, padx=5, pady=5, sticky=tk.W)
                         return
-                    cur.execute('UPDATE Users SET User_password=? WHERE User_id=?', (new_password, self.Found_User_id_var))
+                    Update_table_database('UPDATE Users SET User_password=? WHERE User_id=?', (new_password, self.Found_User_id_var))
                     conn.commit()
                     self.forget_password_label.config(text="Password reset successfully! You can now log in with your new password.")
                     self.forget_password_label.grid(row=17, column=0, columnspan=3, padx=5, pady=5, sticky=tk.W)

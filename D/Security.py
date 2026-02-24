@@ -5,10 +5,6 @@ import json
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
-from C.List import *
-from C.API.Get import *
-from C.API.API import *
-from C.API.Set import *
 
 from Frames.User.Select_User_Company_State import Select_User_Company_State_Frame
 #from Login import Loging_Frame
@@ -18,6 +14,11 @@ from Frames.User.User_Forget_Info import User_Forget_Info_Frame
 
 #from Frames.Company.View_Company import Company_Info_Frame
 #from Frames.Company.Company_Forget_Info import Company_Forget_Info_Frame
+
+from C.List import *
+from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
 
 
 class SecurityForm(tk.Toplevel):
@@ -143,8 +144,7 @@ class SecurityForm(tk.Toplevel):
         self.log_in_button.grid(row=2, column=1, sticky="ew", padx=6, pady=8)
         #self.log_in_button.configure(state='disabled')
 
-        cursor.execute("SELECT * FROM setting")
-        b = cursor.fetchall()
+        b = fetch_as_dict_list("SELECT * FROM setting", ())
 
         # Error list frame with vertical scrollbar
         self.master.Error_list_frame_canvas = tk.Canvas(
@@ -248,21 +248,18 @@ class SecurityForm(tk.Toplevel):
         # Preselect current or previous if available
         preset_name = None
         if self.last_info.get('current'):
-            cur.execute("SELECT User_name FROM USERS WHERE User_id=?", (self.last_info['current'],))
-            res = cur.fetchone()
+            res = fetch_as_dict_list("SELECT User_name FROM USERS WHERE User_id=?", (self.last_info['current'],))
             if res:
-                preset_name = res[0]
+                preset_name = res[0]['User_name']
         elif self.last_info.get('previous'):
-            cur.execute("SELECT User_name FROM USERS WHERE User_id=?", (self.last_info['previous'],))
-            res = cur.fetchone()
+            res = fetch_as_dict_list("SELECT User_name FROM USERS WHERE User_id=?", (self.last_info['previous'],))
             if res:
-                preset_name = res[0]
+                preset_name = res[0]['User_name']
         if preset_name:
             self.selected_user_var.set(preset_name)
 
         # render user buttons
         self._render_user_buttons()
-
 
         # modal
         self.attributes('-topmost', True)
@@ -301,7 +298,7 @@ class SecurityForm(tk.Toplevel):
     # Use: self.update_logged_user("Alice", 5) or self.update_logged_user("Alice")
     def update_logged_user(self, user_name, user_id):
         #print("Updating logged user: " + user_name + (f", id: {user_id}" if user_id is not None else ""))
-        if not user_name or user_id is None:
+        if not user_name:
             return False  # cannot add without id
         
         # update in-memory structures
@@ -383,7 +380,9 @@ class SecurityForm(tk.Toplevel):
         entered_username = self.entered_username_entry.get()
         entered_password = self.entered_password_entry.get()
         link = self.master.link_entry.get()
+        print("Attempting login for user: " + entered_username)
         user = Get_User(link, ["User_name", "User_password"], [entered_username, entered_password])
+        print("Login result: " + str(user))
         if isinstance(user, list) and len(user) > 0 and user[0] != 'User_id':
             user = user[0]
         if user:
@@ -550,7 +549,7 @@ class SecurityForm(tk.Toplevel):
                 self.user_buttons_frame.grid_rowconfigure(colsr, weight=1, minsize=48)
         
         # After creating buttons, update sizes and scrollregion
-        self.user_buttons_frame.update_idletasks()
+        #self.user_buttons_frame.update_idletasks()
         # ensure inner frame requested width is preserved so horizontal scrollbar appears when needed
         self._update_buttons_scrollregion()
         self._adjust_button_widths()
@@ -608,11 +607,10 @@ class SecurityForm(tk.Toplevel):
         # set selection to last 'current' or 'previous' user if available and show credentials
         uid = self.last_info.get('current') or self.last_info.get('previous')
         if uid:
-            cur.execute("SELECT User_name FROM USERS WHERE User_id=?", (uid,))
-            r = cur.fetchone()
+            r = fetch_as_dict_list("SELECT User_name FROM USERS WHERE User_id=?", (uid,))
             if r:
                 # behave like user button pressed
-                self._on_user_button_pressed(r[0])
+                self._on_user_button_pressed(r[0]['User_name'])
 
     def _show_credentials_page(self):
         if self._credentials_shown:
@@ -674,11 +672,9 @@ class SecurityForm(tk.Toplevel):
             if not username:
                 print("No username entered for new user mode")
                 return
-            cur.execute("SELECT * FROM USERS WHERE User_name=? AND User_password=?", (username, password))
+            users = fetch_as_dict_list("SELECT * FROM USERS WHERE User_name=? AND User_password=?", (username, password))
         else:
-            cur.execute("SELECT * FROM USERS WHERE User_name=? AND User_password=?", (selected, self.entered_password_entry.get()))
-
-        users = cur.fetchall()
+            users = fetch_as_dict_list("SELECT * FROM USERS WHERE User_name=? AND User_password=?", (selected, self.entered_password_entry.get()))
         if users:
            user = users[0]
            # optional role checks as before
@@ -706,6 +702,7 @@ class SecurityForm(tk.Toplevel):
         # keep window open for retry
 
 def Security_get_user(self):
+    print("Security_get_user")
     secur = SecurityForm(self, "Hiper Market Login Security")
     if secur.Security_form.Loged_User == None:
         return False

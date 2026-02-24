@@ -19,7 +19,9 @@ from D.docediterform import DocEditForm
 from D.printer import PrinterForm
 from C.slipe import load_slip
 
+from C.API import *
 from C.API.Get import *
+from C.API.Set import *
 
 from C.List import *
 
@@ -157,8 +159,12 @@ class DocForm(tk.Frame):
         self.customer_map = {'': ''}
         if user_info:
             for u in user_info:
-                self.user_map[u['User_name']] = str(u['User_id'])
-                self.customer_map[u['User_name']] = str(u['User_id'])
+                if u['User_id'] is None:
+                    uid = u['Id']
+                else:
+                    uid = u['User_id']
+                self.user_map[u['User_name']] = str(uid)
+                self.customer_map[u['User_name']] = str(uid)
 
         self.user_id_var = tk.StringVar()    # will store the actual user_id (used by perform_search via .get())
         self.user_name_var = tk.StringVar()  # displayed in the combobox
@@ -298,12 +304,15 @@ class DocForm(tk.Frame):
         if user_id is None or user_id == '':
             user_name = "All Users"
         else:
-            user_info = fetch_as_dict_list('SELECT * FROM USERS WHERE User_id=?', (str(user_id)))    
+
+            user_info = fetch_as_dict_list('SELECT * FROM USERS WHERE User_id=?', (str(user_id)))  
             if user_info:
                 user = user_info[0]['User_name']
                 user_name = user + " Sales Info"
-            if len(user_info) > 0:
-                user_name = user_info[0]['User_name']
+            else:
+                user_info = fetch_as_dict_list('SELECT * FROM USERS WHERE Id=?', (str(user_id)))  
+                if user_info:
+                    user_name = user_info[0]['User_name']
 
         self.home_tab = ttk.Frame(self.Doc_tab)
         self.home_tab.grid(row=6, column=0, columnspan=7, rowspan=3, sticky="nsew")
@@ -1000,12 +1009,13 @@ class DocForm(tk.Frame):
 
         # Show summary of today's totals for confirmation
         tk.Label(frame, text="", bg="white", font=("Arial", 14, "bold")).pack(pady=10)
-        tk.Label(frame, text='Cash :        ' + self.Total_Cash_paid_doc.cget("text").split(": ")[1], bg="white", font=("Arial", 12)).pack(pady=5)
-        tk.Label(frame, text='Card :        ' + self.Total_Card_paid_doc.cget("text").split(": ")[1], bg="white", font=("Arial", 12)).pack(pady=5)
-        tk.Label(frame, text='Cash Outs:        ' + str(float(self.Total_Cash_Outs_doc.cget("text").split(": ")[1]) + float(self.Total_Card_Outs_doc.cget("text").split(": ")[1])), bg="white", fg="red", font=("Arial", 12, "bold")).pack(pady=5)
-        tk.Label(frame, text="-----------------------------", bg="white", font=("Arial", 14)).pack(pady=5)
-        tk.Label(frame, text='Total:        ' + str(float(self.Total_paid_doc.cget("text").split(": ")[1]) - float(self.Total_Cash_Outs_doc.cget("text").split(": ")[1]) - float(self.Total_Card_Outs_doc.cget("text").split(": ")[1])), bg="white", font=("Arial", 16)).pack(pady=5)
-        #tk.Label(frame, text="Total Profit: " + self.doc_totalprofit_.cget("text"), bg="white", font=("Arial", 10)).pack(pady=5)
+        tk.Label(frame, text='Cash        :        ' + self.Total_Cash_paid_doc.cget("text").split(": ")[1], bg="white", font=("Arial", 12)).pack(pady=5)
+        tk.Label(frame, text='Card        :        ' + self.Total_Card_paid_doc.cget("text").split(": ")[1], bg="white", font=("Arial", 12)).pack(pady=5)
+        tk.Label(frame, text="             ----------------", bg="white", font=("Arial", 14)).pack(pady=5)
+        tk.Label(frame, text='            :        ' + str(float(self.Total_paid_doc.cget("text").split(": ")[1])), bg="white", font=("Arial", 16)).pack(pady=5)
+        tk.Label(frame, text='Cash Outs   :        ' + str(float(self.Total_Cash_Outs_doc.cget("text").split(": ")[1]) + float(self.Total_Card_Outs_doc.cget("text").split(": ")[1])), bg="white", fg="red", font=("Arial", 12, "bold")).pack(pady=5)
+        tk.Label(frame, text='Total       :        ' + str(float(self.Total_paid_doc.cget("text").split(": ")[1]) - float(self.Total_Cash_Outs_doc.cget("text").split(": ")[1]) - float(self.Total_Card_Outs_doc.cget("text").split(": ")[1])), bg="white", font=("Arial", 16)).pack(pady=5)
+        tk.Label(frame, text="Total Profit: " + self.doc_totalprofit_.cget("text"), bg="white", font=("Arial", 10)).pack(pady=5)
     
     def load_payment(self, p_text, from_d, to_d):
         try:
@@ -1224,11 +1234,8 @@ class DocForm(tk.Frame):
             answer = tk.messagebox.askquestion("Question", "Do you what to delete "+str(barcode)+" ?")
             if answer == 'yes':
                 # Delete the product from the database
-                cur.execute('DELETE FROM doc_table WHERE doc_barcode=?', (barcode,))
-
-                # Commit the changes to the database
-                conn.commit()
-            
+                Update_table_database('DELETE FROM doc_table WHERE doc_barcode=?', (barcode,))
+                
     def perform_print(self):
         item = self.listbox.focus()  # Get the item that was clicked
         if item:
@@ -1547,6 +1554,7 @@ class DocForm(tk.Frame):
             'years': collecte_years
         }
         print("collected_values : " + str(collected_values))
+        
         user_id = self.user_id_entry.get()
         self.creat_info(user_id, vv, collected_values, len(self.listbox.get_children()), count_items, count, itemsProfit)
 
@@ -1566,8 +1574,8 @@ class DocForm(tk.Frame):
 
         self.info_notebook.add(self.T_tab, text='IN')
 
-        #cur.execute("SELECT * FROM COUNT_SELL WHERE strftime('%Y-%m-%d', DATE) BETWEEN ? AND ?", (f'{self.date_from_Entry.get()}', f'{self.date_to_Entry.get()}',))
-        results = []#cur.fetchall()
+        results = []#fetch_as_dict_list("SELECT * FROM COUNT_SELL WHERE strftime('%Y-%m-%d', DATE) BETWEEN ? AND ?", (f'{self.date_from_Entry.get()}', f'{self.date_to_Entry.get()}',))
+        
         l = []
         
         for result in results:

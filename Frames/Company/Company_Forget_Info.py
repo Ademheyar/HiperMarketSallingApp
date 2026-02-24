@@ -14,6 +14,10 @@ sys.path.append(MAIN_dir)
 from D.printer import PrinterForm
 from C.slipe import load_slip
 
+from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
+
 data_dir = os.path.join(MAIN_dir, 'data')
 db_path = os.path.join(data_dir, 'my_database.db')
 
@@ -123,7 +127,7 @@ class Company_Forget_Info_Frame(tk.Frame):
            self.password_num1_entry.config(show="*")
     
     def on_name_entry(self, event):
-        cur.execute('SELECT * FROM Shops WHERE Shop_name=? AND Shop_brand_name=?',
+        Update_table_database('SELECT * FROM Shops WHERE Shop_name=? AND Shop_brand_name=?',
                     (self.fname_entry.get(), self.name_entry.get()))
         Shops = cur.fetchall()
         if Shops:
@@ -209,7 +213,7 @@ class Company_Forget_Info_Frame(tk.Frame):
                       Shop_isenabled TEXT,
                       Shop_Access_levels TEXT'''
                   
-                      cur.execute('INSERT INTO Shops(Shop_name, Shop_brand_name, Shop_type, Shop_email, Shop_phone_num, Shop_country, Shop_location, Shop_password, Shop_about, Shop_profile_img, Shop_oweners_id) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (User_fname, User_name, User_type, User_email, User_phone_num, User_country, User_address, User_password0, User_about, User_pimg, owner_id))
+                      Update_table_database('INSERT INTO Shops(Shop_name, Shop_brand_name, Shop_type, Shop_email, Shop_phone_num, Shop_country, Shop_location, Shop_password, Shop_about, Shop_profile_img, Shop_oweners_id) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (User_fname, User_name, User_type, User_email, User_phone_num, User_country, User_address, User_password0, User_about, User_pimg, owner_id))
                       print("new shop created ")
                   else:
                       print("filde no owner")
@@ -217,10 +221,10 @@ class Company_Forget_Info_Frame(tk.Frame):
                   item_id = int(self.Found_User_id_var)
                   print("item_id : " + str(item_id))
                   # UPDATE the new user into the database
-                  cur.execute('UPDATE Shops SET User_work_shop=?, User_Lname=?, User_name=?, User_gender=?, User_country=?, User_phone_num=?, User_email=?, User_address=?, User_home_no=?, User_id_pp_num=?, User_type=?, User_password=?, User_about=?, User_shop=?, User_work_shop=?, User_access=?, User_pimg=? WHERE Shop_id=?', (User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_id_pp_num, User_type, User_password0, User_about, User_shop, User_work_shop, User_access, User_pimg, item_id))
+                  Update_table_database('UPDATE Shops SET User_work_shop=?, User_Lname=?, User_name=?, User_gender=?, User_country=?, User_phone_num=?, User_email=?, User_address=?, User_home_no=?, User_id_pp_num=?, User_type=?, User_password=?, User_about=?, User_shop=?, User_work_shop=?, User_access=?, User_pimg=? WHERE Shop_id=?', (User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_id_pp_num, User_type, User_password0, User_about, User_shop, User_work_shop, User_access, User_pimg, item_id))
                   
               if self.User_data:
-                  cur.execute('UPDATE USERS SET User_work_shop=? WHERE User_id=?', (User_fname, self.User_data[0]))
+                  Update_table_database('UPDATE USERS SET User_work_shop=? WHERE User_id=?', (User_fname, self.User_data[0]))
                   print("user work place and owner is added")
               # Commit the changes to the database
               conn.commit()

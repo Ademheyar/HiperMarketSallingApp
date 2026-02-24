@@ -11,8 +11,11 @@ sys.path.append(MAIN_dir)
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cursor = conn.cursor()
+
+from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
+
 
 
 def load_slip(doc, d_id):
@@ -41,7 +44,7 @@ def load_slip(doc, d_id):
             
     # get custemur info
     if doc[4] != "":
-        it = cursor.execute("SELECT * FROM users WHERE User_id=?", (doc[4],)).fetchone()
+        it = Update_table_database("SELECT * FROM users WHERE User_id=?", (doc[4],)).fetchone()
         if it:
             #print("it c: " + str(it))   
             slip += "Customer : "+ str(it[3]) +"\n"\

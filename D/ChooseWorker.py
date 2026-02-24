@@ -19,6 +19,10 @@ sys.path.append(MAIN_dir)
 
 from D.GetVALUE import GetvalueForm
 
+from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
+
 class CreateWorkerDialog(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
@@ -105,7 +109,7 @@ class CreateWorkerDialog(tk.Toplevel):
         password = self.password_var.get()
         access = self.access_var.get()
 
-        cursor.execute("INSERT INTO Users (User_name, User_address, User_id_pp_num, User_phone_num, User_email, User_type, User_password, User_access) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        Update_table_database("INSERT INTO Users (User_name, User_address, User_id_pp_num, User_phone_num, User_email, User_type, User_password, User_access) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                        (name, address, id_num, phone_num, email, user_type, password, access))
         conn.commit()
 
@@ -192,8 +196,8 @@ class WorkerManagementApp(tk.Tk):
         self.show_user_details(selected_username)
         
     def show_user_details(self, id):
-        cursor.execute("SELECT * FROM Users WHERE User_id = ?", (id,))
-        row = cursor.fetchone()
+        row = fetch_as_dict_list("SELECT * FROM Users WHERE User_id = ?", (id,))
+        
 
         self.clear_details_panel()
 
@@ -241,8 +245,8 @@ class WorkerManagementApp(tk.Tk):
 
     def fill_user_listbox(self):
         self.user_listbox.delete(0, tk.END)
-        cursor.execute("SELECT User_name FROM Users")
-        rows = cursor.fetchall()
+        rows = fetch_as_dict_list("SELECT User_name FROM Users")
+        
         for row in rows:
             self.user_listbox.insert(tk.END, row[0])
 
@@ -267,7 +271,7 @@ class WorkerManagementApp(tk.Tk):
             if self._qty + i > self.T_qty:
                 i = self.T_qty-self._qty
             self._qty += i
-            cursor.execute("INSERT INTO COUNT_SELL (SELLER_ID, SELLER_NAME, DOC_BARCODE, ITEM_COUNTED, DATE) VALUES (?, ?, ?, ?, ?)",
+            Update_table_database("INSERT INTO COUNT_SELL (SELLER_ID, SELLER_NAME, DOC_BARCODE, ITEM_COUNTED, DATE) VALUES (?, ?, ?, ?, ?)",
                            (self.user_details["User_id"], self.user_details["User_name"], self.doc_bar, i, DATE))
             conn.commit()
             if self.T_qty != self._qty:
@@ -294,9 +298,9 @@ class WorkerManagementApp(tk.Tk):
         
     def search(self):
         username = self.username_var.get()
-        cursor.execute("SELECT * FROM Users WHERE (User_name LIKE ? OR User_address LIKE ? OR User_id_pp_num LIKE ? OR User_phone_num LIKE ? OR User_email LIKE ? OR User_access LIKE ?) AND User_type=?", 
+        rows = fetch_as_dict_list("SELECT * FROM Users WHERE (User_name LIKE ? OR User_address LIKE ? OR User_id_pp_num LIKE ? OR User_phone_num LIKE ? OR User_email LIKE ? OR User_access LIKE ?) AND User_type=?", 
                     ('%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%',"WORKER"))
-        rows = cursor.fetchall()
+        
         self.user_listbox.delete(0, tk.END)
         for row in rows:
             self.user_listbox.insert(tk.END, [row[0], row[3]])

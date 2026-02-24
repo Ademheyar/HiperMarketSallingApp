@@ -19,6 +19,8 @@ from D.user_info import UserInfoForm
 from D.printer import PrinterForm
 
 from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
 
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))

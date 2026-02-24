@@ -21,6 +21,11 @@ data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data')
 db_path = os.path.join(data_dir, 'my_database.db')
 
 
+from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
+
+
 # Function to search for documents in the doc_table SQLite database table
 def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_barcode=None, 
                     item=None, user_id=None, customer_id=None, sold_item_info=None, discount=None, 
@@ -65,7 +70,7 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
     
     #print(query+"\n")
     # Execute the SQL query and return the results as a list of tuples
-    cur.execute(query, (*given,))
+    Update_table_database(query, (*given,))
     results = cur.fetchall()
     return results
     

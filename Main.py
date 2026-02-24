@@ -301,11 +301,19 @@ from M.Display import DisplayFrame
 
 from tkinter import ttk
 
+from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
+
 class MainApplication(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
 
-        self.state('zoomed')  # Full screen on Windows
+        #self.state('zoomed')  # Full screen on Windows
+        # make it full screen on all platforms
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        self.geometry(f"{screen_width}x{screen_height}+0+0")
         self.overrideredirect(True)  # Remove title bar and borders
         self.title("Hiper Market")
         

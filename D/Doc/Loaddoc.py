@@ -8,6 +8,10 @@ import sys
 import os
 import sys
 
+from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
+
 '''current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(current_dir, '..')
 sys.path.append(MAIN_dir)
@@ -195,8 +199,8 @@ def load_payment(payment_text):
         label_customer.grid(row=0, column=0)
         self.selected_user = tk.StringVar()
         self.selected_user = items[3]
-        cursor.execute("SELECT * FROM users")
-        rows = cursor.fetchall()
+        rows = Update_table_database("SELECT * FROM users")
+        
         # create the combo box
         self.entry_customer = ttk.Combobox(top_form, width=20, font=("Arial", 12), textvariable=self.selected_user)
         self.entry_customer.grid(row=0, column=1)
@@ -372,7 +376,7 @@ def load_payment(payment_text):
         payment_tools_label_type = tk.Label(payment_tools, text="Type")
         payment_tools_label_type.grid(row=0, column=0)
         self.selected_pay_type = tk.StringVar()
-        cursor.execute("SELECT * FROM tools")
+        Update_table_database("SELECT * FROM tools")
         rows = cursor.fetchall()
         # create the combo box
         self.payment_tools_entry_type = ttk.Combobox(payment_tools, width=20, font=("Arial", 12), textvariable=self.selected_pay_type)
@@ -458,7 +462,7 @@ def load_payment(payment_text):
             iv = i['values']
             id = i['text']
             print(str(id))
-            cursor.execute("SELECT * FROM product WHERE id=?", (id,))
+            Update_table_database("SELECT * FROM product WHERE id=?", (id,))
             it = cursor.fetchone()
             if it:
                 item += "(:"
@@ -517,17 +521,17 @@ def load_payment(payment_text):
                     it_info = reduc_qty(str(it[12]), 0, str(iv[3]), str(iv[4]),str(iv[5]), str(havetoaddqty))
                     print("REDUSE item12 found : " + str(it_info))
                 
-                    cursor.execute('UPDATE product SET more_info=? WHERE id=?', (it_info, id))
+                    Update_table_database('UPDATE product SET more_info=? WHERE id=?', (it_info, id))
         for olditem in self.olditems:
             # [id, code, name, shop, color, size, qty, price]
-            cursor.execute("SELECT * FROM product WHERE id=?", (olditem[0],))
+            Update_table_database("SELECT * FROM product WHERE id=?", (olditem[0],))
             it = cursor.fetchone()
             if len(it) > 0:
                 print("REDUSE item21: " + str([str(it[12]), 1, str(olditem[4]), str(olditem[5]),str(olditem[6]), str(olditem[7])]))
                 it_info = reduc_qty(str(it[12]), 1, str(olditem[4]), str(olditem[5]),str(olditem[6]), str(olditem[7]))
                 print("REDUSE item22 : " + str(it_info))
             
-                cursor.execute('UPDATE product SET more_info=? WHERE id=?', (it_info, olditem[0]))
+                Update_table_database('UPDATE product SET more_info=? WHERE id=?', (it_info, olditem[0]))
                 
         print("updated item = " + str(item))
         payment_name = []
@@ -559,7 +563,7 @@ def load_payment(payment_text):
             p = self.list_payment.item(a)
             iv = p['values']
             id = p['text']
-            cursor.execute("SELECT * FROM tools WHERE name=?", (iv[0],))
+            Update_table_database("SELECT * FROM tools WHERE name=?", (iv[0],))
             rows = cursor.fetchall()
             print("rows:" + str(rows))
             if rows[0][6] == 1: # chack if enabled
@@ -587,7 +591,7 @@ def load_payment(payment_text):
         #TODO: CHACK IF IT IS PAID OR HAVE CRDITE
         #paid = self.checkbox_paid()
         
-        cursor.execute('UPDATE doc_table SET extension_barcode=?, customer_id=?, item=?, qty=?, price=?, discount=?, tax=?, payments=?, doc_expire_date=?, doc_updated_date=? WHERE id=?', (external_doc, custmer, str(item), items, price, disc, tax, payments_, du_date, date, self.id))
+        Update_table_database('UPDATE doc_table SET extension_barcode=?, customer_id=?, item=?, qty=?, price=?, discount=?, tax=?, payments=?, doc_expire_date=?, doc_updated_date=? WHERE id=?', (external_doc, custmer, str(item), items, price, disc, tax, payments_, du_date, date, self.id))
         # Commit the changes to the database
         conn.commit()
         

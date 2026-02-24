@@ -28,7 +28,10 @@ MAIN_dir = os.path.join(current_dir, '..')
 sys.path.append(MAIN_dir)
 
 from D.Security import *
+
+from C.API.Get import *
 from C.API.API import *
+from C.API.Set import *
 
 
 
@@ -36,12 +39,14 @@ from C.API.API import *
 # query : str = the sql query
 # values : tuple = the values to be used in the query
 def fetch_as_dict_list(query, values):
+    # print("fetch_as_dict_list query : ", query)
+    # print("fetch_as_dict_list values : ", values)
     try:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         cursor.execute(query, values)
         items = cursor.fetchall()
-         #print("items len", len(items))
+        # print("items len", len(items))
         columns = [col[0] for col in cursor.description]
         #print("columns")
         #print(str(columns))
@@ -124,10 +129,9 @@ def Get_User(Link, ARG, VALUE):
 
     print("query ", query)
     print("value ", value)
-    users = fetch_as_dict_list("SELECT * FROM USERS WHERE" + query, value)
+    users = fetch_as_dict_list("SELECT * FROM Users WHERE" + query, value)
     if users:
         return users
-   
 
 # Shop Get
 
@@ -208,13 +212,8 @@ def Get_Setting(user, ARG, VALUE):
                 value = (VALUE[a], )
             if a+1 < len(ARG):
                 query += " AND"
-    cursor.execute("SELECT * FROM setting WHERE " + query, value)
-    setting = cursor.fetchall()
-    if setting:
-        columns = [col[0] for col in cursor.description]
-        return dict(zip(columns, setting[0]))
-    else:
-        return None
+    setting = fetch_as_dict_list("SELECT * FROM setting WHERE " + query, value)
+    return setting
     
 # END OF FILE
 

@@ -16,6 +16,8 @@ from D.Doc.Loaddoc import *
 from C.List import *
 
 from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
 from D.Security import *
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
@@ -772,8 +774,8 @@ class search_entry(ttk.Entry):
         if self.search_type == "":
             self.search_type = "id"
         if (selected_type == "ITEM"):
-            cursor.execute("SELECT * FROM product WHERE "+ self.search_type+ "=?", (selected_id,))
-            result = self.cursor.fetchone()
+            result = fetch_as_dict_list("SELECT * FROM product WHERE "+ self.search_type+ "=?", (selected_id,))
+            
             self.search_type = ""
             if result:
                 self.var.set(str(result[0]) + "   " + str(result[2]) + "   " + str(result[1]))
@@ -801,8 +803,8 @@ class search_entry(ttk.Entry):
                 self.homemaster.qty = 0
                 self.homemaster.update_info()
         if (selected_type == "DOCUMENT"):
-            #self.cursor.execute("SELECT * FROM doc_table WHERE "+ self.search_type+ "=?", (selected_id,))
-            result = [] #self.cursor.fetchone()
+            result = [] #self.fetch_as_dict_list("SELECT * FROM doc_table WHERE "+ self.search_type+ "=?", (selected_id,))
+            
             self.search_type = ""
             if result:
                 self.homemaster.get_ex_doc_items(result[1])

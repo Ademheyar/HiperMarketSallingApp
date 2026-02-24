@@ -2,6 +2,10 @@ import tkinter as tk
 from tkinter import ttk
 import sqlite3, os
 
+from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
+
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
 class ShowchartForm(tk.Tk):
@@ -29,9 +33,10 @@ class ShowchartForm(tk.Tk):
         self.chart_list.grid(row=0, column=0, sticky="nsew")
 
         # retrieve chart data from the database
-        chart_data = cursor.execute("SELECT * FROM pre_doc_table").fetchall()
+        chart_data = fetch_as_dict_list("SELECT * FROM pre_doc_table", ())
         for chart in chart_data:
-            self.chart_list.insert("end", [chart[0],chart[14], chart[13], chart[9], chart[4], chart[1], chart[12]])  # assuming chart name is stored in second column
+            print('chart: ', chart)
+            self.chart_list.insert("end", [chart['id'], chart['PRICE'], chart['exitems_doc_barcode'], chart['doc_created_date']])  # assuming chart name is stored in second column
 
         self.select_button = tk.Button(self.chart_list_form, text="Select", font=("Arial", 12), command=self.select_chart)
         self.select_button.grid(row=1, column=0, sticky="nsew")
@@ -70,8 +75,7 @@ class ShowchartForm(tk.Tk):
             # delete the selected chart from the Listbox
             self.chart_list.delete(selection[0])
             # delete the selected chart from the database
-            cursor.execute("DELETE FROM pre_doc_table WHERE id = ?", (chart_name,))
-            conn.commit()  # commit the changes to the database
+            Update_table_database("DELETE FROM pre_doc_table WHERE id = ?", (chart_name,))
         else:
             print("No chart selected.")
 
@@ -79,5 +83,4 @@ class ShowchartForm(tk.Tk):
         # delete all charts from the Listbox
         self.chart_list.delete(0, "end")
         # delete all charts from the database
-        cursor.execute("DELETE FROM pre_doc_table")
-        conn.commit()  # commit the changes to the database
+        Update_table_database("DELETE FROM pre_doc_table")

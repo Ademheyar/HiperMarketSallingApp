@@ -16,8 +16,11 @@ db_path = os.path.join(data_dir, 'my_database.db')
 #from D.docediterform import DocEditForm
 from D.printer import PrinterForm
 from C.slipe import load_slip
-from C.API.Set import *
 
+
+from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
 
 class User_Info_Frame(tk.Frame):
     def __init__(self, parent, Canceal_callback, User_data, link):
@@ -182,7 +185,7 @@ class User_Info_Frame(tk.Frame):
         else:
             self.name_entry.delete(0, tk.END)
             
-        cur.execute('SELECT * FROM Users WHERE (User_fname=? AND User_Lname=? AND User_name=?) OR User_name=?',
+        Update_table_database('SELECT * FROM Users WHERE (User_fname=? AND User_Lname=? AND User_name=?) OR User_name=?',
                     (self.fname_entry.get(), self.lname_entry.get(), self.name_entry.get(), self.name_entry.get()))
         users = cur.fetchall()
         if users:
@@ -267,7 +270,7 @@ class User_Info_Frame(tk.Frame):
                   item_id = int(self.Found_User_id_var)
                   print("item_id : " + str(item_id))
                   # UPDATE the new user into the database
-                  cur.execute('UPDATE Users SET User_fname=?, User_Lname=?, User_name=?, User_gender=?, User_country=?, User_phone_num=?, User_email=?, User_address=?, User_home_no=?, User_id_pp_num=?, User_type=?, User_password=?, User_about=?, User_shop=?, User_work_shop=?, User_access=?, User_pimg=? WHERE User_id=?', (User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_id_pp_num, User_type, User_password0, User_about, User_shop, User_work_shop, User_access, User_pimg, item_id))
+                  Update_table_database('UPDATE Users SET User_fname=?, User_Lname=?, User_name=?, User_gender=?, User_country=?, User_phone_num=?, User_email=?, User_address=?, User_home_no=?, User_id_pp_num=?, User_type=?, User_password=?, User_about=?, User_shop=?, User_work_shop=?, User_access=?, User_pimg=? WHERE User_id=?', (User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_id_pp_num, User_type, User_password0, User_about, User_shop, User_work_shop, User_access, User_pimg, item_id))
               
                   self.Secc.config(text="Updated Secccesfully", fg="Green")
               # Commit the changes to the database

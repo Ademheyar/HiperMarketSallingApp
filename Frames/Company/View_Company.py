@@ -18,9 +18,14 @@ from C.slipe import load_slip
 data_dir = os.path.join(MAIN_dir, 'data')
 db_path = os.path.join(data_dir, 'my_database.db')
 
+from C.API.Set import *
+from C.API.Get import *
+from C.API.API import *
+
 class Company_Info_Frame(tk.Frame):
     def __init__(self, parent, Canceal_callback, User_data, Shop_data):
         tk.Frame.__init__(self, parent)
+        # 
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         self.Canceal_callback = Canceal_callback
@@ -91,7 +96,7 @@ class Company_Info_Frame(tk.Frame):
         self.password_num1_entry.grid(row=2, column=3, padx=5, pady=5, sticky=tk.W)
         self.show_password_checkbutton.grid(row=3, column=0, padx=5, pady=5, sticky=tk.W)
         
-        self.type_entry.grid(row=4, column=0, padx=5, pady=5, sticky=tk.W)
+        self.type_label.grid(row=4, column=0, padx=5, pady=5, sticky=tk.W)
         self.type_entry.grid(row=4, column=1, padx=5, pady=5, sticky=tk.W)
         self.cuntry_label.grid(row=5, column=0, padx=5, pady=5, sticky=tk.W)
         self.cuntry_entry.grid(row=5, column=1, padx=5, pady=5, sticky=tk.W)
@@ -127,14 +132,12 @@ class Company_Info_Frame(tk.Frame):
            self.password_num1_entry.config(show="*")
     
     def on_name_entry(self, event):
-        cur.execute('SELECT * FROM Shops WHERE Shop_name=? AND Shop_brand_name=?',
-                    (self.fname_entry.get(), self.name_entry.get()))
-        Shops = cur.fetchall()
-        if Shops:
-            for shop in Shops:
-               if shop[1] == self.fname_entry.get() and shop[2] == self.name_entry.get():
+        shops = fetch_as_dict_list('SELECT * FROM Shops WHERE Shop_name=? AND Shop_brand_name=?', (self.fname_entry.get(), self.name_entry.get()))
+        if shops:
+            for shop in shops:
+               if shop['Shop_name'] == self.fname_entry.get() and shop['Shop_brand_name'] == self.name_entry.get():
                   self.forget_password_label.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
-                  self.Found_User_id_var = shop[0];
+                  self.Found_User_id_var = shop['Shop_Id'];
                   self.add_button.config(text="Update")
                   return
         else:
@@ -175,76 +178,108 @@ class Company_Info_Frame(tk.Frame):
         if User_fname == "" or User_name == "" or User_password0 == "" or User_password1 == "":
            pass
         else:
-           if User_password0 == User_password1:
-              new_id = None
-              if self.add_button.cget("text") == "Create":
-                  if self.User_data:
-                      print("new shop owner_id self.User_data[0] =  ", self.User_data)
-                      owner_id = int(self.User_data['User_id'])    
-                      # Insert the new user into the database
-                      User_likes = ""
-                      User_following_shop = ""
-                      User_favoraite_items = ""
-                      User_rate = ""
-                      '''
-                      Shop_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      Shop_online_id INTEGER,
-                      Shop_name TEXT,
-                      Shop_brand_name TEXT,
-                      Shop_oweners_id TEXT,
-                      Shop_type TEXT,
-                      Shop_location TEXT,
-                      Shop_email TEXT,
-                      Shop_contact TEXT,
-                      Shop_password TEXT,                     Shop_Page TEXT,
-                      Shop_rate TEXT,
-                      Shop_items TEXT,
-                      Shop_followers TEXT,
-                      Shop_workers TEXT,
-                      Shop_Payment_Tools TEXT,
-                      Shop_about TEXT,
-                      Shop_Security_Levels TEXT,
-                      Company_Started_Date TEXT,
-                      Shop_likes TEXT,
-                      Shop_rules TEXT,
-                      Shop_link TEXT,
-                      Shop_Settings TEXT,
-                      Shop_profile_img TEXT,
-                      Shop_banner_imgs TEXT,
-                      Shop_payment_info TEXT,
-                      Shop_isenabled TEXT,
-                      Shop_Slip_Settings TEXT,
-                      Shop_Expenses TEXT,
-                      Shop_Actions TEXT,
+            if User_password0 == User_password1:
+                new_id = None
+                if self.add_button.cget("text") == "Create":
+                    if self.User_data:
+                        print("new shop owner_id self.User_data[0] =  ", self.User_data)
+                        owner_id = 0
+                        owner_Userid = 0
+                        if 'User_id' in self.User_data and self.User_data['User_id']:
+                            owner_Userid = int(self.User_data['User_id'])
+                        else:
+                            owner_id = int(self.User_data['Id'])   
+                        # Insert the new user into the database
+                        User_likes = ""
+                        User_following_shop = ""
+                        User_favoraite_items = ""
+                        User_rate = ""
 
-                      
-                      Shop_Items_type TEXT,
-                      Shop_country TEXT,
-                      Shop_payment_r TEXT,
-                      Shop_Access_levels TEXT'''
-                      user_info = User_phone_num + User_country + User_address
-                      cur.execute('INSERT INTO Shops(Shop_name, Shop_brand_name, Shop_type, Shop_email, Shop_location, Shop_password, Shop_about, Shop_profile_img, Shop_oweners_id) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)', (User_fname, User_name, User_type, User_email, user_info, User_password0, User_about, User_pimg, owner_id))
-                      new_id = cur.lastrowid
-                      print("new shop created ", new_id)
-                      self.Secc.config(text="Created Secccesfully", fg="Green")
-                      self.clear_user_details_widget()
-                  else:
-                      self.Secc.config(text="filde no owner", fg="red")
-              else:
-                  item_id = int(self.Found_User_id_var)
-                  print("item_id : " + str(item_id))
-                  # UPDATE the new user into the database
-                  cur.execute('UPDATE Shops SET User_work_shop=?, User_Lname=?, User_name=?, User_gender=?, User_country=?, User_phone_num=?, User_email=?, User_address=?, User_home_no=?, User_id_pp_num=?, User_type=?, User_password=?, User_about=?, User_shop=?, User_work_shop=?, User_access=?, User_pimg=? WHERE Shop_id=?', (User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_id_pp_num, User_type, User_password0, User_about, User_shop, User_work_shop, User_access, User_pimg, item_id))
-                  self.Secc.config(text="UPDATE Secccesfully", fg="Green")
-                  self.clear_user_details_widget()
+                        user_info = User_phone_num + User_country + User_address
+                        newShops = Set_Shop(None, ['Shop_name', 'Shop_brand_name', 'Shop_type', 'Shop_email', 'Shop_location', 'Shop_password', 'Shop_about', 'Shop_profile_img', 'Shop_oweners_id'], [User_fname, User_name, User_type, User_email, user_info, User_password0, User_about, User_pimg, owner_id])
+                        print("newshop : ", newShops)
+                        new_id = newShops['Shop_Id'] if newShops else None
+                        print("company_name : ", newShops['Shop_name'])
+                        print("company_brandname : ", newShops['Shop_brand_name'])
+                        print("Shop_workers : ", newShops['Shop_workers'])
+
+                        Shop_workers = []
+                        if newShops and 'Shop_workers' in newShops and newShops['Shop_workers'] and not newShops['Shop_workers'] == 'None':
+                            Shop_workers = json.loads(newShops['Shop_workers'])
+                        found_worker_inshop = 0
+                        for sw, Shop_worker in enumerate(Shop_workers):
+                            if Shop_worker[0] == self.User_data['User_id']:
+                                found_worker_inshop = 1
+                                Shop_workers[sw] = [self.User_data['User_id'], self.User_data['User_fname'] + " "+ self.User_data['User_Lname'], self.User_data['User_name'], "WORKER", newShops['Shop_name'], newShops['Shop_brand_name'], [10]]
+                        # e.g [2, 'Abdul Kedir', 'AK Abdul', 'OWNER', 'BELLEMA FASHION', 'ADOT', '10']        
+                        # e.g [User Id, 'User Full Name', 'User Name', 'OWNER', 'Shop Name', 'Shop Brand', User permission in shop As (SHOP ASKED -2, USER ASKED -1, DISABLED 0, CUSTUMER 1, WORKER > 1 < 10, OWNER 10)]
+                        if found_worker_inshop == 0:
+                            print("self.User_data : ", self.User_data)
+                            Shop_workers.append([self.User_data['User_id'], self.User_data['User_fname'] + " "+ self.User_data['User_Lname'], self.User_data['User_name'], "WORKER", newShops['Shop_name'], newShops['Shop_brand_name'], [10]])
+                            print("Adding worker to shop workers list ", Shop_workers)
+                            # Update the shop workers in the database
+                            jsonShop_workers = json.dumps(Shop_workers)
+                            if newShops['Shop_Id']:
+                                newShops = Update_Shop(None, self.User_data, ['Shop_workers'], [jsonShop_workers], ['Shop_Id'], [newShops['Shop_Id']])
+                            else:
+                                newShops = Update_Shop(None, self.User_data, ['Shop_workers'], [jsonShop_workers], ['Id'], [newShops['Id']])
+                            
+                            if newShops:
+                                print("Shop workers Updated Secessfuly", newShops)
+                                if isinstance(newShops, list):
+                                    newShops = newShops[0]
+
+                        # Now update the User_work_shop field in Users table
+                        User_work_shops = []
+                        if self.User_data and not self.User_data['User_work_shop'] == None and not self.User_data['User_work_shop'] == 'None':                            
+                            print("self.User_data['User_work_shop'] ", self.User_data['User_work_shop'])
+                            try:
+                                User_work_shops = json.loads(self.User_data['User_work_shop'])
+                            except:
+                                try:
+                                    User_work_shops = json.loads(self.User_data['User_work_shop'])
+                                except:
+                                    print("user_work_shop json, load_list can not read it")
+                                    pass  
+
+                        found_shop_inworkes = 0
+                        for uws, User_work_shop in enumerate(User_work_shops):
+                            if User_work_shop[0] == newShops['Shop_Id']:
+                                found_shop_inworkes = 1
+                                User_work_shops[uws] = [newShops['Shop_Id'], newShops['Shop_name'], newShops['Shop_brand_name'], [10]]
+                        # e.g [id, 'Shop Name', 'Shop Brand', User permission in shop As (SHOP ASKED -2, USER ASKED -1, DISABLED 0, CUSTUMER 1, WORKER > 1 < 10, OWNER 10)]
+
+                        if found_shop_inworkes == 0:
+                            print("Adding shop to user work shops list ", User_work_shops)
+                            User_work_shops.append([newShops['Shop_Id'], newShops['Shop_name'], newShops['Shop_brand_name'], [10]])
+                            # Update the Users table in the database
+                            print("Updating user work shops list ", User_work_shops)
+                            if self.User_data['User_id']:
+                                User = Update_User(None, self.User_data, ['User_work_shop'], [json.dumps(User_work_shops)], ['User_id'], [self.User_data['User_id']])
+                            else:
+                                User = Update_User(None, self.User_data, ['User_work_shop'], [json.dumps(User_work_shops)], ['Id'], [self.User_data['Id']])
+                            print("User : ", User)
+                            self.User_data['User_work_shop'] = json.dumps(User_work_shops)
+                            
+                        print("new shop created ", new_id)
+                        self.Secc.config(text="Created Secccesfully", fg="Green")
+                        self.clear_user_details_widget()
+                        self.Canceal_callback()
+                    else:
+                        self.Secc.config(text="filde no owner", fg="red")
+                else:
+                    item_id = int(self.Found_User_id_var)
+                    print("item_id : " + str(item_id))
+                    # UPDATE the new user into the database
+                    Update_table_database('UPDATE Shops SET User_work_shop=?, User_Lname=?, User_name=?, User_gender=?, User_country=?, User_phone_num=?, User_email=?, User_address=?, User_home_no=?, User_id_pp_num=?, User_type=?, User_password=?, User_about=?, User_shop=?, User_work_shop=?, User_access=?, User_pimg=? WHERE Shop_id=?', (User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_id_pp_num, User_type, User_password0, User_about, User_shop, User_work_shop, User_access, User_pimg, item_id))
+                    self.Secc.config(text="UPDATE Secccesfully", fg="Green")
+                    self.clear_user_details_widget()
                   
-              if self.User_data and new_id:
-                  #json.loads(ITEM)
-                  #ITEM = json.dumps(self.Selected_items)
-                  uws = json.dumps([[new_id, str(User_fname), str(User_name), [10]]])
-                  cur.execute('UPDATE USERS SET User_work_shop=? WHERE User_id=?', (uws, self.User_data['User_id']))
-                  print("user work place and owner is added", uws)
-              # Commit the changes to the database
-              conn.commit()
-              self.Secc.grid(row=18, column=0, padx=5, pady=5, sticky=tk.W)
+                if self.User_data and new_id:
+                    #json.loads(ITEM)
+                    #ITEM = json.dumps(self.Selected_items)
+                    uws = json.dumps([[new_id, str(User_fname), str(User_name), [10]]])
+                    Update_table_database('UPDATE USERS SET User_work_shop=? WHERE User_id=?', (uws, self.User_data['User_id']))
+                    print("user work place and owner is added", uws)
+                self.Secc.grid(row=18, column=0, padx=5, pady=5, sticky=tk.W)
 

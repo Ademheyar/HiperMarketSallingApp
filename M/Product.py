@@ -16,7 +16,11 @@ MAIN_dir = os.path.join(current_dir, '..')
 sys.path.append(MAIN_dir)
 from D.Getdefsize import ButtonEntryApp
 from C.List import *
+
+
 from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
 
 # Connect to the database or create it if it does not exist
 
@@ -30,6 +34,10 @@ from C.Product.selecttype import *
 from C.Product.ProductEdtion import ProductFullEditionForm
 from C.Product.ProductEdtion import ProductQueckEditionForm
 from C.Product.DisplayProductInfo import ProductFullInfoForm
+
+from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
 
 def is_float(value):
     try:
@@ -83,7 +91,7 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
     
     # print(query+"\n")
     # Execute the SQL query and return the results as a list of tuples
-    cur.execute(query, (*given,))
+    Update_table_database(query, (*given,))
     results = cur.fetchall()
     return results
 # Example node hierarchy
@@ -472,18 +480,17 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
     def SAVE_CHANGE(self, index, data, selected_item_info):
         #print("going to make change to = ", self.master.master.master.master.Shops_info['Shop_items'][index])
         newinfo_list = self.Get_next_seletion("Save", data, selected_item_info)
-        if newinfo_list and not newinfo_list == 0:            
-            cur.execute('UPDATE product SET name=?, price=?, more_info=? WHERE id=?', (data[9].get(), data[7].get(), json.dumps(newinfo_list), self.master.master.master.master.Shops_info['Shop_items'][index][0]['id']))
+        if newinfo_list and not newinfo_list == 0:
+            name = data[9].get()
+            it2 = Update_Producte(None, None, ['price', 'name', 'more_info'], [data[7].get(), name, json.dumps(newinfo_list)], ['id'], [self.master.master.master.master.Shops_info['Shop_items'][index][0]['id']])
             data[8].config(text="Price "+data[7].get())
-            it2 = fetch_as_dict_list( 'SELECT * FROM product WHERE id=?', (str(self.master.master.master.master.Shops_info['Shop_items'][index][0]['id']),))
-            if it2 and not len(it2) == 0:
-                self.master.master.master.master.Shops_info['Shop_items'][index][0] = it2[0]
+            if it2 and len(it2):
+                print("changING to = ", self.master.master.master.master.Shops_info['Shop_items'][index])
+                if isinstance(it2, list):
+                    it2 = it2[0]
+                self.master.master.master.master.Shops_info['Shop_items'][index][0] = it2
                 self.master.master.master.master.Shops_info['Shop_items'][index][1] = newinfo_list
-                #print("changed to = ", self.master.master.master.master.Shops_info['Shop_items'][index])
-
-            
-            # Commit the changes to the database
-            conn.commit()
+                print("changed to = ", self.master.master.master.master.Shops_info['Shop_items'][index])
     
     def searchbytype(self):
         pass
@@ -514,35 +521,42 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
             price = float(product['price'])
             #print("selected_item ", selected_item)
             qty_info_list = selected_item_info = self.master.master.master.master.Shops_info['Shop_items'][i][1]
+            #print("qty_info_list ", qty_info_list)
             items += 1
             qty = 0
             def sub_list(ls, qty):
                 comen_qty = 0
                 itemtypes = []
                 if(isinstance(ls, list)):
+                    #print("ls ", ls)
                     for l in ls:
                         if len(l) > 4 and l[4] != ""and l[4] != " ":
+                            #print("l[4] ", l[4])
                             try:
-                                ischar = any(char.isalpha() for char in l[4])
-                                if not ischar and (isinstance(float(l[4]), float) or isinstance(int(l[4]), int)):
+                                if isinstance(float(l[4]), float) or isinstance(int(l[4]), int):
+                                    #print("qty ", l[4])
                                     if comen_qty == 0:
                                         comen_qty = float(l[4])
+                                        
                                     # TODO: FOR 2ps and more than one ps what to do
                                     qty += float(l[4])
-
                                 # this will collect types
                                 if l[1] != '' or l[1] != "":
                                     try:
+                                        #print("add ing = ", l[1])
                                         itemtypes.append(json.loads(l[1]))
                                     except:
                                         print("error while loading item type = ", l[1])
-                            except:
-                                pass
+                            except ValueError:
+                                print("error while loading qty = ", l[4])
                         elif len(l) == 2:
                             #main_name.append(l[0])
+                            #print("going deep = ", l[1])
                             qty, itemtypes = sub_list(l[1], qty)
                 return qty, itemtypes
+            #print("going to sub list with = ", qty_info_list)
             qty, itemtypes = sub_list(qty_info_list, qty)
+            #print("itemtypes ", itemtypes)
             issametype = 0
             # print("self.selectedtype ", self.selectedtype)
             # print("types = ", itemtypes)
@@ -563,9 +577,11 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
              
             vv.append([str(product['id']), float(price), str(product['name'])])
             # TODO make user choosh in which name, code, id
+            #print("qty ", qty)
             if qty > 0:
                 Tprice += qty*price
                 Tcost += qty*cost
+                #print("Tcost ", Tcost)
                 TQTY += qty
             
             if counted >= 10:
@@ -690,12 +706,12 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
                             ITEM = json.dumps(found_shop_items)
                             #print("ITEM : " + str(ITEM))
                             #print("at_shop : " + str(at_shop))
-                            cur.execute('UPDATE Shops SET Shop_items=? WHERE Shop_id=?', (ITEM, at_shop))
+                            Update_table_database('UPDATE Shops SET Shop_items=? WHERE Shop_id=?', (ITEM, at_shop))
                             # Commit the changes to the database
                             conn.commit()
                             self.Shops[itemshop[0][1]]['Shop_items'] = ITEM
                             # Delete the product from the database
-                            cur.execute('DELETE FROM product WHERE id=?', (product_id,))
+                            Update_table_database('DELETE FROM product WHERE id=?', (product_id,))
                             # Commit the changes to the database
                             conn.commit()
                             break
@@ -744,13 +760,29 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
             product_id = selected_product['id']
 
             # Delete the product from the database
-            cur.execute('SELECT * FROM product WHERE id=?', (product_id,))
-            products = cur.fetchall()
+            products = fetch_as_dict_list('SELECT * FROM product WHERE id=?', (product_id,))
 
             #print("name : " + str(products))
-            id, name, code, _type, barcode, at_shop, quantity, cost, \
-              tax, price, include_tax, price_change, more_info , images, \
-                description , service , default_quantity, active = products[0]
+            
+            id = products[0]['id']
+            name = products[0]['name']
+            code = products[0]['code']
+            _type = products[0]['type']
+            barcode = products[0]['barcode']
+            at_shop = products[0]['at_shop']
+            quantity = products[0]['quantity']
+            cost = products[0]['cost']
+            tax = products[0]['tax']
+            price = products[0]['price']
+            include_tax = products[0]['include_tax']
+            price_change = products[0]['price_change']
+            more_info = products[0]['more_info']
+            images = products[0]['images']
+            description = products[0]['description']
+            service = products[0]['service']
+            default_quantity = products[0]['default_quantity']
+            active = products[0]['active']
+
             #load doc files
             notebook_frame.product_id = selected_product['id']
             notebook_frame.perform_doc_search(code)
@@ -835,8 +867,8 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
 
 
     def get_item_by_code(self, item_code):
-        self.cursor.execute("SELECT * FROM product WHERE code=?", (item_code,))
-        result = self.cursor.fetchone()
+        result = fetch_as_dict_list("SELECT * FROM product WHERE code=?", (item_code,))
+        
         
         return result
     

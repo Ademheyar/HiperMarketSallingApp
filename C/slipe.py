@@ -11,7 +11,10 @@ sys.path.append(MAIN_dir)
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
+
 from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
 
 def find_user(v):
     it = None
@@ -23,9 +26,11 @@ def find_user(v):
         return it[0]
     
 def find_shop(id):
-    results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_id=?", (id,))[0]
-    print("found shop ", results)
-    return results
+    results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_Id=?", (id,))
+    if results:
+        print("found shop ", results)
+        return results[0]
+    return None
 
 def add_text_(width, value):
     ret = ""

@@ -56,6 +56,7 @@ class Select_User_Company_State_Frame(tk.Frame):
         self.frames["Select_User_Company_State_Frame"] = select_User_Company_State_Frame
         
         def callbackhomefunction():
+            self.update_user_work_shop()
             self.show_frame("Select_User_Company_State_Frame")
             
         company_Info_Frame = Company_Info_Frame(self, callbackhomefunction, self.User_data, None)
@@ -240,7 +241,7 @@ class Select_User_Company_State_Frame(tk.Frame):
                     self.Shops.append(find_shop_in_sysdb[0])
                     
             def Get_Shop_Data(index, frame, uws):
-                Link = self.master.link_entry.get()
+                Link = self.master.master.link_entry.get()
                 shop_result = Get_Shop(Link, self.User_data, ['Shop_name', 'Shop_brand_name'], [uws[1], uws[2]])
                 if shop_result:
                     if shop_result == []:
@@ -312,12 +313,12 @@ class Select_User_Company_State_Frame(tk.Frame):
                     for sw, Shop_worker in enumerate(Shop_workers):
                         if Shop_worker[0] == self.User_data['User_id']:
                             found_worker_inshop = 1
-                            Shop_workers[sw] = [self.User_data['User_id'], self.User_data['User_fname'] + " "+ self.User_data['User_Lname'], self.User_data['User_name'], "WORKER", Shops['Shop_name'], Shops['Shop_brand_name'], -2]
+                            Shop_workers[sw] = [self.User_data['User_id'], self.User_data['User_fname'] + " "+ self.User_data['User_Lname'], self.User_data['User_name'], "WORKER", Shops['Shop_name'], Shops['Shop_brand_name'], [-2]]
                     # e.g [2, 'Abdul Kedir', 'AK Abdul', 'OWNER', 'BELLEMA FASHION', 'ADOT', '10']        
                     # e.g [User Id, 'User Full Name', 'User Name', 'OWNER', 'Shop Name', 'Shop Brand', User permission in shop As (WORKER -2, OWNER -1, CUSTOMER 0, NOT WORKING 1)]
                     if found_worker_inshop == 0:
                         print("self.User_data : ", self.User_data)
-                        Shop_workers.append([self.User_data['User_id'], self.User_data['User_fname'] + " "+ self.User_data['User_Lname'], self.User_data['User_name'], "WORKER", Shops['Shop_name'], Shops['Shop_brand_name'], -2])
+                        Shop_workers.append([self.User_data['User_id'], self.User_data['User_fname'] + " "+ self.User_data['User_Lname'], self.User_data['User_name'], "WORKER", Shops['Shop_name'], Shops['Shop_brand_name'], [-2]])
                         print("Adding worker to shop workers list ", Shop_workers)
                         # Update the shop workers in the database
                         jsonShop_workers = json.dumps(Shop_workers)
@@ -344,7 +345,7 @@ class Select_User_Company_State_Frame(tk.Frame):
                     for uws, User_work_shop in enumerate(User_work_shops):
                         if User_work_shop[0] == Shops['Shop_Id']:
                             found_shop_inworkes = 1
-                            User_work_shops[uws] = [Shops['Shop_Id'], Shops['Shop_name'], Shops['Shop_brand_name'], -1]
+                            User_work_shops[uws] = [Shops['Shop_Id'], Shops['Shop_name'], Shops['Shop_brand_name'], [-1]]
                     # e.g [id, 'Shop Name', 'Shop Brand', User permission in shop As (WORKER -2, OWNER -1, CUSTOMER 0, NOT WORKING 1)]
 
                     if found_shop_inworkes == 0:
@@ -435,8 +436,8 @@ class Select_User_Company_State_Frame(tk.Frame):
         entered_username = self.username_entry.get()
         entered_password = self.password_entry.get()
 
-        cursor.execute("SELECT * FROM USERS WHERE User_name=? AND User_password=?", (entered_username, entered_password))
-        users = cursor.fetchall()
+        users = fetch_as_dict_list("SELECT * FROM USERS WHERE User_name=? AND User_password=?", (entered_username, entered_password))
+        
          
         if users:
            for user in users:
@@ -458,7 +459,7 @@ class Select_User_Company_State_Frame(tk.Frame):
         # call the function in the main file to show the first frame
         self.master.show_frame("DisplayFrame")
     def on_name_entry(self, event):
-        cur.execute('SELECT * FROM Users')
+        Update_table_database('SELECT * FROM Users')
         users = cur.fetchall()
         for user in users:
             print("on_name_entry\n"+str(user[1]))
@@ -476,7 +477,7 @@ class Select_User_Company_State_Frame(tk.Frame):
             item_text = self.user_docinfo_listbox.item(item, "values")  # Get the text values of the item
             id = self.user_docinfo_listbox.item(item, "text")
             barcode = item_text[0]
-            doc_ = cur.execute("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,)).fetchone()
+            doc_ = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))
             if doc_:
                 answer = tk.messagebox.askquestion("Question", "Do you what to print "+str(barcode)+" ?")
                 if answer == 'yes':

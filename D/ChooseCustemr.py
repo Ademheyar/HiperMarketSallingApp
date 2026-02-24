@@ -8,6 +8,11 @@ db_path = os.path.join(data_dir, 'my_database.db')
 
 from D.Security import *
 
+from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
+
+
 class CreateUserDialog(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
@@ -94,7 +99,7 @@ class CreateUserDialog(tk.Toplevel):
         password = self.password_var.get()
         access = self.access_var.get()
 
-        cursor.execute("INSERT INTO Users (User_name, User_address, User_id_pp_num, User_phone_num, User_email, User_type, User_password, User_access) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        Update_table_database("INSERT INTO Users (User_name, User_address, User_id_pp_num, User_phone_num, User_email, User_type, User_password, User_access) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                        (name, address, id_num, phone_num, email, user_type, password, access))
         conn.commit()
 
@@ -113,7 +118,7 @@ class UserManagementApp(tk.Toplevel):
         self.on_Shop = on_Shop
 
         self.user_details = {}
-        it = cursor.execute("SELECT * FROM Users WHERE User_id=?", (def_cm_id,)).fetchone()
+        it = fetch_as_dict_list("SELECT * FROM Users WHERE User_id=?", (def_cm_id,)).fetchone()
 
         self.username_var = tk.StringVar()
 
@@ -177,8 +182,8 @@ class UserManagementApp(tk.Toplevel):
         self.show_user_details(selected_username)
 
     def show_user_details(self, id):
-        cursor.execute("SELECT * FROM Users WHERE User_id = ?", (id,))
-        row = cursor.fetchone()
+        row = fetch_as_dict_list("SELECT * FROM Users WHERE User_id = ?", (id,))
+        
 
         self.clear_details_panel()
 
@@ -226,8 +231,8 @@ class UserManagementApp(tk.Toplevel):
 
     def fill_user_listbox(self):
         self.user_listbox.delete(0, tk.END)
-        cursor.execute("SELECT User_name FROM Users")
-        rows = cursor.fetchall()
+        rows = fetch_as_dict_list("SELECT User_name FROM Users")
+        
         for row in rows:
             self.user_listbox.insert(tk.END, row[0])
 
@@ -253,9 +258,9 @@ class UserManagementApp(tk.Toplevel):
         
     def search(self):
         username = self.username_var.get()
-        cursor.execute("SELECT * FROM Users WHERE User_name LIKE ? OR User_address LIKE ? OR User_id_pp_num LIKE ? OR User_phone_num LIKE ? OR User_email LIKE ? OR User_type LIKE ? OR User_access LIKE ?", 
+        rows = fetch_as_dict_list("SELECT * FROM Users WHERE User_name LIKE ? OR User_address LIKE ? OR User_id_pp_num LIKE ? OR User_phone_num LIKE ? OR User_email LIKE ? OR User_type LIKE ? OR User_access LIKE ?", 
                     ('%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%'))
-        rows = cursor.fetchall()
+        
         self.user_listbox.delete(0, tk.END)
         for row in rows:
             self.user_listbox.insert(tk.END, [row[0], row[3]])

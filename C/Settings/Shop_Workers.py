@@ -20,6 +20,9 @@ from D.Getdefsize import ButtonEntryApp
 from C.List import *
 
 from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
+
 from D.printer import *
 from D.GetVALUE import GetvalueForm
 # Connect to the database or create it if it does not exist
@@ -330,7 +333,11 @@ class WorkersForm(tk.Frame):
         
         # Add the worker to the worker listbox
         for worker in workers:
-            self.worker_docinfo_listbox.insert('', 'end', text=worker[0], values=(worker[1], worker[2], worker[3], worker[4], worker[5], worker[6]))
+            if worker[0]:
+                workerid = worker[0]
+            else:
+                workerid = ""
+            self.worker_docinfo_listbox.insert('', 'end', text=workerid, values=(worker[1], worker[2], worker[3], worker[4], worker[5], worker[6]))
 
         
     # create a function to update the search results whenever the search box changes
@@ -357,7 +364,7 @@ class WorkersForm(tk.Frame):
             if shop['Shop_oweners_id'] and shop['Shop_oweners_id'] != "":
                 print("shop['Shop_oweners_id'] ", shop['Shop_oweners_id'])
                 # Fetch the user details for the shop owner
-                #cur.execute('SELECT * FROM USERS WHERE User_id=?', (shop['Shop_oweners_id'],))
+                #Update_table_database('SELECT * FROM USERS WHERE User_id=?', (shop['Shop_oweners_id'],))
                 users =[] #cur.fetchall()
                 if users:
                     self.Shop_workers.append([users[0][0], users[0][1] +" "+users[0][2], users[0][3], "OWNER", shop['Shop_name'], shop['Shop_brand_name'], "10"])
@@ -414,7 +421,7 @@ class WorkersForm(tk.Frame):
                         user = users[0]
                         print("Shop_workers_copy ", Shop_workers_copy)
                         print("user ", user)
-                        cur.execute('UPDATE Shops SET Shop_workers=? WHERE Shop_id=?', (json.dumps(Shop_workers_copy), shop['Shop_Id']))
+                        Update_table_database('UPDATE Shops SET Shop_workers=? WHERE Shop_id=?', (json.dumps(Shop_workers_copy), shop['Shop_Id']))
                         # Commit the changes to the database
                         conn.commit()
                         self.Shops[s]['Shop_workers'] = json.dumps(Shop_workers_copy)
@@ -434,7 +441,7 @@ class WorkersForm(tk.Frame):
                             User_work_shops_copy.append(User_work_shop)
                         print("User_work_shops_copy ", User_work_shops_copy)
 
-                        cur.execute('UPDATE Users SET User_work_shop=? WHERE User_id=?', (json.dumps(User_work_shops_copy), user['User_id']))
+                        Update_table_database('UPDATE Users SET User_work_shop=? WHERE User_id=?', (json.dumps(User_work_shops_copy), user['User_id']))
                         # Commit the changes to the database
                         conn.commit()
         # Update the product listbox
@@ -450,7 +457,7 @@ class WorkersForm(tk.Frame):
             product_id = self.worker_docinfo_listbox.item(selected_product)['values'][0]
 
             # Delete the product from the database
-            cur.execute('DELETE FROM tools WHERE name=?', (product_id,))
+            Update_table_database('DELETE FROM tools WHERE name=?', (product_id,))
 
             # Commit the changes to the database
             conn.commit()
@@ -473,7 +480,7 @@ class WorkersForm(tk.Frame):
 
 
     def on_name_entry(self, event):
-        cur.execute('SELECT * FROM tools')
+        Update_table_database('SELECT * FROM tools')
         products = cur.fetchall()
         for product in products:
             if product[1] == self.name_entry.get():

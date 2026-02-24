@@ -34,9 +34,10 @@ from C.List import *
 
 
 from C.API.Get import *
+from C.API.API import *
 from C.API.Set import *
 
-from Manager import ManageForm
+from C.Manager import ManageForm
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
@@ -88,6 +89,7 @@ class DisplayFrame(tk.Frame):
         print("Display Frame Initialized with screen size: {}x{}".format(screen_width, screen_height))
         
         if Shops_info is None or user is None or User_Shops_List is None or Shops is None:
+            print("Critical data missing (Shops_info, user, User_Shops_List, or Shops)")
             if not Security_get_user(self):
                 print("No user data found, closing application.")
                 self.master.destroy()
@@ -189,9 +191,9 @@ class DisplayFrame(tk.Frame):
         self.newlist_button.grid(row=0, column=3, sticky="nsew", padx=3, pady=3)
         self.master.bind("<F7>", lambda _: self.new_chart())
         
-        self.payment_button = ttk.Button(self.buttons_frame, text="Payment\nF12", command=self.call_splitpayment)
+        self.payment_button = ttk.Button(self.buttons_frame, text="Payment\nF10", command=self.call_splitpayment)
         self.payment_button.grid(row=1, column=0, sticky="nsew", padx=3, pady=3)
-        self.master.bind("<F12>", lambda _: self.call_splitpayment())
+        self.master.bind("<F10>", lambda _: self.call_splitpayment())
         
         self.endday_button = ttk.Button(self.buttons_frame, text="Cash Drawer\nCtrl+D", command=lambda: self.open_drower())
         self.endday_button.grid(row=1, column=1, sticky="nsew", padx=3, pady=3)
@@ -384,8 +386,8 @@ class DisplayFrame(tk.Frame):
         for widget in self.Loded_payment_buttons:
             widget[2].destroy()
         self.Loded_payment_buttons = []
-        cursor.execute("SELECT * FROM tools")
-        rows = cursor.fetchall()
+        rows = fetch_as_dict_list("SELECT * FROM tools", ())
+        
         buttons = []
         i = -1
         j = -1
@@ -425,6 +427,8 @@ class DisplayFrame(tk.Frame):
                         new_button = ttk.Button(self.buttons_frame, text=tool_name+"\nCtrl + "+str(row[3]), command=lambda r=str(row[3]), d=tool_name: self.Q_Payment(r, d))
                         new_button.bind("<Button-3>", lambda d=str(row[3]): self.Q_Payment(d, d.widget["text"].split("\n")[0]))
                         self.master.bind("<KeyPress-" + str(row[3]) + ">", lambda r=str(row[3]), d=tool_name, k=new_button: self.Q_Payment(r, d) if "Control" in str(r)else print(""))
+                        if payment_tool_type == "CASH":
+                            self.master.bind("<F12>", lambda r=str(row[3]), d=tool_name, k=new_button: self.Q_Payment(r, d))
                         new_button.grid(row=a, column=b, sticky="nsew")
                         self.Loded_payment_buttons.append([row[1], row[3], new_button])
                         b += 1
@@ -476,7 +480,7 @@ class DisplayFrame(tk.Frame):
             if results and len(results) > 0:
                 #print(str([doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States, ex_item, ex_pay]))
                 # Insert the new product into the database
-                #cursor.execute('UPDATE pre_doc_table SET doc_created_date=?, doc_expire_date=?, doc_updated_date=?, AT_SHOP=?, user_id=?, customer_id=?, type=?, ITEM=?, PRICE=?, Disc=?, TAX=?, States=?, exitems_doc_barcode=?, expayment_doc_barcode=? WHERE id=?', (doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States, ex_item, ex_pay, self.chart_index))
+                Update_table_database('UPDATE pre_doc_table SET doc_created_date=?, doc_expire_date=?, doc_updated_date=?, AT_SHOP=?, user_id=?, customer_id=?, type=?, ITEM=?, PRICE=?, Disc=?, TAX=?, States=?, exitems_doc_barcode=?, expayment_doc_barcode=? WHERE id=?', (doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States, ex_item, ex_pay, self.chart_index))
 
                 #print(f"Record with ID {self.chart_index} has been UPDATE into the table\n\n1\n\n")                
                 #print(str([doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States, self.chart_index, ex_item, ex_pay]))
@@ -485,7 +489,7 @@ class DisplayFrame(tk.Frame):
                 #print(f"Record with ID {self.chart_index} does not exist in the table\n\n2\n\n")
                 #print(str([doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States, ex_item, ex_pay]))
                 # Insert the new product into the database
-                #cursor.execute('INSERT INTO pre_doc_table (id, doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States, exitems_doc_barcode, expayment_doc_barcode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (self.chart_index, doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States, ex_item, ex_pay))
+                Update_table_database('INSERT INTO pre_doc_table (id, doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States, exitems_doc_barcode, expayment_doc_barcode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (self.chart_index, doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States, ex_item, ex_pay))
 
                 #print(str(["doc_barcode", "extension_barcode", "user_id", "customer_id", "type", ITEM, Disc, TAX, "doc_created_date", "doc_expire_date", "doc_updated_date", ex_item, ex_pay]))
                 pass
@@ -861,21 +865,21 @@ class DisplayFrame(tk.Frame):
             self.Selected_items = []
             
             # Extract the item information from the database record
-            self.chart_index = result[0]
-            doc_created_date = result[1]
-            doc_expire_date = result[2]
-            doc_updated_date = result[3]
-            AT_SHOP = result[4]
-            user_id = result[5]
-            customer_id = result[6]
-            type = result[7]
-            ITEM = result[8]
-            PRICE = result[9]
-            Disc = result[10]
-            TAX = result[11]
-            States = result[12]
-            ex_item = result[13]
-            ex_pay = result[14]
+            self.chart_index = result['id']
+            doc_created_date = result['doc_created_date']
+            doc_expire_date = result['doc_expire_date']
+            doc_updated_date = result['doc_updated_date']
+            AT_SHOP = result['AT_SHOP']
+            user_id = result['user_id']
+            customer_id = result['customer_id']
+            type = result['type']
+            ITEM = result['ITEM']
+            PRICE = result['PRICE']
+            Disc = result['Disc']
+            TAX = result['TAX']
+            States = result['States']
+            ex_item = result['exitems_doc_barcode']
+            ex_pay = result['expayment_doc_barcode']
             
             if States != "States":
                 self.chart_index += 1
@@ -905,29 +909,29 @@ class DisplayFrame(tk.Frame):
         i = 0
         #print("self.chart_index == : " + str(self.chart_index))
         for r in results:
-            if r[0] == self.chart_index:
+            if r['id'] == self.chart_index:
                 if towhere == "next":
                     a = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 4)
                     if a:
                         if not i+1 >= len(results):
-                            l = results[i+1][0]
+                            l = results[i+1]['id']
                         else:
-                            l = results[0][0]
+                            l = results[0]['id']
                     break
                 else:
                     a = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 5)
                     if a:
                         if not i-1 < 0:
-                            l = results[i-1][0]
+                            l = results[i-1]['id']
                         elif len(results)-1 < 0:
                             l = 0
                         else:
-                            l = results[len(results)-1][0]
+                            l = results[len(results)-1]['id']
                     break
             i += 1
         if l == -1:
             if len(results) > 0:
-                l = results[0][0]
+                l = results[0]['id']
             else:
                 l = self.chart_index
         self.chart_index = l
@@ -1017,15 +1021,10 @@ class DisplayFrame(tk.Frame):
         if len(itempriceandcost.value) == 2:
             uitemcost = itempriceandcost.value[1]
         
-        self.add_item({
-            'type': 'UnKNOWN',
-            'values': {'id': -1, 'name': 'Unknown Item', 'price': uitemprice, 'cost': uitemcost, 'include_tax': False, 'more_info': ''},
-            'item_list':[], 'extra_data': [],
-        })
-        
+        self.add_item({'type': "UnKNOWN", 'values': {'id': 0, 'name': "Unkown Item", 'price': uitemprice, 'cost': uitemcost}, 'extra_data': [], 'item_list': []})
     # this will add item to the list
     def add_item(self, item_info):
-       #print("item_info = " + str(item_info))
+        print("item_info = " + str(item_info))
         if (item_info['type'] == "UnKNOWN"):
             items = item_info['values']
             # selected_data = Id, code, color, size, qty, left, barcode, extr
@@ -1033,8 +1032,58 @@ class DisplayFrame(tk.Frame):
             # in chake_action we will chack if item is in the list or not
             # id, code, barcode, name, color, size, qty, price, disc, includetax, total_price, shop, extr
 
-            value = [str(items['id']), "Unkown_Code", "Unkown_barcode", items['name'], "Unkown_Color", "Unkown_size", 1, items['price'], items['price']-self.disc, items['include_tax'], items['price'], self.Shops_Names[0], ""]
-            self.Selected_items.append([item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], "", value[8], value[9], value[10], value[11], value[12], ""])        
+            shopname = "Unknown Shop"
+            code = "Unknown Code"
+            color = "Unknown Color"
+            size = "Unknown Size"
+            
+            # finde similar item in the list that has same price and cost
+            for item in self.Shops_info['Shop_items']:
+                # if item price and cost are in range of the unknown item price and cost +- 50% we will consider it as similar item
+                if isinstance(item, list):
+                    item = item[0]
+                print('item ', item)
+                # print("item price ", item['price'], "item cost ", item['cost'], "uitemprice ", uitemprice, "uitemcost ", uitemcost)
+                # print("item price range ", float(uitemprice) - float(uitemprice)/2, " - ", float(uitemprice) + float(uitemprice)/2 )
+                uitemprice = float(items['price'])
+                uitemcost = float(items['cost'])
+                if (float(item['price']) == float(uitemprice) and float(item['cost']) >= float(uitemcost) - float(uitemcost)/2 and float(item['cost']) <= float(uitemcost) + float(uitemcost)/2):
+                    # change this item name to unknown item and add it to the list
+                    item_type = json.loads(item['more_info']) if item['more_info'] else {}
+                    if not item_type == {}:
+                        # get types shop name, code, color, size, extra data if item_type has it like [shops [codes [[colors ...[[sizes[extra data[],...],...],...],...],...],...],...]
+                        def get_type_info(item_type, path):
+                            print("item_type ", item_type)
+                            if len(item_type) == 2 and isinstance(item_type[0], str) and isinstance(item_type[1], list):
+                                new_path = get_type_info(item_type[1], path + [item_type[0]])
+                                if new_path:
+                                    return new_path
+                            elif isinstance(item_type[0], list):
+                                new_path = get_type_info(item_type[0], path)
+                                if new_path:
+                                    return new_path
+                            elif len(item_type) > 4:
+                                if item_type[4] > 0:
+                                    print("path ", path)
+                                    return path
+                            return None
+                        path = get_type_info(item_type, [])
+                        if path:
+                            print("path2 ", path)
+                            shopname = path[0]
+                            code = path[1]
+                            color = path[2]
+                            size = path[3]
+                            item_info = {'type': "ITEM", 'values': item, 'extra_data': [], 'item_list': []}
+                            value = [str(item['id']), item['code'], item['barcode'], 'Unknown Item', color, size, 1, items['price'], items['price']-self.disc, item['include_tax'], items['price'], shopname, ""]
+                            self.Selected_items.append([item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], "", value[8], value[9], value[10], value[11], value[12], ""])        
+                            self.Update_Selected_item()
+                            return
+        
+            # if not similar item found we will add the unknown item to the list with unknown shop and code and color and size
+            # msg box to ask if user want to add this item to the shop items list with this info
+            tk.messagebox.askquestion("Warning", "This item is not in the shop items list, do you want to add it to the shop items list with this info? \n\n Shop Name: " + shopname + "\n Code: " + code + "\n Color: " + color + "\n Size: " + size)
+            
 
         if (item_info['type'] == "ITEM"):
             for data in item_info['extra_data']:
@@ -1394,8 +1443,14 @@ class DisplayFrame(tk.Frame):
                 
            #print("\n\n payments collect than doc_found :" + str(doc_found)+"\n\n")
             
-                
-            f_user_s = fetch_as_dict_list("SELECT * FROM setting WHERE User_id=?", (int(self.user['User_id']),))
+            print("self.user :" + str(self.user))
+            if self.user['User_id']:
+                user_id = 'User_id'
+                user_idv = self.user['User_id']
+            else:
+                user_id = 'Id'
+                user_idv = self.user['Id']
+            f_user_s = fetch_as_dict_list("SELECT * FROM setting WHERE "+user_id+"=?", (int(user_idv),))
             #print("f_user_s "+str(f_user_s))
             Seller_id = None
 
@@ -1505,7 +1560,7 @@ class DisplayFrame(tk.Frame):
                 #while True:
                 #    continue
                 Update_Producte(None, self.user, ['more_info'], [json.dumps(it_info)], ['id'], [change_item[0]])
-                #cursor.execute('UPDATE product SET more_info=? WHERE id=?', (json.dumps(it_info), change_item[0]))
+                #Update_table_database('UPDATE product SET more_info=? WHERE id=?', (json.dumps(it_info), change_item[0]))
 
                 
                 it2 = fetch_as_dict_list('SELECT * FROM product WHERE id=?', (str(change_item[0]),))
@@ -1540,7 +1595,7 @@ class DisplayFrame(tk.Frame):
                                #print("d[Barcode] = " + str(d["Barcode"]))
                                 # Get_Document(None, self.user, ['doc_barcode'], [d["Barcode"]])
                                 rows = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (d["Barcode"],))
-                                # cursor.execute("SELECT * FROM doc_table WHERE doc_barcode=?", (d["Barcode"],)).fetchall()
+                                # fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (d["Barcode"],)).fetchall()
                                 if rows and rows[0]['customer_id']: # if doc found
                                     old_cm_id = rows[0]['customer_id']
                                 
@@ -1549,26 +1604,26 @@ class DisplayFrame(tk.Frame):
                                     #[each item [barcode, isitem, ispay, ex_item, ex_item_items, payments, ex_payment_count, ex_item_pric, ex_item_T_disc, ex_item_T_tax, ex_pid]
                                     Update_Documente(None, self.user, ['customer_id'], [cm_id], ['doc_barcode'], [d["Barcode"]])
 
-                                    # cursor.execute('UPDATE doc_table SET customer_id=? WHERE doc_barcode=?', (cm_id, d["Barcode"]))
+                                    # Update_table_database('UPDATE doc_table SET customer_id=? WHERE doc_barcode=?', (cm_id, d["Barcode"]))
                                     # Commit the changes to the database
                                     # conn.commit()
                                 if Seller_id != None:
                                     #[each item [barcode, isitem, ispay, ex_item, ex_item_items, payments, ex_payment_count, ex_item_pric, ex_item_T_disc, ex_item_T_tax, ex_pid]
                                     Update_Documente(None, self.user, ['Seller_id'], [Seller_id], ['doc_barcode'], [d["Barcode"]])
-                                    # cursor.execute('UPDATE doc_table SET Seller_id=? WHERE doc_barcode=?', (Seller_id, d["Barcode"]))
+                                    # Update_table_database('UPDATE doc_table SET Seller_id=? WHERE doc_barcode=?', (Seller_id, d["Barcode"]))
                                     # Commit the changes to the database
                                     # conn.commit()
                                     
                                 if d['payments_']:
                                     #todo if needed add pid in doc e_doc_info[10]
                                     Update_Documente(None, self.user, ['pid', 'payments', 'doc_updated_date'], [str(d['pid']), json.dumps(d['payments_']), today_date], ['doc_barcode'], [d["Barcode"]])
-                                    # cursor.execute('UPDATE doc_table SET pid=?, payments=?, doc_updated_date=? WHERE doc_barcode=?', (str(d['pid']), json.dumps(d['payments_']), today_date, d["Barcode"]))
+                                    # Update_table_database('UPDATE doc_table SET pid=?, payments=?, doc_updated_date=? WHERE doc_barcode=?', (str(d['pid']), json.dumps(d['payments_']), today_date, d["Barcode"]))
                                     # Commit the changes to the database
                                     #conn.commit()
 
                                 #[each item [barcode, isitem, ispay, ex_item, ex_item_items, payments, ex_payment_count, ex_item_pric, ex_item_T_disc, ex_item_T_tax, ex_pid]
                                 Update_Documente(None, self.user, ['item', 'qty', 'price', 'Profite', 'discount', 'tax', 'doc_updated_date'], [json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], today_date], ['doc_barcode'], [d["Barcode"]])
-                                # cursor.execute('UPDATE doc_table SET item=?, qty=?, price=?, Profite=?, discount=?, tax=?, doc_updated_date=? WHERE doc_barcode=?', (json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], today_date, d["Barcode"]))
+                                # Update_table_database('UPDATE doc_table SET item=?, qty=?, price=?, Profite=?, discount=?, tax=?, doc_updated_date=? WHERE doc_barcode=?', (json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], today_date, d["Barcode"]))
                                 # Commit the changes to the database
                                 # conn.commit()
                                 
@@ -1577,8 +1632,8 @@ class DisplayFrame(tk.Frame):
                                #print("custemer : " + str(self.custemr) + "isneded : " + str(payment_customer_required))
                                 # TODO: chacke if self.At_Shop_Id is selected if not make user selecte one
                                 Set_Document(None, ["doc_barcode", "extension_barcode", "At_Shop_Id", "user_id", "customer_id", "Seller_id", "type", "item", "qty", "price", "discount", "tax", "payments", "pid", "doc_created_date", "doc_expire_date", "doc_updated_date"], [str(brcod), "extension_barcode", self.At_Shop_id, self.user['User_id'], self.custemr, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date])
-                                #cursor.execute('INSERT INTO upload_doc (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", self.At_Shop_id, self.user['User_id'], self.custemr, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date))
-                                #cursor.execute('INSERT INTO doc_table (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, Profite, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", self.At_Shop_id, self.user['User_id'], self.custemr, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date))
+                                #Update_table_database('INSERT INTO upload_doc (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", self.At_Shop_id, self.user['User_id'], self.custemr, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date))
+                                #Update_table_database('INSERT INTO doc_table (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, Profite, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", self.At_Shop_id, self.user['User_id'], self.custemr, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date))
                                 # Commit the changes to the database
                                 #conn.commit()
                                 slip_doc_code.append(brcod)

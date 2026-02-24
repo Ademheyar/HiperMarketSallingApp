@@ -23,7 +23,9 @@ sys.path.append(MAIN_dir)
 from D.Security import *
 
 from C.API.Get import *
-from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
+
 
 class UploadingForm(tk.Toplevel):
     def __init__(self, master, user, Shops):
@@ -126,8 +128,8 @@ class UploadingForm(tk.Toplevel):
     
     def update_Upload_info(self):
         Total_upload_items = 0
-        cursor.execute("SELECT * FROM upload_doc")
-        b = cursor.fetchall()
+        b = fetch_as_dict_list("SELECT * FROM upload_doc")
+        
         Total_upload_Activetis = len(b)
         Total_upload = Total_upload_Activetis
         for where_info in self.found_linkes:
@@ -302,7 +304,7 @@ class UploadingForm(tk.Toplevel):
                                     new_row = response_data['row']
                                     print('row:', new_row)
                                     try:
-                                        cursor.execute("DELETE FROM `upload_doc` WHERE `id`=?", (row['id'],))                                        
+                                        Update_table_database("DELETE FROM `upload_doc` WHERE `id`=?", (row['id'],))                                        
                                         # Commit the changes to the database
                                         conn.commit()
                                     except conn.Error as err:
@@ -437,8 +439,8 @@ class UploadingForm(tk.Toplevel):
         #'''
         # Fetch data from the database
         url = 'http://localhost/Adot/update-api-endpoint.php'
-        cursor.execute("SELECT * FROM upload_doc")
-        b = cursor.fetchall()
+        b = fetch_as_dict_list("SELECT * FROM upload_doc")
+        
         if len(b) > 0:
             ind = -1
             # Convert the fetched data to a list of dictionaries
@@ -504,7 +506,7 @@ class UploadingForm(tk.Toplevel):
                             new_row = response_data['row']
                             print('row:', new_row)
                             if ind != len(b) -1:
-                                cursor.execute("DELETE FROM upload_doc WHERE id=?", (row[0],))
+                                Update_table_database("DELETE FROM upload_doc WHERE id=?", (row[0],))
                                 
                                 # Commit the changes to the database
                                 conn.commit()

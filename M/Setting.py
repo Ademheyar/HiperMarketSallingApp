@@ -13,6 +13,9 @@ from D.Getdefsize import ButtonEntryApp
 from C.List import *
 
 from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
+
 from D.printer import *
 from D.GetVALUE import GetvalueForm
 # Connect to the database or create it if it does not exist
@@ -133,7 +136,7 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
     
     print(query+"\n")
     # Execute the SQL query and return the results as a list of tuples
-    cur.execute(query, (*given,))
+    Update_table_database(query, (*given,))
     results = cur.fetchall()
     return results
 # Example node hierarchy
@@ -416,7 +419,7 @@ class SettingForm(tk.Frame):
     def chacke_remaber_printer(self):
         print("chacke_remaber_printer")
         if int(self.Remamber_printer_int.get()):
-            b = cur.execute("SELECT * FROM setting WHERE User_id = ?", (self.user['User_id'],)).fetchall()
+            b = fetch_as_dict_list("SELECT * FROM setting WHERE User_id = ?", (self.user['User_id'],))
             print("user " + str(self.user[0]) + " found " +str(b))
             printers = list_available_printers()
             if b and len(b) > 0 and b[0][3] == "" or not b:
@@ -426,15 +429,15 @@ class SettingForm(tk.Frame):
                 if selected_printer:
                     if dialog.issave.get():
                         if b:
-                            cur.execute('UPDATE setting SET printer=?, Get_printer=? WHERE User_id=?', ("", 1, self.user['User_id']))
+                            Update_table_database('UPDATE setting SET printer=?, Get_printer=? WHERE User_id=?', ("", 1, self.user['User_id']))
                             # Commit the changes to the database
                             conn.commit()
                         else:
-                            cur.execute('INSERT INTO setting (User_id, Get_printer, printer) VALUES (?, ?, ?, ?)', (self.user['User_id'], 1, selected_printer))
+                            Update_table_database('INSERT INTO setting (User_id, Get_printer, printer) VALUES (?, ?, ?, ?)', (self.user['User_id'], 1, selected_printer))
                             # Commit the changes to the database
                             conn.commit()                    
         else:
-            cur.execute('UPDATE setting SET printer=?, Get_printer=? WHERE User_id=?', ("", int(self.ask_seller_int.get()), self.user['User_id']))
+            Update_table_database('UPDATE setting SET printer=?, Get_printer=? WHERE User_id=?', ("", int(self.ask_seller_int.get()), self.user['User_id']))
             # Commit the changes to the database
             conn.commit()
 
@@ -460,12 +463,12 @@ class SettingForm(tk.Frame):
         self.update_slip_order()
 
     def slip_width_changed(self, name, index, mode):
-        cur.execute('UPDATE setting SET Slip_width=? WHERE User_id=?', (self.slip_width_entry.get(), self.user['User_id']))
+        Update_table_database('UPDATE setting SET Slip_width=? WHERE User_id=?', (self.slip_width_entry.get(), self.user['User_id']))
         # Commit the changes to the database
         conn.commit()
     
     def slip_hight_changed(self, name, index, mode):
-        cur.execute('UPDATE setting SET Slip_hight=? WHERE User_id=?', (self.slip_hight_entry.get(), self.user['User_id']))
+        Update_table_database('UPDATE setting SET Slip_hight=? WHERE User_id=?', (self.slip_hight_entry.get(), self.user['User_id']))
         # Commit the changes to the database
         conn.commit()
         
@@ -475,7 +478,7 @@ class SettingForm(tk.Frame):
             text = self.slip_order_list_items.get(r)
             ind = slip_order_type.index(text)
             ret_value += str(ind)+"+"
-        cur.execute('UPDATE setting SET Slip_orders=? WHERE User_id=?', (ret_value, self.user['User_id']))
+        Update_table_database('UPDATE setting SET Slip_orders=? WHERE User_id=?', (ret_value, self.user['User_id']))
         # Commit the changes to the database
         conn.commit()
         
@@ -491,16 +494,16 @@ class SettingForm(tk.Frame):
             id_ = shop_name[0]
             name_ = shop_name[1]
             # Search for the entered text in the code, name, short_key, and type fields of the user table
-            cur.execute("SELECT * FROM Shops WHERE Shop_id LIKE ? AND Shop_name LIKE ?", 
+            results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_id LIKE ? AND Shop_name LIKE ?", 
                         ('%' + str(id_) + '%','%' + str(name_) + '%'))
-            results = cur.fetchall()
+            
             print("found shop "+str(len(results)))
         else:
             shop_name = self.user['User_work_shop']
             # Search for the entered text in the code, name, short_key, and type fields of the user table
-            cur.execute("SELECT * FROM Shops WHERE Shop_name LIKE ?", 
+            results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_name LIKE ?", 
                         ('%' + str(shop_name) + '%',))
-            results = cur.fetchall()
+            
             print("found shop by name "+str(results))
             
         if results:
@@ -518,7 +521,7 @@ class SettingForm(tk.Frame):
                     values = self.USER_SECURITY_list_box.item(q)['values']
                     st += str(values[0])+"+"
                 print("saving  "+str(st))
-                cur.execute('UPDATE Shops SET Shop_Access_levels=? WHERE Shop_id=?', (st, results[0][0]))
+                Update_table_database('UPDATE Shops SET Shop_Access_levels=? WHERE Shop_id=?', (st, results[0][0]))
                 # Commit the changes to the database
                 conn.commit()
             
@@ -532,16 +535,16 @@ class SettingForm(tk.Frame):
             id_ = shop_name[0]
             name_ = shop_name[1]
             # Search for the entered text in the code, name, short_key, and type fields of the user table
-            cur.execute("SELECT * FROM Shops WHERE Shop_id LIKE ? AND Shop_name LIKE ?", 
+            results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_id LIKE ? AND Shop_name LIKE ?", 
                         ('%' + str(id_) + '%','%' + str(name_) + '%'))
-            results = cur.fetchall()
+            
             print("found shop "+str(len(results)))
         else:
             shop_name = self.user['User_work_shop']
             # Search for the entered text in the code, name, short_key, and type fields of the user table
-            cur.execute("SELECT * FROM Shops WHERE Shop_name LIKE ?", 
+            results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_name LIKE ?", 
                         ('%' + str(shop_name) + '%',))
-            results = cur.fetchall()
+            
             print("found shop00 by name "+str(results))
             
         if results != None and results != []: 
@@ -591,27 +594,27 @@ class SettingForm(tk.Frame):
             id_ = shop_name[0]
             name_ = shop_name[1]
             # Search for the entered text in the code, name, short_key, and type fields of the user table
-            cur.execute("SELECT * FROM Shops WHERE Shop_id LIKE ? AND Shop_name LIKE ?", 
+            results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_id LIKE ? AND Shop_name LIKE ?", 
                         ('%' + str(id_) + '%','%' + str(name_) + '%'))
-            results = cur.fetchall()
+            
             print("found shop "+str(len(results)))
         else:
             shop_name = self.user['User_work_shop']
             # Search for the entered text in the code, name, short_key, and type fields of the user table
-            cur.execute("SELECT * FROM Shops WHERE Shop_name LIKE ?", 
+            results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_name LIKE ?", 
                         ('%' + str(shop_name) + '%',))
-            results = cur.fetchall()
+            
             print("found shop "+str(results[0][0]))
         if results:
-            cur.execute('UPDATE Shops SET Shop_name=?, Shop_brand_name=?, Shop_link=?, Shop_location=?, Shop_rules=?, Shop_phone_num=? WHERE Shop_id=?',
+            Update_table_database('UPDATE Shops SET Shop_name=?, Shop_brand_name=?, Shop_link=?, Shop_location=?, Shop_rules=?, Shop_phone_num=? WHERE Shop_id=?',
                         (self.Shop_name_entry.get(), self.Shop_brand_name_entry.get(), self.Shop_link_entry.get(), self.Shop_location_entry.get(), self.Shop_rules_entry.get(), self.Shop_phone_num_entry.get(), results[0][0]))
             # Commit the changes to the database
             conn.commit()
     
     def load_setting(self):
         #print("load sitting of : " + str(self.user))
-        #cur.execute("SELECT * FROM setting WHERE User_id = ?", (self.user['User_id'],))
-        sittings = []#cur.fetchall()
+        sittings = []#fetch_as_dict_list("SELECT * FROM setting WHERE User_id = ?", (self.user['User_id'],))
+        
         if sittings:
             print("sitting2 : " + str(sittings))
             for sitting in sittings:
@@ -634,7 +637,7 @@ class SettingForm(tk.Frame):
             
     def chacke_ask_seller(self):
         print("going to make seller ask or not...")
-        cur.execute('UPDATE setting SET Get_seller=? WHERE user_id=?', (int(self.ask_seller_int.get()), self.user['User_id']))
+        Update_table_database('UPDATE setting SET Get_seller=? WHERE user_id=?', (int(self.ask_seller_int.get()), self.user['User_id']))
         # Commit the changes to the database
         conn.commit()
 
@@ -707,7 +710,7 @@ class SettingForm(tk.Frame):
             nested_list.append([child_text, self.build_nested_list(item)])
         text = str(nested_list)
         self.types_label.config(text=text)
-        #cur.execute('UPDATE setting SET Items_type=? WHERE user_name=?', (text, self.user['User_name']))
+        #Update_table_database('UPDATE setting SET Items_type=? WHERE user_name=?', (text, self.user['User_name']))
         # Commit the changes to the database
         #conn.commit()
 
@@ -914,7 +917,7 @@ class SettingForm(tk.Frame):
         self.Item_To_Update_tab_listbox.column("#14", stretch=tk.NO, minwidth=25, width=100) 
 
     def perform_search_Item_size_chack(self):
-        cur.execute('SELECT * FROM product')
+        Update_table_database('SELECT * FROM product')
         item = cur.fetchall()
         for it in item:
             print("item["+str(it[0])+"]  : " + str(it[12]))
@@ -1298,7 +1301,7 @@ class SettingForm(tk.Frame):
             # Get the ID of the selected product
             product_id = self.list_box.item(selected_product)['text']
             # Delete the product from the database
-            cur.execute('DELETE FROM product WHERE id=?', (int(product_id),))
+            Update_table_database('DELETE FROM product WHERE id=?', (int(product_id),))
 
 
             # Clear the product details widgets
@@ -1308,8 +1311,8 @@ class SettingForm(tk.Frame):
             self.update_product_listbox()
 
     def get_item_by_code(self, item_code):
-        self.cursor.execute("SELECT * FROM product WHERE code=?", (item_code,))
-        result = self.cursor.fetchone()
+        result = fetch_as_dict_list("SELECT * FROM product WHERE code=?", (item_code,))
+        
         return result
     
     def update_item_info(self, id, code, it_info):
@@ -1321,9 +1324,9 @@ class SettingForm(tk.Frame):
     
     def search_products(self, search_text):
         # Search for the entered text in the code, name, barcode, and type fields of the product table
-        cur.execute("SELECT * FROM product WHERE code LIKE ? OR name LIKE ? OR barcode LIKE ? OR type LIKE ?", 
+        results = fetch_as_dict_list("SELECT * FROM product WHERE code LIKE ? OR name LIKE ? OR barcode LIKE ? OR type LIKE ?", 
                     ('%' + search_text + '%', '%' + search_text + '%', '%' + search_text + '%', '%' + search_text + '%'))
-        results = cur.fetchall()
+        
         return results
 
     # create a function to update the search results whenever the search box changes
@@ -1346,7 +1349,7 @@ class SettingForm(tk.Frame):
         # Clear the product listbox
         self.list_box.delete(*self.list_box.get_children())
         # Get the products from the database
-        cur.execute('SELECT * FROM product')
+        Update_table_database('SELECT * FROM product')
         products = cur.fetchall()
         items = 0
         TQTY = 0
@@ -1417,7 +1420,7 @@ class SettingForm(tk.Frame):
             self.delete_button.config(state=tk.DISABLED)
 
     def on_name_entry(self, event):
-        cur.execute('SELECT * FROM product')
+        Update_table_database('SELECT * FROM product')
         products = cur.fetchall()
         for product in products:
             #TODO MAKE IT EASY BY ID
@@ -1487,7 +1490,7 @@ class SettingForm(tk.Frame):
             product_id = self.list_box.item(selected_product)['values'][0]
         
             # Delete the product from the database
-            cur.execute('DELETE FROM product WHERE id=?', (product_id,))
+            Update_table_database('DELETE FROM product WHERE id=?', (product_id,))
 
             # Commit the changes to the database
             conn.commit()
@@ -1524,8 +1527,8 @@ class SettingForm(tk.Frame):
         item = ""
         doc_type = ""
         brcod = 0
-        cur.execute("SELECT * FROM setting WHERE user_name=?", (self.master.master.master.master.user,))
-        b = cur.fetchone()
+        b = fetch_as_dict_list("SELECT * FROM setting WHERE user_name=?", (self.master.master.master.master.user,))
+        
         if not len(b)<= 0:
             brcod = b[2] # getting barcode
         brcod += 1
@@ -1533,9 +1536,9 @@ class SettingForm(tk.Frame):
             # Insert the new product into the database
             doc_type = "Add_Items"
             # Get the ID of the most recently added item
-            cur.execute('INSERT INTO product (name, code, type, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active))
-            cur.execute("SELECT last_insert_rowid()")
-            new_item_id = cur.fetchone()[0]
+            Update_table_database('INSERT INTO product (name, code, type, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active))
+            new_item_id = fetch_as_dict_list("SELECT last_insert_rowid()")
+            
             print("new_product_id : " + str(new_item_id) + " barcode : " + str(brcod))
             item += f"(:{new_item_id}:,:{name}:,:{code}:,:{typ}:,:{barcode}:,:{at_shop}:,:{quantity}:,:{cost}:,:{tax}:,:{price}:,:{include_tax}:,:{price_change}:,:{more_info}:,:{images}:,:{description}:,:{service}:,:{default_quantity}:,:{active}:)"
             print("item : " + str(item))
@@ -1546,13 +1549,13 @@ class SettingForm(tk.Frame):
             item += f"(:{product_id}:,:{name}:,:{code}:,:{typ}:,:{barcode}:,:{at_shop}:,:{quantity}:,:{cost}:,:{tax}:,:{price}:,:{include_tax}:,:{price_change}:,:{more_info}:,:{images}:,:{description}:,:{service}:,:{default_quantity}:,:{active}:)"
             print("item : " + str(item))
             # Update the product in the database
-            cur.execute('UPDATE product SET name=?, code=?, type=?, barcode=?, at_shop=?, quantity=?, cost=?, tax=?, price=?, include_tax=?, price_change=?, more_info=?, images=?, description=?, service=?, default_quantity=?, active=? WHERE id=?', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active, product_id))
+            Update_table_database('UPDATE product SET name=?, code=?, type=?, barcode=?, at_shop=?, quantity=?, cost=?, tax=?, price=?, include_tax=?, price_change=?, more_info=?, images=?, description=?, service=?, default_quantity=?, active=? WHERE id=?', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active, product_id))
         # Commit the changes to the database
         conn.commit()
 
         try:
             # Insert the record into the upload_doc table
-            cur.execute('INSERT INTO upload_doc (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("23-200-" + str(brcod), "extension_barcode", self.master.master.master.master.user, self.master.master.master.master.custemr, doc_type, item, 1, 0, 0, 0, "payments_", "doc_created_date", "doc_expire_date", "doc_updated_date"))
+            Update_table_database('INSERT INTO upload_doc (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("23-200-" + str(brcod), "extension_barcode", self.master.master.master.master.user, self.master.master.master.master.custemr, doc_type, item, 1, 0, 0, 0, "payments_", "doc_created_date", "doc_expire_date", "doc_updated_date"))
 
             # Commit the changes to the database
             conn.commit()

@@ -32,6 +32,11 @@ from D.Chart.Chart import *
 
 from C.Product.selecttype import *
 
+from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
+
+
 def is_float(value):
     try:
         print()
@@ -84,7 +89,7 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
     
     print(query+"\n")
     # Execute the SQL query and return the results as a list of tuples
-    cur.execute(query, (*given,))
+    Update_table_database(query, (*given,))
     results = cur.fetchall()
     return results
 # Example node hierarchy
@@ -411,7 +416,7 @@ class ActionsForm(tk.Frame):
                                 (str(shop['Shop_Id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
             if Shop and Shop[0] and Shop[0]['Shop_Actions'] and Shop[0]['Shop_Actions'] != "":
                 print("Shop[0]['Shop_Actions'] ", Shop[0]['Shop_Actions'])
-                '''cur.execute("UPDATE Shops SET Shop_Actions=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
+                '''Update_table_database("UPDATE Shops SET Shop_Actions=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
                                 (str(json.dumps([])), str(shop['Shop_Id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
                 # Commit the changes to the database
                 conn.commit()'''
@@ -467,7 +472,7 @@ class ActionsForm(tk.Frame):
                                 else:
                                     shop_actionscopy.append(Shop_Action)
                             Shop_Actions = shop_actionscopy
-                            cur.execute("UPDATE Shops SET Shop_Actions=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
+                            Update_table_database("UPDATE Shops SET Shop_Actions=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
                                             (str(Shop_Actions), str(shop['Shop_Id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
                             # Commit the changes to the database
                             conn.commit()
@@ -813,7 +818,7 @@ class ActionsForm(tk.Frame):
     def void_items(self):
         self.clear_items()
         # delete this list on db
-        cursor.execute("DELETE FROM pre_doc_table WHERE id=?", (self.chart_index,))
+        Update_table_database("DELETE FROM pre_doc_table WHERE id=?", (self.chart_index,))
         # Commit the changes to the database
         conn.commit()
         # self.update_info() will be called in next_prev_chart 
@@ -940,7 +945,7 @@ class ActionsForm(tk.Frame):
                 
                 if self.add_button.cget("text") == "New":
                     Shop_Actions.append([len(Shop_Actions), Action_titel, created_date, from_date, to_date, if_conditions, Do_makes])
-                    cur.execute("UPDATE Shops SET Shop_Actions=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
+                    Update_table_database("UPDATE Shops SET Shop_Actions=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
                                     (json.dumps(Shop_Actions), str(shop['Shop_Id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
                     # Commit the changes to the database
                     conn.commit()
@@ -956,7 +961,7 @@ class ActionsForm(tk.Frame):
                                           make_price, make_total_price, make_discount, make_total_disc, enable, remove_when_expires, from_date, to_date]
 
                         print("Shop_Actions ", Shop_Actions)
-                        cur.execute("UPDATE Shops SET Shop_Actions=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
+                        Update_table_database("UPDATE Shops SET Shop_Actions=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?", 
                                     (str(json.dumps(Shop_Actions)), str(shop['Shop_Id']), str(shop['Shop_name']), str(shop['Shop_brand_name'])))
                         # Commit the changes to the database
                         conn.commit()

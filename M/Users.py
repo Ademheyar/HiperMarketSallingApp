@@ -16,6 +16,10 @@ from D.docediterform import DocEditForm
 from D.printer import PrinterForm
 from C.slipe import load_slip
 
+from C.API.Get import *
+from C.API.API import *
+from C.API.Set import *
+
 class UserForm(tk.Frame):
     def __init__(self, parent, user_info):
         tk.Frame.__init__(self, parent)
@@ -238,11 +242,10 @@ class UserForm(tk.Frame):
         self.update_user_listbox()
 
     def on_name_entry(self, event):
-        cur.execute('SELECT * FROM Users')
-        users = cur.fetchall()
+        users = fetch_as_dict_list('SELECT * FROM Users', ())
         for user in users:
-            print("on_name_entry\n"+str(user[1]))
-            if user[1] == self.name_entry.get():
+            print("on_name_entry\n"+str(user['User_name']))
+            if user['User_name'] == self.name_entry.get():
                 self.add_button.config(text="Update")    
                 return
         if self.main_name == self.name_entry.get() and not self.main_name == "":
@@ -256,7 +259,7 @@ class UserForm(tk.Frame):
             item_text = self.user_docinfo_listbox.item(item, "values")  # Get the text values of the item
             id = self.user_docinfo_listbox.item(item, "text")
             barcode = item_text[0]
-            doc_ = cur.execute("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,)).fetchone()
+            doc_ = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))
             if doc_:
                 answer = tk.messagebox.askquestion("Question", "Do you what to print "+str(barcode)+" ?")
                 if answer == 'yes':
@@ -273,9 +276,9 @@ class UserForm(tk.Frame):
     def search_users(self, search_text):
         
         # Search for the entered text in the code, name, short_key, and type fields of the user table
-        cur.execute("SELECT * FROM Users WHERE User_name LIKE ? OR User_address LIKE ? OR User_id_pp_num LIKE ? OR User_phone_num LIKE ? OR User_email LIKE ? OR User_type LIKE ? OR User_access LIKE ?", 
+        results = fetch_as_dict_list("SELECT * FROM Users WHERE User_name LIKE ? OR User_address LIKE ? OR User_id_pp_num LIKE ? OR User_phone_num LIKE ? OR User_email LIKE ? OR User_type LIKE ? OR User_access LIKE ?", 
                     ('%' + search_text + '%','%' + search_text + '%','%' + search_text + '%','%' + search_text + '%','%' + search_text + '%','%' + search_text + '%','%' + search_text + '%'))
-        results = cur.fetchall()
+        
         
         return results
     
@@ -285,13 +288,13 @@ class UserForm(tk.Frame):
         
 
         # Perform the search and update the listbox with the results
-        cur.execute('SELECT * FROM doc_table WHERE customer_id=?',(customer_id,))
-        df = cur.fetchall()
+        results = fetch_as_dict_list('SELECT * FROM doc_table WHERE customer_id=?',(customer_id,))
+        
         
         self.user_docinfo_listbox.delete(*self.user_docinfo_listbox.get_children())
 
-        '''cur.execute("SELECT * FROM COUNT_SELL WHERE strftime('%Y-%m-%d', DATE) BETWEEN ? AND ?", (f'{self.date_from_Entry.get()}', f'{self.date_to_Entry.get()}',))
-        results = cur.fetchall()
+        '''results = fetch_as_dict_list("SELECT * FROM COUNT_SELL WHERE strftime('%Y-%m-%d', DATE) BETWEEN ? AND ?", (f'{self.date_from_Entry.get()}', f'{self.date_to_Entry.get()}',))
+        
         l = []
         
         for result in results:
@@ -427,7 +430,7 @@ class UserForm(tk.Frame):
             user_id = self.list_box.item(selected_user)['text']
 
             # Delete the user from the database
-            cur.execute('SELECT * FROM Users WHERE User_id=?', (user_id,))
+            Update_table_database('SELECT * FROM Users WHERE User_id=?', (user_id,))
             users = cur.fetchall()
 
             print("name : " + str(users))
@@ -495,7 +498,7 @@ class UserForm(tk.Frame):
     # Define the function for updating the user listbox
     def update_user_listbox(self):
         # Get the users from the database
-        #cur.execute('SELECT * FROM USERS')
+        #Update_table_database('SELECT * FROM USERS')
         users = []#cur.fetchall()
         self.update_results(users)
         
@@ -526,13 +529,13 @@ class UserForm(tk.Frame):
             User_following_shop = ""
             User_favoraite_items = ""
             User_rate = ""
-            cur.execute('INSERT INTO Users(User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_type, User_password, User_about, User_shop, User_work_shop, User_likes, User_following_shop, User_favoraite_items, User_rate, User_access, User_pimg) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',(User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_type, User_password, User_about, User_shop, User_work_shop, User_likes, User_following_shop, User_favoraite_items, User_rate, User_access, User_pimg))
+            Update_table_database('INSERT INTO Users(User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_type, User_password, User_about, User_shop, User_work_shop, User_likes, User_following_shop, User_favoraite_items, User_rate, User_access, User_pimg) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',(User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_type, User_password, User_about, User_shop, User_work_shop, User_likes, User_following_shop, User_favoraite_items, User_rate, User_access, User_pimg))
               
         else:
             item_id = int(self.list_box.item(self.list_box.selection())['text'])
             print("item_id : " + str(item_id))
             # UPDATE the new user into the database
-            cur.execute('UPDATE Users SET User_fname=?, User_Lname=?, User_name=?, User_gender=?, User_country=?, User_phone_num=?, User_email=?, User_address=?, User_home_no=?, User_id_pp_num=?, User_type=?, User_password=?, User_about=?, User_shop=?, User_work_shop=?, User_access=?, User_pimg=? WHERE User_id=?', (User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_id_pp_num, User_type, User_password, User_about, User_shop, User_work_shop, User_access, User_pimg, item_id))
+            Update_table_database('UPDATE Users SET User_fname=?, User_Lname=?, User_name=?, User_gender=?, User_country=?, User_phone_num=?, User_email=?, User_address=?, User_home_no=?, User_id_pp_num=?, User_type=?, User_password=?, User_about=?, User_shop=?, User_work_shop=?, User_access=?, User_pimg=? WHERE User_id=?', (User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_id_pp_num, User_type, User_password, User_about, User_shop, User_work_shop, User_access, User_pimg, item_id))
         
         # Commit the changes to the database
         conn.commit()
@@ -553,7 +556,7 @@ class UserForm(tk.Frame):
             user_id = int(self.list_box.item(self.list_box.selection())['text'])
         
             # Delete the user from the database
-            cur.execute('DELETE FROM Users WHERE User_id=?', (user_id,))
+            Update_table_database('DELETE FROM Users WHERE User_id=?', (user_id,))
 
             # Commit the changes to the database
             conn.commit()

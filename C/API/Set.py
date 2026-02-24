@@ -23,9 +23,6 @@ sys.path.append(MAIN_dir)
 
 data_dir = os.path.join(MAIN_dir, 'data')
 db_path = os.path.join(data_dir, 'my_database.db')
-#conn = sqlite3.connect(db_path)
-#cur = conn.cursor()
-
 
 
 
@@ -33,11 +30,13 @@ db_path = os.path.join(data_dir, 'my_database.db')
 def Update_table_database(query, value):
     Update_table_database_conn = sqlite3.connect(db_path)
     Update_table_database_cur = Update_table_database_conn.cursor()
-        
+    print("Update_table_database query ", query)
+    print("Update_table_database value ", value)    
     Update_table_database_cur.execute(query, value)
     # Commit the changes to the database
     Update_table_database_conn.commit()
     Update_table_database_conn.close()
+    print("Update_table_database done")
     return True
 
 # USER
@@ -90,19 +89,25 @@ def Set_User(Link, ARG, VALUE, parent=None):
         print("user query ", query)
         print("user value ", value)
         # Insert the new user into the database
+        SETUSER_conn = sqlite3.connect(db_path)
+        SETUSER_cur = SETUSER_conn.cursor()                       
+        
         query = query.replace("`", "")
-        cur.execute('INSERT INTO Users' + query, value)
-        Id = cur.lastrowid
+        SETUSER_cur.execute('INSERT INTO Users' + query, value)
+        Id = SETUSER_cur.lastrowid
         # Commit the changes to the database
-        conn.commit()
+        SETUSER_conn.commit()
         
         if User_data and 'User_id' in User_data:
-            cur.execute('SELECT * FROM Users WHERE User_id=?', (User_data['User_id'],))
+            SETUSER_cur.execute('SELECT * FROM Users WHERE User_id=?', (User_data['User_id'],))
         else:
-            cur.execute('SELECT * FROM Users WHERE Id=?', (Id,))
-        row = cur.fetchone()
+            SETUSER_cur.execute('SELECT * FROM Users WHERE Id=?', (Id,))
+        row = SETUSER_cur.fetchone()
+        column = SETUSER_cur.description
+        SETUSER_conn.close()
+        
         if row:
-            columns = [col[0] for col in cur.description]
+            columns = [col[0] for col in column]
             User_data = dict(zip(columns, row))
         
     return User_data
@@ -172,17 +177,17 @@ def Update_User(Link, user, ARG, UserVALUE, find_Arg, find_Value):
     print("user value ", value)
     if query != "" and User == None:
         # Update the user into the database
-        SETSHOP_conn = sqlite3.connect(db_path)
-        SETSHOP_cur = SETSHOP_conn.cursor()                       
+        SETUser_conn = sqlite3.connect(db_path)
+        SETUser_cur = SETUser_conn.cursor()                       
         # Commit the changes to the database
-        SETSHOP_cur.execute('UPDATE Shops SET ' + query + ' WHERE '+fquery, value + fvalue)
+        SETUser_cur.execute('UPDATE Users SET ' + query + ' WHERE '+fquery, value + fvalue)
         # Commit the changes to the database
         
-        SETSHOP_conn.commit()
-        SETSHOP_cur.execute('SELECT * FROM Shops WHERE '+fquery, fvalue)
-        row = SETSHOP_cur.fetchone()
-        column = SETSHOP_cur.description
-        SETSHOP_conn.close()
+        SETUser_conn.commit()
+        SETUser_cur.execute('SELECT * FROM Users WHERE '+fquery, fvalue)
+        row = SETUser_cur.fetchone()
+        column = SETUser_cur.description
+        SETUser_conn.close()
         if row:
             columns = [col[0] for col in column]
             User = dict(zip(columns, row))
@@ -197,6 +202,76 @@ def Update_User(Link, user, ARG, UserVALUE, find_Arg, find_Value):
 
 # SHOP
 
+
+def Set_Shop(Link, ARG, VALUE, parent=None):
+    query = "("
+    value = None
+    user_name = ""
+    for a, arg in enumerate(ARG):
+        if len(VALUE) > a:
+            query += "`" + arg + "`, "
+            if value:
+                value = value + (VALUE[a],)
+            else:
+                value = (VALUE[a], )
+            if arg == 'user_name':
+                user_name = VALUE[a]
+    if query != "(":    
+        if query.endswith(", "):
+            query = query[:-2]
+        query += ") "
+        query += "VALUES (" + ("?, " * len(ARG)).rstrip(", ") + ")"
+    print("Set_Shop query ", query)
+    shop_data = None
+    if Link and islinked(Link):
+        url = Link
+        entry = {'Do': "SET SHOP", 'QUERYS': query, 'QUERYVALUES' : value , 'user_name': user_name}
+        response_data = Sand_API(url, entry)
+        if not response_data == [] and response_data:
+            if response_data['status'] == 'success':
+                if response_data['Value']:
+                    print("DOCUMENT DATA SHOP Secessfully")
+                    shop_data = response_data['Value']
+                else:
+                    print("Faild To Upload SHOP Data")
+                    return "Faild To Upload SHOP Data"
+            else:
+                print("There is Error FOUND")
+                return "There is Error FOUND"
+    else:
+        print("API Error SHOP")
+
+    if shop_data:
+        answer = tk.messagebox.askquestion("Question", "Document Created Online Secccesfully. for fast performance better to download datas. Do you what to download document data?", parent=parent)
+        if answer == 'yes':
+            shop_data = Set_Shop(None, ['Document_id', 'Document_name', 'Document_brand_name', 'Document_price', 'Document_quantity', 'Document_description', 'Document_category', 'Document_image'], [Document_data['Document_id'], Document_data['Document_name'], Document_data['Document_brand_name'], Document_data['Document_price'], Document_data['Document_quantity'], Document_data['Document_description'], Document_data['Document_category'], Document_data['Document_image']], parent=parent)
+    else:
+        print("SHOP data is going to be added")
+        print("SHOP query ", query)
+        print("SHOP value ", value)
+        # Insert the new Document into the database
+        set_shop_conn = sqlite3.connect(db_path)
+        set_shop_cur = set_shop_conn.cursor()
+        query = query.replace("`", "")
+        set_shop_cur.execute('INSERT INTO Shops' + query, value)
+        Id = set_shop_cur.lastrowid
+                                
+        # Commit the changes to the database
+        set_shop_conn.commit()
+        
+        if shop_data and 'Document_id' in shop_data:
+            set_shop_cur.execute('SELECT * FROM Shops WHERE id=?', (shop_data['id'],))
+        else:
+            set_shop_cur.execute('SELECT * FROM Shops WHERE Id=?', (Id,))
+        #cur.execute('INSERT INTO upload_doc_table' + query, value)
+        row = set_shop_cur.fetchone()
+        column = set_shop_cur.description
+        set_shop_conn.close()
+        if row:
+            columns = [col[0] for col in column]
+            shop_data = dict(zip(columns, row))
+        
+    return shop_data
 
 # this function will add new Shop to system data base all data must be given
 def Add_new_Shop(Shop_id, Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions):
@@ -332,8 +407,9 @@ def Update_Shop(Link, user, ARG, ShopsVALUE, find_Arg, find_Value):
     else:
         print("API Error")
 
-    print("shop query ", query)
-    print("shop value ", value)
+    print("update shop query ", query)
+    print("update shop fquery ", fquery)
+    print("update shop value ", value+fvalue)
     if query != "" and Shop == None:
         # Update the shop into the database
         
@@ -409,7 +485,7 @@ def Set_Setting(user, ARG, VALUE):
         SET_SETTING_conn.commit()
         SET_SETTING_cur.execute('SELECT * FROM setting WHERE Id=?', (Id,))
         row = SET_SETTING_cur.fetchone()
-        column = set_product_cur.description
+        column = SET_SETTING_cur.description
         SET_SETTING_conn.close()
         if row:
             columns = [col[0] for col in column]
@@ -483,10 +559,10 @@ def Set_product(Link, ARG, VALUE, parent=None):
         # Commit the changes to the database
         set_product_conn.commit()
         
-        if product_data and 'Document_id' in product_data:
+        if product_data and 'id' in product_data:
             set_product_cur.execute('SELECT * FROM product WHERE id=?', (product_data['id'],))
         else:
-            set_product_cur.execute('SELECT * FROM product WHERE Id=?', (Id,))
+            set_product_cur.execute('SELECT * FROM product WHERE id=?', (Id,))
         #cur.execute('INSERT INTO upload_doc_table' + query, value)
         row = set_product_cur.fetchone()
         column = set_product_cur.description
@@ -549,7 +625,8 @@ def Update_Producte(Link, user, ARG, ProducteVALUE, find_Arg, find_Value):
         print("API Error")
 
     print("product query ", query)
-    print("product value ", value)
+    print("product fquery ", fquery)
+    print("product value ", value+fvalue)
     if query != "" and product == None:
         update_product_conn = sqlite3.connect(db_path)
         update_product_cur = update_product_conn.cursor()
