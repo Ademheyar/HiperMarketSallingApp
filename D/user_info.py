@@ -35,9 +35,11 @@ class UserInfoForm(tk.Tk):
         self.getvalue_form.grid_columnconfigure(3, weight=1)'''
         
         def logout_fun():
-            self.master.grid_remove()
+            mainparent = self.master.master
+            self.master.destroy()
+            mainparent.frames["DisplayFrame"] = None
             self.getvalue_form.destroy()
-            Security_get_user(self.master)
+            mainparent.show_frame("DisplayFrame")
         
         self._label0 = tk.Label(self.getvalue_form, text="Loged User Informations", font=("Arial", 14))
         self._label0.grid(row=0, column=2, padx=10, pady=10)

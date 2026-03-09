@@ -220,8 +220,8 @@ class DocForm(tk.Frame):
             except Exception:
                 pass
 
-        # Keep compatibility with other code using self.user_id_entry.get()
-        self.user_id_entry = self.user_id_var
+        # Keep compatibility with other code using self.user_name_entry.get()
+        self.user_name_entry = self.user_id_var
 
 
         # Create the label and entry for the customer ID search
@@ -240,8 +240,8 @@ class DocForm(tk.Frame):
 
         self.customer_combobox.bind('<<ComboboxSelected>>', _on_customer_selected)
         # TODO: Set default selection if available
-        # Keep the original attribute name so other code calling self.customer_id_entry.get() continues to work.
-        self.customer_id_entry = self.customer_id_var
+        # Keep the original attribute name so other code calling self.customer_name_entry.get() continues to work.
+        self.customer_name_entry = self.customer_id_var
 
         # Create the label and entry for the tax search
         self.seller_id_label = tk.Label(self.details_frame, text="Seller ID:")
@@ -304,15 +304,19 @@ class DocForm(tk.Frame):
         if user_id is None or user_id == '':
             user_name = "All Users"
         else:
-
-            user_info = fetch_as_dict_list('SELECT * FROM USERS WHERE User_id=?', (str(user_id)))  
+            user_info = fetch_as_dict_list('SELECT * FROM USERS WHERE User_name=?', (str(user_id)))
             if user_info:
                 user = user_info[0]['User_name']
-                user_name = user + " Sales Info"
+                user_name = user
             else:
-                user_info = fetch_as_dict_list('SELECT * FROM USERS WHERE Id=?', (str(user_id)))  
+                user_info = fetch_as_dict_list('SELECT * FROM USERS WHERE User_id=?', (str(user_id)))  
                 if user_info:
-                    user_name = user_info[0]['User_name']
+                    user = user_info[0]['User_name']
+                    user_name = user
+                else:
+                    user_info = fetch_as_dict_list('SELECT * FROM USERS WHERE Id=?', (str(user_id)))  
+                    if user_info:
+                        user_name = user_info[0]['User_name']
 
         self.home_tab = ttk.Frame(self.Doc_tab)
         self.home_tab.grid(row=6, column=0, columnspan=7, rowspan=3, sticky="nsew")
@@ -474,7 +478,8 @@ class DocForm(tk.Frame):
         # ensure accumulator exists (do not reset each shop iteration)
         if not hasattr(self, '_accumulated_expenses'):
             self._accumulated_expenses = 0.0
-
+        
+        txt = "Expenses : 0.00"
         for shop in self.shop:
             # if self.Selected_Shop and shop.get('Shop_name') != self.Selected_Shop:
             #    continue
@@ -767,12 +772,12 @@ class DocForm(tk.Frame):
             # display current accumulated total (will end up as the full total after the loop finishes)
             print(self._accumulated_expenses)
             txt = "Expenses : -" + str(round(self._accumulated_expenses, 2))
-            self.Total_Expense_doc = tk.Label(self.home_tab, text=txt, font=("Arial", 11))
-            self.Total_Expense_doc.grid(row=8, column=3)
+        
+        self.Total_Expense_doc = tk.Label(self.home_tab, text=txt, font=("Arial", 11))
+        self.Total_Expense_doc.grid(row=8, column=2)
 
-        self.Total_Out_doc = tk.Label(self.home_tab, text="Total Out:", font=("Arial", 11))
+        self.Total_Out_doc = tk.Label(self.home_tab, text="Total Out: 0.00", font=("Arial", 11))
         self.Total_Out_doc.grid(row=10, column=2)
-
 
         self.doc_totalprofit_ = tk.Label(self.home_tab, text="Totale Profit :", font=("Arial", 11))
         self.doc_totalprofit_.grid(row=6, column=3)
@@ -796,9 +801,9 @@ class DocForm(tk.Frame):
 
         self.Total_Unpaid_doc = tk.Label(self.home_tab, text="Amount Unpaid:", font=("Arial", 11))
         self.Total_Unpaid_doc.grid(row=10, column=5)
-        self.doc_total_ = tk.Label(self.home_tab, text="Totale :", font=("Arial", 15))
+        self.doc_total_ = tk.Label(self.home_tab, text="Totale : 0.00", font=("Arial", 15))
         self.doc_total_.grid(row=10, column=5)
-        self.doc_gtotal_ = tk.Label(self.home_tab, text="GRAND Totale :", font=("Arial", 15))
+        self.doc_gtotal_ = tk.Label(self.home_tab, text="GRAND Totale : 0.00", font=("Arial", 15))
         self.doc_gtotal_.grid(row=10, column=5)
 
         self.doc_endday_btn = tk.Button(self.home_tab, text="End Day", font=("Arial", 12), command=self.perform_endday)
@@ -969,13 +974,28 @@ class DocForm(tk.Frame):
         if TOTALOUT != 0:
             self.Total_Out_doc.config(text="Total Out : " + str(format(TOTALOUT, ".2f")), bg="red")
         
-        self.doc_totalprofit_.config(text="Total Profit : " + str(format(round(itemsProfit, 2), ".2f")))
-        
-        if round(itemsProfit, 2)-TOTALOUT < 0:
-            self.doc_totalprofit_afterout.config(text="Total Profit After Outs : " + str(format(round(itemsProfit, 2)-TOTALOUT, ".2f")), bg="red")
+        if not hasattr(self, 'Total_profit'):
+            try:
+                self.Total_profit = round(self.Total_profit, 2)
+            except Exception:
+                self.Total_profit = 0.0
+                self.doc_totalprofit_.config(text="Total Profit : 0.00")
         else:
-            self.doc_totalprofit_afterout.config(text="Total Profit After Outs : " + str(format(round(itemsProfit, 2)-TOTALOUT, ".2f")))
-        self.doc_total_afterout.config(text="Total After Outs : " + str(format(round(pid, 2)-TOTALOUT, ".2f")))
+            if  (self.Total_profit + round(itemsProfit, 2)) == (round(itemsProfit, 2)) or float(itemsProfit) == 0.0:
+                self.doc_totalprofit_.config(text="Total Profit : " + str(round(itemsProfit, 2)))
+            else:
+                self.doc_totalprofit_.config(text="Total Profit : "+ str(self.Total_profit + round(itemsProfit, 2)) + " (" + str((round(itemsProfit, 2))) + ")")
+        self.Total_profit += round(itemsProfit, 2)
+
+        if round(self.Total_profit, 2)-TOTALOUT < 0:
+            self.doc_totalprofit_afterout.config(text="Total Profit After Outs : " + str(format(round(self.Total_profit, 2)-TOTALOUT, ".2f")), bg="red")
+        else:
+            self.doc_totalprofit_afterout.config(text="Total Profit After Outs : " + str(format(round(self.Total_profit, 2)-TOTALOUT, ".2f")), bg="green")
+        
+        if round(pid, 2)-TOTALOUT < 0:
+            self.doc_total_afterout.config(text="Total After Outs : " + str(format(round(pid, 2)-TOTALOUT, ".2f")), bg="red")
+        else:
+            self.doc_total_afterout.config(text="Total After Outs : " + str(format(round(pid, 2)-TOTALOUT, ".2f")), bg="green")
 
         self.doc_total_.config(text="Total : " + str(format(round(total, 2), ".2f")))
         
@@ -1267,7 +1287,7 @@ class DocForm(tk.Frame):
                 except Exception:
                     pass
         
-
+        self.Total_profit = 0.0
         self.listdocs_tab = ttk.Frame(self.Doc_tab)
         self.listdocs_tab.grid(row=5, column=0, columnspan=7, rowspan=5, sticky="nsew")
         
@@ -1304,12 +1324,15 @@ class DocForm(tk.Frame):
         item = self.item_entry.get()
         sold_item_info = self.sold_item_info_entry.get()
         discount = self.discount_entry.get()
-        user_id = self.user_id_entry.get()
-        customer_id = self.customer_id_entry.get()
+        
+        user_name = self.user_name_var.get()
+
+        customer_name = self.customer_name_entry.get()
+        
         seller_id = self.seller_id_entry.get()
 
         # Perform the search and update the listbox with the results
-        newdoc = search_documents(doc_id, doc_type, doc_barcode, extension_barcode, item, user_id, customer_id,
+        newdoc = search_documents(doc_id, doc_type, doc_barcode, extension_barcode, item, user_name, customer_name,
                             sold_item_info, discount, seller_id, self.date_from_Entry.get(), self.date_to_Entry.get(), self.doc_created_date_var.get(), self.doc_expire_date_var.get(), self.doc_updated_date_var.get())
         self.listbox.delete(*self.listbox.get_children())
         self.Add_New_documents(newdoc)
@@ -1350,8 +1373,8 @@ class DocForm(tk.Frame):
             
             ispayed = False
             try:
-                is_paid, new_payement_made = self.load_payment(index['payments'], self.date_from_Entry.get(), self.date_to_Entry.get()) # LOAD PYMENT AND IT TOTAL
                 items = json.loads(index['item'])
+                is_paid, new_payement_made = self.load_payment(index['payments'], self.date_from_Entry.get(), self.date_to_Entry.get()) # LOAD PYMENT AND IT TOTAL
             except Exception as e:
                 print("Error loading payment or items:", str(e))
                 items = []
@@ -1396,8 +1419,8 @@ class DocForm(tk.Frame):
                     count_items += len(items)
                     if ispayed:
                         count+=1
-            #print("newdoc : " + str(index)
-            #print("newdoc : " + str(index['doc_created_date']))
+            print("newdoc : " + str(index))
+            print("newdoc : " + str(index['doc_created_date']))
             raw = index.get('doc_created_date') if isinstance(index, dict) else None
             if not raw or str(raw).strip() == "":
                 now = datetime.datetime.now()
@@ -1555,9 +1578,8 @@ class DocForm(tk.Frame):
         }
         print("collected_values : " + str(collected_values))
         
-        user_id = self.user_id_entry.get()
-        self.creat_info(user_id, vv, collected_values, len(self.listbox.get_children()), count_items, count, itemsProfit)
-
+        user_id = self.user_name_var.get()
+        self.creat_info(user_id, vv, collected_values, len(self.listbox.get_children()), count_items, count, itemsProfit)    
 
 
 

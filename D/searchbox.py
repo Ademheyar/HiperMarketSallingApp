@@ -46,6 +46,7 @@ class search_entry(ttk.Entry):
         self.var = self["textvariable"]
         if self.var == '':
             self.var = self["textvariable"] = tk.StringVar()
+
         self.chacke_ifitisallowed()
         self.var.trace('w', self.changed)
         self.bind("<Up>", self.treeview_naigation)
@@ -54,9 +55,6 @@ class search_entry(ttk.Entry):
         self.bind("<Insert>", lambda _:self.Done_search())
         self.bind("<Escape>", lambda _: self.var.set(''))
 
-        
-        # Connect to database
-        self.cursor = conn.cursor()
         # Initialize search type
         self.selected_indexd = -1;
         self.search_type = ""
@@ -644,7 +642,7 @@ class search_entry(ttk.Entry):
 
             if self.perm_docs:
                 # single DB query for documents
-                rows = [] # fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode LIKE ?", (f"%{query}%",))
+                rows = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode LIKE ?", (f"%{query}%",))
                 for row in rows:
                     barcode = row['doc_barcode']
                     if barcode not in unique_barcode_results:

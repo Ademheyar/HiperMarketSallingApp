@@ -96,13 +96,11 @@ class DisplayFrame(tk.Frame):
                 return
             else:
                 self.grid(row=0, column=0, sticky="nsew")
-                self.master.show_frame("Display_Frame")
-          
-            
-        
+                print("User data loaded successfully")
+
         self.main_Notebook = ttk.Notebook(self)
         self.main_Notebook.pack(side="top", fill="both", expand=True)
-
+                      
         self.main_frame = tk.Frame(self.main_Notebook, bg=self.bg_dark)
         self.main_frame.grid()
         self.main_Notebook.add(self.main_frame, text='Sell')
@@ -174,6 +172,8 @@ class DisplayFrame(tk.Frame):
         self.buttons_frame.columnconfigure((0, 1, 2, 3), weight=1, minsize=int(self.buttons_frame.winfo_height() *0.1))
         self.buttons_frame.rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9), weight=1, minsize=int(self.buttons_frame.winfo_height() *0.1))
 
+        self.manage_form = ManageForm(self.main_Notebook, self.user, self.Shops, self.Shops_info, self.on_Shop)
+
         self.voidlist_button = ttk.Button(self.buttons_frame, text="Void\nF3", command=self.void_)
         self.voidlist_button.grid(row=0, column=0, sticky="nsew", padx=3, pady=3)
         self.master.bind("<F3>", lambda _: self.void_())
@@ -200,6 +200,9 @@ class DisplayFrame(tk.Frame):
         
         self.update_button = ttk.Button(self.buttons_frame, text="update\nCtrl+U", command=lambda: self.Call_Uploading_Form())
         self.update_button.grid(row=1, column=2, sticky="nsew", padx=3, pady=3)
+        
+        self.Endday_button = ttk.Button(self.buttons_frame, text="End Day\nCtrl+E", command=lambda: self.manage_form.doc_form.perform_endday())
+        self.Endday_button.grid(row=1, column=3, sticky="nsew", padx=3, pady=3)
 
         self.total_frame = tk.Frame(self.main_frame, height=150, bg=self.bg_light)
         self.total_frame.grid(row=2, column=0, rowspan=2, columnspan=4, sticky="nsew")
@@ -245,9 +248,11 @@ class DisplayFrame(tk.Frame):
         
 
         self.at_shop_name = ""
+        self.Shop_brand_name = self.Shops[0]['Shop_brand_name']
         if(len(self.Shops_Names) == 1):
             print("Only one shop found, selecting it by default.")
             print("Shop Name: ", self.Shops)
+            Shop_brand_name = self.Shops[0]['Shop_brand_name']
             self.At_Shop_id = self.Shops[0]['Shop_Id']
             at_shop_name = self.Shops[0]['Shop_name']
             self.on_Shop = 0
@@ -288,8 +293,6 @@ class DisplayFrame(tk.Frame):
         self.date_year_Spinbox.grid(row=0, column=8, sticky="w", padx=2, pady=5)
         self.date_year_Spinbox.set(str(datetime.datetime.now().strftime('%Y')))
 
-        self.manage_form = ManageForm(self.main_Notebook, self.user, self.Shops, self.Shops_info, self.on_Shop)
-        
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 26, f'User Has No Permission To Access MANAGE FRAME OR LOGIN AS ADMIN'):    
             self.manage_form.pack(side="top", fill="both", expand=True)
             self.main_Notebook.add(self.manage_form, text='MANAGE')
@@ -504,16 +507,16 @@ class DisplayFrame(tk.Frame):
         all_total_price = 0
 
         for a, selected_item in enumerate(self.Selected_items):
-            #print("in update item: " + str(selected_item[0]))
-            #print("in update item: " + str(selected_item[0]))
-            #print("in update item: " + str(selected_item[6]))
-            #print("in update item: " + str(selected_item[8]))
+            print("in update item: " + str(selected_item[0]))
+            print("in update item: " + str(selected_item[0]))
+            print("in update item: " + str(selected_item[6]))
+            print("in update item: " + str(selected_item[8]))
 
             qty = float(selected_item[7])
             price = float(selected_item[10])
             discount = float(selected_item[0]['values']['price']) - float(selected_item[10])
             tax = float(selected_item[10])
-            total_price = float(selected_item[11])
+            total_price = qty * price  # float(selected_item[11])
             
             # Calculate the expected total price based on quantity, price, discount, and tax
             expected_total_price = qty * (price)  # - tax
@@ -1063,7 +1066,7 @@ class DisplayFrame(tk.Frame):
                                 if new_path:
                                     return new_path
                             elif len(item_type) > 4:
-                                if item_type[4] > 0:
+                                if float(item_type[4]) > 0:
                                     print("path ", path)
                                     return path
                             return None
@@ -1092,17 +1095,120 @@ class DisplayFrame(tk.Frame):
                     shop = [self.Selected_Shop]
                 items, doc, selected_type, barcode, shop_name, code, color, size, qty = \
                      item_info['values'], None, item_info['type'], data[6], data[0], data[1], data[2], data[3], data[4]
-                if data[7] != []:
-                    for t, typ in enumerate(data[7]):                            
-                        QTY = int(typ[1])
-                        PRICE = int(typ[2])
-                        value = [str(items['id']), code, barcode, items['name'], color, size, float(QTY), PRICE, self.disc, items['include_tax'], float(QTY)*float(PRICE), shop_name, ""]
-                        self.Selected_items.append([item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], data[5], PRICE, value[9], value[10], value[11], value[12], typ[0]])
-                else:
-                    value = [str(items['id']), code, barcode, items['name'], color, size, float(qty), items['price'], self.disc, items['include_tax'], float(qty)*float(items['price']), shop_name, '']
-                    self.Selected_items.append([item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], data[5], item_info['values']['price'], value[9], value[10], value[11], value[12], ""])
+                
+                # chacke if qty lefte is less than 0 or not
+                # change this item name to unknown item and add it to the list
+                item_type = json.loads(items['more_info']) if items['more_info'] else {}
+                if not item_type == {}:
+                    # get types shop name, code, color, size, extra data if item_type has it like [shops [codes [[colors ...[[sizes[extra data[],...],...],...],...],...],...],...]
+                    def get_type_info(item_type, path):
+                        print("item_type ", item_type)
+                        if len(item_type) == 2 and isinstance(item_type[0], str) and isinstance(item_type[1], list):
+                            new_path = get_type_info(item_type[1], path + [item_type[0]])
+                            if new_path:
+                                return new_path
+                        elif isinstance(item_type[0], list):
+                            new_path = get_type_info(item_type[0], path)
+                            if new_path:
+                                return new_path
+                        elif len(item_type) > 4:
+                            if float(item_type[4]) > 0:
+                                if float(item_type[4])-float(qty) >= 0:
+                                    path = path + [qty]
+                                    print("path ", path)
+                                    return path
+                                else:
+                                    path = path + [float(item_type[4])]
+                                    print("path ", path)
+                                    return path
+                        return None
+                    path = get_type_info(item_type, [])
+                    if path:
+                        print("path2 ", path)
+                        print("shop_name ", shop_name, "code ", code, "color ", color, "size ", size)
+                        if not (path[0] == shop_name and path[1] == code and path[2] == color and path[3] == size):
+                            ask = tk.messagebox.askquestion("Warning", "Selected Items Size, Color or Code Out of Stockd or will be out of stock, do you want to add it to the shop items list with this info? \n\n Shop Name: " + path[0] + "\n Code: " + path[1] + "\n Color: " + path[2] + "\n Size: " + path[3])
+                            if ask == 'yes':
+                                shopname = path[0]
+                                code = path[1]
+                                color = path[2]
+                                size = path[3]
+                                nqty = float(qty)-path[4]
+                                qty = path[4]
+                                item_info = {'type': "ITEM", 'values': items, 'extra_data': [], 'item_list': []}
+                                value = [str(items['id']), items['code'], items['barcode'], items['name'], color, size, qty, items['price'], items['price']-self.disc, items['include_tax'], items['price'], shopname, ""]
+                                self.Selected_items.append([item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], "", value[8], value[9], value[10], value[11], value[12], ""])           
+                        else:
+                            qty = float(qty)-float(path[4])
+                            if data[7] != []:
+                                for t, typ in enumerate(data[7]):                            
+                                    QTY = int(typ[1])
+                                    PRICE = int(typ[2])
+                                    value = [str(items['id']), code, barcode, items['name'], color, size, float(QTY), PRICE, self.disc, items['include_tax'], float(QTY)*float(PRICE), shop_name, ""]
+                                    self.Selected_items.append([item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], data[5], PRICE, value[9], value[10], value[11], value[12], typ[0]])
+                            else:
+                                value = [str(items['id']), code, barcode, items['name'], color, size, float(path[4]), items['price'], self.disc, items['include_tax'], float(qty)*float(items['price']), shop_name, '']
+                                self.Selected_items.append([item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], data[5], item_info['values']['price'], value[9], value[10], value[11], value[12], ""])                        
+                            
+                            if qty <= 0:
+                                continue
+
+                # finde similar item in the list that has same price and cost
+                for item in self.Shops_info['Shop_items']:
+                    # if item price and cost are in range of the unknown item price and cost +- 50% we will consider it as similar item
+                    if isinstance(item, list):
+                        item = item[0]
+                    print('item ', item)
+                    # print("item price ", item['price'], "item cost ", item['cost'], "uitemprice ", uitemprice, "uitemcost ", uitemcost)
+                    # print("item price range ", float(uitemprice) - float(uitemprice)/2, " - ", float(uitemprice) + float(uitemprice)/2 )
+                    uitemprice = float(items['price'])
+                    uitemcost = float(items['cost'])
+                    if (float(item['price']) == float(uitemprice) and float(item['cost']) >= float(uitemcost) - float(uitemcost)/2 and float(item['cost']) <= float(uitemcost) + float(uitemcost)/2):
+                        # change this item name to unknown item and add it to the list
+                        item_type = json.loads(item['more_info']) if item['more_info'] else {}
+                        if not item_type == {}:
+                            # get types shop name, code, color, size, extra data if item_type has it like [shops [codes [[colors ...[[sizes[extra data[],...],...],...],...],...],...],...]
+                            def get_type_info(item_type, path):
+                                print("item_type ", item_type)
+                                if len(item_type) == 2 and isinstance(item_type[0], str) and isinstance(item_type[1], list):
+                                    new_path = get_type_info(item_type[1], path + [item_type[0]])
+                                    if new_path:
+                                        return new_path
+                                elif isinstance(item_type[0], list):
+                                    new_path = get_type_info(item_type[0], path)
+                                    if new_path:
+                                        return new_path
+                                elif len(item_type) > 4:
+                                    if float(item_type[4]) > 0 and float(item_type[4]) - float(qty) >= 0:
+                                        path = path + [qty]
+                                        print("path ", path)
+                                        return path
+                                return None
+                            path = get_type_info(item_type, [])
+                            if path:
+                                ask = tk.messagebox.askquestion("Warning", "This item is out of stock, but we found similar item in the shop items list with this info: \n\n Shop Name: " + path[0] + "\n Code: " + path[1] + "\n Color: " + path[2] + "\n Size: " + path[3] + "\n\n Do you want to add this similar item to the list instead?")
+                                if ask == 'yes':
+                                    shopname = path[0]
+                                    code = path[1]
+                                    color = path[2]
+                                    size = path[3]
+                                    item_info = {'type': "ITEM", 'values': item, 'extra_data': [], 'item_list': []}
+                                    value = [str(item['id']), item['code'], item['barcode'], 'Unknown Item', color, size, path[4], items['price'], items['price']-self.disc, item['include_tax'], items['price'], shopname, ""]
+                                    self.Selected_items.append([item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], "", value[8], value[9], value[10], value[11], value[12], ""])        
+                                    break
+                                else:
+                                    if data[7] != []:
+                                        for t, typ in enumerate(data[7]):                            
+                                            QTY = int(typ[1])
+                                            PRICE = int(typ[2])
+                                            value = [str(items['id']), code, barcode, items['name'], color, size, float(QTY), PRICE, self.disc, items['include_tax'], float(QTY)*float(PRICE), shop_name, ""]
+                                            self.Selected_items.append([item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], data[5], PRICE, value[9], value[10], value[11], value[12], typ[0]])
+                                    else:
+                                        value = [str(items['id']), code, barcode, items['name'], color, size, float(path[4]), items['price'], self.disc, items['include_tax'], float(qty)*float(items['price']), shop_name, '']
+                                        self.Selected_items.append([item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], data[5], item_info['values']['price'], value[9], value[10], value[11], value[12], ""])                        
+                                    break
+
                 self.disc = 0
-        
         if(item_info['type'] == 'ACTIONS'):
            #print("item_info['values'] " + str(item_info['values']))
            #print("item_info['values'][6] " + str(item_info['values'][6]))
@@ -1111,15 +1217,15 @@ class DisplayFrame(tk.Frame):
                 self.Selected_items.append(action)
                 
         if (item_info['type'] == "DOCUMENT"):
+            self.Selected_items = []
             items = json.loads(item_info['values']['item'])
             for item in items:
-                it = fetch_as_dict_list("SELECT * FROM product WHERE id=?", 
-                                (item[0],))[0]
+                it = fetch_as_dict_list("SELECT * FROM product WHERE id=?", (item[0],))[0]
                 if it:
                     doc_item_info = {'values': it, 'type': 'DOCUMENT', 'item_list':[]}
-                    #print("items===========%%%%%%% = " + str(it))
-                   #print("items===========%%%%%%% = " + str(item))
-                   #print("doc_item_info ===========%%%%%%% = " + str(doc_item_info))
+                    # print("items===========%%%%%%% = " + str(it))
+                    # print("items===========%%%%%%% = " + str(item))
+                    # print("doc_item_info ===========%%%%%%% = " + str(doc_item_info))
                     # TODO: last empty one is type find it
                     typ = ""
                     if len(item) > 11:
@@ -1531,7 +1637,7 @@ class DisplayFrame(tk.Frame):
                         return
            #print("--item_tobechanged : " + str(item_tobechanged))
             
-            name = ""
+            costumer_name = ""
             phone_num = ""
             cm_id = None
             old_cm_id = None
@@ -1578,7 +1684,7 @@ class DisplayFrame(tk.Frame):
                 if self.custemr == "" or not self.app:
                     self.Add_Custumer()
                 cm_id = self.custemr
-                name = self.app.user_details['User_name']
+                costumer_name = self.app.user_details['User_name']
                 phone_num = self.app.user_details['User_phone_num']
                #print(self.app.user_details)
 
@@ -1629,11 +1735,11 @@ class DisplayFrame(tk.Frame):
                                 
                                 slip_doc_code.append(d["Barcode"])
                         elif d["Barcode"] == "":
-                               #print("custemer : " + str(self.custemr) + "isneded : " + str(payment_customer_required))
+                                print("custemer : " + str(costumer_name) + "isneded : " + str(payment_customer_required))
                                 # TODO: chacke if self.At_Shop_Id is selected if not make user selecte one
-                                Set_Document(None, ["doc_barcode", "extension_barcode", "At_Shop_Id", "user_id", "customer_id", "Seller_id", "type", "item", "qty", "price", "discount", "tax", "payments", "pid", "doc_created_date", "doc_expire_date", "doc_updated_date"], [str(brcod), "extension_barcode", self.At_Shop_id, self.user['User_id'], self.custemr, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date])
-                                #Update_table_database('INSERT INTO upload_doc (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", self.At_Shop_id, self.user['User_id'], self.custemr, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date))
-                                #Update_table_database('INSERT INTO doc_table (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, Profite, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", self.At_Shop_id, self.user['User_id'], self.custemr, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date))
+                                Set_Document(None, ["doc_barcode", "extension_barcode", "At_Shop_Id", "user_id", "customer_id", "Seller_id", "type", "item", "qty", "price", "discount", "tax", "payments", "pid", "doc_created_date", "doc_expire_date", "doc_updated_date"], [str(brcod), "extension_barcode", self.Shop_brand_name, self.user['User_name'], costumer_name, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date])
+                                #Update_table_database('INSERT INTO upload_doc (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", self.Shop_brand_name, self.user['User_name'], costumer_name, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date))
+                                #Update_table_database('INSERT INTO doc_table (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, Profite, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", self.Shop_brand_name, self.user['User_name'], costumer_name, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date))
                                 # Commit the changes to the database
                                 #conn.commit()
                                 slip_doc_code.append(brcod)
@@ -1677,9 +1783,7 @@ class DisplayFrame(tk.Frame):
 
     # display buttons profermans
     def load(self):
-        self.master.show_frame("DisplayFrame")
         self.load_setting()
-        #ApproveFrame(self, [])
 
     def on_tab_selected(self, event):
         selected_tab = self.main_Notebook.index(self.main_Notebook.select())

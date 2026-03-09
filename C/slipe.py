@@ -19,14 +19,18 @@ from C.API.Set import *
 def find_user(v):
     it = None
     if v and v.isdigit():
+        
         it = fetch_as_dict_list("SELECT * FROM users WHERE User_id=?", (v,))
-    elif  v:
+    elif  v and not v == 'None':
         it = fetch_as_dict_list("SELECT * FROM users WHERE User_name=?", (v,))
     if it:
         return it[0]
     
 def find_shop(id):
-    results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_Id=?", (id,))
+    if id and id.isdigit():
+        results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_Id=?", (id,))
+    elif  id and not id == 'None':
+        results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_brand_name=?", (id,))
     if results:
         print("found shop ", results)
         return results[0]
@@ -357,7 +361,7 @@ def load_slip(doc, d_id):
     user = find_user(doc['user_id'])
     print("User : ", user)
     at_shop = find_shop(doc['At_Shop_Id'])
-    print("User : ", at_shop)
+    print("at_shop", at_shop)
 
     slip = ""
     if at_shop and at_shop['Shop_Slip_Settings']:

@@ -15,7 +15,6 @@ import requests
 
 from C.API import *
 from C.API.Get import *
-from C.API.Set import *
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(os.path.join(current_dir, '..'), '..')
@@ -132,23 +131,23 @@ def Update_User(Link, user, ARG, UserVALUE, find_Arg, find_Value):
 
     for a, arg in  enumerate(find_Arg):
         if len(find_Value) > a:
-            fquery += " " + arg + "=?"
+            fquery += " " + arg + " = ?"
             if fvalue:
                 fvalue = fvalue + (find_Value[a],)
             else:
                 fvalue = (find_Value[a], )
             if a+1 < len(find_Arg):
-                fquery += " AND"
+                fquery += ", "
 
     for a, arg in  enumerate(ARG):
         if len(UserVALUE) > a:
-            query += " " + arg + "=?"
+            query += " " + arg + " = ?"
             if value:
                 value = value + (UserVALUE[a],)
             else:
                 value = (UserVALUE[a], )
             if a+1 < len(ARG):
-                query += " AND"
+                query += ", "
 
     if Link and islinked(Link):
         url = Link
@@ -175,6 +174,7 @@ def Update_User(Link, user, ARG, UserVALUE, find_Arg, find_Value):
 
     print("user query ", query)
     print("user value ", value)
+    print("user find ", 'UPDATE Users SET ' + query + ' WHERE '+fquery, value + fvalue)
     if query != "" and User == None:
         # Update the user into the database
         SETUser_conn = sqlite3.connect(db_path)
@@ -382,7 +382,7 @@ def Update_Shop(Link, user, ARG, ShopsVALUE, find_Arg, find_Value):
             else:
                 value = (ShopsVALUE[a], )
             if a+1 < len(ARG):
-                query += " AND"
+                query += ", "
 
     if Link and islinked(Link):
         url = Link
@@ -599,7 +599,7 @@ def Update_Producte(Link, user, ARG, ProducteVALUE, find_Arg, find_Value):
             else:
                 value = (ProducteVALUE[a], )
             if a+1 < len(ARG):
-                query += " AND"
+                query += ", "
 
     if Link and islinked(Link):
         url = Link
@@ -754,7 +754,7 @@ def Update_Documente(Link, user, ARG, DocumenteVALUE, find_Arg, find_Value):
             else:
                 value = (DocumenteVALUE[a], )
             if a+1 < len(ARG):
-                query += " AND"
+                query += ", "
 
     if Link and islinked(Link):
         url = Link
@@ -784,20 +784,17 @@ def Update_Documente(Link, user, ARG, DocumenteVALUE, find_Arg, find_Value):
     if query != "" and Document == None:
         update_doc_conn = sqlite3.connect(db_path)
         update_doc_cur = update_doc_conn.cursor()
-        # Update the Document into the database                
-        update_doc_cur.execute('UPDATE upload_doc SET ' + query + ' WHERE '+fquery, value + fvalue)
-        update_doc_cur.execute('UPDATE doc_table SET ' + query + ' WHERE '+fquery, value + fvalue)
+        # Update the Document into the database  
+        Tquery = 'UPDATE upload_doc SET ' + query + ' WHERE '+fquery
+        print("Document Tquery ", Tquery)
+        TqueryV = value + fvalue
+        print("Document TqueryV ", TqueryV)             
+        update_doc_cur.execute(Tquery, TqueryV)
+        #update_doc_cur.execute('UPDATE upload_doc SET ' + query + ' WHERE '+fquery, value + fvalue)
         # Commit the changes to the database
         update_doc_conn.commit()
-        update_doc_cur.execute('SELECT * FROM upload_doc WHERE '+fquery, fvalue)
-        row = update_doc_cur.fetchone()
-        column = update_doc_cur.description
         update_doc_conn.close()
-        if row:
-            columns = [col[0] for col in column]
-            Document = dict(zip(columns, row))
-        else:
-            return None
+        Document = fetch_as_dict_list('SELECT * FROM upload_doc WHERE '+fquery, fvalue)
     return Document
 
 

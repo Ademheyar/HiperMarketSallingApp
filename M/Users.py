@@ -284,83 +284,15 @@ class UserForm(tk.Frame):
     
     # Function to perform the search and display the results in the listbox
     def perform_search(self, customer_id):
-        self.pyment_used = []
+        # Get the search text from the search entry
+        search_text = self.search_var.get()
         
+        # Search for users based on the search text
+        users = self.search_users(search_text)
+        
+        # Update the listbox with the search results
+        self.update_results(users)
 
-        # Perform the search and update the listbox with the results
-        results = fetch_as_dict_list('SELECT * FROM doc_table WHERE customer_id=?',(customer_id,))
-        
-        
-        self.user_docinfo_listbox.delete(*self.user_docinfo_listbox.get_children())
-
-        '''results = fetch_as_dict_list("SELECT * FROM COUNT_SELL WHERE strftime('%Y-%m-%d', DATE) BETWEEN ? AND ?", (f'{self.date_from_Entry.get()}', f'{self.date_to_Entry.get()}',))
-        
-        l = []
-        
-        for result in results:
-            f = 0
-            self.TLs_items.insert(tk.END, [result[0], result[1], result[2], result[3], result[4]])
-            for item in l:
-                #print("item"+str(item))
-                if item[1] == result[1]:
-                    item[3] += result[4]
-                    f = 1
-            if f == 0:
-                l.extend([[len(l), result[1], result[2], result[4]]])
-        for ls in l:
-            self.TL_items.insert(tk.END, ls)
-        #self.get_columen()'''
-        vv = []
-        count = 0
-        for index in df:
-            item = self.user_docinfo_listbox.insert('', 'end', text=index[0], values=(index[1], index[2], index[3], index[4], index[5], index[6], index[7], index[8], index[9], index[10], index[11], index[12], index[13], index[14]))
-            '''ispayed = self.load_payment(index[11], self.date_from_Entry.get(), self.date_to_Entry.get()) # LOAD PYMENT AND IT TOTAL 
-            if ispayed:
-                count+=1
-            #print("df : " + str(index)
-            #print("df : " + str(index[12]))
-            dateandtime = index[12].split(" ") if " " in index[12] else index[12].split("_")
-            hour = dateandtime[1].split(":")[0] if ":" in dateandtime[1] else dateandtime[1].split("-")[0]
-            date = dateandtime[0].split("-")
-            day = date[2]
-            month = date[1]
-            year = date[0]
-            vv.append([year, month, day, hour, float(index[8])-float(index[9])])
-
-            
-            id = self.listbox.item(item, "text")
-            item_text = self.listbox.item(item, "values")
-
-            if item:
-                # Detect double-click
-                print("Double-clicked item:", item_text)
-
-                # Add tabs to the self.center_notebook
-                if item_text[0]:
-                    tab_exist = any(self.center_notebook.tab(tab_id, "text") == item_text[0] for tab_id in self.center_notebook.tabs())
-                    if not tab_exist:
-                        test_tab = ttk.Frame(self.center_notebook)
-                        self.center_notebook.add(test_tab, text=item_text[0])
-                        # Create a close button and position it at the top next to the tab title
-                        close_button1 = tk.Button(test_tab, text="X", command=lambda : self.close_tab(test_tab))
-                        close_button1.pack(side="top", anchor="ne", padx=5, pady=2)
-                        doc_edit_form = DocEditForm(test_tab, item_text, id)
-                    else:
-                        for a in self.center_notebook.tabs():
-                            print("Tab already exists!")
-                            print(str(self.center_notebook.tab(a, "text")))
-
-        if len(vv) > 0:
-            #print(" v : " + str(vv))
-            self.graph_value, self.graph_value0, tilte = make_list(vv)
-        
-            #print("self.graph_value0 :" + str(self.graph_value0))
-            draw_cart(int(self.style_var.get()), self.chart_canvas, self.next_button, self.prev_button, self.graph_value0, int(self.which_var.get()), 1, 0)
-            draw_cart(int(self.style_var.get()), self.chart2_canvas, None, None, self.graph_value0, int(self.which_var.get()), 2, 0)
-            self.display_products(self.graph_value0, int(self.which_var.get()))
-      
-        self.creat_info(count)'''
-        
     # create a function to update the search results whenever the search box changes
     def update_search_results(self, *args):
         # get the search string from the search box
@@ -385,7 +317,8 @@ class UserForm(tk.Frame):
         
         # Add the users to the user listbox
         for user in users:
-            self.list_box.insert('', 'end', text=user[0], values=(user[1], user[2], user[3], user[4], user[5], user[6]))
+            print("update_results\n"+str(user))
+            self.list_box.insert('', 'end', text=user['User_id'], values=(user['User_fname'], user['User_Lname'], user['User_name'], user['User_gender'], user['User_country'], user['User_phone_num'], user['User_email'], user['User_address']))
 
         # Hide the user details frame
         self.hide_user_details_frame()
@@ -430,13 +363,33 @@ class UserForm(tk.Frame):
             user_id = self.list_box.item(selected_user)['text']
 
             # Delete the user from the database
-            Update_table_database('SELECT * FROM Users WHERE User_id=?', (user_id,))
-            users = cur.fetchall()
+            users = fetch_as_dict_list('SELECT * FROM Users WHERE User_id=?', (user_id,))
 
             print("name : " + str(users))
             if users:
-                id, User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, \
-                    User_home_no, User_id_pp_num, User_type, User_password, User_about, User_shop, User_work_shop, User_likes, User_following_shop, User_favoraite_items, User_rate, User_access, User_pimg = users[0]
+                id = users[0]['User_id']
+                User_fname = users[0]['User_fname']
+                User_Lname = users[0]['User_Lname']
+                User_name = users[0]['User_name']
+                User_gender = users[0]['User_gender']
+                User_country = users[0]['User_country']
+                User_phone_num = users[0]['User_phone_num']
+                User_email = users[0]['User_email']
+                User_address = users[0]['User_address']
+                User_home_no = users[0]['User_home_no']
+                User_id_pp_num = users[0]['User_id_pp_num']
+                User_type = users[0]['User_type']
+                User_password = users[0]['User_password']
+                User_about = users[0]['User_about']
+                User_shop = users[0]['User_shop']
+                User_work_shop = users[0]['User_work_shop']
+                User_likes = users[0]['User_likes']
+                User_following_shop = users[0]['User_following_shop']
+                User_favoraite_items = users[0]['User_favoraite_items']
+                User_rate = users[0]['User_rate']
+                User_access = users[0]['User_access']
+                User_pimg = users[0]['User_pimg']
+
                 # Clear the current text
                 # than add new one
                 self.fname_entry.delete(0, "end")
@@ -481,10 +434,8 @@ class UserForm(tk.Frame):
                 self.pimg_entry.delete(0, "end")
                 self.pimg_entry.insert(0, str(User_pimg))
                 
-                self.perform_search(id, )
+                #self.perform_search(id, )
                 self.add_button.config(text="Update")
-                # Commit the changes to the database
-                conn.commit()
                 self.userinfo_notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
     def on_select(self, event):
@@ -498,8 +449,7 @@ class UserForm(tk.Frame):
     # Define the function for updating the user listbox
     def update_user_listbox(self):
         # Get the users from the database
-        #Update_table_database('SELECT * FROM USERS')
-        users = []#cur.fetchall()
+        users = fetch_as_dict_list('SELECT * FROM USERS', ())
         self.update_results(users)
         
     # Define the function for adding a new user
@@ -529,17 +479,13 @@ class UserForm(tk.Frame):
             User_following_shop = ""
             User_favoraite_items = ""
             User_rate = ""
-            Update_table_database('INSERT INTO Users(User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_type, User_password, User_about, User_shop, User_work_shop, User_likes, User_following_shop, User_favoraite_items, User_rate, User_access, User_pimg) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',(User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_type, User_password, User_about, User_shop, User_work_shop, User_likes, User_following_shop, User_favoraite_items, User_rate, User_access, User_pimg))
+            Set_User(None, ['User_fname', 'User_Lname', 'User_name', 'User_gender', 'User_country', 'User_phone_num', 'User_email', 'User_address', 'User_home_no', 'User_type', 'User_password', 'User_about', 'User_shop', 'User_work_shop', 'User_likes', 'User_following_shop', 'User_favoraite_items', 'User_rate', 'User_access', 'User_pimg'], [User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_type, User_password, User_about, User_shop, User_work_shop, User_likes, User_following_shop, User_favoraite_items, User_rate, User_access, User_pimg])
               
         else:
-            item_id = int(self.list_box.item(self.list_box.selection())['text'])
-            print("item_id : " + str(item_id))
+            user_id = int(self.list_box.item(self.list_box.selection())['text'])
+            print("user_id : " + str(user_id))
             # UPDATE the new user into the database
-            Update_table_database('UPDATE Users SET User_fname=?, User_Lname=?, User_name=?, User_gender=?, User_country=?, User_phone_num=?, User_email=?, User_address=?, User_home_no=?, User_id_pp_num=?, User_type=?, User_password=?, User_about=?, User_shop=?, User_work_shop=?, User_access=?, User_pimg=? WHERE User_id=?', (User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_id_pp_num, User_type, User_password, User_about, User_shop, User_work_shop, User_access, User_pimg, item_id))
-        
-        # Commit the changes to the database
-        conn.commit()
-
+            Update_User(None, self.user_info, ['User_fname', 'User_Lname', 'User_name', 'User_gender', 'User_country', 'User_phone_num', 'User_email', 'User_address', 'User_home_no', 'User_id_pp_num', 'User_type', 'User_password', 'User_about', 'User_shop', 'User_work_shop', 'User_access', 'User_pimg'], [User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_id_pp_num, User_type, User_password, User_about, User_shop, User_work_shop, User_access, User_pimg], ['User_id'], [user_id])
         # Clear the user details widgets
         self.clear_user_details_widget()
         

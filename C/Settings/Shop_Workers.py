@@ -266,7 +266,6 @@ class WorkersForm(tk.Frame):
     # Create the "Add New" button
     def show_add_forme(self):
         self.clear_tool_details_widget()
-        self.on_name_entry(None)
         self.details_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
         
     def hide_add_forme(self):
@@ -414,16 +413,15 @@ class WorkersForm(tk.Frame):
                             Shop_worker[6] = acsess
                         Shop_workers_copy.append(Shop_worker)
                     users = None
+                    print("Shop_workers_copy ", Shop_workers_copy)
                     if not shop_worker_id == "":
-                        users = fetch_as_dict_list( 'SELECT * FROM USERS WHERE User_id=?', (str(shop_worker_id)))
+                        users = fetch_as_dict_list( 'SELECT * FROM USERS WHERE User_id=?', (str(shop_worker_id),))
                     
                     if users:
                         user = users[0]
                         print("Shop_workers_copy ", Shop_workers_copy)
                         print("user ", user)
-                        Update_table_database('UPDATE Shops SET Shop_workers=? WHERE Shop_id=?', (json.dumps(Shop_workers_copy), shop['Shop_Id']))
-                        # Commit the changes to the database
-                        conn.commit()
+                        Update_Shop(None, users, ['Shop_workers'], [json.dumps(Shop_workers_copy)], ['Shop_id'], [shop['Shop_Id']])
                         self.Shops[s]['Shop_workers'] = json.dumps(Shop_workers_copy)
                         
                         User_work_shops = []
@@ -440,10 +438,8 @@ class WorkersForm(tk.Frame):
                                     User_work_shop[3] = [acsess]
                             User_work_shops_copy.append(User_work_shop)
                         print("User_work_shops_copy ", User_work_shops_copy)
+                        Update_User(None, users, ['User_work_shop'], [json.dumps(User_work_shops_copy)], ['User_id'], [user['User_id']])
 
-                        Update_table_database('UPDATE Users SET User_work_shop=? WHERE User_id=?', (json.dumps(User_work_shops_copy), user['User_id']))
-                        # Commit the changes to the database
-                        conn.commit()
         # Update the product listbox
         self.update_WORKERS_listbox()
         
@@ -468,28 +464,6 @@ class WorkersForm(tk.Frame):
             # Update the product listbox
             self.update_WORKERS_listbox()
 
-
-
-
-
-
-
-
-
-
-
-
-    def on_name_entry(self, event):
-        Update_table_database('SELECT * FROM tools')
-        products = cur.fetchall()
-        for product in products:
-            if product[1] == self.name_entry.get():
-                self.add_button.config(text="Update")    
-                return
-        if self.main_name == self.name_entry.get() and not self.main_name == "":
-            self.add_button.config(text="Update")
-        else:
-            self.add_button.config(text="New")
 
     def on_select(self, event):
         print("onselect")

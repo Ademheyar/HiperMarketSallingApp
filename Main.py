@@ -365,7 +365,7 @@ class MainApplication(tk.Tk):
         
         #self.show_frame("DisplayFrame")
 
-    def login(self, i, Shops, User_data, User_work_shops):
+    '''def login(self, i, Shops, User_data, User_work_shops):
             # hide all frames except the one to be shown
             Shops_info = {'Selected_Shop': Shops[i], 'Shops': Shops, 'User': User_data, 'User_Shops_List': User_work_shops, 'Shop_items': [], 'Shop_Actions': ""}
             #print("User11 : " + str(user[15]))
@@ -377,7 +377,7 @@ class MainApplication(tk.Tk):
             self.frames["DisplayFrame"].Shops = Shops
             self.frames["DisplayFrame"].User_Shops_List = User_work_shops
             #self.master.frames["DisplayFrame"].load()
-            #self.master.show_frame("DisplayFrame")
+            #self.master.show_frame("DisplayFrame")'''
             
     def self_focus(self):
         #print("focus main window")
@@ -385,15 +385,17 @@ class MainApplication(tk.Tk):
         self.focus_set()
         
     def show_frame(self, frame_name):
+        if "DisplayFrame" in self.frames and self.frames["DisplayFrame"] == None:
+            self.frames["DisplayFrame"] = DisplayFrame(self, None, None, None, None)
+
         # hide all frames except the one to be shown
         for frame in self.frames.values():
             if frame:
                 frame.grid_remove()
+
         if frame_name in self.frames and self.frames[frame_name]:
             self.frames[frame_name].grid()
-        #if frame_name == "DisplayFrame":
-        #    self.frames[frame_name].search_entry.focus_set()
-
+        
         # this will chaek if frame called is user create or show info
         # than it will display result of connection
         if frame_name == "User_Info_Frame" and self.frames[frame_name]:

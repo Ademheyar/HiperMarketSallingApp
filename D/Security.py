@@ -106,7 +106,19 @@ class SecurityForm(tk.Toplevel):
             bd=2
         )
         self.entered_username_entry.grid(row=0, column=1, columnspan=2, sticky="ew", padx=12, pady=8)
-
+        self.forgetuserbtn = tk.Button(
+            self.credentials_frame,
+            text="Forgot Username?",
+            command=self.forget_username,
+            bg=bg_light,
+            fg=text_light,
+            font=("Roboto", 10),
+            relief=tk.FLAT,
+            activebackground="#1565c0",
+            activeforeground=text_light,
+            padx=10,
+            pady=8
+        )
         # Password entry
         password_label = tk.Label(
             self.credentials_frame,
@@ -127,7 +139,8 @@ class SecurityForm(tk.Toplevel):
             bd=2
         )
         self.entered_password_entry.grid(row=1, column=1, columnspan=2, sticky="ew", padx=12, pady=8)
-
+        self.entered_password_entry.bind("<Return>", lambda event: self.log_in())  # allow Enter key to trigger login
+        
         self.log_in_button = tk.Button(
             self.credentials_frame,
             text="Log In",
@@ -526,7 +539,7 @@ class SecurityForm(tk.Toplevel):
         on_r = 0
         # create buttons and place them in a grid with fixed number of rows and variable columns
         for idx, name in enumerate(names):
-            r = idx // rows       # row cycles 0..rows-1
+            r = idx // rows       # row cycles 0 ..rows -1
             if on_r == desired_rows:
                 r = on_r % rows
                 on_col += 1
@@ -549,13 +562,14 @@ class SecurityForm(tk.Toplevel):
                 self.user_buttons_frame.grid_rowconfigure(colsr, weight=1, minsize=48)
         
         # After creating buttons, update sizes and scrollregion
-        #self.user_buttons_frame.update_idletasks()
+        # self.user_buttons_frame.update_idletasks()
         # ensure inner frame requested width is preserved so horizontal scrollbar appears when needed
         self._update_buttons_scrollregion()
         self._adjust_button_widths()
 
     def _on_new_user_pressed(self):
         # when New User pressed, go to credential page and allow entering username/password
+        self.forgetuserbtn.grid_remove()  # hide the "Forgot Username?" button in new user mode
         self.selected_user_var.set("")
         self._show_credentials_page()
         self.button_BACK_close['text'] = "Back"
@@ -564,8 +578,45 @@ class SecurityForm(tk.Toplevel):
         self.log_in_button.configure(state='normal')
         self.entered_username_entry.focus_set()
 
+
+    def forget_username(self):
+        user_name = self.entered_username_entry.get()
+        loged_path = os.path.join(data_dir, 'loged.txt')
+        user_map = {}
+        user_names = []
+        text = ""
+        for saveduser in self.user_map:
+            if saveduser != user_name:
+                text = f"{self.user_map[saveduser]}:{saveduser}\n"
+                user_names.append(saveduser)
+                user_map[saveduser] = self.user_map[saveduser]
+        self.user_map = user_map
+        self.user_names = user_names
+
+        # persist to file (simple id:name per line)
+        try:
+            #print("Writing logged users to loged.txt...")
+            loged_path = os.path.join(data_dir, 'loged.txt')
+            with open(loged_path, 'w', encoding='utf-8') as f:
+                #print("Saving users...")
+                f.write(text)
+                #print("Users saved.")           
+        except Exception:
+            return False
+        
+        # hide credentials frame and restore user selection canvas + scrollbar
+        try:
+            self.credentials_frame.grid_remove()
+        except Exception:
+            pass
+        self.forgetuserbtn.grid_remove()  # hide the "Forgot Username?" button in new user mode
+        self._update_buttons_scrollregion()
+        self._adjust_button_widths()
+        self._render_user_buttons()
+
     def _on_user_button_pressed(self, name):
         # when an existing user button is pressed, go to credential page and prefill username (readonly)
+        self.forgetuserbtn.grid(row=0, column=3, sticky="e", padx=12, pady=8)        
         self.selected_user_var.set(name)
         self._show_credentials_page()
         self.button_BACK_close['text'] = "Back"

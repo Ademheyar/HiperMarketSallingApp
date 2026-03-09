@@ -240,10 +240,14 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
             given.append(f'%{item}%')
         else:
             given.append(f'%{item}%')
+
     if user_id is not None and user_id is not '':
+        print("doc user_id : ", user_id)
         q += f" AND user_id='{user_id}'" if q != '' else f" user_id='{user_id}'"
     if customer_id is not None and customer_id is not '':
+        print("doc customer_id : ", customer_id)
         q += f" AND customer_id='{customer_id}'" if q != '' else f" customer_id='{customer_id}'"
+
     if sold_item_info is not None and sold_item_info is not '':
         q += f" AND sold_item_info='{sold_item_info}'" if q != '' else f" sold_item_info='{sold_item_info}'"
     if discount is not None and discount is not '':
@@ -276,7 +280,7 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
             r = d
     query += r
     
-    #print(str([query, (*given,)])+"\n")
+    print("search documents Query:", str([query, (*given,)])+"\n")
     # Execute the SQL query and return the results as a list of tuples
-    results = fetch_as_dict_list( query, (given))
+    results = fetch_as_dict_list(query, (given))
     return results

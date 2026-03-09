@@ -80,8 +80,6 @@ class CreateUserDialog(tk.Toplevel):
         create_button = tk.Button(self, text="Create", command=self.create_user, font=("Arial", 14))
         create_button.grid(row=8, column=0, padx=10, pady=10)
         
-
-
         cancel_button = tk.Button(self, text="Cancel", command=self.destroy, font=("Arial", 14))
         cancel_button.grid(row=8, column=1, padx=10, pady=10)
 
@@ -91,6 +89,8 @@ class CreateUserDialog(tk.Toplevel):
 
     def create_user(self):
         name = self.name_var.get()
+        fname = name.split(" ")[0] if len(name.split(" ")) > 0 else name
+        lname = name.split(" ")[1] if len(name.split(" ")) > 0 else ""
         address = self.address_var.get()
         id_num = self.id_num_var.get()
         phone_num = self.phone_num_var.get()
@@ -99,8 +99,8 @@ class CreateUserDialog(tk.Toplevel):
         password = self.password_var.get()
         access = self.access_var.get()
 
-        Update_table_database("INSERT INTO Users (User_name, User_address, User_id_pp_num, User_phone_num, User_email, User_type, User_password, User_access) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                       (name, address, id_num, phone_num, email, user_type, password, access))
+        Update_table_database("INSERT INTO Users (User_name, User_fname, User_lname, User_address, User_id_pp_num, User_phone_num, User_email, User_type, User_password, User_access) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                       (name, fname, lname, address, id_num, phone_num, email, user_type, password, access))
         conn.commit()
 
         self.parent.fill_user_listbox()
@@ -118,7 +118,7 @@ class UserManagementApp(tk.Toplevel):
         self.on_Shop = on_Shop
 
         self.user_details = {}
-        it = fetch_as_dict_list("SELECT * FROM Users WHERE User_id=?", (def_cm_id,)).fetchone()
+        it = fetch_as_dict_list("SELECT * FROM Users WHERE User_id=?", (def_cm_id,))
 
         self.username_var = tk.StringVar()
 
@@ -178,26 +178,38 @@ class UserManagementApp(tk.Toplevel):
                 self.user_listbox.selection_set(next_index)
             else:
                 self.user_listbox.selection_set(0)
-        selected_username = self.user_listbox.get(self.user_listbox.curselection())[0]
-        self.show_user_details(selected_username)
+        selected_userId = self.user_listbox.get(self.user_listbox.curselection())[0]
+        selected_usernid = self.user_listbox.get(self.user_listbox.curselection())[1]
+        selected_username = self.user_listbox.get(self.user_listbox.curselection())[2]
 
-    def show_user_details(self, id):
-        row = fetch_as_dict_list("SELECT * FROM Users WHERE User_id = ?", (id,))
+        self.show_user_details(selected_userId, selected_usernid, selected_username)
+
+    def show_user_details(self, Id, userid, username):
         
+        if userid == None or userid == "None" or userid == "":
+            row = fetch_as_dict_list("SELECT * FROM Users WHERE Id = ?", (Id,))
+        else:
+            row = fetch_as_dict_list("SELECT * FROM Users WHERE User_id = ?", (userid,))
 
         self.clear_details_panel()
-
         if row:
-            # print("row : "+str(row))
-            user_id = row[0]
-            name  = row[3]
-            addres  = row[4]
-            id_num  = row[5]
-            phone_num  = row[6]
-            email  = row[7]
-            utype  = row[11]
-            password  = row[12]
-            acsess= row[13]
+            row = row[0]
+            print("row : "+str(row))
+            Id = row['Id']
+            user_id = row['User_id']
+            username = row['User_name']
+            if row['User_fname'] == None:
+                row['User_fname'] = ""
+            if row['User_Lname'] == None:
+                row['User_Lname'] = ""
+            name  = row['User_fname'] + " " + row['User_Lname']
+            addres  = row['User_address']
+            id_num  = row['User_id_pp_num']
+            phone_num  = row['User_phone_num']
+            email  = row['User_email']
+            utype  = row['User_type']
+            password  = row['User_password']
+            acsess= row['User_access']
 
             user_id_label = tk.Label(self.details_panel, text="User ID: " + str(user_id), font=("Arial", 14))
             user_id_label.grid(row=0, column=0, sticky="w")
@@ -205,7 +217,7 @@ class UserManagementApp(tk.Toplevel):
             username_label = tk.Label(self.details_panel, text="Username: " + str(name), font=("Arial", 14))
             username_label.grid(row=1, column=0, sticky="w")
 
-            first_name_label = tk.Label(self.details_panel, text="Name: " + str(row[1])+ " "+ str(row[2]), font=("Arial", 14))
+            first_name_label = tk.Label(self.details_panel, text="Name: " + str(row['User_fname'])+ " "+ str(row['User_Lname']), font=("Arial", 14))
             first_name_label.grid(row=2, column=0, sticky="w")
 
             last_name_label = tk.Label(self.details_panel, text="phone number: " + str(phone_num), font=("Arial", 14))
@@ -218,8 +230,11 @@ class UserManagementApp(tk.Toplevel):
             type_label.grid(row=5, column=0, sticky="w")
 
             self.user_details = {
+                "Id": Id,
                 "User_id": user_id,
-                "User_name": name,
+                "User_name": username,
+                "User_fname": row['User_fname'],
+                "User_Lname": row['User_Lname'],
                 "User_address": addres,
                 "User_id_pp_num": id_num,
                 "User_phone_num": phone_num,
@@ -228,31 +243,38 @@ class UserManagementApp(tk.Toplevel):
                 "password": password,
                 "acsess": acsess
             }
+        else:
+            no_details_label = tk.Label(self.details_panel, text="No details available", font=("Arial", 14))
+            no_details_label.grid(row=0, column=0, sticky="w")
+            self.user_details = None
 
     def fill_user_listbox(self):
         self.user_listbox.delete(0, tk.END)
-        rows = fetch_as_dict_list("SELECT User_name FROM Users")
-        
+        rows = fetch_as_dict_list("SELECT Id, User_id, User_name FROM Users", ())
         for row in rows:
-            self.user_listbox.insert(tk.END, row[0])
+            self.user_listbox.insert(tk.END, [row["Id"], row["User_id"], row["User_name"]])
 
     def clear_details_panel(self):
         for widget in self.details_panel.winfo_children():
             widget.destroy()
 
     def on_user_select(self, event):
-        print("self.user_listbox.curselection() " + str(self.user_listbox.curselection()))
-        print("self.user_listbox.get( " + str(self.user_listbox.get(self.user_listbox.curselection())))
-        selected_username = self.user_listbox.get(self.user_listbox.curselection())[0]
-        self.show_user_details(selected_username)
+        # print("self.user_listbox.curselection() " + str(self.user_listbox.curselection()))
+        # print("self.user_listbox.get( " + str(self.user_listbox.get(self.user_listbox.curselection())))
+        selected_userId = self.user_listbox.get(self.user_listbox.curselection())[0]
+        selected_usernid = self.user_listbox.get(self.user_listbox.curselection())[1]
+        selected_username = self.user_listbox.get(self.user_listbox.curselection())[2]
+
+        self.show_user_details(selected_userId, selected_usernid, selected_username)
 
     def done_selecting(self):
-        selected_username = self.user_listbox.get(self.user_listbox.curselection())[0]
+        selected_userId = self.user_listbox.get(self.user_listbox.curselection())[0]
+        selected_usernid = self.user_listbox.get(self.user_listbox.curselection())[1]
+        selected_username = self.user_listbox.get(self.user_listbox.curselection())[2]
         if self.user_details:
-            if selected_username == self.user_details["User_id"]:
+            if str(selected_userId) == str(self.user_details["Id"]) and str(selected_usernid) == str(self.user_details["User_id"]) and selected_username == self.user_details["User_name"]:
                 self.destroy()
             
-
     def entry_changed(self, *args):
         self.search()
         
@@ -261,9 +283,9 @@ class UserManagementApp(tk.Toplevel):
         rows = fetch_as_dict_list("SELECT * FROM Users WHERE User_name LIKE ? OR User_address LIKE ? OR User_id_pp_num LIKE ? OR User_phone_num LIKE ? OR User_email LIKE ? OR User_type LIKE ? OR User_access LIKE ?", 
                     ('%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%'))
         
-        self.user_listbox.delete(0, tk.END)
+        self.user_listbox.delete(0, tk.END)  
         for row in rows:
-            self.user_listbox.insert(tk.END, [row[0], row[3]])
+            self.user_listbox.insert(tk.END, [row['Id'], row['User_id'], row['User_name']])
 
     def create_user_dialog(self):
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 20, f'User Not allowed to Create New Costumer'):

@@ -326,7 +326,8 @@ class ProductForm(ttk.Frame):
         All_Products = self.tree.insert("", "end", text="ALL PRODUCTS")
         def add_items(parent_id, items):
             newpid = None
-            if not len(items) >= 1:
+            print("add_items ", items)
+            if not items or not isinstance(items, list) or not len(items) >= 1:
                 return
             else:
                 # print("items ", list(items))    

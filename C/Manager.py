@@ -33,9 +33,9 @@ class ManageForm(ttk.Frame):
 
         self.manage_menus_label = ttk.Label(self.left_pane, text="Manage Menus")
         self.manage_menus_label.pack()
+        self.doc_form = DocForm(self.manage_form, self.user, self.Shops)
         
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 27, f'User Has No Permission To Access DOC FRAME OR LOGIN AS ADMIN'):                        
-            self.doc_form = DocForm(self.manage_form, self.user, self.Shops)
             self.manuframes["DocForm"] = self.doc_form
 
             # create buttons in manage_menus form

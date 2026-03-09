@@ -325,7 +325,10 @@ class Select_User_Company_State_Frame(tk.Frame):
                         Shops = Update_Shop(self.Link, self.User_data, ['Shop_workers'], [jsonShop_workers], ['Shop_Id'], [Shops['Shop_Id']])
                         if Shops:
                             print("Shop workers Updated Secessfuly", Shops)
-                            Shops = Shops[0]
+                            if isinstance(Shops, list):
+                                Shops = Shops[0]
+                            else:
+                                Shops = Shops
                             self.Shops.append(Shops)
 
                     # Now update the User_work_shop field in Users table
