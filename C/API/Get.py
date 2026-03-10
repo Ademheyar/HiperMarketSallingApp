@@ -10,8 +10,11 @@ import random
 import sqlite3, os
 import base64
 import json
+import requests
 
-from C.API import API
+
+from D.Security import *
+from C.API.API import *
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(os.path.join(current_dir, '..'), '..')
@@ -19,21 +22,6 @@ sys.path.append(MAIN_dir)
 
 data_dir = os.path.join(MAIN_dir, 'data')
 db_path = os.path.join(data_dir, 'my_database.db')
-
-
-import requests
-
-current_dir = os.path.abspath(os.path.dirname(__file__))
-MAIN_dir = os.path.join(current_dir, '..')
-sys.path.append(MAIN_dir)
-
-from D.Security import *
-
-from C.API.Get import *
-from C.API.API import *
-from C.API.Set import *
-
-
 
 # this will fetch data as dict list from data base
 # query : str = the sql query
@@ -75,8 +63,8 @@ def fetch_as_dict_list(query, values):
 # NAME AND PASSWORD IS RQUERDE FOR FACHING ALL INFO
 
 def Get_WORKER(Link, ARG, VALUE):
-    
-    
+    User_name = ''
+    User_password = ''
     url = Link
     entry = {'Do': "GET USER", 'User_name': User_name, 'User_password' : User_password }
     while 1:

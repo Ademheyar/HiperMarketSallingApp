@@ -11,26 +11,20 @@ import sqlite3, os
 import base64
 import json
 
-current_dir = os.path.abspath(os.path.dirname(__file__))
-MAIN_dir = os.path.join(os.path.join(current_dir, '..'), '..')
-sys.path.append(MAIN_dir)
-
-data_dir = os.path.join(MAIN_dir, 'data')
-db_path = os.path.join(data_dir, 'my_database.db')
-conn = sqlite3.connect(db_path)
-cursor = conn.cursor()
-
 import requests
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
-MAIN_dir = os.path.join(current_dir, '..')
+MAIN_dir = os.path.join(os.path.join(current_dir, '..'), '..')
 sys.path.append(MAIN_dir)
-
+data_dir = os.path.join(MAIN_dir, 'data')
+db_path = os.path.join(data_dir, 'my_database.db')
 
 
 # API Connection 
 
 def Chacke_Connection(Link):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
     url = Link
     entry = {'Do': "Testing Connection", 'shop': 0, 'user' : 0, 'ISNEW_USER' : 0 , 'ISNEW_SHOP' : 0 }
     while 1:

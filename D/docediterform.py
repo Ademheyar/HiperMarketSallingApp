@@ -70,14 +70,18 @@ class DocEditForm(tk.Frame):
         label_customer.grid(row=0, column=0)
         self.selected_user = tk.StringVar()
         self.selected_user = items[3]
-        rows = fetch_as_dict_list("SELECT * FROM users")
+        users_list = fetch_as_dict_list("SELECT * FROM users", ())
         
         # create the combo box
         self.entry_customer = ttk.Combobox(top_form, width=20, font=("Arial", 12), textvariable=self.selected_user)
         self.entry_customer.grid(row=0, column=1)
         users_options = []
-        for row in rows:
-            users_options.append(row[1])
+        for user in users_list:
+            # how to tall will reading it
+            if user['User_id'] == 'None':
+                users_options.append(user['Id'])
+            else:
+                users_options.append(user['User_id'])
         # set the list of options
         self.entry_customer['values'] = users_options
 
@@ -231,14 +235,14 @@ class DocEditForm(tk.Frame):
         payment_tools_label_type = tk.Label(payment_tools, text="Type")
         payment_tools_label_type.grid(row=0, column=0)
         self.selected_pay_type = tk.StringVar()
-        rows = fetch_as_dict_list("SELECT * FROM tools")
+        #payments_list = fetch_as_dict_list("SELECT * FROM tools", ())
         
         # create the combo box
         self.payment_tools_entry_type = ttk.Combobox(payment_tools, width=20, font=("Arial", 12), textvariable=self.selected_pay_type)
         self.payment_tools_entry_type.grid(row=0, column=1)
         pay_type_options = []
-        for row in rows:
-            pay_type_options.append(row[1])
+        # for payment in payments_list:
+        # pay_type_options.append(payment[1])
         # set the list of options
         self.payment_tools_entry_type['values'] = pay_type_options
         

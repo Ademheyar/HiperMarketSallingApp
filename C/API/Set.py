@@ -13,8 +13,9 @@ import json
 
 import requests
 
-from C.API import *
-from C.API.Get import *
+
+from C.API.API import Sand_API
+from C.API.Get import fetch_as_dict_list, islinked
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(os.path.join(current_dir, '..'), '..')
@@ -22,7 +23,6 @@ sys.path.append(MAIN_dir)
 
 data_dir = os.path.join(MAIN_dir, 'data')
 db_path = os.path.join(data_dir, 'my_database.db')
-
 
 
 # this will add Document data to system database Document data mast be given dict list key : value
@@ -61,6 +61,7 @@ def Set_User(Link, ARG, VALUE, parent=None):
         query += "VALUES (" + ("?, " * len(ARG)).rstrip(", ") + ")"
     print("Set_User query ", query)
     User_data = None
+
     if Link and islinked(Link):
         url = Link
         entry = {'Do': "SET USER", 'QUERYS': query, 'QUERYVALUES' : value , 'user_name': user_name}
@@ -244,7 +245,7 @@ def Set_Shop(Link, ARG, VALUE, parent=None):
     if shop_data:
         answer = tk.messagebox.askquestion("Question", "Document Created Online Secccesfully. for fast performance better to download datas. Do you what to download document data?", parent=parent)
         if answer == 'yes':
-            shop_data = Set_Shop(None, ['Document_id', 'Document_name', 'Document_brand_name', 'Document_price', 'Document_quantity', 'Document_description', 'Document_category', 'Document_image'], [Document_data['Document_id'], Document_data['Document_name'], Document_data['Document_brand_name'], Document_data['Document_price'], Document_data['Document_quantity'], Document_data['Document_description'], Document_data['Document_category'], Document_data['Document_image']], parent=parent)
+            shop_data = Set_Shop(None, ['Document_id', 'Document_name', 'Document_brand_name', 'Document_price', 'Document_quantity', 'Document_description', 'Document_category', 'Document_image'], [shop_data['Document_id'], shop_data['Document_name'], shop_data['Document_brand_name'], shop_data['Document_price'], shop_data['Document_quantity'], shop_data['Document_description'], shop_data['Document_category'], shop_data['Document_image']])
     else:
         print("SHOP data is going to be added")
         print("SHOP query ", query)
@@ -287,13 +288,17 @@ def Add_new_Shop(Shop_id, Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type
        pass
     else:
         # Insert the new user into the database
+        shop_conn = sqlite3.connect(db_path)
+        shop_cur = shop_conn.cursor()                       
         if Shop_id == "" or Shop_id == None:
-            cur.execute('INSERT INTO Shops(Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions))
+            shop_cur.execute('INSERT INTO Shops(Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions))
         else:
-            cur.execute('INSERT INTO Shops(Shop_id, Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (Shop_id, Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions))
+            shop_cur.execute('INSERT INTO Shops(Shop_id, Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (Shop_id, Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions))
+        
         # Commit the changes to the database
-        conn.commit()                 
-
+        shop_conn.commit()
+        shop_conn.close()
+        
 '''item_id = int(self.Found_User_id_var)
 print("item_id : " + str(item_id))
 # UPDATE the new user into the database
@@ -330,9 +335,9 @@ def Add_Shop_data_From_list(Shop_data):
 # THIS WILL GET User BY ITS GIVEN VALUES
 # NAME AND PASSWORD IS RQUERDE FOR FACHING ALL INFO
 
-def Get_WORKER(Link, ARG, VALUE):
-    
-    
+def set_WORKER(Link, ARG, VALUE):
+    User_name = ''
+    User_password = ''
     url = Link
     entry = {'Do': "GET USER", 'User_name': User_name, 'User_password' : User_password }
     while 1:
@@ -544,7 +549,7 @@ def Set_product(Link, ARG, VALUE, parent=None):
     if product_data:
         answer = tk.messagebox.askquestion("Question", "Document Created Online Secccesfully. for fast performance better to download datas. Do you what to download document data?", parent=parent)
         if answer == 'yes':
-            product_data = Set_product(None, ['Document_id', 'Document_name', 'Document_brand_name', 'Document_price', 'Document_quantity', 'Document_description', 'Document_category', 'Document_image'], [Document_data['Document_id'], Document_data['Document_name'], Document_data['Document_brand_name'], Document_data['Document_price'], Document_data['Document_quantity'], Document_data['Document_description'], Document_data['Document_category'], Document_data['Document_image']], parent=parent)
+            product_data = Set_product(None, ['Document_id', 'Document_name', 'Document_brand_name', 'Document_price', 'Document_quantity', 'Document_description', 'Document_category', 'Document_image'], [product_data['Document_id'], product_data['Document_name'], product_data['Document_brand_name'], product_data['Document_price'], product_data['Document_quantity'], product_data['Document_description'], product_data['Document_category'], product_data['Document_image']])
     else:
         print("PRODUCT data is going to be added")
         print("PRODUCT query ", query)
@@ -785,7 +790,7 @@ def Update_Documente(Link, user, ARG, DocumenteVALUE, find_Arg, find_Value):
         update_doc_conn = sqlite3.connect(db_path)
         update_doc_cur = update_doc_conn.cursor()
         # Update the Document into the database  
-        Tquery = 'UPDATE upload_doc SET ' + query + ' WHERE '+fquery
+        Tquery = 'UPDATE doc_table SET ' + query + ' WHERE '+fquery
         print("Document Tquery ", Tquery)
         TqueryV = value + fvalue
         print("Document TqueryV ", TqueryV)             
@@ -794,10 +799,6 @@ def Update_Documente(Link, user, ARG, DocumenteVALUE, find_Arg, find_Value):
         # Commit the changes to the database
         update_doc_conn.commit()
         update_doc_conn.close()
-        Document = fetch_as_dict_list('SELECT * FROM upload_doc WHERE '+fquery, fvalue)
+        Document = fetch_as_dict_list('SELECT * FROM doc_table WHERE '+fquery, fvalue)
+
     return Document
-
-
-
-
-

@@ -810,7 +810,7 @@ class ProductFullEditionForm(ttk.Notebook):
         doc_code = datetime.datetime.now().strftime('%y:%m') + "-11"
         b = 0
         while True:
-            ex_doc = fetch_as_dict_list("SELECT * FROM upload_doc WHERE doc_barcode=?", (doc_code+str(b),)).fetchone()
+            ex_doc = fetch_as_dict_list("SELECT * FROM upload_doc WHERE doc_barcode=?", (doc_code+str(b),))
             if ex_doc:
                 b = random.randint(0, 10000)
             else:

@@ -1602,11 +1602,12 @@ class DisplayFrame(tk.Frame):
                #print("--Barcode = " + str(d['Barcode']))
                 if d['Barcode'] != '':
                     fdoc = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (d['Barcode'],))
-                   #print("fdoc " + str(fdoc) + " to item")
+                    #print("fdoc " + str(fdoc) + " to item")
                     if fdoc:
                         fdoc = fdoc[0]
                         items = json.loads(fdoc['item'])
                         for item in items:
+                            print('item ', item)
                             it = fetch_as_dict_list("SELECT * FROM product WHERE id=?", (item[0],))
                             itemqty = item[7]
                             if it:
@@ -1624,7 +1625,8 @@ class DisplayFrame(tk.Frame):
                                             itemqty -= exitem[7]
                                             if itemqty <= 0:
                                                 break;'''
-                                if itemqty > 0:
+                                print('itemqty ', itemqty)
+                                if float(itemqty) > 0:
                                     item_tobechanged.append([item[0], it['more_info'], 1, str(item[4]), str(item[1]), str(item[5]),str(item[6]), str(itemqty)])
                                     #print("--removeing all old qty = " + str([item[1], it['more_info'], 0, str(item[4]), str(item[1]), str(item[5]),str(item[6]), str(item[7])]))
             if f_user_s and f_user_s[0] and f_user_s[0]['Get_seller']:
@@ -1675,11 +1677,7 @@ class DisplayFrame(tk.Frame):
                         if it3[0]['id'] == it2[0]['id']:
                             self.Shops_info['Shop_items'][i3][0] = it2[0]
                             break
-                #print("item info updated : " + str(it2[0]['more_info']))
-                
-                # Commit the changes to the database
-                conn.commit()
-                
+                #print("item info updated : " + str(it2[0]['more_info']))                
             if payment_customer_required:
                 if self.custemr == "" or not self.app:
                     self.Add_Custumer()

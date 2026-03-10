@@ -423,6 +423,7 @@ class UserForm(tk.Frame):
                 self.work_shop_entry.config(text="")
                 wus = []
                 try:
+                    print('User_work_shop ', User_work_shop)
                     wus = json.loads(User_work_shop)
                 except json.JSONDecodeError:
                     wus = []
