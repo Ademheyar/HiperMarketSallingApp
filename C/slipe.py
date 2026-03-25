@@ -44,14 +44,17 @@ def add_text_(width, value):
         i+=1
     return [ret]
     
-def add_ltext_(width, value):
+def add_ltext_(width, value, do=""):
     ret = ""
     i = 0
     for l in value:
         ret += l
         i+=1
         if i == int(width):
-           break
+            if not do or do == "":
+               break
+            else:
+                ret+=do 
     return [ret]
     
 def get_sparet_2(doc, width, pvv, user, shop):
@@ -60,18 +63,26 @@ def get_sparet_2(doc, width, pvv, user, shop):
         ret += "_"
     return [ret + "\n"]
 
-def get_location(doc, width, pvv, user, shop):
+def get_Information(doc, width, pvv, user, shop):
     v = shop['Shop_location']
     ret = ""
     if v and "+" in v:
-        location = v.split("+")
-        for l in location:
-            ret += add_ltext_(width, l)[0] + "\n"
-    elif v:
-        ret += add_ltext_(width, v)[0]
+        infos = v.split("+")
+        for l in infos:
+            info = l.split("=")
+            if "Location" == info[0]:
+                ret += "* "+ add_ltext_(width, info[1], "\n")[0] + "\n"
+        wod = 0        
+        for l in infos:
+            info = l.split("=")
+            if wod + len(info[0]) >= round(float(width))+1:
+                ret += "\n"
+            if "Phone Number" == info[0]:
+                ret += "[] "+add_ltext_(width, info[1])[0]
+        ret += "\n" 
     return [ret + "\n"]
 
-def get_Linkes(doc, width, pvv, user, shop):
+def get_About(doc, width, pvv, user, shop):
     v = shop['Shop_about']
     ret = ""
     if v and "+" in v:
@@ -79,7 +90,7 @@ def get_Linkes(doc, width, pvv, user, shop):
         for l in Shop_about:
             ret += add_ltext_(width, l)[0] + "\n"
     elif v:
-        ret += add_ltext_(width, v)[0]
+        ret += add_ltext_(width, v)[0] + "\n"
     return [ret]
 
 def get_Phone_No(doc, width, pvv, user, shop):
@@ -152,33 +163,57 @@ def get_items(doc, width, pvv, user, shop):
     items_lists = str(doc['item'])
     list_items_copy = json.loads(items_lists)
     T_price = 0
+    T_Disc = 0
+    count = 1
+    thereisdic = 0
     for iv in list_items_copy:
         print("load_slip items iv: " + str(iv))
         # id, code, bar, name, shop, color, size, qty, price, disc, T_price = iv
-        QTY += float(iv[7])
+        QTY += round(float(iv[7]))
         total_price = float(iv[7])*float(iv[8])
-        T_price += total_price
         PRICE += float(total_price)
-        Disc += float(iv[9])
+        T_Disc += float(iv[9])
         TAX += float(0)
-        v.append([str(iv[1]), str(iv[3]), str(iv[7]), str(iv[8]), str(total_price)])
-    # Code   : Name      : qty : price  : totale :
+        price = str(iv[8])
+        T_price += float(iv[8])+float(iv[9])
+        if float(iv[9]) != 0:
+            thereisdic = 1
+            if float(iv[9]) < 0:
+                price = str(float(iv[8])+float(iv[9]))+str(float(iv[9]))
+            else:
+                price = str(float(iv[8])+float(iv[9]))+"-"+str(float(iv[9]))
+        # No : Code   : Name      : qty : price  : totale :
+        v.append([str(count), str(iv[1]), str(iv[3]), str(round(float(iv[7]))), price, str(total_price)])
+        count += 1
+    # No : Code   : Name      : qty : price  : totale :
     # TODO make equal space
     itemforslip = ""
     #print("v : " + str(v))
-    vsl = [4, 4, 3, 4, 4]
+    if thereisdic:
+        vsl = [2, 4, 4, 3, 8, 4] # tall the maximam space for columens
+    else:
+        vsl = [2, 4, 4, 3, 4, 4] # tall the maximam space for columens
     tw=21
     width = int(width)
     while not (tw+5 > width-3 and tw+5 < width+3):
         if tw+5 < width:
-            vsl = [vsl[0]+2, vsl[1]+3, vsl[2]+0, vsl[3]+1, vsl[4]+1]
+            vsl = [2 , vsl[1]+1, vsl[2]+2, vsl[3], vsl[4]+1, vsl[5]+1]
             tw += 7
         elif tw+5 > width:
-            vsl = [vsl[0]-1, vsl[1]-1, vsl[2], vsl[3]-1, vsl[4]-1]
+            vsl = [2, vsl[1]-1, vsl[2]-1, vsl[3], vsl[4]-1, vsl[5]-1]
             tw -= 4
-    for vs in v:
+
+    v.append([str('-'*vsl[0]), str("-"*vsl[1]), str("-"*vsl[2]), str("-"*vsl[3]), str("-"*vsl[4]), str('-'*vsl[5])])
+    if T_Disc != 0:
+        if float(iv[9]) < 0:
+            v.append([str(""), str(""), str("TOTAL "), str(QTY), str(PRICE+T_Disc)+str(T_Disc), str(PRICE)])
+        else:
+            v.append([str(""), str(""), str("TOTAL "), str(QTY), str(PRICE+T_Disc)+"-"+str(T_Disc), str(PRICE)])
+    else:
+        v.append([str(""), str(""), str("TOTAL "), str(QTY), str(PRICE), str(PRICE)])
+    for countv, vs in enumerate(v):
         vl = vsl
-        vsy = ['/', '(', 'x', '=', ')']
+        vsy = ['.', '/', ' ', 'x', '=', ' ']
         vvi = 0
         for vi in vl:
             for w in range(vi):
@@ -187,14 +222,22 @@ def get_items(doc, width, pvv, user, shop):
                     itemforslip += vs[vvi][w]
                 else:
                     itemforslip += ' '
-            itemforslip += vsy[vvi]
+            if not len(v) == countv+1 and not len(v) == countv+2:
+                itemforslip += vsy[vvi]
+            elif len(v) == countv+2:
+                 itemforslip += "-"
+            else:
+                itemforslip += " " # this will skip any simbols for the last list
             vvi += 1
         itemforslip += "\n"
     
     itemcolumnsforslip = ""
     #print("v : " + str(v))
     vi = 0
-    vs = ["Code", "Name", "qty", "price", "Totale"] #21 letters + 5 spaces + 5 Blockes = 31
+    if thereisdic:
+        vs = ["NO", "CODE", "NAME", "QTY", "PRICE-DISC", "TOTAL"] #21 letters + 5 spaces + 5 Blockes = 31
+    else:
+        vs = ["NO", "CODE", "NAME", "QTY", "PRICE", "TOTAL"] #21 letters + 5 spaces + 5 Blockes = 31
     von = 0
     won = 0 
     for wid in range(int(width)):
@@ -202,7 +245,7 @@ def get_items(doc, width, pvv, user, shop):
             itemcolumnsforslip += " "
             continue
             
-        if won < vsl[von]:
+        if won < vsl[von]: # chacke it is not more that given space
             if won < len(vs[von]):
                 itemcolumnsforslip += vs[von][won]
                 won += 1
@@ -222,17 +265,21 @@ def get_items(doc, width, pvv, user, shop):
     slip += itemcolumnsforslip +"\n"
     slip += get_sparet_2(doc, width, pvv, user, shop)[0]
     slip += itemforslip + "\n"
-    infos_needed = ["TOTAL QTY", "TOTAL Price", "TOTAL Tax", "TOTAL Discount", "Recived", "Balance"]
+    #infos_needed = ["TOTAL QTY", "TOTAL Price", "TOTAL Tax", "TOTAL Discount", "Recived", "Balance"]
+    infos_needed = ["TOTAL Price", "TOTAL Tax", "TOTAL Discount", "Recived", "Balance", "LEFT"]
     #, "CHANGE"
+    # paymenats 
     given_info = []
     totalitemforslip = ""
     pvv = [QTY, PRICE, TAX, Disc, T_price]
     if len(pvv) == 5:
         if doc['pid']:
-            pvv = [str(pvv[0]), str(pvv[1]), str(pvv[2]), str(pvv[3]), str(float(doc['pid'])), "0"]
+            #pvv = [str(pvv[0]), str(pvv[1]), str(pvv[2]), str(pvv[3]), str(float(doc['pid'])), "0"]
+            pvv = [str(pvv[1]), str(pvv[2]), str(pvv[3]), str(float(doc['pid'])), "0", "0"]
             # , str(str(float(doc['pid'])-(PRICE-Disc)))
         else:
-            pvv = [str(pvv[0]), str(pvv[1]), str(pvv[2]), str(pvv[3]), str(float(pvv[4])), str(float(pvv[4]))]
+            #pvv = [str(pvv[0]), str(pvv[1]), str(pvv[2]), str(pvv[3]), str(float(pvv[4])), str(float(pvv[4]))]
+            pvv = [str(pvv[1]), str(pvv[2]), str(pvv[3]), str(float(pvv[4])), str(float(pvv[4])), '0']
 
     done_inserting = 0
     infos_need_on = -1
@@ -252,12 +299,16 @@ def get_items(doc, width, pvv, user, shop):
                 
                 if intesd < len(pvv):
                     totalitemforslip += "_" 
-                else:
-                    break
-            elif wid < hafe_width:
+                continue
+
+            if wid < hafe_width:
                 if payment_on < len(list_payment_copy):
                     price = list_payment_copy[payment_on][1]
-                    F = str(list_payment_copy[payment_on][1]) + ", " +  str(list_payment_copy[payment_on][0])+ " " + list_payment_copy[payment_on][5]
+                    if " " in list_payment_copy[payment_on][5]:
+                        fusername = list_payment_copy[payment_on][5].split(" ")[0]
+                    else:
+                        fusername = list_payment_copy[payment_on][5]
+                    F = fusername + " " + str(list_payment_copy[payment_on][1]) + ", " +  str(list_payment_copy[payment_on][2])
                     S = list_payment_copy[payment_on][3]+ ", " # pay_updated_date.split()[0] + ", " 
                     if fw < len(F):
                         totalitemforslip += F[fw]
@@ -267,12 +318,12 @@ def get_items(doc, width, pvv, user, shop):
                 else:
                     totalitemforslip += " "
             else:
-                if wid == hafe_width + (hafe_width/2):
+                if wid == hafe_width + 1 + (hafe_width/2):
                     totalitemforslip += "|"
-                elif(wid < hafe_width + (hafe_width//2) and fwon < len(infos_needed[infos_need_on])):
+                elif(wid < hafe_width + 1 + (hafe_width//2) and fwon < len(infos_needed[infos_need_on])):
                     totalitemforslip += infos_needed[infos_need_on][fwon]
                     fwon +=1
-                elif(wid > hafe_width + (hafe_width//2) and swon < len(pvv[infos_need_on])):
+                elif(wid > hafe_width + 1 + (hafe_width//2) and swon < len(pvv[infos_need_on])):
                     totalitemforslip += pvv[infos_need_on][swon]
                     swon +=1
                 else:
@@ -281,7 +332,7 @@ def get_items(doc, width, pvv, user, shop):
         if done_inserting == 0:
             done_inserting = 1
             infos_need_on += 1
-            while infos_need_on < len(pvv) and (pvv[infos_need_on] == '0' or pvv[infos_need_on] == '0.0'):
+            while (payment_on >= len(list_payment_copy)) and (infos_need_on < len(pvv) and (pvv[infos_need_on] == '0' or pvv[infos_need_on] == '0.0')):
                 infos_need_on += 1
             payment_on += 1
             if infos_need_on < len(pvv):
@@ -319,6 +370,17 @@ def get_Rules(doc, width, pvv, user, shop):
         ret += v
     return [ret]
 
+def get_Logo(doc, width, pvv, user, shop):
+    if width == "":
+        width = 20
+    logo = shop['Shop_name'] # 
+    # TODO: MAKE SOURE IT IS ALLOWED AND CHACKE BEAND NAME OR SHOP NAME TO DISPLAY
+    ret = ("-"*(round(float(width))-1))+"\n"
+    size = str(round(float(width))-4)
+    ret += f"| {logo:^{size}} |\n"
+    ret += ("-"*(round(float(width))-1))+"\n"
+    return [ret]
+
 def get_sparet(doc, width, pvv, user, shop):
     ret = ""
     for i in range(int(width)):
@@ -337,8 +399,6 @@ def get_sparet_1(doc, width, pvv, user, shop):
         ret += "-"
     return [ret + "\n"]
 
-
-
 def get_sparet_3(doc, width, pvv, user, shop):
     ret = ""
     for i in range(int(width)):
@@ -351,7 +411,7 @@ def get_sparet_4(doc, width, pvv, user, shop):
         ret += "~"
     return [ret + "\n"]
 
-slip_order_type=[get_sparet, get_sparet_0, get_sparet_1, get_sparet_2, get_sparet_3, get_sparet_4, get_location, get_Linkes, get_Phone_No, get_Receipt_no, get_extnsion_Receipt_no, get_date, get_updated_date, get_Due_date, get_user, get_seller, get_customer, get_items, get_Rules]
+slip_order_type=[get_sparet, get_sparet_0, get_sparet_1, get_sparet_2, get_sparet_3, get_sparet_4, get_Logo, get_Information, get_About, get_Phone_No, get_Receipt_no, get_extnsion_Receipt_no, get_date, get_updated_date, get_Due_date, get_user, get_seller, get_customer, get_items, get_Rules]
 
 import json
 import ast

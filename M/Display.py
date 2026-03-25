@@ -721,10 +721,15 @@ class DisplayFrame(tk.Frame):
     
     def remove_ex_items(self, ex_bar_frame, search_label):
         for i, selected_item in enumerate(self.Selected_items):
-            if selected_item[13] == search_label.cget("text"):
+            print("selected_item[14] ", selected_item[14])
+            print("search_label.cget(text) ", search_label.cget("text"))
+            if selected_item[14] == search_label.cget("text"):
+                print("removed ")
+                
                 self.Selected_items.remove(selected_item)
-        self.Update_Selected_item()
+        
         ex_bar_frame.grid_forget()
+        self.Update_Selected_item() # it keep loading old
                 
     def Update_Selected_item(self):
         for items in self.Selected_item_Display_frame.winfo_children():
@@ -1292,7 +1297,8 @@ class DisplayFrame(tk.Frame):
         if len(self.Selected_items) > 0 or len(self.pid_peyment) > 0:
             PaymentForm(self)
         else:
-           print("no list ", len(self.Selected_items))
+           print("item ", len(self.Selected_items))
+           print("payment ", len(self.pid_peyment))
     
     # about payment
     def process_payment(self):
@@ -1376,18 +1382,19 @@ class DisplayFrame(tk.Frame):
             change = 0
             
             doc_found = []
-           #print("brcod :" + str(brcod))
+            #print("brcod :" + str(brcod))
             #print("count sold items :" + str(len(list_items_copy.get_children())))
-           #print("sold list_items_copy :" + str(list_items_copy))
+            #print("sold list_items_copy :" + str(list_items_copy))
             for iv in list_items_copy:
-               #print("self.ex_items :" + str(self.ex_items))
-               #print("iv[11] :" + str(iv[11]))
-               #print("len(iv) :" + str(len(iv)))
-                if len(iv) >= 15:
-                    found_index = next((i for i, d in enumerate(doc_found) if d["Barcode"] == iv[15]), -1)
+                print("iv :" + str(iv))
+                print("self.ex_items :" + str(self.ex_items))
+                print("iv[11] :" + str(iv[11]))
+                print("len(iv) :" + str(len(iv)))
+                if len(iv) >= 14:
+                    found_index = next((i for i, d in enumerate(doc_found) if d["Barcode"] == iv[14]), -1)
                     if found_index:
                         selected_item_info = {
-                            "Barcode" : iv[15],
+                            "Barcode" : iv[14],
                             'payments_' : [],
                             'pay_index' : 0,
                             'itemforslip' : "",
@@ -1410,9 +1417,9 @@ class DisplayFrame(tk.Frame):
                         doc_found.append(selected_item_info)
                         found_index = len(doc_found) -1 
 
-                   #print("found_index :" + str(found_index))
-                   #print(str(iv[1]))
-                   #print("item id " + str(iv[0]['values']['id']) + " to item")
+                    print("found_index :" + str(found_index))
+                    print(str(iv[1]))
+                    print("item id " + str(iv[0]['values']['id']) + " to item")
                     if iv[0]['values']['id'] == -1:
                         # TODO : add type here
                         disc = float(iv[0]['values']['price'])-float(iv[10])
@@ -1426,12 +1433,12 @@ class DisplayFrame(tk.Frame):
                         doc_found[found_index]['tax'] += float(iv[10])
                         doc_found[found_index]['new_items'].append(itl)
                     
-                       #print("adding " + str(iv) + " to item")
-                       #print("adding " + str(iv) + " to item")
-                       #print("adding " + str(iv[7]) + " to item_tobechanged")
+                        print("adding " + str(iv) + " to item")
+                        print("adding " + str(iv) + " to item")
+                        print("adding " + str(iv[7]) + " to item_tobechanged")
                     else:
                         it = fetch_as_dict_list("SELECT * FROM product WHERE id=?", (iv[0]['values']['id'],))
-                       #print("item it " + str(it) + " to item")
+                        print("item it " + str(it) + " to item")
                         if it:
                             it = it[0]
                             # TODO : add type here
@@ -1446,26 +1453,26 @@ class DisplayFrame(tk.Frame):
                             doc_found[found_index]['tax'] += float(iv[10])
                             doc_found[found_index]['new_items'].append(itl)
                         
-                           #print("adding " + str(it) + " to item")
-                           #print("adding " + str(iv) + " to item")
-                           #print("adding " + str(iv[7]) + " to item_tobechanged")
+                            print("adding " + str(it) + " to item")
+                            print("adding " + str(iv) + " to item")
+                            print("adding " + str(iv[7]) + " to item_tobechanged")
                             
-                            item_tobechanged.append([iv[1], iv[0]['values']['more_info'], 0, str(iv[13]), str(iv[2]), str(iv[5]),str(iv[6]), str(iv[7])])            
+                            item_tobechanged.append([iv[1], it['more_info'], 0, str(iv[13]), str(iv[2]), str(iv[5]),str(iv[6]), str(iv[7])])            
                         else:
                             # message there is proplame on item change_item
                             erroritemsearchanswer = tk.messagebox.askquestion("Question", "There is proplame finding On one of Item Do you whant to continue?")
                             if erroritemsearchanswer != 'yes':
                                     return                  
-                   #print("\n\n sold items collect :" + str(doc_found[found_index]['new_items'])+"\n\n")
+                    print("\n\n sold items collect :" + str(doc_found[found_index]['new_items'])+"\n\n")
                     
-           #print("\n\n items collect than doc_found :" + str(doc_found)+"\n\n")
+            print("\n\n items collect than doc_found :" + str(doc_found)+"\n\n")
             p = 0
             while p < len(self.pid_peyment):
-               #print("self.pid_peyment:" + str(self.pid_peyment))
-               #print("self.ex_pid_peyment:" + str(self.ex_pid_peyment))
-               #print("self.pid_peyment[p]:" + str(self.pid_peyment[p]))
+                print("self.pid_peyment:" + str(self.pid_peyment))
+                print("self.ex_pid_peyment:" + str(self.ex_pid_peyment))
+                print("self.pid_peyment[p]:" + str(self.pid_peyment[p]))
                 if len(self.pid_peyment[p]) > 7:  
-                   #print("\n\n items collect than self.pid_peyment[p][7] :" + str(self.pid_peyment[p][7])+"\n\n")
+                    print("\n\n items collect than self.pid_peyment[p][7] :" + str(self.pid_peyment[p][7])+"\n\n")
                     found_index = next((i for i, d in enumerate(doc_found) if d["Barcode"] == self.pid_peyment[p][7]), -1)
                     if found_index:
                         selected_item_info = {
@@ -1491,17 +1498,17 @@ class DisplayFrame(tk.Frame):
                         doc_found.append(selected_item_info)
                         found_index = len(doc_found) -1 
                     doc_found[found_index]['pay_index'] += 1
-                   #print("self.pid_peyment[p]:" + str(self.pid_peyment[p]))
+                    print("self.pid_peyment[p]:" + str(self.pid_peyment[p]))
                     rows = 0
                     for r in self.Shop_Payment_Tools:
                         if r[0] == self.pid_peyment[p][1]:
                             rows = r
                             break
                     if rows:
-                       #print("rows:" + str(rows))
-                       #print("price-disc "+str(doc_found[found_index]['price']-doc_found[found_index]['Tdisc']) + ":pid " + str(doc_found[found_index]['pid']) + ":def_pid " + str(def_pid))
+                        print("rows:" + str(rows))
+                        print("price-disc "+str(doc_found[found_index]['price']-doc_found[found_index]['Tdisc']) + ":pid " + str(doc_found[found_index]['pid']) + ":def_pid " + str(def_pid))
                         c = float(self.pid_peyment[p][2])
-                       #print("c:" + str(c))
+                        print("c:" + str(c))
                         # "Tool Name", "Tool Method", "Tool ID", "Tool Short cut", "Tool Acsess key", "Tool enabel", "Tool Quick_pay","Tool Markpad", "Tool Customer_required", "Tool Open_drower", "Tool#printslip"
                         if rows[5] == '1': # chack if enabled
                             payment_enable += 1
@@ -1544,10 +1551,10 @@ class DisplayFrame(tk.Frame):
                                 doc_found[found_index]['pid'] += c
                             doc_found[found_index]['payments_'].append([str(doc_found[found_index]['pay_index']), str(self.pid_peyment[p][1]), str(c), date, date, self.user['User_name'], str(rows[4]), str(self.pid_peyment[p][3]), rows[1]])
                 self.pid_peyment.remove(self.pid_peyment[p])
-               #print("\n\n payments_ pid collect :" + str(doc_found[found_index]['payments_'])+"\n\n")
-               #print("\n\n payments_extra pid collect :" + str(payments_extra)+"\n\n")
+                print("\n\n payments_ pid collect :" + str(doc_found[found_index]['payments_'])+"\n\n")
+                print("\n\n payments_extra pid collect :" + str(payments_extra)+"\n\n")
                 
-           #print("\n\n payments collect than doc_found :" + str(doc_found)+"\n\n")
+            print("\n\n payments collect than doc_found :" + str(doc_found)+"\n\n")
             
             print("self.user :" + str(self.user))
             if self.user['User_id']:
@@ -1557,18 +1564,18 @@ class DisplayFrame(tk.Frame):
                 user_id = 'Id'
                 user_idv = self.user['Id']
             f_user_s = fetch_as_dict_list("SELECT * FROM setting WHERE "+user_id+"=?", (int(user_idv),))
-            #print("f_user_s "+str(f_user_s))
+            print("f_user_s "+str(f_user_s))
             Seller_id = None
 
             for px, extra_payment in enumerate(payments_extra):
-               #print("--extra_payment = " + str(extra_payment))
+                print("--extra_payment = " + str(extra_payment))
                 c = float(extra_payment[2])
                 l = 0 # doc found 
                 while c > 0 and l == 0:
                     for i, d in enumerate(doc_found):
-                       #print("--Barcode = " + str(d['Barcode']))
-                       #print("--item = " + str(d['new_items']))
-                       #print("--payments_ : " + str(d['payments_']))
+                        print("--Barcode = " + str(d['Barcode']))
+                        print("--item = " + str(d['new_items']))
+                        print("--payments_ : " + str(d['payments_']))
                         if d['price']-d['Tdisc'] != d['pid']:
                             if d['pid'] + c > d['price']-d['Tdisc']:
                                 pr = (d['price']-d['disc']) # item price
@@ -1584,7 +1591,7 @@ class DisplayFrame(tk.Frame):
                             doc_found[i]['pid'] += c
                             doc_found[i]['payments_'].append([str(doc_found[i]['pay_index']), str(extra_payment[1]), str(c), extra_payment[3], date, extra_payment[5], extra_payment[6], extra_payment[7]])
                             l += 1
-                       #print("--payments_ : " + str(d['payments_']))
+                        print("--payments_ : " + str(d['payments_']))
                     if c > 0:
                         doc_found[0]['pay_index'] += 1
                         if extra_payment[7] == "":
@@ -1599,10 +1606,10 @@ class DisplayFrame(tk.Frame):
                     newitems = d['new_items']
                     
             for i, d in enumerate(doc_found):
-               #print("--Barcode = " + str(d['Barcode']))
+                print("--Barcode = " + str(d['Barcode']))
                 if d['Barcode'] != '':
                     fdoc = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (d['Barcode'],))
-                    #print("fdoc " + str(fdoc) + " to item")
+                    print("fdoc " + str(fdoc) + " to item")
                     if fdoc:
                         fdoc = fdoc[0]
                         items = json.loads(fdoc['item'])
@@ -1628,16 +1635,16 @@ class DisplayFrame(tk.Frame):
                                 print('itemqty ', itemqty)
                                 if float(itemqty) > 0:
                                     item_tobechanged.append([item[0], it['more_info'], 1, str(item[4]), str(item[1]), str(item[5]),str(item[6]), str(itemqty)])
-                                    #print("--removeing all old qty = " + str([item[1], it['more_info'], 0, str(item[4]), str(item[1]), str(item[5]),str(item[6]), str(item[7])]))
+                                    print("--removeing all old qty = " + str([item[1], it['more_info'], 0, str(item[4]), str(item[1]), str(item[5]),str(item[6]), str(item[7])]))
             if f_user_s and f_user_s[0] and f_user_s[0]['Get_seller']:
-                   #print("opning worker dialog")
+                    print("opning worker dialog")
                     app = WorkerManagementApp(self, str(brcod), float(count_new_items))
                     if app.user_details:
-                       #print("app.user_details['User_id'] "+str(app.user_details['User_id']))
+                        print("app.user_details['User_id'] "+str(app.user_details['User_id']))
                         Seller_id = app.user_details['User_id']
                     else:
                         return
-           #print("--item_tobechanged : " + str(item_tobechanged))
+            print("--item_tobechanged : " + str(item_tobechanged))
             
             costumer_name = ""
             phone_num = ""
@@ -1647,15 +1654,15 @@ class DisplayFrame(tk.Frame):
             slip_doc_code = []
             '''while True:
                 continue'''
-           #print("item_tobechanged  : " + str(item_tobechanged))
+            print("item_tobechanged  : " + str(item_tobechanged))
             for change_item in item_tobechanged:
-                #print("item : " + str(change_item[1]), change_item[2], str(change_item[3]), str(change_item[4]),str(change_item[5]), str(change_item[6]))
-                #print("item info befor : " + str(change_item[1]))
+                print("item : " + str(change_item[1]), change_item[2], str(change_item[3]), str(change_item[4]),str(change_item[5]), str(change_item[6]))
+                print("item info befor : " + str(change_item[1]))
                 qty_info_list = []
-                #print("change_item[1]  : " + str(change_item[1]))
+                print("change_item[1]  : " + str(change_item[1]))
                 if change_item[1]:
                     qty_info_list = json.loads(change_item[1])
-                #print("qty_info_list[1]  : " + str(qty_info_list))
+                print("qty_info_list[1]  : " + str(qty_info_list))
                 it_info = change_qty(qty_info_list, change_item[2], str(change_item[3]), str(change_item[4]), str(change_item[5]),str(change_item[6]), str(change_item[7]))
 
                 if not it_info:
@@ -1664,7 +1671,7 @@ class DisplayFrame(tk.Frame):
                         if erroriteminfoanswer != 'yes':
                                 return
                                 
-                #print("item info befor  : " + str(it_info))
+                print("item info befor  : " + str(it_info))
                 #while True:
                 #    continue
                 Update_Producte(None, self.user, ['more_info'], [json.dumps(it_info)], ['id'], [change_item[0]])
@@ -1677,33 +1684,32 @@ class DisplayFrame(tk.Frame):
                         if it3[0]['id'] == it2[0]['id']:
                             self.Shops_info['Shop_items'][i3][0] = it2[0]
                             break
-                #print("item info updated : " + str(it2[0]['more_info']))                
+                print("item info updated : " + str(it2[0]['more_info']))                
             if payment_customer_required:
                 if self.custemr == "" or not self.app:
                     self.Add_Custumer()
                 cm_id = self.custemr
                 costumer_name = self.app.user_details['User_name']
                 phone_num = self.app.user_details['User_phone_num']
-               #print(self.app.user_details)
+                print(self.app.user_details)
 
                 
             for i, d in enumerate(doc_found):
-               #print("--item = " + str(d['item']))
-               #print("--payments_ : " + str(d['payments_']))
+                print("--item = " + str(d['item']))
+                print("--payments_ : " + str(d['payments_']))
                 if d['payments_'] == [] and payments_extra != []:
                     d['payments_'] = payments_extra
                     payments_extra = []
                     
                 if d['payments_'] != [] or float(d['count_new_items']) != 0:
                         if d["Barcode"] != "":
-                               #print("d[Barcode] = " + str(d["Barcode"]))
+                                print("d[Barcode] = " + str(d["Barcode"]))
                                 # Get_Document(None, self.user, ['doc_barcode'], [d["Barcode"]])
                                 rows = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (d["Barcode"],))
                                 # fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (d["Barcode"],)).fetchall()
                                 if rows and rows[0]['customer_id']: # if doc found
                                     old_cm_id = rows[0]['customer_id']
-                                
-                               #print("cmd old id = " + str(rows[0]) + " new id " + str(cm_id))
+                                    print("cmd old id = " + str(rows[0]) + " new id " + str(cm_id))
                                 if cm_id and old_cm_id != str(cm_id):
                                     #[each item [barcode, isitem, ispay, ex_item, ex_item_items, payments, ex_payment_count, ex_item_pric, ex_item_T_disc, ex_item_T_tax, ex_pid]
                                     Update_Documente(None, self.user, ['customer_id'], [cm_id], ['doc_barcode'], [d["Barcode"]])

@@ -511,6 +511,7 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
         chackname = self.chackname 
         chackprice = self.chackprice
         itemstypes = []
+        self.searched_items = []
         
         for i, item in enumerate(self.master.master.master.master.Shops_info['Shop_items']):
             product = selected_item = item[0]
@@ -584,7 +585,7 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
                 Tcost += qty*cost
                 #print("Tcost ", Tcost)
                 TQTY += qty
-            
+            self.searched_items.append(item[0])
             if counted >= 10:
                 continue
             counted += 1
@@ -693,7 +694,7 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
         
     def delete_product(self, index, frame):
         # Get the ID of the selected product
-        product_id = selected_item = self.master.master.master.master.Shops_info['Shop_items'][index][0]['id']
+        product_id = selected_item = [index][0]['id']
         answer = tk.messagebox.askquestion("Question", "Do you what to delete "+str(product_id)+" ?")
         if answer == 'yes':
             itemshop = [[shop, i] for i, shop in enumerate(self.Shops) if str(shop['Shop_Id']) == str(self.master.master.master.master.Shops_info['Shop_items'][index][0]['at_shop'])]
@@ -734,7 +735,7 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
             self.show_info_button.config(text="Hide Information")
             shop_items = self.vv
             #[item[0] for item in self.master.master.master.master.Shops_info['Shop_items']]
-            self.Product_info_frame = ProductFullInfoForm(self.Frame_contaner_frame, self.user_info, self.Shops, shop_items)
+            self.Product_info_frame = ProductFullInfoForm(self.Frame_contaner_frame, self.user_info, self.Shops, shop_items, self.master.master.master.master.Shops_info, self.searched_items)
             self.Product_info_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
         
     # for Adding new Product

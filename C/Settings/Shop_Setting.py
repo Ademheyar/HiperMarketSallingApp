@@ -35,7 +35,7 @@ from C.API.API import *
 from C.API.Set import *
 
 Shop_deff_type = "[['MANS', [['ACCESSORIES', []], ['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['WOMANS', [['ACCESSORIES', []], ['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['DRESS', [['SUNDRESS', []], ['COCKTAIL', []], ['MAXI', []], ['SHIFT', []], ['BODYCON', []], ['A-LINE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['SPORTBRA', []], ['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['KIDS', [['ACCESSORIES', []], ['GIRLS', [['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['DRESS', [['SUNDRESS', []], ['COCKTAIL', []], ['MAXI', []], ['SHIFT', []], ['BODYCON', []], ['A-LINE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['SPORTBRA', []], ['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['BOYS', [['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['FORKIDS', [['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]]]], ['FOREVERYONE', [['ACCESSORIES', []], ['SHOES', []], ['TROUSER', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []], ['TRENCHCOAT', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]]]"
-slip_order_type=["*", "#", "-", "_", "=", "~", "Location", "Linkes", "Phone_No", "Receipt_no", "Extnsion_Receipt_no", "Date", "Updated_date", "Due_date", "User", "Seller", "Customer", "Item", "Rules"]
+slip_order_type=["*", "#", "-", "_", "=", "~", "LOGO", "Information", "About", "Phone_No", "Receipt_no", "Extnsion_Receipt_no", "Date", "Updated_date", "Due_date", "User", "Seller", "Customer", "Item", "Rules"]
 
 access_types=[  "USER CAN INITIALIZE SYSTEM", # 0 0
                 "USER CAN SEE PAYMENT TOOL BUTTONS", # 1 0
@@ -556,8 +556,6 @@ class Shop_SettingForm(ttk.Notebook):
         if shop_:
             shop_['Shop_Items_type'] = Shop_deff_type
             Update_table_database('UPDATE Shops SET Shop_Items_type=? WHERE Shop_id=?', (Shop_deff_type, shop_['Shop_Id']))
-            # Commit the changes to the database
-            conn.commit()
             self.load_type_info()
         
     def convert_to_text(self):
@@ -570,8 +568,6 @@ class Shop_SettingForm(ttk.Notebook):
         shop_ = self.Shops[0]
         if shop_:
             Update_table_database('UPDATE Shops SET Shop_Items_type=? WHERE Shop_id=?', (text, shop_['Shop_Id']))
-            # Commit the changes to the database
-            conn.commit()
 
     # shop profile  
     def load_shop_info(self):
@@ -637,25 +633,23 @@ class Shop_SettingForm(ttk.Notebook):
                 
                 
                 Update_table_database('UPDATE Shops SET Shop_Security_Levels=? WHERE Shop_id=?',
-                        (json.dumps(Shop_Security_Levels), self.Shop['Shop_Id']))
-                # Commit the changes to the database
-                conn.commit()
-                
+                        (json.dumps(Shop_Security_Levels), self.Shop['Shop_Id']))               
     def save_shop_info(self):
+        # TODO : CHANGE SHOP SELECTED ONLY
         shop_ = self.Shops[0]
         if shop_:
-            shop_info =  "Phone Number="+self.Shop_phone_num_entry.get()+"+Location="+self.Shop_location_entry.get()
+            # TODO MAKE NICE WAY TO RESIVE INFGORMATIONS
+            shop_info =  self.Shop_location_entry.get() # "Phone Number="+self.Shop_phone_num_entry.get()+"+Location="+self.Shop_location_entry.get()
             if shop_['Shop_Id']:
                 idq = 'Shop_Id'
                 idv = shop_['Shop_Id']
             else:
                 idq = 'Id'
                 idv = shop_['Id']
-            Update_Shop(None, None, ['Shop_name', 'Shop_brand_name', 'Shop_link', 'Shop_location', 'Shop_rules', 'Shop_about'], [self.Shop_name_entry.get(), self.Shop_brand_name_entry.get(), self.Shop_link_entry.get(), shop_info, self.Shop_rules_entry.get(), self.Shop_about_entry.get()], [idq], [idv])
+            s = Update_Shop(None, None, ['Shop_name', 'Shop_brand_name', 'Shop_link', 'Shop_location', 'Shop_rules', 'Shop_about'], [self.Shop_name_entry.get(), self.Shop_brand_name_entry.get(), self.Shop_link_entry.get(), shop_info, self.Shop_rules_entry.get(), self.Shop_about_entry.get()], [idq], [idv])
             
-            s = fetch_as_dict_list("SELECT * FROM Shops WHERE " + idq + "=?", (str(idv),))
+            #  = fetch_as_dict_list("SELECT * FROM Shops WHERE " + idq + "=?", (str(idv),))
             if s:
-                # TODO : CHANGE SHOP SELECTED ONLY
                 print("s "+str(s))
                 if isinstance(s, list) and len(s) > 0:
                     self.Shops = s
@@ -695,8 +689,6 @@ class Shop_SettingForm(ttk.Notebook):
         slip_order_list_str = json.dumps(self.slip_order_list)
         self.Shops[selected_shop_index]['Shop_Slip_Settings'] = slip_order_list_str
         Update_table_database('UPDATE Shops SET Shop_Slip_Settings=? WHERE Shop_id=?', (slip_order_list_str, self.Shops[selected_shop_index]['Shop_Id']))
-        # Commit the changes to the database
-        conn.commit()
         print("updated self.slip_order_list[1] ", self.slip_order_list[1])
         self.refrash_slip_order()
 
@@ -784,22 +776,18 @@ class Shop_SettingForm(ttk.Notebook):
                     if dialog.issave.get():
                         if b:
                             Update_table_database('UPDATE setting SET printer=?, Get_printer=? WHERE User_id=?', ("", 1, self.user['User_id']))
-                            # Commit the changes to the database
-                            conn.commit()
+                            
                         else:
                             Update_table_database('INSERT INTO setting (User_id, Get_printer, printer) VALUES (?, ?, ?, ?)', (self.user['User_id'], 1, selected_printer))
-                            # Commit the changes to the database
-                            conn.commit()                    
+                                                
         else:
             Update_table_database('UPDATE setting SET printer=?, Get_printer=? WHERE User_id=?', ("", int(self.ask_seller_int.get()), self.user['User_id']))
-            # Commit the changes to the database
-            conn.commit()
+            
             
     def chacke_ask_seller(self):
         print("going to make seller ask or not...")
         Update_table_database('UPDATE setting SET Get_seller=? WHERE user_id=?', (int(self.ask_seller_int.get()), self.user['User_id']))
-        # Commit the changes to the database
-        conn.commit()
+        
 
         
     def show_Setting_Form(self):
@@ -1655,8 +1643,6 @@ class Shop_SettingForm(ttk.Notebook):
             # Delete the product from the database
             Update_table_database('DELETE FROM product WHERE id=?', (product_id,))
 
-            # Commit the changes to the database
-            conn.commit()
             # Update the product listbox
             self.update_product_listbox()
 
@@ -1712,15 +1698,12 @@ class Shop_SettingForm(ttk.Notebook):
             print("item : " + str(item))
             # Update the product in the database
             Update_table_database('UPDATE product SET name=?, code=?, type=?, barcode=?, at_shop=?, quantity=?, cost=?, tax=?, price=?, include_tax=?, price_change=?, more_info=?, images=?, description=?, service=?, default_quantity=?, active=? WHERE id=?', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active, product_id))
-        # Commit the changes to the database
-        conn.commit()
+        
 
         try:
             # Insert the record into the upload_doc table
             Update_table_database('INSERT INTO upload_doc (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("23-200-" + str(brcod), "extension_barcode", self.master.master.master.master.user, self.master.master.master.master.custemr, doc_type, item, 1, 0, 0, 0, "payments_", "doc_created_date", "doc_expire_date", "doc_updated_date"))
 
-            # Commit the changes to the database
-            conn.commit()
             
             print("Data inserted successfully into the upload_doc table.")
         except Exception as e:
@@ -1728,8 +1711,6 @@ class Shop_SettingForm(ttk.Notebook):
             print(str(e))
 
 
-        # Commit the changes to the database
-        conn.commit()
 
         # Clear the product details widgets
         self.clear_product_details_widget()

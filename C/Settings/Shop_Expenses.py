@@ -381,7 +381,7 @@ class ExpensesForm(tk.Frame):
                 print("Adding expense to shop:", shop.get('Shop_name'))
                 Update_table_database("UPDATE Shops SET Shop_Expenses=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?",
                             (json.dumps(shop_exp), str(shop.get('Shop_Id')), str(shop.get('Shop_name')), str(shop.get('Shop_brand_name'))))
-                conn.commit()
+                
                 shop['Shop_Expenses'] = json.dumps(shop_exp)
             else:
                 print("Updating existing expense")
@@ -396,7 +396,7 @@ class ExpensesForm(tk.Frame):
                         # update DB and local shops list
                         Update_table_database("UPDATE Shops SET Shop_Expenses=? WHERE Shop_id=? AND Shop_name=? AND Shop_brand_name=?",
                                         (json.dumps(shop_exp), str(shop.get('Shop_Id')), str(shop.get('Shop_name')), str(shop.get('Shop_brand_name'))))
-                        conn.commit()
+                        
                         shop['Shop_Expenses'] = json.dumps(shop_exp)
                         break
 

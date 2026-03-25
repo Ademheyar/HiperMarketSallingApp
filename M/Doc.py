@@ -19,6 +19,7 @@ from D.docediterform import DocEditForm
 from D.printer import PrinterForm
 from C.slipe import load_slip
 
+from D.ApprovedDisplay import ApproveFrame
 from C.API import *
 from C.API.Get import *
 from C.API.Set import *
@@ -26,6 +27,7 @@ from C.API.Set import *
 from C.List import *
 
 import os
+# Error executing query: Incorrect number of bindings supplied. The current statement uses
 # Create a connection to the SQLite database
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
@@ -280,7 +282,7 @@ class DocForm(tk.Frame):
         self.search_button.grid(row=2, column=6)
 
         # Create the search button
-        self.print_button = tk.Button(self.details_frame, text="Print", command=self.perform_print)
+        self.print_button = tk.Button(self.details_frame, text="Veiw", command=self.perform_veiw)
         self.print_button.grid(row=3, column=6)
         self.delet_button = tk.Button(self.details_frame, text="Delet", command=self.perform_delet)
         self.delet_button.grid(row=3, column=7)
@@ -1019,7 +1021,7 @@ class DocForm(tk.Frame):
         # create top level window for end day confirmation
         top = tk.Toplevel(self.master, bg="white")
         top.title("End Day Confirmation")
-        top.geometry("500x300")  # Set a fixed size for the window
+        top.geometry("500x400")  # Set a fixed size for the window
         top.resizable(False, False)  # Prevent resizing
         
         # Create a frame for better layout
@@ -1028,14 +1030,30 @@ class DocForm(tk.Frame):
 
 
         # Show summary of today's totals for confirmation
-        tk.Label(frame, text="", bg="white", font=("Arial", 14, "bold")).pack(pady=10)
+        Enddaystr = "\n"
+        if self.date_from_Entry.get() == self.date_to_Entry.get():
+            tk.Label(frame, text="DATE : " + str(self.date_from_Entry.get()), bg="white", font=("Arial", 14, "bold")).pack(pady=10)
+            Enddaystr += "DATE : " + str(self.date_from_Entry.get()) + "\n"
+        else :
+            tk.Label(frame, text="FROM DATE : " + str(self.date_from_Entry.get()) + " TO " + str(self.date_to_Entry.get()), bg="white", font=("Arial", 14, "bold")).pack(pady=10)
+            Enddaystr += "FROM DATE : " + str(self.date_from_Entry.get()) + " TO " + str(self.date_to_Entry.get()) + "\n"
         tk.Label(frame, text='Cash        :        ' + self.Total_Cash_paid_doc.cget("text").split(": ")[1], bg="white", font=("Arial", 12)).pack(pady=5)
+        Enddaystr += 'Cash        :        ' + self.Total_Cash_paid_doc.cget("text").split(": ")[1] + "\n"
         tk.Label(frame, text='Card        :        ' + self.Total_Card_paid_doc.cget("text").split(": ")[1], bg="white", font=("Arial", 12)).pack(pady=5)
+        Enddaystr += 'Card        :        ' + self.Total_Card_paid_doc.cget("text").split(": ")[1] + "\n"
         tk.Label(frame, text="             ----------------", bg="white", font=("Arial", 14)).pack(pady=5)
+        Enddaystr += "             ----------------" + "\n"
         tk.Label(frame, text='            :        ' + str(float(self.Total_paid_doc.cget("text").split(": ")[1])), bg="white", font=("Arial", 16)).pack(pady=5)
+        Enddaystr += '            :        ' + str(float(self.Total_paid_doc.cget("text").split(": ")[1])) + "\n"
         tk.Label(frame, text='Cash Outs   :        ' + str(float(self.Total_Cash_Outs_doc.cget("text").split(": ")[1]) + float(self.Total_Card_Outs_doc.cget("text").split(": ")[1])), bg="white", fg="red", font=("Arial", 12, "bold")).pack(pady=5)
+        Enddaystr += 'Cash Outs   :        ' + str(float(self.Total_Cash_Outs_doc.cget("text").split(": ")[1]) + float(self.Total_Card_Outs_doc.cget("text").split(": ")[1])) + "\n"
         tk.Label(frame, text='Total       :        ' + str(float(self.Total_paid_doc.cget("text").split(": ")[1]) - float(self.Total_Cash_Outs_doc.cget("text").split(": ")[1]) - float(self.Total_Card_Outs_doc.cget("text").split(": ")[1])), bg="white", font=("Arial", 16)).pack(pady=5)
+        Enddaystr += 'Total       :        ' + str(float(self.Total_paid_doc.cget("text").split(": ")[1]) - float(self.Total_Cash_Outs_doc.cget("text").split(": ")[1]) - float(self.Total_Card_Outs_doc.cget("text").split(": ")[1])) + "\n"
         tk.Label(frame, text="Total Profit: " + self.doc_totalprofit_.cget("text"), bg="white", font=("Arial", 10)).pack(pady=5)
+        Enddaystr += "Total Profit: " + self.doc_totalprofit_.cget("text") + "\n"
+
+        #Enddaystr = self.on_slip.cget('text')
+        tk.Button(frame, text="Print", command=lambda: PrinterForm.print_slip(self, self.user_info, self.shop, Enddaystr, 1)).pack(pady=5)
     
     def load_payment(self, p_text, from_d, to_d):
         try:
@@ -1256,7 +1274,7 @@ class DocForm(tk.Frame):
                 # Delete the product from the database
                 Update_table_database('DELETE FROM doc_table WHERE doc_barcode=?', (barcode,))
                 
-    def perform_print(self):
+    def perform_veiw(self):
         item = self.listbox.focus()  # Get the item that was clicked
         if item:
             item_text = self.listbox.item(item, "values")  # Get the text values of the item
@@ -1264,14 +1282,16 @@ class DocForm(tk.Frame):
             barcode = item_text[0]
             doc_ = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))[0]
             if doc_:
-                answer = tk.messagebox.askquestion("Question", "Do you what to print "+str(barcode)+" ?")
+                 #TODO: MAKE IT SEND SELECTEd SHOP
+                ApproveFrame(self, self.user_info, self.shop[0], [barcode], [], 1)
+                '''answer = tk.messagebox.askquestion("Question", "Do you what to print "+str(barcode)+" ?")
                 if answer == 'yes':
                     #print(str(doc_))
                     doc_edit_form = load_slip(doc_, doc_id)
                     print("don loding slip : \n\n" + str(doc_edit_form))
                     self.user = self.master.master.master.master.user
                     # TODO: Make It send selected shop to print_slip
-                    PrinterForm.print_slip(self, self.user_info, self.shop[0], doc_edit_form, 1) # TODO chack in setting if paper cut allowed
+                    PrinterForm.print_slip(self, self.user_info, self.shop[0], doc_edit_form, 1) # TODO chack in setting if paper cut allowed'''
 
     # Function to perform the search and display the results in the listbox
     def perform_search(self):
@@ -1380,7 +1400,17 @@ class DocForm(tk.Frame):
                 items = []
                 new_payement_made = []
             print("New payment made: ", new_payement_made)
-            if index['type'] == "Sale_item":
+            
+            # 'doc_created_date': '2026-03-14 07:49', 'doc_expire_date': '2026-03-14 07:49', 'doc_updated_date': '2026-03-14 07:49'
+            # today_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+            doc_created = datetime.datetime.strptime(index['doc_created_date'].split(" ")[0], '%Y-%m-%d')
+            doc_updated = datetime.datetime.strptime(index['doc_updated_date'].split(" ")[0], '%Y-%m-%d')
+            give_srte_date = datetime.datetime.strptime(self.date_from_Entry.get(), '%Y-%m-%d')
+            give_end_date = datetime.datetime.strptime(self.date_to_Entry.get(), '%Y-%m-%d')
+            iscreateddatebtn = give_srte_date <= doc_created <= give_end_date
+            isupdateddatebtn = give_srte_date <= doc_updated <= give_end_date
+            
+            if index['type'] == "Sale_item" and iscreateddatebtn  and isupdateddatebtn:
                 for item in items:
                     itemProfit = 0
                     print("item for profit calcute : " + str(item))

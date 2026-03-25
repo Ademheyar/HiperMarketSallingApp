@@ -53,7 +53,7 @@ def is_float(value):
     
 
 class ProductFullInfoForm(ttk.Notebook):
-    def __init__(self, master, user, Shops, given_value):
+    def __init__(self, master, user, Shops, given_value, Shops_info, searched_items):
         # Modern battery/energy-inspired color scheme
         bg_dark = "#1a1a2e"      # Dark navy
         bg_medium = "#16213e"    # Medium navy
@@ -61,7 +61,8 @@ class ProductFullInfoForm(ttk.Notebook):
         accent_yellow = "#e94560" # Energy red
         text_light = "#eaeaea"   # Light gray
         text_secondary = "#b0b0b0" # Secondary text
-        
+        self.searched_items = searched_items
+        self.Shops_info = Shops_info
         ttk.Notebook.__init__(self, master)
         self.master = master
         self.user_info = user
@@ -255,6 +256,8 @@ class ProductFullInfoForm(ttk.Notebook):
 
         self.Item_To_Update_tab_upload_button = tk.Button(self.Item_To_Update_tab_details_frame, text="Refresh", bg="red", fg="white", font=("Arial", 12), command=lambda: self.perform_search_Item_size_chack())
         self.Item_To_Update_tab_upload_button.grid(row=4, column=2)
+        self.Item_To_Update_tab_balance_button = tk.Button(self.Item_To_Update_tab_details_frame, text="Balance Stock", bg="red", fg="white", font=("Arial", 12), command=lambda: self.perform_balancing())
+        self.Item_To_Update_tab_balance_button.grid(row=4, column=3)
 
 
         # Create the listbox to display search results
@@ -289,6 +292,72 @@ class ProductFullInfoForm(ttk.Notebook):
         self.doc_total_.grid(row=5, column=5)'''
 
         # show the Payment Form window
+
+    def perform_balancing(self):
+        answer = tk.messagebox.askquestion("Question", "the system will shift negative stocks and reduce with some stocks.\nThis will mass with stock.\n Do you what that?")
+        if answer == 'yes':
+            item_with_less = []
+            for i, item in enumerate(self.searched_items):
+                # chacke if qty lefte is less than 0 or not
+                # change this item name to unknown item and add it to the list
+                item_type = json.loads(item['more_info']) if item['more_info'] else {}
+                
+                if not item_type == {}:
+                    # get types shop name, code, color, size, extra data if item_type has it like [shops [codes [[colors ...[[sizes[extra data[],...],...],...],...],...],...],...]
+                    def get_type_info(item_type, path):
+                        print("item_type ", item_type)
+                        if len(item_type) == 2 and isinstance(item_type[0], str) and isinstance(item_type[1], list):
+                            item_type[1] = get_type_info(item_type[1], path + [item_type[0]])
+                        elif isinstance(item_type[0], list):
+                            item_type[0] = get_type_info(item_type[0], path)
+                        elif len(item_type) > 4:
+                            if float(item_type[4]) < 0:
+                                item_with_less.append([item, item_type[4]])
+                                item_type[4] = 0
+                        return item_type
+                    item_type = get_type_info(item_type, [])
+                    if item_type:
+                        Update_Producte(None, None, ['more_info'], [json.dumps(item_type)], ['id'], [item['id']])
+                        
+            if item_with_less:
+                # finde similar item in the list that has same price and cost
+                count = 4
+                while count:
+                    count-= 1
+                    for li, litem in enumerate(item_with_less):
+                        print('item ', item)
+                        litemprice = float(litem[0]['price'])
+                        litemcost = float(litem[0]['cost'])
+                        # finde similar item in the list that has same price and cost
+                        for item in self.Shops_info['Shop_items']:
+                            # if item price and cost are in range of the unknown item price and cost +- 50% we will consider it as similar item
+                            if isinstance(item, list):
+                                item = item[0]
+                            print('blancing item ', item)
+                            if (float(item['price']) == float(litemprice) and float(item['cost']) >= float(litemcost) - float(litemcost)/2 and float(item['cost']) <= float(litemcost) + float(litemcost)/2):
+                                # change this item name to unknown item and add it to the list
+                                item_type = json.loads(item['more_info']) if item['more_info'] else {}
+                                if not item_type == {}:
+                                    # get types shop name, code, color, size, extra data if item_type has it like [shops [codes [[colors ...[[sizes[extra data[],...],...],...],...],...],...],...]
+                                    def get_type_info(item_type):
+                                        print("item_type ", item_type)
+                                        if len(item_type) == 2 and isinstance(item_type[0], str) and isinstance(item_type[1], list):
+                                            item_type[1] = get_type_info(item_type[1])
+                                        elif isinstance(item_type[0], list):
+                                            item_type[0] = get_type_info(item_type[0])
+                                        elif len(item_type) > 4:
+                                            if float(item_type[4]) > 0:
+                                                if float(litem[1])-float(item_type[4]) < 0:
+                                                    litem[1] = float(litem[1])-float(item_type[4])
+                                                    item_type[4] = 0
+                                                else:
+                                                    item_type[4] = float(litem[1])-float(item_type[4])
+                                                    item_with_less.pop(li)
+                                        return item_type
+                                    new_inf = get_type_info(item_type)
+                                    if not item_type == new_inf:
+                                        Update_Producte(None, None, ['more_info'], [json.dumps(new_inf)], ['id'], [item['id']])
+                                
     def get_columen_(self):
         self.Item_To_Update_tab_listbox['columns'] = ('doc_barcode', 'extension_barcode', 'user_id', 'customer_id', 'Type', 'Itmes', 'Qty', 'Paymen', 'price', 'disc', 'tax', 'doc_created_date', 'doc_expire_date', 'doc_updated_date')
         self.Item_To_Update_tab_listbox.heading("#0", text="ID")

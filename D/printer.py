@@ -82,12 +82,12 @@ class PrinterForm(tk.Tk):
         selected_printer = "DEFALUET"
         printers = list_available_printers()
         print("user " + str(user_info) + "found ")
-        if self.user['User_id']:
+        if user_info['User_id']:
             user_id = 'User_id'
-            user_idv = self.user['User_id']
+            user_idv = user_info['User_id']
         else:
             user_id = 'Id'
-            user_idv = self.user['Id']
+            user_idv = user_info['Id']
         b = fetch_as_dict_list("SELECT * FROM setting WHERE "+user_id+" = ?", (int(user_idv),))
         print("user " + str(user_info['User_name']) + "found " +str(b))
         if b and len(b) > 0 and b[0]['printer'] != "" and b[0]['printer'] in printers:
@@ -163,6 +163,8 @@ class PrinterForm(tk.Tk):
         if printer_name == "":
             return
         hight = 5
+        if isinstance(at_shop, list):
+            at_shop = at_shop[0]
         if at_shop and at_shop['Shop_Slip_Settings']:
             sittings = json.loads(at_shop['Shop_Slip_Settings'])
             hight = sittings[0][1]

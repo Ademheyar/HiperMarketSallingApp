@@ -36,6 +36,13 @@ class ApproveFrame(tk.Frame):
         self.shops = shops
         self.user = user
         self.count_printed = 0
+        # Android-style dark blue color scheme
+        self.bg_dark = "#0d47a1"      # Deep blue
+        self.bg_light = "#1565c0"     # Darker blue
+        self.accent_blue = "#1976d2"  # Medium blue
+        self.text_light = "#ffffff"   # White text
+        self.bg_darker = "#0a3d91"    # Even darker blue
+        
         slip = ""
         for barcode in slips:
             doc_ = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))
@@ -80,8 +87,39 @@ class ApproveFrame(tk.Frame):
         self.next_slip = tk.Button(self.getvalue_form, text=">>", font=("Arial", 15), command= self.get_next_slip)
         self.next_slip.grid(row=0, column=2, sticky="nsew")
         
-        self.on_slip = tk.Label(self.getvalue_form, text=slip, font=("Arial", 10))
-        self.on_slip.grid(row=1, column=0, columnspan=5, rowspan=4, sticky="nsew")
+        self.midel_frame = tk.Frame(self.getvalue_form)
+        self.midel_frame.grid(row=1, column=0, columnspan=5, rowspan=4, sticky="nsew")
+        
+        self.extrnal_frame = tk.Frame(self.midel_frame, height=int(screen_height * 0.050), bg=self.bg_darker)
+        self.extrnal_frame.pack(side="top", fill="x")
+
+        self.Frame_contaner_frame = tk.Frame(self.midel_frame, bg=self.bg_dark)
+        self.Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        self.List_Frame_contaner_frame = tk.Frame(self.Frame_contaner_frame, bg=self.bg_dark)
+        self.List_Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        self.List_Frame = tk.Frame(self.List_Frame_contaner_frame, bg=self.bg_dark)
+        self.List_Frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        
+        self.item_List_canvas = tk.Canvas(self.List_Frame, bg=self.bg_dark, highlightthickness=0)
+        self.item_List_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
+        
+        self.item_List_yscrollbar = tk.Scrollbar(self.List_Frame, orient='vertical', 
+                                                 command=self.item_List_canvas.yview, bg=self.bg_light)
+        self.item_List_yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.item_List_xscrollbar = tk.Scrollbar(self.List_Frame_contaner_frame, orient='horizontal', 
+                                                 command=self.item_List_canvas.xview, bg=self.bg_light)
+        self.item_List_xscrollbar.pack(side=tk.TOP, fill=tk.X)
+        
+        self.item_List_canvas.configure(xscrollcommand=self.item_List_xscrollbar.set, 
+                                       yscrollcommand=self.item_List_yscrollbar.set)
+
+        self.resipt_fram = tk.Frame(self.item_List_canvas, bg='white')
+        self.item_List_canvas.create_window((0, 0), window=self.resipt_fram, anchor=tk.NW)
+        self.resipt_fram.bind('<Configure>', lambda e: self.item_List_canvas.configure(scrollregion=self.item_List_canvas.bbox("all")))
+        
 
         
         self.label1 = tk.Label(self.getvalue_form, text="change : 0", font=("Arial", 25))
@@ -121,6 +159,16 @@ class ApproveFrame(tk.Frame):
     def change_focus(self, event):
         self.print_button.focus_set()
         
+    def set_slip_lines(self, text):
+        #active_var = tk.IntVar()
+        #active_checkbutton = tk.Checkbutton(New_item_contener_frame, text='Active', variable=active_var)
+        
+        for items in self.resipt_fram.winfo_children():
+            items.destroy()
+        lines = text.split("\n")
+        for l in lines:
+            tk.Label(self.resipt_fram, text=l, font=("Arial", 10), bg='white').pack()
+        
     def get_next_slip(self):
         i = 0;
         if self.on_barid.cget('text') != "":
@@ -128,11 +176,11 @@ class ApproveFrame(tk.Frame):
         if not i+1 >= len(self.slips):
             i += 1
             self.on_barid.config(text=str(i))
-            self.on_slip.config(text=str(self.slips[i][1]))
+            self.set_slip_lines(str(self.slips[i][1]))
         else:
             i = 0
             self.on_barid.config(text=str(i))
-            self.on_slip.config(text=str(self.slips[i][1]))
+            self.set_slip_lines(str(self.slips[i][1]))
             
     def get_prev_slip(self):
         i = 0;
@@ -141,11 +189,11 @@ class ApproveFrame(tk.Frame):
         if not i-1 < 0:
             i -= 1
             self.on_barid.config(text=str(i))
-            self.on_slip.config(text=str(self.slips[i][1]))
+            self.set_slip_lines(str(self.slips[i][1]))
         else:
             i = len(self.slips)-1
             self.on_barid.config(text=str(i))
-            self.on_slip.config(text=str(self.slips[i][1]))
+            self.set_slip_lines(str(self.slips[i][1]))
             
     def print_item(self, a):
         #print("printing : " + str(self.print_slip) + "splip : " + str(self.on_barid.cget('text')))
@@ -154,7 +202,11 @@ class ApproveFrame(tk.Frame):
             answer = tk.messagebox.askquestion("Question", "Slip orady printed " + str(self.count_printed+1)+ " times do you whant to print more?")
         if self.print_slip == 1 and (answer == None or answer == 'yes'):
             self.count_printed += 1
-            PrinterForm.print_slip(self, self.user, self.shops, self.on_slip.cget('text'), 1) # TODO chack in setting if paper cut allowed
+            on_slip = ""
+            for items in self.resipt_fram.winfo_children():
+                on_slip += items.cget('text') + "\n"
+            if on_slip != "":
+                PrinterForm.print_slip(self, self.user, self.shops, on_slip, 1) # TODO chack in setting if paper cut allowed
     
     def undo_item(self):
         pass
