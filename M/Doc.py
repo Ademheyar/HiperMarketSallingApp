@@ -42,6 +42,12 @@ class DocForm(tk.Frame):
         self.pyment_used = []
         self.shop = shop
         self.user_info = user
+        # Android-style dark blue color scheme
+        self.bg_dark = "#0d47a1"      # Deep blue
+        self.bg_light = "#1565c0"     # Darker blue
+        self.accent_blue = "#1976d2"  # Medium blue
+        self.text_light = "#ffffff"   # White text
+        self.bg_darker = "#0a3d91"    # Even darker blue
         # Notebook widget - CENTER_NOTEBOK
         self.start_value = datetime.datetime.now().strftime('%Y-%m-%d')
         self.end_value = self.start_value
@@ -1019,39 +1025,77 @@ class DocForm(tk.Frame):
     def perform_endday(self):
         # Implement end day logic here
         # create top level window for end day confirmation
-        top = tk.Toplevel(self.master, bg="white")
+        top = tk.Toplevel(self.master, bg=self.bg_dark)
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
         top.title("End Day Confirmation")
-        top.geometry("500x400")  # Set a fixed size for the window
+        screen_width = self.master.winfo_screenwidth()
+        screen_height = self.master.winfo_screenheight()
+        x = (screen_width / 2) - (500 / 2)  # 500 is the width of the Payment Form window
+        y = (screen_height / 2) - (600 / 2)  # 500 is the height of the Payment Form window
+
+        # Set the position of the Payment Form window to center
+        top.geometry(f"+{int(x)}+{int(y)}")
+        top.geometry("500x600")  # Set a fixed size for the window
         top.resizable(False, False)  # Prevent resizing
         
+        
+        
         # Create a frame for better layout
-        frame = tk.Frame(top, bg="white")
+        frame = tk.Frame(top, bg=self.bg_dark)
         frame.pack(padx=20, pady=20)
 
 
         # Show summary of today's totals for confirmation
         Enddaystr = "\n"
         if self.date_from_Entry.get() == self.date_to_Entry.get():
-            tk.Label(frame, text="DATE : " + str(self.date_from_Entry.get()), bg="white", font=("Arial", 14, "bold")).pack(pady=10)
+            tk.Label(frame, text="DATE : " + str(self.date_from_Entry.get()), bg=self.bg_dark, fg="white", font=("Arial", 14, "bold")).pack(pady=10)
             Enddaystr += "DATE : " + str(self.date_from_Entry.get()) + "\n"
         else :
-            tk.Label(frame, text="FROM DATE : " + str(self.date_from_Entry.get()) + " TO " + str(self.date_to_Entry.get()), bg="white", font=("Arial", 14, "bold")).pack(pady=10)
+            tk.Label(frame, text="FROM DATE : " + str(self.date_from_Entry.get()) + " TO " + str(self.date_to_Entry.get()), bg=self.bg_dark, fg="white", font=("Arial", 14, "bold")).pack(pady=10)
             Enddaystr += "FROM DATE : " + str(self.date_from_Entry.get()) + " TO " + str(self.date_to_Entry.get()) + "\n"
-        tk.Label(frame, text='Cash        :        ' + self.Total_Cash_paid_doc.cget("text").split(": ")[1], bg="white", font=("Arial", 12)).pack(pady=5)
-        Enddaystr += 'Cash        :        ' + self.Total_Cash_paid_doc.cget("text").split(": ")[1] + "\n"
-        tk.Label(frame, text='Card        :        ' + self.Total_Card_paid_doc.cget("text").split(": ")[1], bg="white", font=("Arial", 12)).pack(pady=5)
-        Enddaystr += 'Card        :        ' + self.Total_Card_paid_doc.cget("text").split(": ")[1] + "\n"
-        tk.Label(frame, text="             ----------------", bg="white", font=("Arial", 14)).pack(pady=5)
-        Enddaystr += "             ----------------" + "\n"
-        tk.Label(frame, text='            :        ' + str(float(self.Total_paid_doc.cget("text").split(": ")[1])), bg="white", font=("Arial", 16)).pack(pady=5)
-        Enddaystr += '            :        ' + str(float(self.Total_paid_doc.cget("text").split(": ")[1])) + "\n"
-        tk.Label(frame, text='Cash Outs   :        ' + str(float(self.Total_Cash_Outs_doc.cget("text").split(": ")[1]) + float(self.Total_Card_Outs_doc.cget("text").split(": ")[1])), bg="white", fg="red", font=("Arial", 12, "bold")).pack(pady=5)
-        Enddaystr += 'Cash Outs   :        ' + str(float(self.Total_Cash_Outs_doc.cget("text").split(": ")[1]) + float(self.Total_Card_Outs_doc.cget("text").split(": ")[1])) + "\n"
-        tk.Label(frame, text='Total       :        ' + str(float(self.Total_paid_doc.cget("text").split(": ")[1]) - float(self.Total_Cash_Outs_doc.cget("text").split(": ")[1]) - float(self.Total_Card_Outs_doc.cget("text").split(": ")[1])), bg="white", font=("Arial", 16)).pack(pady=5)
-        Enddaystr += 'Total       :        ' + str(float(self.Total_paid_doc.cget("text").split(": ")[1]) - float(self.Total_Cash_Outs_doc.cget("text").split(": ")[1]) - float(self.Total_Card_Outs_doc.cget("text").split(": ")[1])) + "\n"
-        tk.Label(frame, text="Total Profit: " + self.doc_totalprofit_.cget("text"), bg="white", font=("Arial", 10)).pack(pady=5)
-        Enddaystr += "Total Profit: " + self.doc_totalprofit_.cget("text") + "\n"
+        exp = float(self.Total_Expense_doc.cget("text").split(": ")[1])
+        cashout = float(self.Total_Cash_Outs_doc.cget("text").split(": ")[1]) + float(self.Total_Card_Outs_doc.cget("text").split(": ")[1])
+        cashout = cashout if cashout <= 0 else float('-'+str(cashout))
+        
+        tk.Label(frame, text='Expance               : ' + str(exp), bg=self.bg_dark, fg="red", font=("Arial", 12, "bold")).pack(pady=5)
+        Enddaystr += 'Expance               : ' + str(exp) + "\n"
+        tk.Label(frame, text='Cash Outs             : ' + str(cashout), bg=self.bg_dark, fg="red", font=("Arial", 12, "bold")).pack(pady=5)
+        Enddaystr += 'Cash Outs             : ' + str(cashout) + "\n"
+        
+        tk.Label(frame, text="                     -----------", bg=self.bg_dark, fg="red", font=("Arial", 14)).pack(pady=5)
+        Enddaystr += "                     -----------" + "\n"
+        tk.Label(frame, text='                      : ' + str(exp + cashout), bg=self.bg_dark, fg="red", font=("Arial", 16)).pack(pady=5)
+        Enddaystr += '                      : ' + str(exp + cashout) + "\n"
+        Enddaystr += "\n"
+        
+        tk.Label(frame, text='Cash                  : ' + self.Total_Cash_paid_doc.cget("text").split(": ")[1], bg=self.bg_dark, fg="white", font=("Arial", 12)).pack(pady=5)
+        Enddaystr += 'Cash                  : ' + self.Total_Cash_paid_doc.cget("text").split(": ")[1] + "\n"
+        tk.Label(frame, text='Card                  : ' + self.Total_Card_paid_doc.cget("text").split(": ")[1], bg=self.bg_dark, fg="white", font=("Arial", 12)).pack(pady=5)
+        Enddaystr += 'Card                  : ' + self.Total_Card_paid_doc.cget("text").split(": ")[1] + "\n"
+        tk.Label(frame, text="                     -----------", bg=self.bg_dark, fg="white", font=("Arial", 14)).pack(pady=5)
+        Enddaystr += "                     -----------" + "\n"
+        totalpid = float(self.Total_Cash_paid_doc.cget("text").split(": ")[1]) + float(self.Total_Card_paid_doc.cget("text").split(": ")[1])
+        tk.Label(frame, text='                      : ' + str(totalpid), bg=self.bg_dark, fg="white", font=("Arial", 16)).pack(pady=5)
+        Enddaystr += '                      : ' + str(totalpid) + "\n"
+        Enddaystr += "\n"
+        
+        tk.Label(frame, text="Profit                : " + str(self.doc_totalprofit_.cget("text").split(": ")[1]), bg=self.bg_dark, fg="white", font=("Arial", 10)).pack(pady=5)
+        Enddaystr += "Profit                : " + str(self.doc_totalprofit_.cget("text").split(": ")[1]) + "\n"
 
+        tk.Label(frame, text='Profit After Expences : ' + str(round(float(self.doc_totalprofit_.cget("text").split(": ")[1].split(" (")[0])+(exp + cashout), 2)), bg=self.bg_dark, fg="red" if float(self.doc_totalprofit_.cget("text").split(": ")[1].split(" (")[0])+(exp + cashout) < 0 else "light green", font=("Arial", 16)).pack(pady=5)
+        Enddaystr += 'Profit After Expences : ' + str(round(float(self.doc_totalprofit_.cget("text").split(": ")[1].split(" (")[0])+(exp + cashout), 2)) + "\n"
+
+        tk.Label(frame, text='Total After Expences  : ' + str(round(float(totalpid+(exp + cashout)), 2)), bg=self.bg_dark, fg="white", font=("Arial", 16)).pack(pady=5)
+        Enddaystr += 'Total After Expences  : ' + str(round(float(totalpid+(exp + cashout)), 2)) + "\n"
+        
+        tk.Label(frame, text='Stock                 : ' + str(float(self.Total_Stock_doc.cget("text").split(": ")[1])), bg=self.bg_dark, fg="white", font=("Arial", 16)).pack(pady=5)
+        Enddaystr += 'Stock                 : ' + str(float(self.Total_Stock_doc.cget("text").split(": ")[1])) + "\n"
+        
+        if not self.date_from_Entry.get() == self.date_to_Entry.get():
+            tk.Label(frame, text='Total After Stock  : ' + str(round(float(totalpid+(exp + cashout)-float(self.Total_Stock_doc.cget("text").split(": ")[1])), 2)), bg=self.bg_dark, fg="white", font=("Arial", 16)).pack(pady=5)
+            Enddaystr += 'Total After Stock  : ' + str(round(float(totalpid+(exp + cashout)-float(self.Total_Stock_doc.cget("text").split(": ")[1])), 2)) + "\n"
+        
         #Enddaystr = self.on_slip.cget('text')
         tk.Button(frame, text="Print", command=lambda: PrinterForm.print_slip(self, self.user_info, self.shop, Enddaystr, 1)).pack(pady=5)
     
@@ -1071,7 +1115,7 @@ class DocForm(tk.Frame):
             pay_id = item[0]
             pay_type = item[1]
             pay_pid = item[2]
-            pay_pid_date = item[3]
+            pay_pid_date = item[3] if item[3] != "" else from_d
             pay_updated_date = item[4]
             pay_user = item[5]
             ispay_pide = item[6]
@@ -1097,7 +1141,7 @@ class DocForm(tk.Frame):
                             print("not found payment method for type : other")
                         break
             print("pay_pid " + str(pay_pid))
-            #print("date : " + str(pay_pid_date))
+            print("date : " + str(pay_pid_date))
             #print("udate : " + str(pay_updated_date))
             splitedate = pay_pid_date.split(" ")[0].split("-")
             fd = from_d.split("-")
@@ -1117,7 +1161,10 @@ class DocForm(tk.Frame):
             chacke_d = datetime.datetime(int(''.join([d for d in str(splitedate[0]) if d.isdigit()])), int(''.join([d for d in str(splitedate[1]) if d.isdigit()])), int(''.join([d for d in str(day) if d.isdigit()])))
             price = item[1]
             found = 0
-            print("pay_pid " + str(pay_pid))
+            print("day " + day)
+            print("start_d " + str(start_d))
+            print("chacke_d " + str(chacke_d))
+            print("end_d " + str(end_d))
             if start_d <= chacke_d <= end_d:
                 for pay in self.pyment_used:
                     if pay[0] == pay_type and pay[2] == ispay_pide:
@@ -1410,7 +1457,7 @@ class DocForm(tk.Frame):
             iscreateddatebtn = give_srte_date <= doc_created <= give_end_date
             isupdateddatebtn = give_srte_date <= doc_updated <= give_end_date
             
-            if index['type'] == "Sale_item" and iscreateddatebtn  and isupdateddatebtn:
+            if (index['type'] == "Sale_item") and iscreateddatebtn  and isupdateddatebtn: #
                 for item in items:
                     itemProfit = 0
                     print("item for profit calcute : " + str(item))
@@ -1490,7 +1537,7 @@ class DocForm(tk.Frame):
                         # unknown format -> fallback to now
                         now = datetime.datetime.now()
                         dateandtime = [now.strftime('%Y-%m-%d'), now.strftime('%H:%M:%S')]
-
+            '''
             Time = dateandtime[1] if len(dateandtime) > 1 and dateandtime[1] else "00:00:00"
 
             # MINUTE
@@ -1595,6 +1642,7 @@ class DocForm(tk.Frame):
             was_on_year = year
 
             vv.append([year, month, day, hour, minute, float(index['price'])-float(index['discount'])])
+            '''
             item = self.listbox.insert('', 'end', text=index['id'], values=(index['doc_barcode'], index['extension_barcode'], index['At_Shop_Id'], index['user_id'], index['Seller_id'], index['customer_id'], index['pid'], index['qty'], index['price'], index['discount'], index['tax'], index['doc_created_date'], index['doc_expire_date'], index['doc_updated_date'], index['item'],  index['payments']))
             id = self.listbox.item(item, "text")
             item_text = self.listbox.item(item, "values")

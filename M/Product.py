@@ -449,17 +449,18 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
                                             if len(siv) == 1 or s[0] == size:
                                                 inputs[3].set(siv[0])
                                             if do_what == "Save" and sh[0] == shop and codes[0] == code and c[0] == color and s[0] == size:
+                                                restocked_qty = int(info_list[i0][1][i1][1][i2][1][i3][1][0][4]) - int(inputs[4].get())
                                                 info_list[i0][1][i1][1][i2][1][i3][1][0][4] = inputs[4].get()
                                                 self.get_total_qty(inputs, info_list)
-                                                return info_list
+                                                return info_list, restocked_qty
                                             elif not do_what == "Save":
                                                 if s[1][0][4] and s[1][0][4] != "":
                                                     inputs[4].set(float(s[1][0][4]))
                                                 inputs[5].config(text=s[1][0][0])
                                                 if sh[0] == shop and codes[0] == code and c[0] == color and s[0] == size:
                                                     #slef.get_total_qty(inputs, info_list)
-                                                    return info_list
-        return item_list
+                                                    return info_list, 0
+        return item_list, 0
                                             
     def Update_selected_item_info(self, data, selected_item_info, new_item_Price_Spinbox, new_item_TPrice_Spinbox, index):
         self.Get_next_seletion("", data, selected_item_info)
@@ -480,7 +481,7 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
     
     def SAVE_CHANGE(self, index, data, selected_item_info):
         #print("going to make change to = ", self.master.master.master.master.Shops_info['Shop_items'][index])
-        newinfo_list = self.Get_next_seletion("Save", data, selected_item_info)
+        newinfo_list, restocked_qty = self.Get_next_seletion("Save", data, selected_item_info)
         if newinfo_list and not newinfo_list == 0:
             name = data[9].get()
             it2 = Update_Producte(None, None, ['price', 'name', 'more_info'], [data[7].get(), name, json.dumps(newinfo_list)], ['id'], [self.master.master.master.master.Shops_info['Shop_items'][index][0]['id']])
@@ -492,6 +493,54 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
                 self.master.master.master.master.Shops_info['Shop_items'][index][0] = it2
                 self.master.master.master.master.Shops_info['Shop_items'][index][1] = newinfo_list
                 print("changed to = ", self.master.master.master.master.Shops_info['Shop_items'][index])
+            
+        if restocked_qty > 0:
+            date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+                
+            doc_code = datetime.datetime.now().strftime('%y:%m') + "-11"
+            b = 0
+            while True:
+                ex_doc = fetch_as_dict_list("SELECT * FROM upload_doc WHERE doc_barcode=?", (doc_code+str(b),))
+                if ex_doc:
+                    b = random.randint(0, 10000)
+                else:
+                    brcod = doc_code+str(b)
+                    break
+            
+            cost = float(self.master.master.master.master.Shops_info['Shop_items'][index][0]['cost'])
+            asked = tk.messagebox.askquestion("Question", "QTY : " + str(restocked_qty) + "\nCost : " + str(restocked_qty * cost) + "\nThis product has been updated or restocked. Do you want to update the stock?")
+            if asked == 'yes':
+                # Insert a single doc_table record representing this batch (store updated stock)
+                try:
+                    Tcost = restocked_qty * cost 
+                    payments_ = [['0', str('CREDITSTOCK'), str(Tcost), date, date, self.user_info.get('User_name', ""), 1, '', 'CREDITSTOCK']]
+                    
+                    doc_items = [{"product_id": self.product_id, "name": name, "cost": cost, "qty": restocked_qty, "price": data[7].get()}]
+                    doc_data = {
+                        'doc_barcode': brcod,
+                        'extension_barcode': "",
+                        'At_Shop_Id': self.master.master.master.master.Shops_info['Shop_id'],
+                        'user_id': self.user_info.get('User_name', ""),
+                        'customer_id': "",
+                        'Seller_id': "",
+                        'type': "ReStocked_Items",
+                        'item': json.dumps(doc_items),
+                        'qty': restocked_qty,
+                        'price': Tcost,
+                        'Profite': 0,
+                        'discount': 0,
+                        'tax': 0,
+                        'payments': json.dumps(payments_),
+                        'pid': "",
+                        'doc_created_date': date,
+                        'doc_expire_date': date,
+                        'doc_updated_date': date
+                    }
+                    newdoc = Set_Document(None, list(doc_data.keys()), list(doc_data.values()))
+                    print("Done setting stock document", newdoc)
+                except Exception as e:
+                    print("Error inserting record updated products on doc_table:", e)
+
     
     def searchbytype(self):
         pass

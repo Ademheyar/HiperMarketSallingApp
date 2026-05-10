@@ -12,6 +12,8 @@ MAIN_dir = os.path.join(current_dir, '..')
 sys.path.append(MAIN_dir)
 
 from D.ItemSelector import ItemSelectorWidget
+from C.Product.ProductEdtion import ProductQueckEditionForm
+from D.ChooseCustemr import CreateUserDialog
 from D.Doc.Loaddoc import *
 from C.List import *
 
@@ -33,6 +35,7 @@ class search_entry(ttk.Entry):
         self.Shops = Shops
         self.Shops_Names = [shop['Shop_name'] for shop in self.Shops]
         self.homemaster = self
+        self.main_frame = None
         p = 0
         while(True):
             p += 1
@@ -48,7 +51,7 @@ class search_entry(ttk.Entry):
             self.var = self["textvariable"] = tk.StringVar()
 
         self.chacke_ifitisallowed()
-        self.var.trace('w', self.changed)
+        self.var.trace('w', lambda name, index, mode: self.changed())
         self.bind("<Up>", self.treeview_naigation)
         self.bind("<Down>", self.treeview_naigation)
         self.bind("<Return>", self.select)
@@ -69,6 +72,7 @@ class search_entry(ttk.Entry):
         self.perm_actions = Chacke_Security(self, self.homemaster.user, shop_obj, 24, 'User Need Permetion To Search For Products')
         self.perm_items = Chacke_Security(self, self.homemaster.user, shop_obj, 9, 'User Need Permetion To Search For Actions')
         self.perm_docs = Chacke_Security(self, self.homemaster.user, shop_obj, 23, 'User Need Permetion To Search For Documents')
+        self.perm_user = Chacke_Security(self, self.homemaster.user, shop_obj, 23, 'User Need Permetion To Search For Documents') # Todo chack if search user is allowed
 
     def Load_Shop_items(self):
         for s, shop in enumerate(self.Shops):
@@ -91,6 +95,7 @@ class search_entry(ttk.Entry):
         Total_qty = 0
         Total_Document = 0
         Total_Actions = 0
+        Total_User = 0
         for item_info in self.selected_products:
             price = 0
             if(item_info['type'] == 'ITEM'):
@@ -107,10 +112,12 @@ class search_entry(ttk.Entry):
                         price = price*float(data[4])
             elif(item_info['type'] == 'DOCUMENT'):
                 Total_Document += 1
+            elif(item_info['type'] == 'USERS'):
+                Total_User += 1
             elif(item_info['type'] == 'ACTIONS'):
                 Total_Actions += 1
             Total_price += price
-        self.Done_btn.config(text="Done \n Total QTY " + str(Total_qty) + " Total Price "+ str(Total_price)+ " Total Documents "+ str(Total_Document)+ " Total Actions "+ str(Total_Actions))
+        self.Done_btn.config(text="Done \n Total Item Counted " + str(Total_qty) + " Total Price "+ str(Total_price)+ " Total User "+ str(Total_User)+ " Total Documents "+ str(Total_Document)+ " Total Actions "+ str(Total_Actions))
 
     def Selectd_item_add(self, item_id, extra_data, selected_type):
         selected_item_info = None
@@ -172,7 +179,11 @@ class search_entry(ttk.Entry):
                     elif(info['type'] == 'DOCUMENT'):
                         selected_item_info = {'values': item, 'type': 'DOCUMENT'}
                         self.selected_products.append(selected_item_info)
-                    
+                        
+                    elif(info['type'] == 'User'):
+                        selected_item_info = {'values': item, 'type': 'USERS'}
+                        self.selected_products.append(selected_item_info)
+                        
                     elif(info['type'] == 'ACTIONS'):
                         selected_item_info = {'values': item, 'type': 'ACTIONS'}
                         self.selected_products.append(selected_item_info)
@@ -408,6 +419,11 @@ class search_entry(ttk.Entry):
                     if item['id'] == item_id:
                         self.create_info_getter(-1, i, parent)
                         break
+                elif(info[0] == 'USERS'):
+                    if item['User_name'] == item_id:
+                        selected_item_info = {'values': item, 'type': 'USERS'}
+                        self.selected_products.append(selected_item_info)
+                        break
                 elif(info[0] == 'DOCUMENT'):
                     if item['doc_barcode'] == item_id:
                         selected_item_info = {'values': item, 'type': 'DOCUMENT'}
@@ -430,7 +446,7 @@ class search_entry(ttk.Entry):
         #print(self.selected_products)
         self.Update_selected_Ifo()
         
-    def changed(self, name, index, mode):
+    def changed(self):
         if self.homemaster.Shops_info['Shop_items'] == []:
             self.Load_Shop_items()
         if self.debounce_id is not None:
@@ -446,65 +462,91 @@ class search_entry(ttk.Entry):
             
             screen_width = self.winfo_screenwidth()
             screen_height = self.winfo_screenheight()
+            if not self.lb_up:
+                # Main Frame (initially hidden)
+                self.main_frame = ttk.Frame(self.master.master)
+                self.Contener_frame = ttk.Frame(self.main_frame)
+                self.Contener_frame.pack(side=tk.LEFT, fill=tk.X)
+                #self.main_frame.pack_forget()  # Hide the main frame initially
+                    
+                self.canvas = tk.Canvas(self.Contener_frame, width=screen_width-(screen_width/3), height=screen_height-(screen_height/3))
+                self.canvas.pack(side=tk.TOP, fill=tk.BOTH)
+                self.scrollbar = ttk.Scrollbar(self.main_frame, command=self.canvas.yview)
+                self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y, expand=1)
+                self.canvas.configure(yscrollcommand=self.scrollbar.set)
+                    
+                # Clear existing widgets
+                #self.lb.destroy()
+                # Frame inside Canvas
+                self.lb = ttk.Frame(self.canvas, width=self.canvas.cget('width'))
+                self.canvas.create_window((0, 0), window=self.lb, anchor=tk.NW)
+                self.lb.bind('<Configure>', lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+
+
+                # Bind the scrollbar to update the scrollregion
+                self.lb.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+
+                self.Manue_fram = ttk.Frame(self.Contener_frame)
+                self.Manue_fram.pack(side=tk.TOP, fill=tk.BOTH)
+                self.Cancel_btn = ttk.Button(self.Manue_fram, text='Cancel', command=self.cancel_search)
+                self.Cancel_btn.pack(side=tk.LEFT, expand=1)
+                self.Done_btn = ttk.Button(self.Manue_fram, text='Done', command=self.Done_search)
+                self.Done_btn.pack(side=tk.RIGHT, expand=1)
+                self.Update_selected_Ifo()
+                    
+            for child in self.lb.winfo_children():
+                child.destroy()
+            self.selected_indexd = -1;
+            w = 0
+            n_w = 0
+            d_w = 0
+            self.canvas.bind("<MouseWheel>", lambda e: self.load_more_items(words))
+                    
+            self.main_frame.place(x=self.winfo_x(), y=self.winfo_y()+self.winfo_height()+25)
+            self.lb_up = True
             if words:
-                if not self.lb_up:
-                    # Main Frame (initially hidden)
-                    self.main_frame = ttk.Frame(self.master.master)
-                    self.Contener_frame = ttk.Frame(self.main_frame)
-                    self.Contener_frame.pack(side=tk.LEFT, fill=tk.X)
-                    #self.main_frame.pack_forget()  # Hide the main frame initially
-                    
-                    self.canvas = tk.Canvas(self.Contener_frame, width=screen_width-(screen_width/3), height=screen_height-(screen_height/3))
-                    self.canvas.pack(side=tk.TOP, fill=tk.BOTH)
-                    self.scrollbar = ttk.Scrollbar(self.main_frame, command=self.canvas.yview)
-                    self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y, expand=1)
-                    self.canvas.configure(yscrollcommand=self.scrollbar.set)
-                    
-                    # Clear existing widgets
-                    #self.lb.destroy()
-                    # Frame inside Canvas
-                    self.lb = ttk.Frame(self.canvas, width=self.canvas.cget('width'))
-                    self.canvas.create_window((0, 0), window=self.lb, anchor=tk.NW)
-                    self.lb.bind('<Configure>', lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
-
-
-                    # Bind the scrollbar to update the scrollregion
-                    self.lb.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
-
-                    self.Manue_fram = ttk.Frame(self.Contener_frame)
-                    self.Manue_fram.pack(side=tk.TOP, fill=tk.BOTH)
-                    self.Cancel_btn = ttk.Button(self.Manue_fram, text='Cancel', command=self.cancel_search)
-                    self.Cancel_btn.pack(side=tk.LEFT, expand=1)
-                    self.Done_btn = ttk.Button(self.Manue_fram, text='Done', command=self.Done_search)
-                    self.Done_btn.pack(side=tk.RIGHT, expand=1)
-                    self.Update_selected_Ifo()
-                    
-                for child in self.lb.winfo_children():
-                    child.destroy()
-                self.selected_indexd = -1;
-                w = 0
-                n_w = 0
-                d_w = 0
-
                 # check security permissions to show items
                 if not self.perm_items:
                     words = [word for word in words if word[0] != 'ITEM']
                 if not self.perm_docs:
                     words = [word for word in words if word[0] != 'DOCUMENT']
+                if not self.perm_user:
+                    words = [word for word in words if word[0] != 'USERS']
                 if not self.perm_actions:
                     words = [word for word in words if word[0] != 'ACTIONS']
-                
+            
                 self.load_more_items(words[:5])
-                self.canvas.bind("<MouseWheel>", lambda e: self.load_more_items(words))
-                    
-                self.main_frame.place(x=self.winfo_x(), y=self.winfo_y()+self.winfo_height()+25)
-                self.lb_up = True
             else:
+                w = self.grid_size()[0]
+                h = self.grid_size()[1]
+            
+                screen_width = self.winfo_screenwidth()
+                screen_height = self.winfo_screenheight()
+                
+                self.Cancel_btn = ttk.Button(self.lb, text='Create New Items', command=self.create_new_item, width=screen_width-(screen_width/3))
+                self.Cancel_btn.pack(fill='x', expand=True, pady=10, padx=10)
+                self.Cancel_btn = ttk.Button(self.lb, text='Create New Users', command=self.create_new_user, width=screen_width-(screen_width/3))
+                self.Cancel_btn.pack(fill='x', expand=True, pady=10, padx=10)
+                self.Cancel_btn = ttk.Button(self.lb, text='Create New Actions', command=self.cancel_search, width=screen_width-(screen_width/3))
+                self.Cancel_btn.pack(fill='x', expand=True, pady=10, padx=10)
+                '''
                 self.chacke_ifitisallowed()
                 if self.lb_up:
                     self.main_frame.destroy()
-                    self.lb_up = False
-                        
+                    self.lb_up = False'''
+            
+    def create_new_item(self):
+        for child in self.lb.winfo_children():
+            child.destroy()
+        notebook_frame = ProductQueckEditionForm(self.lb, self.user, self.Shops)
+        notebook_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+    def create_new_user(self):
+        for child in self.lb.winfo_children():
+            child.destroy()
+        newuser = CreateUserDialog(self.lb)
+        newuser.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)                  
+                
     def load_more_items(self, words):
             w = self.grid_size()[0]
             h = self.grid_size()[1]
@@ -571,9 +613,22 @@ class search_entry(ttk.Entry):
                     var.set(len([item for selecteditem in self.selected_products if item['doc_barcode'] == selecteditem[0]]) > 0)
                     checkbox = ttk.Checkbutton(f, variable=var, command=lambda i=item['doc_barcode'], v=var, p=f: self.toggle_selected(i, v, p))
                     checkbox.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-                    ttk.Label(f, text=f"Document : " + item['doc_barcode'], wraplength=150).grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
+                    ttk.Label(f, text=f"Document : " + item['doc_barcode']+" Coustemur : " + str(item['customer_id']) + "\n Qty : " + str(item['qty']) +"  price : " + str(item['price']) +"\n Date : " + str(item['doc_created_date']) + "\n", wraplength=150).grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
                     #tk.Button(f, text='Remove', command=lambda i=item['id'], v=None: self.Selectd_item_remove(i, v)).grid(row=1, column=4, padx=5, pady=5, sticky=tk.W)
-                    
+
+                elif(info[0] == 'USERS'):
+                    #print("word: " + str(len(item)))
+                    #print("Documents: " + str(item))
+                    f = tk.Frame(self.lb, width=screen_width-(screen_width/3), bg="#0d47a1", highlightthickness=2, highlightbackground="black")
+                    #f.grid(row=len(self.lb.winfo_children()), column=0, pady=1, sticky=tk.EW)
+                    f.pack(fill='x', expand=True, pady=10, padx=10)
+                    var = tk.BooleanVar()
+                    var.set(len([item for selecteditem in self.selected_products if item['User_name'] == selecteditem[0]]) > 0)
+                    checkbox = ttk.Checkbutton(f, variable=var, command=lambda i=item['User_name'], v=var, p=f: self.toggle_selected(i, v, p))
+                    checkbox.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+                    ttk.Label(f, text=f"USER Name : " + item['User_name'], wraplength=150).grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
+                    #tk.Button(f, text='Remove', command=lambda i=item['id'], v=None: self.Selectd_item_remove(i, v)).grid(row=1, column=4, padx=5, pady=5, sticky=tk.W)
+
                 elif(info[0] == 'ACTIONS'):
                     #print("word: " + str(len(item)))
                     #print("ACTIONS: " + str(item))
@@ -595,12 +650,16 @@ class search_entry(ttk.Entry):
             self.all_items = []
             results = []
             items_results = []
+            
             unique_item_results = []
             barcode_results = []
             unique_barcode_results = []
             
             Actions_results = []
             unique_Actions_results = []
+            
+            user_results = []
+            unique_user_results = []
             
             unique_results = set()  # To store unique results
 
@@ -648,9 +707,28 @@ class search_entry(ttk.Entry):
                     if barcode not in unique_barcode_results:
                         barcode_results.append(["DOCUMENT", barcode, row])
                         unique_barcode_results.append(barcode)
-
+                        
+            if self.perm_user:
+                # single DB query for documents
+                username = query
+                rows = fetch_as_dict_list("SELECT * FROM Users WHERE User_name LIKE ? OR User_address LIKE ? OR User_id_pp_num LIKE ? OR User_phone_num LIKE ? OR User_email LIKE ? OR User_type LIKE ? OR User_access LIKE ?", 
+                    ('%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%'))
+                for row in rows:
+                    User_name = row['User_name']
+                    if User_name not in unique_user_results:
+                        barcode_results.append(["USERS", User_name, row])
+                        unique_user_results.append(User_name)
+                        docs = search_documents("", "", "", "", "", "", User_name,
+                            "", "", "", "", "", "", "", "")
+                        for doc in docs:
+                            barcode = doc['doc_barcode']
+                            if barcode not in unique_barcode_results:
+                                barcode_results.append(["DOCUMENT", barcode, doc])
+                                unique_barcode_results.append(barcode)
+                        
             results.extend(items_results)
             results.extend(Actions_results)
+            results.extend(user_results)
             results.extend(barcode_results)
             #print("items_results: " + str(len(items_results)) + " query: " + str(query))
             #print("barcode_results: " + str(len(barcode_results)) + " query: " + str(query))
@@ -689,14 +767,21 @@ class search_entry(ttk.Entry):
                 
                 p.qty = 0
                 p.update_info()
-            elif(item_info['type'] == 'DOCUMENT'):
-                p.get_ex_doc_items(item_info)
-                p.get_ex_doc_payments(item_info)
-                p.update_info()
                 
             elif(item_info['type'] == 'ACTIONS'):
                 p.add_item(item_info)
                 p.update_info()
+                
+            elif(item_info['type'] == 'USERS'):
+                p.custemr = item_info['values']['User_id']
+                p.Add_custemur_label.config(text=item_info['values']['User_name'])
+                p.update_info()
+                
+            elif(item_info['type'] == 'DOCUMENT'):
+                p.get_ex_doc_items(item_info)
+                p.get_ex_doc_payments(item_info)
+                p.update_info()
+                 
         self.var.set("")
         self.lb_up = False
         self.items = []

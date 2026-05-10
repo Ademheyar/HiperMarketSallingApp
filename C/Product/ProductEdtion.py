@@ -58,6 +58,7 @@ class ProductFullEditionForm(ttk.Notebook):
         self.notebook_frame = self
         self.selected_path = []
         self.product_id = -1
+        self.restocked_qty = 0
         # Create the frame for the product details
         self.details_frame = tk.Frame(self.notebook_frame)
         self.details_frame.pack()
@@ -604,9 +605,14 @@ class ProductFullEditionForm(ttk.Notebook):
             self.selected_path = []
         found = 0 
         i = 0
+
         for p in self.inventory:
             if p["shop_name"] == self.master.master.shop_name_Combobox.get() and p["color"] == self.color_entry.get() and \
                p["size"] == self.size_entry.get():
+                
+                newqty = int(self.qty_entry.get())-int(p["qty"])
+                self.restocked_qty  += newqty
+                
                 if p["barcode"] == self.bracode_entry.get() and p["qtyfirst"] == self.qty_entry.get() and \
                     p["qty"] == self.qty_entry.get():
                     print("issame!!!" + str(p)) # TODO: show same earror
@@ -614,22 +620,28 @@ class ProductFullEditionForm(ttk.Notebook):
                 else:
                     self.inventory[i]["barcode"] = self.bracode_entry.get()
                     self.inventory[i]["qty"] = self.qty_entry.get()
+                    
                 found = 1
             else:
                 found = 0
             i += 1
 
         #{'shop_name': '1', 'color': '2', 'size': '3', 'barcode': '4', 'qtyfirst': '4', 'qty': '4', 'cdate': '', 'update': ''}
-                #return (p["barcode"], p["qtyfirst"], p["qty"], p["cdate"], p["update"])
+        #return (p["barcode"], p["qtyfirst"], p["qty"], p["cdate"], p["update"])
         
         if self.type_entry.get_value and len(self.type_entry.get_value) > 0:
             for type_ in self.type_entry.get_value:
                 new_type = json.dumps(type_)
                 if self.selected_path == []:
                     self.selected_path = [self.master.master.shop_name_Combobox.get(), self.code_entry.get(), self.color_entry.get(), self.size_entry.get()]
+                clist, left_path, fpath = get_last_same_path_list(self.selected_path, self.nested_list)
                 found, self.nested_list = add_new_list(self.nested_list, self.selected_path, [self.bracode_entry.get(), new_type, self.single_price_entry.get(), self.qty_entry.get(), self.qty_entry.get(), "", self.images_entry.get(), "", ""], 1)
+                if left_path and len(left_path) > 8:
+                    newqty = int(self.qty_entry.get())-int(left_path[8])
+                    self.restocked_qty  += newqty
         else:
             pass # sand messeg
+        
         print("self.nested_list : " + str(self.nested_list))
         if found:
             self.add_info_(self.master.master.shop_name_Combobox.get(), self.code_entry.get(), self.color_entry.get(), self.size_entry.get(), self.bracode_entry.get(), self.qty_entry.get(), self.qty_entry.get(), "", self.images_entry.get(), "", "")
@@ -763,12 +775,24 @@ class ProductFullEditionForm(ttk.Notebook):
         # Get the values from the product details widgets
         at_shop = ""
         found_shop_items = []
+        p = self
+        v = None
+        while(True):
+            if hasattr(p, 'shop_name_Combobox'):
+                v = p.shop_name_Combobox
+                break
+            if hasattr(p, 'User_Shopes_Combobox'):
+                v = p.User_Shopes_Combobox
+                break
+            else:
+                p = p.master
+                
         for s, shop in enumerate(self.Shops):
             print("Loop s ", s)
             print("Loop Shop ", shop['Shop_name'])
-            print("Selected s ", self.master.master.shop_name_Combobox.current())
-            print("Selected Shop ", self.master.master.shop_name_Combobox.get())
-            if (shop['Shop_name'] == "" or (s == self.master.master.shop_name_Combobox.current() and self.master.master.shop_name_Combobox.get() == shop['Shop_name'])):
+            print("Selected s ", v.current())
+            print("Selected Shop ", v.get())
+            if (shop['Shop_name'] == "" or (s == v.current() and v.get() == shop['Shop_name'])):
                 at_shop = shop['Shop_Id']
                 print(" Found ", at_shop)
                 if shop['Shop_items']:
@@ -789,15 +813,12 @@ class ProductFullEditionForm(ttk.Notebook):
         price = float(self.price_entry.get())
         include_tax = int(self.include_tax_var.get())
         price_change = int(self.price_change_var.get())
-        more_info = json.dumps(self.nested_list)
         images = self.images_entry.get()
         description = self.description_entry.get()
         service = self.service_change_var.get()
         default_quantity = int(self.default_quantity_change_var.get())
         active = int(self.active_var.get())
-            
-        print(str([name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active]))
-        
+                    
         item = ""
         doc_type = ""
         
@@ -806,7 +827,9 @@ class ProductFullEditionForm(ttk.Notebook):
         # doc_code = "1"
         # Year:Month-docType 1 doccreateplatform 1 doc_numb
         #TODO make it create randim number so that ont to count
-        date = datetime.datetime.now().strftime('%y-%m-%d')
+        # date = datetime.datetime.now().strftime('%y-%m-%d')
+        date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+            
         doc_code = datetime.datetime.now().strftime('%y:%m') + "-11"
         b = 0
         while True:
@@ -817,7 +840,11 @@ class ProductFullEditionForm(ttk.Notebook):
                 brcod = doc_code+str(b)
                 break
 
-        if self.add_button.cget("text") == "New" or self.add_button.cget("text") == "Add":        
+        if self.add_button.cget("text") == "New" or self.add_button.cget("text") == "Add":   
+            
+            more_info = json.dumps(self.nested_list) 
+            print(str([name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active]))
+
             # Insert the new product into the database
             doc_type = "Add_Items"
             # Get the ID of the most recently added item
@@ -828,7 +855,6 @@ class ProductFullEditionForm(ttk.Notebook):
             item += f"(:{new_item_id}:,:{name}:,:{code}:,:{typ}:,:{barcode}:,:{at_shop}:,:{quantity}:,:{cost}:,:{tax}:,:{price}:,:{include_tax}:,:{price_change}:,:{more_info}:,:{images}:,:{description}:,:{service}:,:{default_quantity}:,:{active}:)"
             print("item : " + str(item))
             # Commit the changes to the database
-            conn.commit()
             found_shop_items.append([new_item_id, 1, date, date, date])
             ITEM = json.dumps(found_shop_items)
             print("ITEM : " + str(ITEM))
@@ -843,13 +869,84 @@ class ProductFullEditionForm(ttk.Notebook):
                     at_shop = shop['Shop_Id']
                     print(" Found ", at_shop)
                     shop['Shop_items'] = ITEM
+            # Insert a single doc_table record representing this batch (store payments)
+            try:
+                doc_items = [{"product_id": new_item_id, "name": name, "cost": cost, "qty": quantity, "price": price}]
+                doc_data = {
+                    'doc_barcode': brcod,
+                    'extension_barcode': "",
+                    'At_Shop_Id': at_shop,
+                    'user_id': self.user_info.get('user_id', ""),
+                    'customer_id': "",
+                    'Seller_id': "",
+                    'type': "Stocked_Items",
+                    'item': json.dumps(doc_items),
+                    'qty': quantity,
+                    'price': price,
+                    'Profite': 0,
+                    'discount': 0,
+                    'tax': tax,
+                    'payments': json.dumps({}),
+                    'pid': "",
+                    'doc_created_date': date,
+                    'doc_expire_date': date,
+                    'doc_updated_date': date
+                }
+                Set_Document(None, list(doc_data.keys()), list(doc_data.values()))
+                print("Done setting stock document")
+            except Exception as e:
+                print("Error inserting record new products on doc_table:", e)
+            
+
+
         elif self.product_id != -1:
+            
+            more_info = json.dumps(self.nested_list)
+            print(str([name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active]))
+
             print("product_id : " + str(self.product_id) + " barcode : " + str(brcod))
             doc_type = "Update_Items"
             item += f"(:{self.product_id}:,:{name}:,:{code}:,:{typ}:,:{barcode}:,:{at_shop}:,:{quantity}:,:{cost}:,:{tax}:,:{price}:,:{include_tax}:,:{price_change}:,:{more_info}:,:{images}:,:{description}:,:{service}:,:{default_quantity}:,:{active}:)"
             print("item : " + str(item))
             # Update the product in the database
             Update_Producte(None, None, ['name', 'code', 'type', 'barcode', 'at_shop', 'quantity', 'cost', 'tax', 'price', 'include_tax', 'price_change', 'more_info', 'images', 'description', 'service', 'default_quantity', 'active'], [name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active], ['id'], [self.product_id])
+
+            if self.restocked_qty != 0:
+                asked = tk.messagebox.askquestion("Question", "QTY : " + str(self.restocked_qty) + "\nCost : " + str(self.restocked_qty * cost) + "\nThis product has been updated or restocked. Do you want to update the stock?")
+                if asked == 'yes':
+                    # Insert a single doc_table record representing this batch (store updated stock)
+                    try:
+                        Tprice = self.restocked_qty * price
+                        Tcost = self.restocked_qty * cost 
+                        payments_ = [['0', str('CREDITSTOCK'), str(Tcost), date, date, self.user_info.get('User_name', ""), 1, '', 'CREDITSTOCK']]
+                        
+                        doc_items = [{"product_id": self.product_id, "name": name, "cost": cost, "qty": quantity, "price": price}]
+                        doc_data = {
+                            'doc_barcode': brcod,
+                            'extension_barcode': "",
+                            'At_Shop_Id': at_shop,
+                            'user_id': self.user_info.get('User_name', ""),
+                            'customer_id': "",
+                            'Seller_id': "",
+                            'type': "ReStocked_Items",
+                            'item': json.dumps(doc_items),
+                            'qty': self.restocked_qty,
+                            'price': Tcost,
+                            'Profite': 0,
+                            'discount': 0,
+                            'tax': tax,
+                            'payments': json.dumps(payments_),
+                            'pid': "",
+                            'doc_created_date': date,
+                            'doc_expire_date': date,
+                            'doc_updated_date': date
+                        }
+                        newdoc = Set_Document(None, list(doc_data.keys()), list(doc_data.values()))
+                        print("Done setting stock document", newdoc)
+                    except Exception as e:
+                        print("Error inserting record updated products on doc_table:", e)
+            
+
         # Clear the product details widgets
         self.clear_product_details_widget()
         self.master.master.Load_Shop_items() # refrash items
@@ -1200,6 +1297,18 @@ class ProductQueckEditionForm(ttk.Notebook):
         # Collect created items to build one doc entry at the end
         doc_items = []
         created_ids = []
+        p = self
+        v = None
+        while(True):
+            if hasattr(p, 'shop_name_Combobox'):
+                v = p.shop_name_Combobox
+                break
+            if hasattr(p, 'User_Shopes_Combobox'):
+                v = p.User_Shopes_Combobox
+                break
+            else:
+                p = p.master
+                
         date_now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
         # determine a unique document barcode once
         base_doc_code = datetime.datetime.now().strftime('%y:%m') + "-11"
@@ -1222,21 +1331,28 @@ class ProductQueckEditionForm(ttk.Notebook):
             online_shop_id = ""
             offline_shop_id = ""
             found_shop_items = []
-            if not self.Shops:
-                continue
+            foundshop = 0
             for s, shop in enumerate(self.Shops):
-                if (shop.get('Shop_name', "") == "" or
-                    (s == self.master.master.shop_name_Combobox.current() and
-                    self.master.master.shop_name_Combobox.get() == shop.get('Shop_name', ""))):
+                #print("shop ",  shop)
+                #print("v.current() ",  v.current())
+                #print("shop.get('Shop_name', "") ",  shop.get('Shop_name', ""))
+                #print("v.get() ",  v.get())
+                # TODO IF SHOP IS NOT SELECTED MAKE IT ADD TO ALL SHOP THAT IS LODED USER
+                if shop.get('Shop_name', "") in v['values']:
                     online_shop_id = shop.get('Shop_Id')
                     offline_shop_id = shop.get('Id')
                     selected = s
+                    foundshop = 1
                     if shop.get('Shop_items'):
                         try:
                             found_shop_items = json.loads(shop['Shop_items'])
-                            break
                         except Exception:
                             found_shop_items = []
+                    break
+            if not self.Shops or foundshop == 0:
+                while True:
+                    continue
+                continue
             if online_shop_id == "":
                 online_shop_id = self.Shops[0].get('Shop_Id')  # fallback to first shop if none selected
                 offline_shop_id = self.Shops[0].get('Id')
@@ -1291,8 +1407,10 @@ class ProductQueckEditionForm(ttk.Notebook):
                 types_info.append([barcode, new_type, price, quantity_f, quantity_f, "", json.dumps([]), "", ""])
             else:
                 types_info = [[barcode, json.dumps([]), price, quantity_f, quantity_f, "", json.dumps([]), "", ""]]
-
-            more_info = json.dumps([[self.master.master.shop_name_Combobox.get(), [[code, [["DEF_COLOR", [["DEF_SIZE", types_info]]]]]]]])
+            shopname = v.get()
+            if shopname == "":
+                shopname = shop.get('Shop_name', "")
+            more_info = json.dumps([[shopname, [[code, [["DEF_COLOR", [["DEF_SIZE", types_info]]]]]]]])
 
             # Insert product row
             try:
@@ -1332,9 +1450,11 @@ class ProductQueckEditionForm(ttk.Notebook):
         # Determine user_id and customer_id
         user_id = ""
         if isinstance(getattr(self, 'user', None), dict):
-            user_id = self.user.get('User_id', "")
+            user_id = self.user.get('User_name', "")
+
         if not user_id and isinstance(getattr(self, 'user_info', None), dict):
-            user_id = self.user_info.get('id', self.user_info.get('User_id', ""))
+            user_id = self.user_info.get('User_name', self.user_info.get('User_name', ""))
+            
         customer_id = getattr(self, 'customer', "") or ""
 
         # Payment form: collect credit stock, cash stock, card stock
@@ -1367,14 +1487,32 @@ class ProductQueckEditionForm(ttk.Notebook):
 
         # Insert a single doc_table record representing this batch (store payments)
         try:
+            print(['doc_barcode', 'extension_barcode', 'At_Shop_Id', 'user_id', 'customer_id', 'Seller_id', 'type', 'item', 'qty', 'price', 'Profite', 'discount', 'tax', 'payments', 'pid', 'doc_created_date', 'doc_expire_date', 'doc_updated_date'], [brcod, "extension_barcode", online_shop_id, user_id, customer_id, "", "Stocked_Items", json.dumps(doc_items), count_new_items, total_price, total_profit, 0, 0, payments_json, "", date_now, date_now, date_now])
             Set_Document(None, ['doc_barcode', 'extension_barcode', 'At_Shop_Id', 'user_id', 'customer_id', 'Seller_id', 'type', 'item', 'qty', 'price', 'Profite', 'discount', 'tax', 'payments', 'pid', 'doc_created_date', 'doc_expire_date', 'doc_updated_date'], [brcod, "extension_barcode", online_shop_id, user_id, customer_id, "", "Stocked_Items", json.dumps(doc_items), count_new_items, total_price, total_profit, 0, 0, payments_json, "", date_now, date_now, date_now])
-            
+            print("Done setting stock document")
         except Exception as e:
             print("Error inserting recurde new products on doc_table:", e)
             
 
         # Clear the product details widgets
         #self.clear_product_details_widget()
-        self.master.master.Load_Shop_items() # refrash items
+        p = self
+        while(True):
+            if not p.master or hasattr(p, 'Load_Shop_items'):
+                break
+            else:
+                p = p.master
+                
+        p.Load_Shop_items() # refrash items
+
+        # this is for search box it makes it search
+        while True:
+            print("p ", p)
+            if hasattr(p, 'DFsearch_entry'):
+                print("p ", p)
+                p.DFsearch_entry.var.set(name)
+                p.DFsearch_entry.changed()
+                p.DFsearch_entry.focus_set()
+                break
         self.destroy()
 

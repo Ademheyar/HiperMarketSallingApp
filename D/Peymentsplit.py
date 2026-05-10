@@ -231,15 +231,15 @@ class PaymentForm(tk.Tk):
             t = self.list_payment.item(a)["text"]
             p1 = 0
             while p1 < len(self.master.pid_peyment):
-                #print("payment not selected ,"+str(self.master.pid_peyment[p1]))
-                #print("payment not selected ."+str(aa))
-                if len(aa) == 7 and len(self.master.pid_peyment[p1]) == 8 and str(t) == str(self.master.pid_peyment[p1][0]) and str(aa[0]) == str(self.master.pid_peyment[p1][1]) and \
+                print("payment not selected ,"+str(self.master.pid_peyment[p1]))
+                print("payment not selected ."+str(aa))
+                if len(aa) >= 7 and len(self.master.pid_peyment[p1]) >= 8 and str(t) == str(self.master.pid_peyment[p1][0]) and str(aa[0]) == str(self.master.pid_peyment[p1][1]) and \
                    str(aa[1]) == str(self.master.pid_peyment[p1][2]) and str(aa[2]) == str(self.master.pid_peyment[p1][3]) and \
                    str(aa[3]) == str(self.master.pid_peyment[p1][4]) and str(aa[4]) == str(self.master.pid_peyment[p1][5]) and \
                    str(aa[5]) == str(self.master.pid_peyment[p1][6]) and str(aa[6]) == str(self.master.pid_peyment[p1][7]):
                     self.master.pid_peyment.remove(self.master.pid_peyment[p1])
                     break
-                elif len(aa) == 7 and len(self.master.pid_peyment[p1]) == 4 and str(t) == str(self.master.pid_peyment[p1][0]) and str(aa[0]) == str(self.master.pid_peyment[p1][1]) and \
+                elif len(aa) >= 7 and len(self.master.pid_peyment[p1]) >= 4 and str(t) == str(self.master.pid_peyment[p1][0]) and str(aa[0]) == str(self.master.pid_peyment[p1][1]) and \
                    str(aa[1]) == str(self.master.pid_peyment[p1][2]) and str(aa[2]) == str(self.master.pid_peyment[p1][3]):
                     self.master.pid_peyment.remove(self.master.pid_peyment[p1])
                     break

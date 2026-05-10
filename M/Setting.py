@@ -141,7 +141,9 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
     return results
 # Example node hierarchy
 
-class SettingForm(tk.Frame):
+
+
+class Appelication_SettingForm(tk.Frame):
     def __init__(self, master, user, shops):
         tk.Frame.__init__(self, master)
         self.master = master
@@ -150,15 +152,10 @@ class SettingForm(tk.Frame):
         self.user = user
         self.Shops = shops
         self.slip_order_list = []
-
-
-        self.setting_notebook = ttk.Notebook(self)
-        self.setting_notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         
         # Create the frame for the product details Product_stting_frame
-        self.Product_list_frame = tk.Frame(self.setting_notebook)
+        self.Product_list_frame = self
         self.Product_list_frame.pack()
-        self.setting_notebook.add(self.Product_list_frame, text="Appelication Setting")
 
         # Create the frame for the search bar and buttons
         self.search_frame = tk.Frame(self.Product_list_frame)
@@ -175,8 +172,8 @@ class SettingForm(tk.Frame):
 
         self.ask_seller_int = tk.IntVar()
        
-        self.ask_seller_entry = tk.Checkbutton(self.search_frame, text='ask seller', variable=self.ask_seller_int, command=self.chacke_ask_seller)
-        self.ask_seller_entry.grid(row=9, column=0, sticky=tk.E)
+        #self.ask_seller_entry = tk.Checkbutton(self.search_frame, text='ask seller', variable=self.ask_seller_int, command=self.chacke_ask_seller)
+        #self.ask_seller_entry.grid(row=9, column=0, sticky=tk.E)
         
 
 
@@ -186,7 +183,7 @@ class SettingForm(tk.Frame):
         
         self.list_box = ttk.Treeview(self.Product_list_frame)
         #self.list_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.list_box.bind('<<TreeviewSelect>>', self.on_select)
+        #self.list_box.bind('<<TreeviewSelect>>', self.on_select)
 
         self.list_box['columns'] = ("ID", "Name", "code", "type", "barcode", "at_shop", "quantity", "cost", "tax", "price", "include_tax", "price_change", "more_info", "images", "description", "service", "default_quantity", "active")
         self.list_box.column("#0", minwidth=0, width=0) 
@@ -214,11 +211,11 @@ class SettingForm(tk.Frame):
         # create a StringVar to represent the search box
         self.search_var = tk.StringVar()
         self.search_entry = tk.Entry(self.Product_list_frame, textvariable=self.search_var)
-        self.search_entry.bind('<KeyRelease>', self.update_search_results)
+        #self.search_entry.bind('<KeyRelease>', self.update_search_results)
         self.search_entry.pack(side=tk.LEFT, padx=5, pady=5)
             
         # bind the update_search_results function to the search box
-        self.search_var.trace("w", self.update_search_results)
+        #self.search_var.trace("w", self.update_search_results)
         # Create the list box
         
         # Add vertical scrollbar
@@ -312,8 +309,8 @@ class SettingForm(tk.Frame):
 
 
 
-        self.remove_info_button = tk.Button(self.tab3_frame, text='Remove', command=self.remove_info)
-        self.remove_info_button.grid(row=7, column=0, sticky=tk.W)
+        #self.remove_info_button = tk.Button(self.tab3_frame, text='Remove', command=self.remove_info)
+        #self.remove_info_button.grid(row=7, column=0, sticky=tk.W)
         
         self.shop_name_label = tk.Label(self.tab3_frame, text='At Shop :')
         self.shop_name_label.grid(row=8, column=0, sticky=tk.W)
@@ -354,8 +351,8 @@ class SettingForm(tk.Frame):
         sizing_menu = tk.OptionMenu(self.first_frame, self.sizing_var, *sizing_options)
         sizing_menu.pack()
 
-        self.create_form_button = tk.Button(self.first_frame, text="Create Form", command=self.create_sizes_form)
-        self.create_form_button.pack(side=tk.LEFT)
+        #self.create_form_button = tk.Button(self.first_frame, text="Create Form", command=self.create_sizes_form)
+        #self.create_form_button.pack(side=tk.LEFT)
 
         self.form_frame = tk.Frame(self.second_frame)  # Frame to hold the form entries
         self.form_frame.pack(pady=10)
@@ -384,43 +381,19 @@ class SettingForm(tk.Frame):
         self.images_entry = tk.Entry(self.tab3_frame)
         self.images_entry.grid(row=15, column=1, sticky=tk.W)
         
-        self.add_info_button = tk.Button(self.tab3_frame, text='Add', command=self.add_info)
-        self.add_info_button.grid(row=22, column=0, sticky=tk.W)
+        #self.add_info_button = tk.Button(self.tab3_frame, text='Add', command=self.add_info)
+        #self.add_info_button.grid(row=22, column=0, sticky=tk.W)
       
-        self.add_button = tk.Button(self.details_frame, text='Add', command=self.add_product)
-        self.add_button.grid(row=30, column=0, padx=5, pady=5, sticky=tk.W)
-        self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=self.hide_add_product_forme)
-        self.cancle_button.grid(row=30, column=1, padx=5, pady=5, sticky=tk.W)
-
-
-
-        # Create the frame for the Shop Info
-        self.shops_frame = tk.Frame(self.setting_notebook)
-        self.shops_frame.pack()
-        self.setting_notebook.add(self.shops_frame, text="Shop")
-        self.Shop_setting_Notebook = ttk.Notebook(self.shops_frame)
-        self.Shop_setting_Notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-
-        for shop_ in self.Shops:
-            Shop_setting_frame = tk.Frame(self.Shop_setting_Notebook)
-            Shop_setting_frame.pack()
-            self.Shop_setting_Notebook.add(Shop_setting_frame, text=shop_['Shop_name'])
-            self.Shop_setting_notebook = Shop_SettingForm(Shop_setting_frame, user, shop_)
-            self.Shop_setting_notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-                   
-        
-        self.load_setting()
-        # Pack the widgets for the product tab2
-        #self.update_product_listbox()
-        #
-        #self.Item_To_Update()
-
+        #self.add_button = tk.Button(self.details_frame, text='Add', command=self.add_product)
+        #self.add_button.grid(row=30, column=0, padx=5, pady=5, sticky=tk.W)
+        #self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=self.hide_add_product_forme)
+        #self.cancle_button.grid(row=30, column=1, padx=5, pady=5, sticky=tk.W)
 
     def chacke_remaber_printer(self):
         print("chacke_remaber_printer")
         if int(self.Remamber_printer_int.get()):
             b = fetch_as_dict_list("SELECT * FROM setting WHERE User_id = ?", (self.user['User_id'],))
-            print("user " + str(self.user[0]) + " found " +str(b))
+            #print("user " + str(self.user[0]) + " found " +str(b))
             printers = list_available_printers()
             if b and len(b) > 0 and b[0][3] == "" or not b:
                 dialog = PrinterSelectionDialog(self, printers)
@@ -441,6 +414,37 @@ class SettingForm(tk.Frame):
             # Commit the changes to the database
             conn.commit()
 
+class SettingForm(tk.Frame):
+    def __init__(self, master, user, shops):
+        tk.Frame.__init__(self, master)
+        self.master = master
+        self.nested_list = []
+        self.user_info = None
+        self.user = user
+        self.Shops = shops
+        self.slip_order_list = []
+
+
+        self.setting_notebook = ttk.Notebook(self)
+        self.setting_notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        
+        # Create the frame for the Shop Info
+        for shop_ in self.Shops:
+            Shop_setting_frame = tk.Frame(self.setting_notebook)
+            Shop_setting_frame.pack()
+            self.setting_notebook.add(Shop_setting_frame, text=shop_['Shop_name'])
+            self.Shop_setting_notebook = Shop_SettingForm(Shop_setting_frame, user, shop_)
+            self.Shop_setting_notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+                   
+        
+        self.load_setting()
+        # Pack the widgets for the product tab2
+        #self.update_product_listbox()
+        #
+        #self.Item_To_Update()
+
+
+    
     def dele_slip_order(self):
         current_selection = self.slip_order_list_items.curselection()
         self.slip_order_list_items.delete(current_selection[0])

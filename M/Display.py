@@ -26,6 +26,7 @@ from D.endday import EnddayForm
 from D.Upload_ import UploadingForm
 from D.user_info import UserInfoForm
 from D.Veaw_Notifications import Veaw_Notifications
+from M.Setting import Appelication_SettingForm
 from D.printer import PrinterForm
 from C.slipe import load_slip
 from D.Doc.Loaddoc import *
@@ -105,13 +106,15 @@ class DisplayFrame(tk.Frame):
         self.main_frame.grid()
         self.main_Notebook.add(self.main_frame, text='Sell')
         self.main_Notebook.bind("<<NotebookTabChanged>>", self.on_tab_selected)
+
+                      
         
         self.main_frame.columnconfigure((0, 1), weight=1)
         self.main_frame.columnconfigure(1, weight=0)
         self.main_frame.rowconfigure(0, weight=0)
         self.main_frame.rowconfigure(1, weight=2)
         self.main_frame.rowconfigure(2, weight=0)
-
+        
         self.top_frame = tk.Frame(self.main_frame, height=int(screen_height * 0.70), bg=self.bg_light)
         self.top_frame.grid(row=0, column=0, columnspan=2, sticky="nsew")
         self.top_frame.columnconfigure((0), weight=0)
@@ -122,8 +125,8 @@ class DisplayFrame(tk.Frame):
                                      bg=self.bg_light, fg=self.text_light)
         self.search_label.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
         
-        self.search_entry = search_entry(self.top_frame, self.Shops_info, self.user, self.Shops, font=("Arial", 12))
-        self.search_entry.grid(row=0, column=1, columnspan=5, sticky="nsew", padx=5, pady=5)
+        self.DFsearch_entry = search_entry(self.top_frame, self.Shops_info, self.user, self.Shops, font=("Arial", 12))
+        self.DFsearch_entry.grid(row=0, column=1, columnspan=5, sticky="nsew", padx=5, pady=5)
 
         self.Calculter_button = ttk.Button(self.top_frame, text="Calcu\nF1", command=lambda: GetvalueForm(self, '0', ["Calculater"]))
         self.Calculter_button.grid(row=0, column=6, sticky="nsew", padx=2, pady=5)
@@ -292,7 +295,7 @@ class DisplayFrame(tk.Frame):
         self.date_year_Spinbox = ttk.Spinbox(self.total_frame, from_=1990, width=5)
         self.date_year_Spinbox.grid(row=0, column=8, sticky="w", padx=2, pady=5)
         self.date_year_Spinbox.set(str(datetime.datetime.now().strftime('%Y')))
-
+    
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 26, f'User Has No Permission To Access MANAGE FRAME OR LOGIN AS ADMIN'):    
             self.manage_form.pack(side="top", fill="both", expand=True)
             self.main_Notebook.add(self.manage_form, text='MANAGE')
@@ -311,7 +314,7 @@ class DisplayFrame(tk.Frame):
             self.master.destroy()
             return
         
-
+        
         self.chackeqyu = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 14, f'User Not allowed to Change QTY')
         self.chackeprice = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 15, f'User Not allowed to Change Price')
         self.chakedisc = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 16, f'User Not allowed to Give Discount')
@@ -335,11 +338,64 @@ class DisplayFrame(tk.Frame):
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 1, 'LISTING PAYMENT TOOLS NEEDED ACCESS PERMISSION OR LOGIN AS ADMIN'):
             self.Load_payment_buttons()
         
+        self.appleication_frame = tk.Frame(self.main_Notebook, bg=self.bg_dark)
+        self.appleication_frame.grid()
+        self.main_Notebook.add(self.appleication_frame, text='Appelication Settings')
+        self.appleication_form = Appelication_SettingForm(self.appleication_frame, self.user, self.Shops)
+        self.appleication_form.pack(side="top", fill="both", expand=True)
+        
         self.load()
             
     def Veaw_Notifications(self):
         pass
     
+    def Load_Shop_items(self):
+        self.Shops_info['Shop_items'] = []
+        for s, shop in enumerate(self.Shops):
+            #print("Loop Shop ", shop['Shop_name'])
+            #print("Selected Shop ", self.shop_name_Combobox.get())
+            #print("Shop items = ", shop['Shop_items'])
+            FOUND = []
+            if shop['Shop_items'] and (shop['Shop_name'] == "" or s == self.User_Shopes_Combobox.current() or self.User_Shopes_Combobox.current() == ""):
+                found_shop_items = json.loads(shop['Shop_items'])
+                #print("Shop items --> ", found_shop_items)
+                if found_shop_items:
+                    for item in found_shop_items:
+                        #print('item -- > ', item)
+                        if item[0] in FOUND:
+                            print("SAME ITEM COUNTERD ", item[0])
+                        else:
+                            FOUND.append(item[0])
+                        value = fetch_as_dict_list( 'SELECT * FROM product WHERE id=?', (str(item[0]),))
+                        #print("Shop items value --> ", value[0])
+                        if value and not len(value) == 0:
+                            self.Shops_info['Shop_items'].append([value[0], [], "", "", "", "", "", "", "", "", "", "", ""])
+                            
+                            #print('items = ', self.master.master.master.master.Shops_info['Shop_items'])
+                            #print("self.master.master.master.master.Shops_in['Shop_items'] = ", len(self.master.master.master.master.Shops_info['Shop_items']))
+                    #while True:
+                        #continue
+        
+        for i, item in enumerate(self.Shops_info['Shop_items']):
+            product = selected_item = item[0]
+            self.Shops_info['Shop_items'][i][1] = json.loads(product['more_info'])
+            itemstypes = []
+            def sub_list(ls, itemtypes):
+                if(isinstance(ls, list)):
+                    for l in ls:
+                        if len(l) > 4 and l[4] != ""and l[4] != " ":
+                            if l[1] != '' or l[1] != "":
+                                try:
+                                    #print("add ing = ", l[1])
+                                    itemtypes.append(json.loads(l[1]))
+                                except:
+                                    print("error while loading item type = ", l[1])
+                        elif len(l) == 2:
+                            #print("going deep = ", l[1])
+                            sub_list(l[1], itemtypes)
+            #print("sanding typrs = ", self.Shops_info['Shop_items'][i][1])
+            sub_list(self.Shops_info['Shop_items'][i][1], self.itemtypes)
+        
     def treeview_naigation(self, event):
         if not (event.keysym == "Up" or event.keysym == "Down"):
             self.focus_set()
@@ -365,7 +421,7 @@ class DisplayFrame(tk.Frame):
             self.Selected_item_Display_frame.winfo_children()[self.selected_indexd].configure(bg="blue")
 
     def Selectd_item_remove(self, event):
-        if not self.selected_indexd == -1:
+        if not self.selected_indexd == -1 and (0 >= self.selected_indexd < len(self.Selected_item_Display_frame.winfo_children())):
             self.remove_item(self.selected_indexd, self.Selected_item_Display_frame.winfo_children()[self.selected_indexd])
         
     def crtl_d_focus(self, event):
@@ -375,7 +431,7 @@ class DisplayFrame(tk.Frame):
             #print("crtl+D pressed " + str(event.state))
         
     def change_focus(self, event):
-        self.search_entry.focus_set()
+        self.DFsearch_entry.focus_set()
         
     # about Display control
     def call_manager(self):
@@ -826,7 +882,7 @@ class DisplayFrame(tk.Frame):
             new_item_TPrice_Label.grid(row=2, column=7, sticky="nsew")
             new_item_TPrice_Spinbox = ttk.Spinbox(new_item_fram, from_=0, to=100, width=10)
             new_item_TPrice_Spinbox.grid(row=3, column=7, sticky="nsew")
-            new_item_TPrice_Spinbox.set(str(float(selected_item[7])*float(selected_item[8])))
+            new_item_TPrice_Spinbox.set(str(float(selected_item[7])*float(selected_item[10])))
             
             data = [new_item_Shop_Combobox, new_item_Code_Combobox, new_item_Color_Combobox, new_item_Size_Combobox, new_item_QTY_Spinbox, new_barcode_Label, new_item_Price_Label]
 
@@ -964,6 +1020,7 @@ class DisplayFrame(tk.Frame):
         self.items = []
         self.ex_items = []
         self.custemr = ""
+        self.Add_custemur_label.config(text="+ Custumer")
         self.disc = 0
         
     def call_chartForm(self):
@@ -1055,7 +1112,7 @@ class DisplayFrame(tk.Frame):
                 # print("item price range ", float(uitemprice) - float(uitemprice)/2, " - ", float(uitemprice) + float(uitemprice)/2 )
                 uitemprice = float(items['price'])
                 uitemcost = float(items['cost'])
-                if (float(item['price']) == float(uitemprice) and float(item['cost']) >= float(uitemcost) - float(uitemcost)/2 and float(item['cost']) <= float(uitemcost) + float(uitemcost)/2):
+                if ((float(item['cost']) > uitemprice/3 and float(item['cost']) <= (float(uitemcost) + float(uitemcost)/2)) and float(item['cost']) < uitemprice or  float(item['cost']) >= uitemprice/3 and(float(item['cost']) <= float(uitemprice))  ) and ((float(item['price']) >= float(uitemprice)) and (float(item['price']) <= float(uitemprice)) ):
                     # change this item name to unknown item and add it to the list
                     item_type = json.loads(item['more_info']) if item['more_info'] else {}
                     if not item_type == {}:
@@ -1073,6 +1130,7 @@ class DisplayFrame(tk.Frame):
                             elif len(item_type) > 4:
                                 if float(item_type[4]) > 0:
                                     print("path ", path)
+                                    path = path + [float(item_type[4])]
                                     return path
                             return None
                         path = get_type_info(item_type, [])
@@ -1082,8 +1140,10 @@ class DisplayFrame(tk.Frame):
                             code = path[1]
                             color = path[2]
                             size = path[3]
+                            qtylaft = path[4] if len(path) > 4 else 1
                             item_info = {'type': "ITEM", 'values': item, 'extra_data': [], 'item_list': []}
-                            value = [str(item['id']), item['code'], item['barcode'], 'Unknown Item', color, size, 1, items['price'], items['price']-self.disc, item['include_tax'], items['price'], shopname, ""]
+                            value = [str(item['id']), item['code'], item['barcode'], 'Unknown Item', color, size, 1, qtylaft, items['price']-self.disc, item['include_tax'], items['price'], shopname, ""]
+                            #                                                                                                            value[7] Qty left
                             self.Selected_items.append([item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], "", value[8], value[9], value[10], value[11], value[12], ""])        
                             self.Update_Selected_item()
                             return
@@ -1302,8 +1362,6 @@ class DisplayFrame(tk.Frame):
     
     # about payment
     def process_payment(self):
-        
-        
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 22, f'User Not allowed to Sell'):
            #print("user "+str(self.user))
             answer = tk.messagebox.askquestion("Question", "do you whant to continue?")
@@ -1506,7 +1564,7 @@ class DisplayFrame(tk.Frame):
                             break
                     if rows:
                         print("rows:" + str(rows))
-                        print("price-disc "+str(doc_found[found_index]['price']-doc_found[found_index]['Tdisc']) + ":pid " + str(doc_found[found_index]['pid']) + ":def_pid " + str(def_pid))
+                        print("price-disc "+str(doc_found[found_index]['price']-doc_found[found_index]['Tdisc']) + ": pid " + str(doc_found[found_index]['pid']) + ":def_pid " + str(def_pid))
                         c = float(self.pid_peyment[p][2])
                         print("c:" + str(c))
                         # "Tool Name", "Tool Method", "Tool ID", "Tool Short cut", "Tool Acsess key", "Tool enabel", "Tool Quick_pay","Tool Markpad", "Tool Customer_required", "Tool Open_drower", "Tool#printslip"
@@ -1530,9 +1588,9 @@ class DisplayFrame(tk.Frame):
                         
                         if doc_found[found_index]['price']-doc_found[found_index]['Tdisc'] == doc_found[found_index]['pid']:
                             if doc_found[found_index]['price']-doc_found[found_index]['Tdisc'] == 0:
-                                doc_found[found_index]['payments_'].append([str(doc_found[found_index]['pay_index']), str(self.pid_peyment[p][1]), str(self.pid_peyment[p][2]), date, date, self.user['User_name'], str(rows[4]), str(self.pid_peyment[p][3]), rows[1]])
+                                doc_found[found_index]['payments_'].append([str(doc_found[found_index]['pay_index']), str(self.pid_peyment[p][1]), str(self.pid_peyment[p][2] if self.pid_peyment[p][2] != "" else date), str(self.pid_peyment[p][3] if self.pid_peyment[p][3] != "" else date), str(self.pid_peyment[p][4]), self.user['User_name'], str(rows[4]), str(self.pid_peyment[p][3]), rows[1]])
                             else:
-                                payments_extra.append([str(doc_found[found_index]['pay_index']), str(self.pid_peyment[p][1]), str(self.pid_peyment[p][2]), date, date, self.user['User_name'], str(rows[4]), str(self.pid_peyment[p][3]), rows[1]])
+                                payments_extra.append([str(doc_found[found_index]['pay_index']), str(self.pid_peyment[p][1]), str(self.pid_peyment[p][2] if self.pid_peyment[p][2] != "" else date), str(self.pid_peyment[p][3] if self.pid_peyment[p][3] != "" else date), str(self.pid_peyment[p][4]), self.user['User_name'], str(rows[4]), str(self.pid_peyment[p][3]), rows[1]])
                             #doc_found[found_index]['payments_'].append([str(doc_found[found_index]['pay_index']), str(self.pid_peyment[p][1]), str(c), date, date, self.user['User_name'], str(rows[4]), str(self.pid_peyment[p][3]), rows[1]])
                         else:
                             if doc_found[found_index]['pid'] + c > doc_found[found_index]['price']-doc_found[found_index]['Tdisc']:
@@ -1540,7 +1598,7 @@ class DisplayFrame(tk.Frame):
                                 pl = pr-doc_found[found_index]['pid']     # price left to pay
                                 if c > pl:
                                     e = c - pl
-                                    payments_extra.append([str(doc_found[found_index]['pay_index']), str(self.pid_peyment[p][1]), str(e), date, date, self.user['User_name'], str(rows[4]), str(self.pid_peyment[p][3]), rows[1]])
+                                    payments_extra.append([str(doc_found[found_index]['pay_index']), str(self.pid_peyment[p][1]), str(e), str(self.pid_peyment[p][3] if self.pid_peyment[p][3] != "" else date), str(self.pid_peyment[p][4]), self.user['User_name'], str(rows[4]), str(self.pid_peyment[p][3]), rows[1]])
                                     #doc_found[found_index]['payments_'].append([str(doc_found[found_index]['pay_index']), str(self.pid_peyment[p][1]), str(c), date, date, self.user['User_name'], str(rows[4]), str(self.pid_peyment[p][3]), rows[1]])
                                     c = pl # taking only what pied
                                 else:
@@ -1549,7 +1607,7 @@ class DisplayFrame(tk.Frame):
                                #print("pid+c ")
                                 doc_found[found_index]['T_pid'] += float(self.pid_peyment[p][2])
                                 doc_found[found_index]['pid'] += c
-                            doc_found[found_index]['payments_'].append([str(doc_found[found_index]['pay_index']), str(self.pid_peyment[p][1]), str(c), date, date, self.user['User_name'], str(rows[4]), str(self.pid_peyment[p][3]), rows[1]])
+                            doc_found[found_index]['payments_'].append([str(doc_found[found_index]['pay_index']), str(self.pid_peyment[p][1]), str(c), str(self.pid_peyment[p][3] if self.pid_peyment[p][3] != "" else date), str(self.pid_peyment[p][4]), self.user['User_name'], str(rows[4]), str(self.pid_peyment[p][3]), rows[1]])
                 self.pid_peyment.remove(self.pid_peyment[p])
                 print("\n\n payments_ pid collect :" + str(doc_found[found_index]['payments_'])+"\n\n")
                 print("\n\n payments_extra pid collect :" + str(payments_extra)+"\n\n")
@@ -1595,7 +1653,6 @@ class DisplayFrame(tk.Frame):
                     if c > 0:
                         doc_found[0]['pay_index'] += 1
                         if extra_payment[7] == "":
-                            
                             doc_found[0]['payments_'].append([str(doc_found[0]['pay_index']), "Change", str(-c), extra_payment[3], date, extra_payment[5], extra_payment[6], extra_payment[7]])
                         else:
                             doc_found[0]['payments_'].append([str(doc_found[0]['pay_index']), "", str(-c), extra_payment[3], date, extra_payment[5], extra_payment[6], extra_payment[7]])
@@ -1767,9 +1824,11 @@ class DisplayFrame(tk.Frame):
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 21, f'User Not allowed to Search for Custumers'):
             self.app = UserManagementApp(self, "", self.user, self.Shops, self.on_Shop)
             if self.app.user_details:
+                print("selected user == ", self.app.user_details)
                 self.custemr = self.app.user_details['User_id']
                 self.Add_custemur_label.config(text=self.app.user_details['User_name'])
             else:
+                print("user not selected")
                 self.Add_custemur_label.config(text="+ Custumer")
         
 

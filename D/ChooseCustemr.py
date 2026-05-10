@@ -13,11 +13,12 @@ from C.API.API import *
 from C.API.Set import *
 
 
-class CreateUserDialog(tk.Toplevel):
+class CreateUserDialog(tk.Frame):
     def __init__(self, parent):
-        super().__init__(parent)
+        tk.Frame.__init__(self, parent)
 
         self.parent = parent
+        
 
         self.name_var = tk.StringVar()
         self.address_var = tk.StringVar()
@@ -83,9 +84,9 @@ class CreateUserDialog(tk.Toplevel):
         cancel_button = tk.Button(self, text="Cancel", command=self.destroy, font=("Arial", 14))
         cancel_button.grid(row=8, column=1, padx=10, pady=10)
 
-        self.transient(self.master)
+        #self.transient(self.master)
         self.grab_set()
-        self.master.wait_window(self)
+        #self.master.wait_window(self)
 
     def create_user(self):
         name = self.name_var.get()
@@ -101,11 +102,11 @@ class CreateUserDialog(tk.Toplevel):
 
         Update_table_database("INSERT INTO Users (User_name, User_fname, User_lname, User_address, User_id_pp_num, User_phone_num, User_email, User_type, User_password, User_access) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                        (name, fname, lname, address, id_num, phone_num, email, user_type, password, access))
-        conn.commit()
 
-        self.parent.fill_user_listbox()
-        self.master.username_entry.insert(0, name)
-        self.master.username_var.set(name)
+        #self.fill_user_listbox()
+        #self.master.master.username_entry.insert(0, name)
+        self.master.master.username_var.set(name)
+        self.master.master.search()
         self.destroy()
         
 class UserManagementApp(tk.Toplevel):
@@ -113,10 +114,21 @@ class UserManagementApp(tk.Toplevel):
         super().__init__(parent)
 
         self.parent = parent
+        
+        # Calculate the center coordinates of the screen
+        screen_width = self.master.winfo_screenwidth()
+        screen_height = self.master.winfo_screenheight()
+        x = (screen_width / 2) - (500 / 2)  # 500 is the width of the Payment Form window
+        y = (screen_height / 2) - (500 / 2)  # 500 is the height of the Payment Form window
+
+        # Set the position of the Payment Form window to center
+        self.geometry(f"+{int(x)}+{int(y)}")
+        
         self.user = user
         self.Shops = Shops
         self.on_Shop = on_Shop
-
+        self.search_for = "User"
+        
         self.user_details = {}
         it = fetch_as_dict_list("SELECT * FROM Users WHERE User_id=?", (def_cm_id,))
 
@@ -129,23 +141,14 @@ class UserManagementApp(tk.Toplevel):
         if it:
             self.username_entry.insert(0, it[1])
             self.username_var.set(it[1])
-        self.username_entry.grid(row=0, column=1, padx=10, pady=10)
-        
-        search_button = tk.Button(self, text="Search", command=self.search, font=("Arial", 14))
-        search_button.grid(row=0, column=2, sticky="w", padx=10, pady=10)
+        self.username_entry.grid(row=0, column=2, padx=10, pady=10)
         
         self.user_listbox = tk.Listbox(self, font=("Arial", 14), width=30)
         self.user_listbox.grid(row=1, column=0, columnspan=5, rowspan=5, padx=10, pady=10)
         self.user_listbox.bind("<<ListboxSelect>>", self.on_user_select)
-
-        self.create_user_button = tk.Button(self, text="Create User", command=self.create_user_dialog, font=("Arial", 14))
-        self.create_user_button.grid(row=6, column=0, sticky="w", padx=10, pady=10)
-
-        self.create_user_button = tk.Button(self, text="Ok", command=self.done_selecting, font=("Arial", 14))
-        self.create_user_button.grid(row=6, column=2, sticky="w", padx=10, pady=10)
         
         self.details_panel = tk.Frame(self)
-        self.details_panel.grid(row=7, column=0, columnspan=3, rowspan=3, padx=10, pady=10, sticky="n")
+        self.details_panel.grid(row=1, column=6, columnspan=3, rowspan=3, padx=10, pady=10, sticky="n")
 
         self.fill_user_listbox()
         # TODO: show this user info
@@ -153,37 +156,55 @@ class UserManagementApp(tk.Toplevel):
         # TODO: user can add sub user depending on its usertype
         self.search()
         
-        self.username_var.trace('w', self.entry_changed)
+        self.username_var.trace('w', self.select_button)
+        self.username_entry.bind("<KeyPress>", self.select_button)
+        #self.bind("<KeyPress>", self.select_button)
+        
         self.bind("<Up>", self.select_button)
         self.bind("<Down>", self.select_button)
         self.bind("<Return>", lambda _:self.done_selecting())
+        self.bind("<Escape>", lambda _:self.done_selecting())
+        self.username_entry.bind("<Escape>", lambda _:self.done_selecting())
+        self.username_entry.focus_set()
         # show the Payment Form window
         self.transient(self.master)
         self.grab_set()
         self.master.wait_window(self)
-        
+    
+    def entry_changed(self, *args):
+        if self.username_var == "":
+           self.destroy()
+        else:
+            self.username_var = ""
+    
     def select_button(self, event):
         current_selection = self.user_listbox.curselection()
         if event.keysym == "Up":
-            if current_selection:
-                next_index = (current_selection[0]-1)% self.user_listbox.size()
-                self.user_listbox.selection_clear(0, tk.END)
-                self.user_listbox.selection_set(next_index)
-            else:
-                self.user_listbox.selection_set(0)
-        elif event.keysym == "Down":
             if current_selection:
                 next_index = (current_selection[0]+1)% self.user_listbox.size()
                 self.user_listbox.selection_clear(0, tk.END)
                 self.user_listbox.selection_set(next_index)
             else:
                 self.user_listbox.selection_set(0)
-        selected_userId = self.user_listbox.get(self.user_listbox.curselection())[0]
-        selected_usernid = self.user_listbox.get(self.user_listbox.curselection())[1]
-        selected_username = self.user_listbox.get(self.user_listbox.curselection())[2]
-
-        self.show_user_details(selected_userId, selected_usernid, selected_username)
-
+        elif event.keysym == "Down":
+            if current_selection:
+                next_index = (current_selection[0]-1)% self.user_listbox.size()
+                self.user_listbox.selection_clear(0, tk.END)
+                self.user_listbox.selection_set(next_index)
+            else:
+                self.user_listbox.selection_set(0)
+        else:
+            self.username_entry.focus_set()
+            self.search()
+        if self.user_listbox.curselection():
+            selected_userId = self.user_listbox.get(self.user_listbox.curselection())[0]
+            selected_usernid = self.user_listbox.get(self.user_listbox.curselection())[1]
+            selected_username = self.user_listbox.get(self.user_listbox.curselection())[2]
+            if selected_userId == "Create ":
+                self.create_user_dialog()
+            else:
+                self.show_user_details(selected_userId, selected_usernid, selected_username)
+    
     def show_user_details(self, Id, userid, username):
         
         if userid == None or userid == "None" or userid == "":
@@ -228,7 +249,10 @@ class UserManagementApp(tk.Toplevel):
 
             type_label = tk.Label(self.details_panel, text="Type : " + str(utype), font=("Arial", 14))
             type_label.grid(row=5, column=0, sticky="w")
-
+            
+            self.create_user_button = tk.Button(self.details_panel, text="Ok", command=self.done_selecting, font=("Arial", 14))
+            self.create_user_button.grid(row=6, column=0, sticky="w")
+            
             self.user_details = {
                 "Id": Id,
                 "User_id": user_id,
@@ -264,19 +288,25 @@ class UserManagementApp(tk.Toplevel):
         selected_userId = self.user_listbox.get(self.user_listbox.curselection())[0]
         selected_usernid = self.user_listbox.get(self.user_listbox.curselection())[1]
         selected_username = self.user_listbox.get(self.user_listbox.curselection())[2]
-
-        self.show_user_details(selected_userId, selected_usernid, selected_username)
+        if selected_userId == "Create ":
+            self.create_user_dialog()
+        else:
+            self.show_user_details(selected_userId, selected_usernid, selected_username)
 
     def done_selecting(self):
-        selected_userId = self.user_listbox.get(self.user_listbox.curselection())[0]
-        selected_usernid = self.user_listbox.get(self.user_listbox.curselection())[1]
-        selected_username = self.user_listbox.get(self.user_listbox.curselection())[2]
         if self.user_details:
+            selected_userId = self.user_listbox.get(self.user_listbox.curselection())[0]
+            selected_usernid = self.user_listbox.get(self.user_listbox.curselection())[1]
+            selected_username = self.user_listbox.get(self.user_listbox.curselection())[2]
+            print(selected_userId)
+            print(self.user_details["Id"])
+            print(selected_usernid)
+            print(self.user_details["User_id"])
+            print(selected_username)
+            print(self.user_details["User_name"])
             if str(selected_userId) == str(self.user_details["Id"]) and str(selected_usernid) == str(self.user_details["User_id"]) and selected_username == self.user_details["User_name"]:
                 self.destroy()
             
-    def entry_changed(self, *args):
-        self.search()
         
     def search(self):
         username = self.username_var.get()
@@ -286,10 +316,14 @@ class UserManagementApp(tk.Toplevel):
         self.user_listbox.delete(0, tk.END)  
         for row in rows:
             self.user_listbox.insert(tk.END, [row['Id'], row['User_id'], row['User_name']])
+        if len(rows) == 0:
+            self.user_listbox.insert(tk.END, ["Create ", "New ", self.search_for])
 
     def create_user_dialog(self):
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 20, f'User Not allowed to Create New Costumer'):
-            CreateUserDialog(self)
+            self.clear_details_panel()
+            newuser = CreateUserDialog(self.details_panel)
+            newuser.pack()
 
     def close_connection(self):
         cursor.close()

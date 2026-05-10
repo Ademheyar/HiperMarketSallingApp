@@ -1,6 +1,13 @@
 import tkinter as tk
 import sqlite3
+import shutil
+import datetime
 import os
+import atexit
+import sys
+import json
+import ast
+
 
 # Create a connection to the SQLite database
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data'))
@@ -156,6 +163,7 @@ cur.execute('''CREATE TABLE IF NOT EXISTS doc_table
 # Add a new document record to the doc_table SQLite database table
 
 # Connect to the database or create it if it does not exist
+#cur.execute('ALTER TABLE product ADD COLUMN Product_Id INTEGER')
 cur.execute('''CREATE TABLE IF NOT EXISTS product
              (id INTEGER PRIMARY KEY AUTOINCREMENT,
               name TEXT,
@@ -175,6 +183,8 @@ cur.execute('''CREATE TABLE IF NOT EXISTS product
               service TEXT,
               default_quantity INTEGER,
               active INTEGER)''')
+
+
 #query = f"DROP TABLE IF EXISTS Shops"
 #cur.execute(query)
 
@@ -223,7 +233,6 @@ cur.execute('''CREATE TABLE IF NOT EXISTS Shops
               Shop_country TEXT,
               Shop_payment_r TEXT,
               Shop_Access_levels TEXT)''')
-              
 
 #cur.execute("ALTER TABLE Id ADD COLUMN Shop_Settings TEXT AFTER Shop_link")
 
@@ -304,6 +313,8 @@ from tkinter import ttk
 from C.API.Get import *
 from C.API.API import *
 from C.API.Set import *
+
+
 
 class MainApplication(tk.Tk):
     def __init__(self):

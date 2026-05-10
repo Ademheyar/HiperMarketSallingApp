@@ -50,7 +50,7 @@ class ManageForm(ttk.Frame):
             self.product_btn.pack(side="top", fill="both", expand=True)
         
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 29, f'User Has No Permission To Access USER FRAME OR LOGIN AS ADMIN'):                        
-            self.user_Form = UserForm(self.manage_form, user)
+            self.user_Form = UserForm(self.manage_form, user, self.Shops)
             self.manuframes["UserForm"] = self.user_Form
 
             self.user_btn = ttk.Button(self.left_pane, text="User", command=self.user_Form.show_user_form)

@@ -108,7 +108,7 @@ class SecurityForm(tk.Toplevel):
         self.entered_username_entry.grid(row=0, column=1, columnspan=2, sticky="ew", padx=12, pady=8)
         self.forgetuserbtn = tk.Button(
             self.credentials_frame,
-            text="Forgot Username?",
+            text="Clear User Log History?",
             command=self.forget_username,
             bg=bg_light,
             fg=text_light,

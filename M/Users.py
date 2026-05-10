@@ -16,14 +16,16 @@ from D.docediterform import DocEditForm
 from D.printer import PrinterForm
 from C.slipe import load_slip
 
+from D.ApprovedDisplay import ApproveFrame
+from C.API import *
 from C.API.Get import *
-from C.API.API import *
 from C.API.Set import *
 
 class UserForm(tk.Frame):
-    def __init__(self, parent, user_info):
+    def __init__(self, parent, user_info, shop):
         tk.Frame.__init__(self, parent)
         self.user_info = user_info
+        self.shop = shop
         # Create the search bar
         # Create the frame for the search bar and buttons
         self.search_frame = tk.Frame(self)
@@ -186,7 +188,7 @@ class UserForm(tk.Frame):
         self.user_docinfo_listbox.column("#14", stretch=tk.NO, minwidth=25, width=100)
 
         # Create the search button
-        self.print_button = tk.Button(self.userinfo_notebook, text="Print", command=self.perform_print)
+        self.print_button = tk.Button(self.l_frame, text="Veiw Doc", command=self.perform_veiw)
         self.print_button.pack()#.grid(row=2, column=0)
 
 
@@ -252,7 +254,25 @@ class UserForm(tk.Frame):
             self.add_button.config(text="Update")
         else:
             self.add_button.config(text="New")
-            
+    def perform_veiw(self):
+        item = self.user_docinfo_listbox.focus()  # Get the item that was clicked
+        if item:
+            item_text = self.user_docinfo_listbox.item(item, "values")  # Get the text values of the item
+            id = self.user_docinfo_listbox.item(item, "text")
+            barcode = item_text[0]
+            doc_ = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))[0]
+            if doc_:
+                 #TODO: MAKE IT SEND SELECTEd SHOP
+                ApproveFrame(self, self.user_info, self.shop[0], [barcode], [], 1)
+                '''answer = tk.messagebox.askquestion("Question", "Do you what to print "+str(barcode)+" ?")
+                if answer == 'yes':
+                    #print(str(doc_))
+                    doc_edit_form = load_slip(doc_, doc_id)
+                    print("don loding slip : \n\n" + str(doc_edit_form))
+                    self.user = self.master.master.master.master.user
+                    # TODO: Make It send selected shop to print_slip
+                    PrinterForm.print_slip(self, self.user_info, self.shop[0], doc_edit_form, 1) # TODO chack in setting if paper cut allowed'''
+        
     def perform_print(self):
         item = self.user_docinfo_listbox.focus()  # Get the item that was clicked
         if item:
@@ -423,8 +443,9 @@ class UserForm(tk.Frame):
                 self.work_shop_entry.config(text="")
                 wus = []
                 try:
-                    print('User_work_shop ', User_work_shop)
-                    wus = json.loads(User_work_shop)
+                    if User_work_shop:
+                        print('User_work_shop ', User_work_shop)
+                        wus = json.loads(User_work_shop)
                 except json.JSONDecodeError:
                     wus = []
                 self.work_shop_entry.config(text="")
@@ -435,9 +456,18 @@ class UserForm(tk.Frame):
                 self.pimg_entry.delete(0, "end")
                 self.pimg_entry.insert(0, str(User_pimg))
                 
-                #self.perform_search(id, )
                 self.add_button.config(text="Update")
                 self.userinfo_notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+                #newdoc = search_documents(doc_id, doc_type, doc_barcode, extension_barcode, item, user_name, customer_name,
+                #            sold_item_info, discount, seller_id, self.date_from_Entry.get(), self.date_to_Entry.get(), self.doc_created_date_var.get(), self.doc_expire_date_var.get(), self.doc_updated_date_var.get())
+                
+                newdocs = search_documents("", "", "", "", "", "", User_name,
+                            "", "", "", "", "", "", "", "")
+                if newdocs:
+                    self.user_docinfo_listbox.delete(*self.user_docinfo_listbox.get_children())
+                    for index in newdocs:
+                        item = self.user_docinfo_listbox.insert('', 'end', text=index['id'], values=(index['doc_barcode'], index['extension_barcode'], index['At_Shop_Id'], index['user_id'], index['Seller_id'], index['customer_id'], index['pid'], index['qty'], index['price'], index['discount'], index['tax'], index['doc_created_date'], index['doc_expire_date'], index['doc_updated_date'], index['item'],  index['payments']))
+
 
     def on_select(self, event):
         if len(event.widget.selection()) > 0:

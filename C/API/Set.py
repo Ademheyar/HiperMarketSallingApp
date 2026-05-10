@@ -702,7 +702,9 @@ def Set_Document(Link, ARG, VALUE, parent=None):
             Document_data = Set_Document(None, ['Document_id', 'Document_name', 'Document_brand_name', 'Document_price', 'Document_quantity', 'Document_description', 'Document_category', 'Document_image'], [Document_data['Document_id'], Document_data['Document_name'], Document_data['Document_brand_name'], Document_data['Document_price'], Document_data['Document_quantity'], Document_data['Document_description'], Document_data['Document_category'], Document_data['Document_image']], parent=parent)
     else:
         print("Document data is going to be added")
+        print("Document len value ", len(query))
         print("Document query ", query)
+        print("Document len value ", len(value))
         print("Document value ", value)
         # Insert the new Document into the database
         set_doc_conn = sqlite3.connect(db_path)
@@ -725,7 +727,7 @@ def Set_Document(Link, ARG, VALUE, parent=None):
         if row:
             columns = [col[0] for col in column]
             Document_data = dict(zip(columns, row))
-        
+        print("new doc = ", Document_data)
     return Document_data
 
 
