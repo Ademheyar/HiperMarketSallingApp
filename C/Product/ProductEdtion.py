@@ -1506,13 +1506,11 @@ class ProductQueckEditionForm(ttk.Notebook):
         p.Load_Shop_items() # refrash items
 
         # this is for search box it makes it search
-        while True:
+        if hasattr(p, 'DFsearch_entry'):
             print("p ", p)
-            if hasattr(p, 'DFsearch_entry'):
-                print("p ", p)
-                p.DFsearch_entry.var.set(name)
-                p.DFsearch_entry.changed()
-                p.DFsearch_entry.focus_set()
-                break
+            p.DFsearch_entry.var.set(name)
+            p.DFsearch_entry.changed()
+            p.DFsearch_entry.focus_set()
+        
         self.destroy()
 

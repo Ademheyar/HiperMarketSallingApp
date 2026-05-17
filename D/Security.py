@@ -36,13 +36,19 @@ class SecurityForm(tk.Toplevel):
         self.Security_form.resizable(False, False)
         self.Security_form.wm_iconbitmap('')
         self.Security_form.wm_title('')
+        
         # make the frame bigger
         screen_width = self.master.winfo_screenwidth()
         screen_height = self.master.winfo_screenheight()
         width, height = 900, 600
-        x = (screen_width // 2) - (width // 2)
-        y = (screen_height // 2) - (height // 2)
-        self.Security_form.geometry(f"{width}x{height}+{int(x)}+{int(y)}")
+        # Ensure window doesn't exceed screen boundaries
+        width = min(width, screen_width)
+        height = min(height, screen_height)
+        # Center the window on screen without exceeding boundaries
+        # position the window at 10% of the screen width and height
+        x = 100
+        y = 100
+        self.Security_form.geometry(f"{width}x{height}+{x}+{y}")
 
 
         # Android-style dark blue color scheme
