@@ -48,12 +48,13 @@ class DisplayFrame(tk.Frame):
     def __init__(self, master, Shops_info, user, User_Shops_List, Shops):
         tk.Frame.__init__(self, master)
         
-        # Android-style dark blue color scheme
         self.bg_dark = "#0d47a1"      # Deep blue
         self.bg_light = "#1565c0"     # Darker blue
         self.accent_blue = "#1976d2"  # Medium blue
         self.text_light = "#ffffff"   # White text
         self.bg_darker = "#0a3d91"    # Even darker blue
+        self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
+        
         
         self.configure(bg=self.bg_dark)
         
@@ -121,20 +122,17 @@ class DisplayFrame(tk.Frame):
         self.top_frame.columnconfigure((5), weight=1)
         self.top_frame.rowconfigure((0), weight=1)
 
-        self.search_label = tk.Label(self.top_frame, text="Search:", font=("Arial", 12), 
-                                     bg=self.bg_light, fg=self.text_light)
-        self.search_label.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
-        
-        self.DFsearch_entry = search_entry(self.top_frame, self.Shops_info, self.user, self.Shops, font=("Arial", 12))
-        self.DFsearch_entry.grid(row=0, column=1, columnspan=5, sticky="nsew", padx=5, pady=5)
-
-        self.Calculter_button = ttk.Button(self.top_frame, text="Calcu\nF1", command=lambda: GetvalueForm(self, '0', ["Calculater"]))
-        self.Calculter_button.grid(row=0, column=6, sticky="nsew", padx=2, pady=5)
+        self.Calculter_button = tk.Button(self.top_frame, text="Calcu\nF1", command=lambda: GetvalueForm(self, '0', ["Calculater"]), **self.button_style)
+        self.Calculter_button.grid(row=0, column=0, sticky="nsew", padx=2, pady=5)
         self.master.bind("<F1>", lambda _: GetvalueForm(self, '0', ["Calculater"]))
         
-        self.Add_None_item_button = ttk.Button(self.top_frame, text="None\nF2", command=lambda: self.Create_Unowen_item())
-        self.Add_None_item_button.grid(row=0, column=7, sticky="nsew", padx=2, pady=5)
+        self.Add_None_item_button = tk.Button(self.top_frame, text="None\nF2", command=lambda: self.Create_Unowen_item(), **self.button_style)
+        self.Add_None_item_button.grid(row=0, column=1, sticky="nsew", padx=2, pady=5)
         self.master.bind("<F2>", lambda _: self.Create_Unowen_item())
+        
+        self.DFsearch_entry = search_entry(self.top_frame, self.Shops_info, self.user, self.Shops, font=("Arial", 12))
+        self.DFsearch_entry.grid(row=0, column=2, columnspan=4, sticky="nsew", padx=1, pady=1)
+
 
         self.midel_frame = tk.Frame(self.main_frame, bg=self.bg_dark)
         self.midel_frame.grid(row=1, column=0, sticky="nsew")
@@ -177,35 +175,35 @@ class DisplayFrame(tk.Frame):
 
         self.manage_form = ManageForm(self.main_Notebook, self.user, self.Shops, self.Shops_info, self.on_Shop)
 
-        self.voidlist_button = ttk.Button(self.buttons_frame, text="Void\nF3", command=self.void_)
-        self.voidlist_button.grid(row=0, column=0, sticky="nsew", padx=3, pady=3)
+        self.voidlist_button = tk.Button(self.top_frame, text="Void\nF3", command=self.void_, **self.button_style)
+        self.voidlist_button.grid(row=0, column=6, sticky="nsew", padx=1, pady=1)
         self.master.bind("<F3>", lambda _: self.void_())
         
-        self.prevlist_button = ttk.Button(self.buttons_frame, text="Prev\nF5", command=lambda: self.next_prev_chart("prev"))
-        self.prevlist_button.grid(row=0, column=1, sticky="nsew", padx=3, pady=3)
+        self.prevlist_button = tk.Button(self.top_frame, text="Prev\nF5", command=lambda: self.next_prev_chart("prev"), **self.button_style)
+        self.prevlist_button.grid(row=0, column=7, sticky="nsew", padx=1, pady=1)
         self.prevlist_button.config(state=tk.DISABLED)
         self.master.bind("<F5>", lambda _: self.next_prev_chart("prev"))
         
-        self.activets_button = ttk.Button(self.buttons_frame, text="Activets\nF6", command=self.call_chartForm)
-        self.activets_button.grid(row=0, column=2, sticky="nsew", padx=3, pady=3)
+        self.activets_button = tk.Button(self.top_frame, text="Activets\nF6", command=self.call_chartForm)
+        self.activets_button.grid(row=0, column=8, sticky="nsew", padx=1, pady=1)
         self.master.bind("<F6>", lambda _: self.call_chartForm())
         
-        self.newlist_button = ttk.Button(self.buttons_frame, text="New\nF7", command=self.new_chart)
-        self.newlist_button.grid(row=0, column=3, sticky="nsew", padx=3, pady=3)
+        self.newlist_button = tk.Button(self.top_frame, text="New\nF7", command=self.new_chart, **self.button_style)
+        self.newlist_button.grid(row=0, column=9, sticky="nsew", padx=1, pady=1)
         self.master.bind("<F7>", lambda _: self.new_chart())
         
-        self.payment_button = ttk.Button(self.buttons_frame, text="Payment\nF10", command=self.call_splitpayment)
-        self.payment_button.grid(row=1, column=0, sticky="nsew", padx=3, pady=3)
+        self.payment_button = tk.Button(self.top_frame, text="Payment\nF10", command=self.call_splitpayment)
+        self.payment_button.grid(row=0, column=10, sticky="nsew", padx=1, pady=1)
         self.master.bind("<F10>", lambda _: self.call_splitpayment())
         
-        self.endday_button = ttk.Button(self.buttons_frame, text="Cash Drawer\nCtrl+D", command=lambda: self.open_drower())
-        self.endday_button.grid(row=1, column=1, sticky="nsew", padx=3, pady=3)
+        self.endday_button = tk.Button(self.top_frame, text="Cash Drawer\nCtrl+D", command=lambda: self.open_drower(), **self.button_style)
+        self.endday_button.grid(row=0, column=11, sticky="nsew", padx=1, pady=1)
         
-        self.update_button = ttk.Button(self.buttons_frame, text="update\nCtrl+U", command=lambda: self.Call_Uploading_Form())
-        self.update_button.grid(row=1, column=2, sticky="nsew", padx=3, pady=3)
+        self.update_button = tk.Button(self.top_frame, text="update\nCtrl+U", command=lambda: self.Call_Uploading_Form())
+        self.update_button.grid(row=0, column=12, sticky="nsew", padx=1, pady=1)
         
-        self.Endday_button = ttk.Button(self.buttons_frame, text="End Day\nCtrl+E", command=lambda: self.manage_form.doc_form.perform_endday())
-        self.Endday_button.grid(row=1, column=3, sticky="nsew", padx=3, pady=3)
+        self.Endday_button = tk.Button(self.top_frame, text="End Day\nCtrl+E", command=lambda: self.manage_form.doc_form.perform_endday(), **self.button_style)
+        self.Endday_button.grid(row=0, column=13, sticky="nsew", padx=1, pady=1)
 
         self.total_frame = tk.Frame(self.main_frame, height=150, bg=self.bg_light)
         self.total_frame.grid(row=2, column=0, rowspan=2, columnspan=4, sticky="nsew")
@@ -448,51 +446,34 @@ class DisplayFrame(tk.Frame):
         rows = fetch_as_dict_list("SELECT * FROM tools", ())
         
         buttons = []
+        j = 0
         i = -1
-        j = -1
+        for widget in range(len(self.buttons_frame.winfo_children())):
+            j = 0
         a = 0
         b = 0
-        for widget in range(len(self.buttons_frame.winfo_children()) - 1):
-            j += 1
-            if b == 3:
+        for spt, row in enumerate(self.Shop_Payment_Tools):
+            #print("creating row btn = " + str(row))
+            i += 1
+            if b > 3:
                 b = 0
                 a += 1
-                continue
-            if len(self.buttons_frame.winfo_children()) - 1 == j + 1:
-                a += 1
-                b = 0
-
-                readon = -1
-                if self.Selected_Shop != "":
-                    readon = self.Shops_Names.index(self.Selected_Shop)
-                
-                for spt, row in enumerate(self.Shop_Payment_Tools):
-                    if readon != -1 and readon != spt:
-                        continue
-                    #print("creating row btn = " + str(row))
-                    i += 1
-                    if b > 3:
-                        b = 0
-                        a += 1
-                    tool_name = row[0]
-                    # Create a new button
+            tool_name = row[0]
+            # Create a new button
                     
                     
-                    payment_tool_type = row[1]
-                    permission_level = {'CASH':2, 'CARD':3, 'CREADIT':4, 'CASHOUT':5, 'CASHIN':6, 'OTHER':7}
-                    perm_level = permission_level.get(payment_tool_type, 6)
+            payment_tool_type = row[1]
+            permission_level = {'CASH':2, 'CARD':3, 'CREADIT':4, 'CASHOUT':5, 'CASHIN':6, 'OTHER':7}
+            perm_level = permission_level.get(payment_tool_type, 6)
                     
-                    if Chacke_Security(self, self.user, self.Shops[self.on_Shop], perm_level, f'User Not allowed to Use {payment_tool_type} Payment Tool'):
-                        new_button = ttk.Button(self.buttons_frame, text=tool_name+"\nCtrl + "+str(row[3]), command=lambda r=str(row[3]), d=tool_name: self.Q_Payment(r, d))
-                        new_button.bind("<Button-3>", lambda d=str(row[3]): self.Q_Payment(d, d.widget["text"].split("\n")[0]))
-                        self.master.bind("<KeyPress-" + str(row[3]) + ">", lambda r=str(row[3]), d=tool_name, k=new_button: self.Q_Payment(r, d) if "Control" in str(r)else print(""))
-                        if payment_tool_type == "CASH":
-                            self.master.bind("<F12>", lambda r=str(row[3]), d=tool_name, k=new_button: self.Q_Payment(r, d))
-                        new_button.grid(row=a, column=b, sticky="nsew")
-                        self.Loded_payment_buttons.append([row[1], row[3], new_button])
-                        b += 1
-                break
-            else:
+            if Chacke_Security(self, self.user, self.Shops[self.on_Shop], perm_level, f'User Not allowed to Use {payment_tool_type} Payment Tool'):
+                new_button = tk.Button(self.buttons_frame, text=tool_name+"\nCtrl + "+str(row[3]), command=lambda r=str(row[3]), d=tool_name: self.Q_Payment(r, d), **self.button_style)
+                new_button.bind("<Button-3>", lambda d=str(row[3]): self.Q_Payment(d, d.widget["text"].split("\n")[0]))
+                self.master.bind("<KeyPress-" + str(row[3]) + ">", lambda r=str(row[3]), d=tool_name, k=new_button: self.Q_Payment(r, d) if "Control" in str(r)else print(""))
+                if payment_tool_type == "CASH":
+                    self.master.bind("<F12>", lambda r=str(row[3]), d=tool_name, k=new_button: self.Q_Payment(r, d))
+                new_button.grid(row=a, column=b, sticky="nsew", padx=2, pady=5)
+                self.Loded_payment_buttons.append([row[1], row[3], new_button])
                 b += 1
                 
     def Load_payment_buttons(self):
@@ -816,25 +797,29 @@ class DisplayFrame(tk.Frame):
             #if isinstance(selected_item_info, str):
             #    selected_item_info = ast.literal_eval(selected_item_info)
             item = [""]
-            
-            new_item_fram = tk.Frame(self.Selected_item_Display_frame, highlightthickness=2, highlightbackground="black")
-            new_item_fram.grid(row=len(self.Selected_item_Display_frame.winfo_children()), column=0, pady=1, sticky=tk.EW)
+
+            print("droing item list\n")
+            new_item_fram = tk.Frame(self.Selected_item_Display_frame, highlightthickness=2, highlightbackground="black", bg=self.bg_dark)
+            new_item_fram.pack(side="top", fill="x", expand=True)
+            #new_item_fram.grid(row=len(self.Selected_item_Display_frame.winfo_children()), column=3, columnspan=5, pady=1)
+            #
+
 
             # TODO ADD IMAGE 
 
-            new_item_name = tk.Label(new_item_fram, text=str(selected_item[4]), font=("Arial", 11))
+            new_item_name = tk.Label(new_item_fram, text=str(selected_item[4]), font=("Arial", 11), bg=self.bg_dark, fg= self.text_light)
             new_item_name.grid(row=0, column=1, columnspan=6, sticky="nsew")
 
-            new_barcode_Label = tk.Label(new_item_fram, text=str("barcode"), font=("Arial", 7))
+            new_barcode_Label = tk.Label(new_item_fram, text=str("barcode"), font=("Arial", 7), bg=self.bg_dark, fg= self.text_light)
             new_barcode_Label.grid(row=1, column=1, columnspan=3, sticky="nsew")
             
-            new_type_Label = tk.Label(new_item_fram, text=str(selected_item[15]), font=("Arial", 7))
+            new_type_Label = tk.Label(new_item_fram, text=str(selected_item[15]), font=("Arial", 7), bg=self.bg_dark, fg= self.text_light)
             new_type_Label.grid(row=1, column=3, columnspan=3, sticky="nsew")
             
-            new_item_QTY_fram = tk.Frame(new_item_fram)
+            new_item_QTY_fram = tk.Frame(new_item_fram, bg=self.bg_dark)
             new_item_QTY_fram.grid(row=2, column=1, rowspan=2, sticky="nsew")
             
-            new_item_QTY_Label = tk.Label(new_item_QTY_fram, text="QTY Max is " + str(selected_item[8]), font=("Arial", 8))
+            new_item_QTY_Label = tk.Label(new_item_QTY_fram, text="QTY Max is " + str(selected_item[8]), font=("Arial", 8), bg=self.bg_dark, fg= self.text_light)
             new_item_QTY_Label.grid(row=1, column=1, sticky="nsew")
             new_item_QTY_Spinbox = ttk.Spinbox(new_item_QTY_fram, from_=0, to=100, width=10)
             new_item_QTY_Spinbox.grid(row=2, column=1, sticky="nsew")
@@ -844,41 +829,41 @@ class DisplayFrame(tk.Frame):
             disc = ""
             if float(selected_item_info['values']['price'])-float(selected_item[10]) > 0:
                 disc = " DISCOUNT " + str(float(selected_item_info['values']['price'])-float(selected_item[10]))
-            new_item_Price_Label = tk.Label(new_item_fram, text="Price " + price_ + disc, font=("Arial", 7))
+            new_item_Price_Label = tk.Label(new_item_fram, text="Price " + price_ + disc, font=("Arial", 7), bg=self.bg_dark, fg= self.text_light)
             new_item_Price_Label.grid(row=2, column=2, sticky="nsew")
             new_item_Price_Spinbox = ttk.Spinbox(new_item_fram, from_=0, to=100, width=10)
             new_item_Price_Spinbox.grid(row=3, column=2, sticky="nsew")
             new_item_Price_Spinbox.set(str(selected_item[10]))
 
-            new_item_Shop_Label = tk.Label(new_item_fram, text="Shop :" , font=("Arial", 7))
+            new_item_Shop_Label = tk.Label(new_item_fram, text="Shop :" , font=("Arial", 7), bg=self.bg_dark, fg= self.text_light)
             new_item_Shop_Label.grid(row=2, column=3, sticky="nsew")
             new_item_Shop_Combobox = ttk.Combobox(new_item_fram, values=[], width=10)
             new_item_Shop_Combobox.grid(row=3, column=3, padx=5, pady=5, sticky=tk.W)
             new_item_Shop_Combobox.set(str(selected_item[13]))
-            new_item_Code_Label = tk.Label(new_item_fram, text="Code :" , font=("Arial", 7))
+            new_item_Code_Label = tk.Label(new_item_fram, text="Code :" , font=("Arial", 7), bg=self.bg_dark, fg= self.text_light)
             new_item_Code_Label.grid(row=2, column=4, sticky="nsew")
             new_item_Code_Combobox = ttk.Combobox(new_item_fram, values=[], width=10)
             new_item_Code_Combobox.grid(row=3, column=4, padx=5, pady=5, sticky=tk.W)
             new_item_Code_Combobox.set(str(selected_item[2]))
-            new_item_Color_Label = tk.Label(new_item_fram, text="Color " , font=("Arial", 7))
+            new_item_Color_Label = tk.Label(new_item_fram, text="Color " , font=("Arial", 7), bg=self.bg_dark, fg= self.text_light)
             new_item_Color_Label.grid(row=2, column=5, sticky="nsew")
             new_item_Color_Combobox = ttk.Combobox(new_item_fram, values=[], width=10)
             new_item_Color_Combobox.grid(row=3, column=5, padx=5, pady=5, sticky=tk.W)
             new_item_Color_Combobox.set(str(selected_item[5]))
-            new_item_Size_Label = tk.Label(new_item_fram, text="Size " , font=("Arial", 7))
+            new_item_Size_Label = tk.Label(new_item_fram, text="Size " , font=("Arial", 7), bg=self.bg_dark, fg= self.text_light)
             new_item_Size_Label.grid(row=2, column=6, sticky="nsew")
             new_item_Size_Combobox = ttk.Combobox(new_item_fram, values=[], width=10)
             new_item_Size_Combobox.grid(row=3, column=6, padx=5, pady=5, sticky=tk.W)
             new_item_Size_Combobox.set(str(selected_item[6]))
             
-            new_exbarcode_Label = tk.Label(new_item_fram, text=str(selected_item[14]), font=("Arial", 7))
+            new_exbarcode_Label = tk.Label(new_item_fram, text=str(selected_item[14]), font=("Arial", 7), bg=self.bg_dark, fg= self.text_light)
             new_exbarcode_Label.grid(row=1, column=7, sticky="nsew")
             
-            del_button = ttk.Button(new_item_fram, text="x", command= lambda index=i, frame=new_item_fram: self.remove_item(index, frame))
+            del_button = tk.Button(new_item_fram, text="x", command= lambda index=i, frame=new_item_fram: self.remove_item(index, frame), **self.button_style)
             del_button.grid(row=0, column=7, sticky="nsew")
             # self.master.bind("<Delete>", lambda _: self.remove_item())
             
-            new_item_TPrice_Label = tk.Label(new_item_fram, text="Total Price is " , font=("Arial", 13))
+            new_item_TPrice_Label = tk.Label(new_item_fram, text="Total Price" , font=("Arial", 13), bg=self.bg_dark, fg= self.text_light)
             new_item_TPrice_Label.grid(row=2, column=7, sticky="nsew")
             new_item_TPrice_Spinbox = ttk.Spinbox(new_item_fram, from_=0, to=100, width=10)
             new_item_TPrice_Spinbox.grid(row=3, column=7, sticky="nsew")
@@ -1514,8 +1499,13 @@ class DisplayFrame(tk.Frame):
                             print("adding " + str(it) + " to item")
                             print("adding " + str(iv) + " to item")
                             print("adding " + str(iv[7]) + " to item_tobechanged")
-                            
-                            item_tobechanged.append([iv[1], it['more_info'], 0, str(iv[13]), str(iv[2]), str(iv[5]),str(iv[6]), str(iv[7])])            
+                            setted = 0
+                            for i, itbc in enumerate(item_tobechanged):
+                                if itbc[0] == iv[1]:
+                                    item_tobechanged[i][7] = str(float(item_tobechanged[i][7])+float(iv[7]))
+                                    setted = 1
+                            if setted == 0:
+                                item_tobechanged.append([iv[1], it['more_info'], 0, str(iv[13]), str(iv[2]), str(iv[5]),str(iv[6]), str(iv[7])])            
                         else:
                             # message there is proplame on item change_item
                             erroritemsearchanswer = tk.messagebox.askquestion("Question", "There is proplame finding On one of Item Do you whant to continue?")

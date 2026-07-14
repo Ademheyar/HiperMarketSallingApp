@@ -10,6 +10,18 @@ class GetvalueForm(tk.Tk):
         self.master = master
         self.value = []
         self.first = True
+        
+        # Android-style dark blue color scheme
+        self.bg_dark = "#0d47a1"      # Deep blue
+        self.bg_light = "#1565c0"     # Darker blue
+        self.accent_blue = "#1976d2"  # Medium blue
+        self.text_light = "#ffffff"   # White text
+        self.bg_darker = "#0a3d91"    # Even darker blue
+        button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
+        
+        
+
+        
         # create a Toplevel window for the payment form
         self.getvalue_form = tk.Toplevel(self.master)
         self.onvalue = 0
@@ -49,71 +61,71 @@ class GetvalueForm(tk.Tk):
 
         # Create 4 button widgets and grid(row=0, column=0, sticky="nsew")
         self.button1 = tk.Button(
-            self.getvalue_form, text="7", font=("Arial", 15), command=lambda: self.add_num(None, "7")
-        )
+            self.getvalue_form, text="7", command=lambda: self.add_num(None, "7")
+        , **button_style)
         self.button1.grid(row=2, column=0, sticky="nsew")
         self.button2 = tk.Button(
-            self.getvalue_form, text="8", font=("Arial", 15), command=lambda: self.add_num(None, "8")
-        )
+            self.getvalue_form, text="8", command=lambda: self.add_num(None, "8")
+        , **button_style)
         self.button2.grid(row=2, column=1, sticky="nsew")
         self.button3 = tk.Button(
-            self.getvalue_form, text="9", font=("Arial", 15), command=lambda: self.add_num(None, "9")
-        )
+            self.getvalue_form, text="9", command=lambda: self.add_num(None, "9")
+        , **button_style)
         self.button3.grid(row=2, column=2, sticky="nsew")
         self.button4 = tk.Button(
-            self.getvalue_form, text="clean", font=("Arial", 15), command=lambda: self.add_num(None, "clean")
-        )
+            self.getvalue_form, text="clean", command=lambda: self.add_num(None, "clean")
+        , **button_style)
         self.button4.grid(row=2, column=3, sticky="nsew")
 
         self.button5 = tk.Button(
-            self.getvalue_form, text="4", font=("Arial", 15), command=lambda: self.add_num(None, "4")
-        )
+            self.getvalue_form, text="4", command=lambda: self.add_num(None, "4")
+        , **button_style)
         self.button5.grid(row=3, column=0, sticky="nsew")
         self.button6 = tk.Button(
-            self.getvalue_form, text="5", font=("Arial", 15), command=lambda: self.add_num(None, "5")
-        )
+            self.getvalue_form, text="5", command=lambda: self.add_num(None, "5")
+        , **button_style)
         self.button6.grid(row=3, column=1, sticky="nsew")
         self.button7 = tk.Button(
-            self.getvalue_form, text="6", font=("Arial", 15), command=lambda: self.add_num(None, "6")
-        )
+            self.getvalue_form, text="6", command=lambda: self.add_num(None, "6")
+        , **button_style)
         self.button7.grid(row=3, column=2, sticky="nsew")
         self.button8 = tk.Button(
-            self.getvalue_form, text="+", font=("Arial", 15), command=lambda: self.add_num(None, "")
-        )
+            self.getvalue_form, text="+", command=lambda: self.add_num(None, "")
+        , **button_style)
         self.button8.grid(row=3, column=3, sticky="nsew")
 
         self.button9 = tk.Button(
-            self.getvalue_form, text="1", font=("Arial", 15), command=lambda: self.add_num(None, "1")
-        )
+            self.getvalue_form, text="1", command=lambda: self.add_num(None, "1")
+        , **button_style)
         self.button9.grid(row=4, column=0, sticky="nsew")
         self.button10 = tk.Button(
-            self.getvalue_form, text="2", font=("Arial", 15), command=lambda: self.add_num(None, "2")
-        )
+            self.getvalue_form, text="2", command=lambda: self.add_num(None, "2")
+        , **button_style)
         self.button10.grid(row=4, column=1, sticky="nsew")
         self.button11 = tk.Button(
-            self.getvalue_form, text="3", font=("Arial", 15), command=lambda: self.add_num(None, "3")
-        )
+            self.getvalue_form, text="3", command=lambda: self.add_num(None, "3")
+        , **button_style)
         self.button11.grid(row=4, column=2, sticky="nsew")
         self.button12 = tk.Button(
-            self.getvalue_form, text="-", font=("Arial", 15), command=lambda: self.add_num(None, "")
-        )
+            self.getvalue_form, text="-", command=lambda: self.add_num(None, "")
+        , **button_style)
         self.button12.grid(row=4, column=3, sticky="nsew")
 
         self.button13 = tk.Button(
-            self.getvalue_form, text="0", font=("Arial", 15), command=lambda: self.add_num(None,"0")
-        )
+            self.getvalue_form, text="0", command=lambda: self.add_num(None,"0")
+        , **button_style)
         self.button13.grid(row=5, column=0, sticky="nsew")
         self.button14 = tk.Button(
-            self.getvalue_form, text=".", font=("Arial", 15), command=lambda: self.add_num(None, ".")
-        )
+            self.getvalue_form, text=".", command=lambda: self.add_num(None, ".")
+        , **button_style)
         self.button14.grid(row=5, column=1, sticky="nsew")
         self.button15 = tk.Button(
-            self.getvalue_form, text="enter", font=("Arial", 15), command=lambda: self.add_num(None,"enter")
-        )
+            self.getvalue_form, text="enter", command=lambda: self.add_num(None,"enter")
+        , **button_style)
         self.button15.grid(row=5, column=2, sticky="nsew")
         self.close_btn = tk.Button(
             self.getvalue_form, text="Close", command=lambda: self.getvalue_form.destroy()
-        )
+        , **button_style)
         self.close_btn.grid(row=5, column=3, sticky="nsew")
 
         # show the Payment Form window

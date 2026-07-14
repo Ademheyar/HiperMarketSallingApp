@@ -26,6 +26,7 @@ class GetDateForm(tk.Tk):
         self.accent_blue = "#1976d2"  # Medium blue
         self.text_light = "#ffffff"   # White text
         self.bg_darker = "#0a3d91"    # Even darker blue
+        button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
         
         # create a Toplevel window for the payment form
         self.getvalue_form = tk.Toplevel(self.master)
@@ -67,7 +68,6 @@ class GetDateForm(tk.Tk):
         self.end_calander.var.trace('w', lambda *_:self.changed())
         self.strt_calander.var.trace('w', lambda *_: self.changed())
 
-        button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
         
         self.Today_button = tk.Button(self.getvalue_form, text="Today", command=lambda:self.saved_pariods("Today"), **button_style)
         self.Today_button.grid(row=3, column=5, sticky="nsew", padx=3, pady=3)

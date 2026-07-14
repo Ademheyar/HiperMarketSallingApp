@@ -15,7 +15,6 @@ MAIN_dir = os.path.join(current_dir, '..')
 sys.path.append(MAIN_dir)
 #from M.Display import DisplayFrame
 
-from D.searchbox import search_entry
 from D.ChooseCustemr import UserManagementApp
 from D.iteminfo import *
 from D.Security import *

@@ -436,33 +436,30 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
                             inputs[1].config(values=cov)
                             if len(cov) == 1 or codes[0] == code:
                                 inputs[1].set(codes[0])
-                            if codes[1] and not len(codes[1]) == 0:
-                                for i2, c in enumerate(codes[1]):
-                                    if c[0] == color or i2 == 0:
-                                        cv = [colorc[0] for colorc in codes[1]]
-                                        inputs[2].config(values=cv)
-                                        if len(cv) == 1 or c[0] == color:
-                                            inputs[2].set(c[0])
-                                        if c[1] and not len(c[1]) == 0:
-                                            for i3, s in enumerate(c[1]):
-                                                if s[0] == size or i3 == 0:
-                                                    siv = [si[0] for si in c[1]]
-                                                    inputs[3].config(values=siv)
-                                                    if len(siv) == 1 or s[0] == size:
-                                                        inputs[3].set(siv[0])
-                                                    if do_what == "Save" and sh[0] == shop and codes[0] == code and c[0] == color and s[0] == size:
-                                                        restocked_qty = float(inputs[4].get()) - float(info_list[i0][1][i1][1][i2][1][i3][1][0][4])
-                                                        info_list[i0][1][i1][1][i2][1][i3][1][0][4] = inputs[4].get()
-                                                        if hasattr(self, 'get_total_qty'):
-                                                            self.get_total_qty(inputs, info_list)
-                                                        return info_list, restocked_qty
-                                                    elif not do_what == "Save":
-                                                        if s[1][0][4] and s[1][0][4] != "":
-                                                            inputs[4].set(float(s[1][0][4]))
-                                                        inputs[5].config(text=s[1][0][0])
-                                                        if sh[0] == shop and codes[0] == code and c[0] == color and s[0] == size:
-                                                            #slef.get_total_qty(inputs, info_list)
-                                                            return info_list, 0
+                            for i2, c in enumerate(codes[1]):
+                                if c[0] == color or i2 == 0:
+                                    cv = [colorc[0] for colorc in codes[1]]
+                                    inputs[2].config(values=cv)
+                                    if len(cv) == 1 or c[0] == color:
+                                        inputs[2].set(c[0])
+                                    for i3, s in enumerate(c[1]):
+                                        if s[0] == size or i3 == 0:
+                                            siv = [si[0] for si in c[1]]
+                                            inputs[3].config(values=siv)
+                                            if len(siv) == 1 or s[0] == size:
+                                                inputs[3].set(siv[0])
+                                            if do_what == "Save" and sh[0] == shop and codes[0] == code and c[0] == color and s[0] == size:
+                                                restocked_qty = float(inputs[4].get()) - float(info_list[i0][1][i1][1][i2][1][i3][1][0][4])
+                                                info_list[i0][1][i1][1][i2][1][i3][1][0][4] = inputs[4].get()
+                                                self.get_total_qty(inputs, info_list)
+                                                return info_list, restocked_qty
+                                            elif not do_what == "Save":
+                                                if s[1][0][4] and s[1][0][4] != "":
+                                                    inputs[4].set(float(s[1][0][4]))
+                                                inputs[5].config(text=s[1][0][0])
+                                                if sh[0] == shop and codes[0] == code and c[0] == color and s[0] == size:
+                                                    #slef.get_total_qty(inputs, info_list)
+                                                    return info_list, 0
         return item_list, 0
                                             
     def Update_selected_item_info(self, data, selected_item_info, new_item_Price_Spinbox, new_item_TPrice_Spinbox, index):
@@ -482,26 +479,20 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
         self.update_info()
         
     
-    def SAVE_Product_Queck_CHANGES(self, index, data, selected_item_info):
+    def SAVE_CHANGE(self, index, data, selected_item_info):
         #print("going to make change to = ", self.master.master.master.master.Shops_info['Shop_items'][index])
         newinfo_list, restocked_qty = self.Get_next_seletion("Save", data, selected_item_info)
-        p = self
-        while(True):
-            if hasattr(p, 'onDisplayFrame'):
-                break
-            else:
-                p = p.master
         if newinfo_list and not newinfo_list == 0:
             name = data[9].get()
             it2 = Update_Producte(None, None, ['price', 'name', 'more_info'], [data[7].get(), name, json.dumps(newinfo_list)], ['id'], [self.master.master.master.master.Shops_info['Shop_items'][index][0]['id']])
             data[8].config(text="Price "+data[7].get())
             if it2 and len(it2):
-                print("changING to = ", p.Shops_info['Shop_items'][index])
+                print("changING to = ", self.master.master.master.master.Shops_info['Shop_items'][index])
                 if isinstance(it2, list):
                     it2 = it2[0]
-                p.Shops_info['Shop_items'][index][0] = it2
-                p.Shops_info['Shop_items'][index][1] = newinfo_list
-                print("changed to = ", p.Shops_info['Shop_items'][index])
+                self.master.master.master.master.Shops_info['Shop_items'][index][0] = it2
+                self.master.master.master.master.Shops_info['Shop_items'][index][1] = newinfo_list
+                print("changed to = ", self.master.master.master.master.Shops_info['Shop_items'][index])
             
         if restocked_qty > 0:
             date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
@@ -516,22 +507,22 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
                     brcod = doc_code+str(b)
                     break
             
-            cost = float(p.Shops_info['Shop_items'][index][0]['cost'])
+            cost = float(self.master.master.master.master.Shops_info['Shop_items'][index][0]['cost'])
             asked = tk.messagebox.askquestion("Question", "QTY : " + str(restocked_qty) + "\nCost : " + str(restocked_qty * cost) + "\nThis product has been updated or restocked. Do you want to update the stock?")
             if asked == 'yes':
                 # Insert a single doc_table record representing this batch (store updated stock)
                 Shop = None
-                for shop in p.Shops:
-                    if (hasattr(self, 'shop_name_Combobox') and self.shop_name_Combobox.get() == shop['Shop_name']) or (hasattr(p, 'shop_name_Combobox') and p.shop_name_Combobox.get() == shop['Shop_name']):
+                for shop in self.master.master.master.master.Shops:
+                    if shop['Shop_Id'] == self.shop_name_Combobox.get():
                         Shop = shop
                         break
                 if not Shop:
-                    Shop = p.Shops[0]  # Fallback to the first shop if none matches
+                    Shop = self.master.master.master.master.Shops[0]  # Fallback to the first shop if none matches
                 
                 try:
                     Tcost = restocked_qty * cost 
                     payments_ = [['0', str('CREDITSTOCK'), str(Tcost), date, date, self.user_info.get('User_name', ""), 1, '', 'CREDITSTOCK']]
-                    product_id = p.Shops_info['Shop_items'][index][0]['id']
+                    product_id = self.master.master.master.master.Shops_info['Shop_items'][index][0]['id']
                     doc_items = [{"product_id": product_id, "name": name, "cost": cost, "qty": restocked_qty, "price": data[7].get()}]
                     doc_data = {
                         'doc_barcode': brcod,
@@ -735,7 +726,7 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
             self.Get_next_seletion("", data, selected_item_info)
             #slef.get_total_qty(data, selected_item_info)
             
-            save_button = ttk.Button(new_item_fram, text="Save Change", command= lambda index=i, d=data, v=selected_item_info: self.SAVE_Product_Queck_CHANGES(index, d, v))
+            save_button = ttk.Button(new_item_fram, text="Save Change", command= lambda index=i, d=data, v=selected_item_info: self.SAVE_CHANGE(index, d, v))
             save_button.grid(row=2, column=8, sticky="nsew")
 
             new_item_Shop_Combobox.bind("<<ComboboxSelected>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=[], j=i: self.Update_selected_item_info(d, v, p, tp, j))

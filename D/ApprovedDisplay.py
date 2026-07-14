@@ -6,7 +6,6 @@ import sys
 current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(current_dir, '..')
 sys.path.append(MAIN_dir)
-from D.searchbox import search_entry
 from D.Peymentsplit import PaymentForm
 from D.GetVALUE import GetvalueForm
 from D.Showchartlists import ShowchartForm
@@ -42,6 +41,9 @@ class ApproveFrame(tk.Frame):
         self.accent_blue = "#1976d2"  # Medium blue
         self.text_light = "#ffffff"   # White text
         self.bg_darker = "#0a3d91"    # Even darker blue
+        self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
+        
+        
         
         slip = ""
         for barcode in slips:
@@ -54,7 +56,7 @@ class ApproveFrame(tk.Frame):
                 print(str(slip))
                 
         # Create a new Toplevel window for the value form
-        self.getvalue_form = tk.Toplevel(self.master)
+        self.getvalue_form = tk.Toplevel(self.master, bg=self.bg_dark)
         self.getvalue_form.title("Selector Form")
         self.getvalue_form.columnconfigure((0), weight=1)
         self.getvalue_form.columnconfigure((1,2,3, 4, 5, 6, 7, 8, 9, 10), weight=1)
@@ -71,20 +73,20 @@ class ApproveFrame(tk.Frame):
 
         # Create a listbox for the items
         
-        self.buttons_frame = tk.Frame(self.getvalue_form)
+        self.buttons_frame = tk.Frame(self.getvalue_form, bg=self.bg_dark)
         self.buttons_frame.grid(row=0, column=1, columnspan=3, rowspan=5, sticky="nsew")
         #.pack(side="left", fill="both", expand=True)
         self.buttons_frame.columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
         self.buttons_frame.rowconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
         
-        self.prev_slip = tk.Button(self.getvalue_form, text="<<", font=("Arial", 15), command= self.get_prev_slip)
+        self.prev_slip = tk.Button(self.getvalue_form, text="<<", command= self.get_prev_slip, **self.button_style)
         self.prev_slip.grid(row=0, column=0, sticky="nsew")
         
 
-        self.on_barid = tk.Label(self.getvalue_form, text=str(len(self.slips)-2), font=("Arial", 25))
+        self.on_barid = tk.Label(self.getvalue_form, text=str(len(self.slips)-2), font=("Arial", 25), bg=self.bg_dark)
         self.on_barid.grid(row=0, column=1, sticky="nsew")
 
-        self.next_slip = tk.Button(self.getvalue_form, text=">>", font=("Arial", 15), command= self.get_next_slip)
+        self.next_slip = tk.Button(self.getvalue_form, text=">>", command= self.get_next_slip, **self.button_style)
         self.next_slip.grid(row=0, column=2, sticky="nsew")
         
         self.midel_frame = tk.Frame(self.getvalue_form)
@@ -122,31 +124,34 @@ class ApproveFrame(tk.Frame):
         
 
         
-        self.label1 = tk.Label(self.getvalue_form, text="change : 0", font=("Arial", 25))
+        self.label1 = tk.Label(self.getvalue_form, text="change : 0", font=("Arial", 25), bg=self.bg_dark)
         self.label1.grid(row=5, column=0, columnspan=3, sticky="nsew")
 
         # Create a frame for buttons and labels
-        self.buttons_frame = tk.Frame(self.getvalue_form)
+        self.buttons_frame = tk.Frame(self.getvalue_form, bg=self.bg_dark)
         self.buttons_frame.grid(row=0, column=5, columnspan=3, rowspan=5, sticky="nsew")
         #.pack(side="left", fill="both", expand=True)
         self.buttons_frame.columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
         self.buttons_frame.rowconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
         
         
-        self.label2 = tk.Label(self.buttons_frame, text="How Would the Customer like their receipt?", font=("Arial", 20))
+        self.label2 = tk.Label(self.buttons_frame, text="How Would the Customer like their receipt?", font=("Arial", 20), bg=self.bg_dark)
         self.label2.grid(row=1, column=4, columnspan=4, sticky="nsew")
         
         # Create an undo button
-        self.print_button = tk.Button(self.buttons_frame, text="print", font=("Arial", 15), command= lambda:self.print_item(None))
+        self.print_button = tk.Button(self.buttons_frame, text="print", command= lambda:self.print_item(None), **self.button_style)
         self.print_button.grid(row=5, column=4, sticky="nsew")
         self.print_button.focus_set()
         
         # Create an undo button
-        self.undo_button = tk.Button(self.buttons_frame, text="Undo", font=("Arial", 15), command= lambda: self.undo_item)
+        def setudofirst():
+            i = int(self.on_barid.cget('text'))
+            self.undo_item(slips[int(self.on_barid.cget('text'))])
+        self.undo_button = tk.Button(self.buttons_frame, text="Undo", command=setudofirst, **self.button_style)
         self.undo_button.grid(row=6, column=5, sticky="nsew")
 
         # Create continue Button
-        self.continue_button = ttk.Button(self.buttons_frame, text="Continue", command=self.getvalue_form.destroy)
+        self.continue_button = tk.Button(self.buttons_frame, text="Continue", command=self.getvalue_form.destroy, **self.button_style)
         self.continue_button.grid(row=6, column=4, sticky="nsew")
         #self.update_items()
         self.get_next_slip()
@@ -208,8 +213,8 @@ class ApproveFrame(tk.Frame):
             if on_slip != "":
                 PrinterForm.print_slip(self, self.user, self.shops, on_slip, 1) # TODO chack in setting if paper cut allowed
     
-    def undo_item(self):
-        pass
+    def undo_item(self, doc_barcode):
+        print("Undo Items bar4code %s", doc_barcode)
     
     def call_manager(self):
         pass

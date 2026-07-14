@@ -42,12 +42,18 @@ class DocForm(tk.Frame):
         self.pyment_used = []
         self.shop = shop
         self.user_info = user
+
         # Android-style dark blue color scheme
         self.bg_dark = "#0d47a1"      # Deep blue
         self.bg_light = "#1565c0"     # Darker blue
         self.accent_blue = "#1976d2"  # Medium blue
         self.text_light = "#ffffff"   # White text
         self.bg_darker = "#0a3d91"    # Even darker blue
+        self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
+        
+        
+
+        
         # Notebook widget - CENTER_NOTEBOK
         self.start_value = datetime.datetime.now().strftime('%Y-%m-%d')
         self.end_value = self.start_value
@@ -280,19 +286,20 @@ class DocForm(tk.Frame):
         self.date_to_Entry.insert(0, self.start_value)
         self.date_to_Entry.grid(row=3, column=4)
         
-        self.GetDate_button = tk.Button(self.details_frame, text="GetDate", font=("Arial", 12), command=self.fix_date)
+        self.GetDate_button = tk.Button(self.details_frame, text="GetDate", command=self.fix_date, **self.button_style)
         self.GetDate_button.grid(row=3, column=5, sticky="nsew")
 
         # Create the search button
-        self.search_button = tk.Button(self.details_frame, text="Search", command=self.perform_search)
+        self.search_button = tk.Button(self.details_frame, text="Search", command=self.perform_search, **self.button_style)
         self.search_button.grid(row=2, column=6)
+        self.print_button = tk.Button(self.details_frame, text="Veiw", command=lambda: self.perform_veiw(None), **self.button_style)
+        self.print_button.grid(row=2, column=7)
 
         # Create the search button
-        self.print_button = tk.Button(self.details_frame, text="Veiw", command=self.perform_veiw)
-        self.print_button.grid(row=3, column=6)
-        self.delet_button = tk.Button(self.details_frame, text="Delet", command=self.perform_delet)
-        self.delet_button.grid(row=3, column=7)
-
+        self.delet_button = tk.Button(self.details_frame, text="Delet", command=lambda: self.deleselecteddoc(None), **self.button_style)
+        self.delet_button.grid(row=3, column=6)
+        self.undot_button = tk.Button(self.details_frame, text="Undo", command=lambda: self.undoselecteddoc(None), **self.button_style)
+        self.undot_button.grid(row=3, column=7)
         self.total_info = tk.Label(self.details_frame, text="TOTAL DOC : 0\nITEMS : 0 COUNTED\nGrand Total : 0", font=("Arial", 11))
         self.total_info.grid(row=0, column=8, rowspan=2)
 
@@ -774,7 +781,7 @@ class DocForm(tk.Frame):
             end_date = _fix_two_digit_year(exp[10] if len(exp) > 10 else None, end_date)
             print(f"[SHOP:{shop.get('Shop_name','?')}] shop_daily_total after processing expenses: {shop_daily_total}")
 
-            # accumulate across shops so final label (updated each iteration) ends up with total of all shops processed
+            # accumulate across shops so final label (updated each iteration) ends up with total of all shops processed)
             self._accumulated_expenses += shop_daily_total
 
             # display current accumulated total (will end up as the full total after the loop finishes)
@@ -1038,67 +1045,160 @@ class DocForm(tk.Frame):
         top.geometry(f"+{int(x)}+{int(y)}")
         top.geometry("500x600")  # Set a fixed size for the window
         top.resizable(False, False)  # Prevent resizing
+        top.bind("<Escape>", lambda event: top.destroy())
+
         
+        main_Notebook = ttk.Notebook(top)
+        main_Notebook.pack(side="top", fill="both", expand=True)
         
         
         # Create a frame for better layout
-        frame = tk.Frame(top, bg=self.bg_dark)
-        frame.pack(padx=20, pady=20)
+        totalframe = tk.Frame(main_Notebook, bg=self.bg_dark)
+        totalframe.pack(padx=20, pady=20)
+        main_Notebook.add(totalframe, text='Total')
+        
 
 
         # Show summary of today's totals for confirmation
         Enddaystr = "\n"
         if self.date_from_Entry.get() == self.date_to_Entry.get():
-            tk.Label(frame, text="DATE : " + str(self.date_from_Entry.get()), bg=self.bg_dark, fg="white", font=("Arial", 14, "bold")).pack(pady=10)
+            tk.Label(totalframe, text="DATE : " + str(self.date_from_Entry.get()), bg=self.bg_dark, fg="white", font=("Arial", 14, "bold")).pack(pady=10)
             Enddaystr += "DATE : " + str(self.date_from_Entry.get()) + "\n"
         else :
-            tk.Label(frame, text="FROM DATE : " + str(self.date_from_Entry.get()) + " TO " + str(self.date_to_Entry.get()), bg=self.bg_dark, fg="white", font=("Arial", 14, "bold")).pack(pady=10)
+            tk.Label(totalframe, text="FROM DATE : " + str(self.date_from_Entry.get()) + " TO " + str(self.date_to_Entry.get()), bg=self.bg_dark, fg="white", font=("Arial", 14, "bold")).pack(pady=10)
             Enddaystr += "FROM DATE : " + str(self.date_from_Entry.get()) + " TO " + str(self.date_to_Entry.get()) + "\n"
         exp = float(self.Total_Expense_doc.cget("text").split(": ")[1])
         cashout = float(self.Total_Cash_Outs_doc.cget("text").split(": ")[1]) + float(self.Total_Card_Outs_doc.cget("text").split(": ")[1])
         cashout = cashout if cashout <= 0 else float('-'+str(cashout))
         
-        tk.Label(frame, text='Expance               : ' + str(exp), bg=self.bg_dark, fg="red", font=("Arial", 12, "bold")).pack(pady=5)
+        tk.Label(totalframe, text='Expance               : ' + str(exp), bg=self.bg_dark, fg="red", font=("Arial", 12, "bold")).pack(pady=5)
         Enddaystr += 'Expance               : ' + str(exp) + "\n"
-        tk.Label(frame, text='Cash Outs             : ' + str(cashout), bg=self.bg_dark, fg="red", font=("Arial", 12, "bold")).pack(pady=5)
+        tk.Label(totalframe, text='Cash Outs             : ' + str(cashout), bg=self.bg_dark, fg="red", font=("Arial", 12, "bold")).pack(pady=5)
         Enddaystr += 'Cash Outs             : ' + str(cashout) + "\n"
         
-        tk.Label(frame, text="                     -----------", bg=self.bg_dark, fg="red", font=("Arial", 14)).pack(pady=5)
+        tk.Label(totalframe, text="                     -----------", bg=self.bg_dark, fg="red", font=("Arial", 14)).pack(pady=5)
         Enddaystr += "                     -----------" + "\n"
-        tk.Label(frame, text='                      : ' + str(exp + cashout), bg=self.bg_dark, fg="red", font=("Arial", 16)).pack(pady=5)
+        tk.Label(totalframe, text='                      : ' + str(exp + cashout), bg=self.bg_dark, fg="red", font=("Arial", 16)).pack(pady=5)
         Enddaystr += '                      : ' + str(exp + cashout) + "\n"
         Enddaystr += "\n"
         
-        tk.Label(frame, text='Cash                  : ' + self.Total_Cash_paid_doc.cget("text").split(": ")[1], bg=self.bg_dark, fg="white", font=("Arial", 12)).pack(pady=5)
+        tk.Label(totalframe, text='Cash                  : ' + self.Total_Cash_paid_doc.cget("text").split(": ")[1], bg=self.bg_dark, fg="white", font=("Arial", 12)).pack(pady=5)
         Enddaystr += 'Cash                  : ' + self.Total_Cash_paid_doc.cget("text").split(": ")[1] + "\n"
-        tk.Label(frame, text='Card                  : ' + self.Total_Card_paid_doc.cget("text").split(": ")[1], bg=self.bg_dark, fg="white", font=("Arial", 12)).pack(pady=5)
+        tk.Label(totalframe, text='Card                  : ' + self.Total_Card_paid_doc.cget("text").split(": ")[1], bg=self.bg_dark, fg="white", font=("Arial", 12)).pack(pady=5)
         Enddaystr += 'Card                  : ' + self.Total_Card_paid_doc.cget("text").split(": ")[1] + "\n"
-        tk.Label(frame, text="                     -----------", bg=self.bg_dark, fg="white", font=("Arial", 14)).pack(pady=5)
+        tk.Label(totalframe, text="                     -----------", bg=self.bg_dark, fg="white", font=("Arial", 14)).pack(pady=5)
         Enddaystr += "                     -----------" + "\n"
         totalpid = float(self.Total_Cash_paid_doc.cget("text").split(": ")[1]) + float(self.Total_Card_paid_doc.cget("text").split(": ")[1])
-        tk.Label(frame, text='                      : ' + str(totalpid), bg=self.bg_dark, fg="white", font=("Arial", 16)).pack(pady=5)
+        tk.Label(totalframe, text='                      : ' + str(totalpid), bg=self.bg_dark, fg="white", font=("Arial", 16)).pack(pady=5)
         Enddaystr += '                      : ' + str(totalpid) + "\n"
         Enddaystr += "\n"
         
-        tk.Label(frame, text="Profit                : " + str(self.doc_totalprofit_.cget("text").split(": ")[1]), bg=self.bg_dark, fg="white", font=("Arial", 10)).pack(pady=5)
+        tk.Label(totalframe, text="Profit                : " + str(self.doc_totalprofit_.cget("text").split(": ")[1]), bg=self.bg_dark, fg="white", font=("Arial", 10)).pack(pady=5)
         Enddaystr += "Profit                : " + str(self.doc_totalprofit_.cget("text").split(": ")[1]) + "\n"
 
-        tk.Label(frame, text='Profit After Expences : ' + str(round(float(self.doc_totalprofit_.cget("text").split(": ")[1].split(" (")[0])+(exp + cashout), 2)), bg=self.bg_dark, fg="red" if float(self.doc_totalprofit_.cget("text").split(": ")[1].split(" (")[0])+(exp + cashout) < 0 else "light green", font=("Arial", 16)).pack(pady=5)
+        tk.Label(totalframe, text='Profit After Expences : ' + str(round(float(self.doc_totalprofit_.cget("text").split(": ")[1].split(" (")[0])+(exp + cashout), 2)), bg=self.bg_dark, fg="red" if float(self.doc_totalprofit_.cget("text").split(": ")[1].split(" (")[0])+(exp + cashout) < 0 else "light green", font=("Arial", 16)).pack(pady=5)
         Enddaystr += 'Profit After Expences : ' + str(round(float(self.doc_totalprofit_.cget("text").split(": ")[1].split(" (")[0])+(exp + cashout), 2)) + "\n"
 
-        tk.Label(frame, text='Total After Expences  : ' + str(round(float(totalpid+(exp + cashout)), 2)), bg=self.bg_dark, fg="white", font=("Arial", 16)).pack(pady=5)
+        tk.Label(totalframe, text='Total After Expences  : ' + str(round(float(totalpid+(exp + cashout)), 2)), bg=self.bg_dark, fg="white", font=("Arial", 16)).pack(pady=5)
         Enddaystr += 'Total After Expences  : ' + str(round(float(totalpid+(exp + cashout)), 2)) + "\n"
         
-        tk.Label(frame, text='Stock                 : ' + str(float(self.Total_Stock_doc.cget("text").split(": ")[1])), bg=self.bg_dark, fg="white", font=("Arial", 16)).pack(pady=5)
+        tk.Label(totalframe, text='Stock                 : ' + str(float(self.Total_Stock_doc.cget("text").split(": ")[1])), bg=self.bg_dark, fg="white", font=("Arial", 16)).pack(pady=5)
         Enddaystr += 'Stock                 : ' + str(float(self.Total_Stock_doc.cget("text").split(": ")[1])) + "\n"
         
         if not self.date_from_Entry.get() == self.date_to_Entry.get():
-            tk.Label(frame, text='Total After Stock  : ' + str(round(float(totalpid+(exp + cashout)-float(self.Total_Stock_doc.cget("text").split(": ")[1])), 2)), bg=self.bg_dark, fg="white", font=("Arial", 16)).pack(pady=5)
+            tk.Label(totalframe, text='Total After Stock  : ' + str(round(float(totalpid+(exp + cashout)-float(self.Total_Stock_doc.cget("text").split(": ")[1])), 2)), bg=self.bg_dark, fg="white", font=("Arial", 16)).pack(pady=5)
             Enddaystr += 'Total After Stock  : ' + str(round(float(totalpid+(exp + cashout)-float(self.Total_Stock_doc.cget("text").split(": ")[1])), 2)) + "\n"
         
         #Enddaystr = self.on_slip.cget('text')
-        tk.Button(frame, text="Print", command=lambda: PrinterForm.print_slip(self, self.user_info, self.shop, Enddaystr, 1)).pack(pady=5)
-    
+        tk.Button(totalframe, text="Print", command=lambda: PrinterForm.print_slip(self, self.user_info, self.shop, Enddaystr, 1), **self.button_style).pack(side="right",padx=5)
+        tk.Button(totalframe, text="Refrash", command=lambda: self.perform_search(), **self.button_style).pack(side="left",padx=5)
+        
+        # Create a frame for better layout
+        docframe = tk.Frame(main_Notebook, bg=self.bg_dark)
+        docframe.pack(padx=20, pady=20)
+        main_Notebook.add(docframe, text='Documents')
+
+        doctopframe = tk.Frame(docframe, bg=self.bg_dark)
+        doctopframe.pack(padx=20, pady=20)
+       
+        Frame_contaner_frame = tk.Frame(docframe, bg=self.bg_dark)
+        Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        List_Frame_contaner_frame = tk.Frame(Frame_contaner_frame, bg=self.bg_dark)
+        List_Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        List_Frame = tk.Frame(List_Frame_contaner_frame, bg=self.bg_dark)
+        List_Frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        
+        item_List_canvas = tk.Canvas(List_Frame)
+        item_List_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
+        
+        item_List_yscrollbar = tk.Scrollbar(List_Frame, orient='vertical', command=item_List_canvas.yview)
+        item_List_yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        item_List_xscrollbar = tk.Scrollbar(List_Frame_contaner_frame, orient='horizontal', command=item_List_canvas.xview)
+        item_List_xscrollbar.pack(side=tk.TOP, fill=tk.X)
+        
+        item_List_canvas.configure(xscrollcommand=item_List_xscrollbar.set, yscrollcommand=item_List_yscrollbar.set)
+        #New_item_contener_canvas.bind('<Configure>', lambda e: New_item_contener_canvas.configure(scrollregion=New_item_contener_canvas.bbox("all")))
+
+        Selected_item_Display_frame = tk.Frame(item_List_canvas, bg=self.bg_dark)
+        item_List_canvas.create_window((0, 0), window=Selected_item_Display_frame, anchor=tk.NW)
+        Selected_item_Display_frame.bind('<Configure>', lambda e: item_List_canvas.configure(scrollregion=item_List_canvas.bbox("all")))
+
+
+        # Create the listbox to display search results
+        listtotalsbox = ttk.Treeview(Selected_item_Display_frame)
+        listtotalsbox['columns'] = ['No.', 'Document', 'Coustmer', 'User', 'Pide', 'Date']
+        #listtotalsbox.bind('<<TreeviewSelect>>', self.on_select)
+        listtotalsbox.pack(side=tk.TOP, fill=tk.BOTH)
+        listtotalsbox.heading("#0", text='No.')
+        listtotalsbox.heading("#1", text='Document')
+        listtotalsbox.heading("#2", text='AT Shop')
+        listtotalsbox.heading("#3", text='Coustmer')
+        listtotalsbox.heading("#4", text='User')
+        listtotalsbox.heading("#5", text='Pide')
+        listtotalsbox.heading("#6", text='Date')
+
+        if self.listbox:
+            for i, iid in enumerate(self.listbox.get_children()):
+                vaue = self.listbox.item(iid, 'values')
+                listtotalsbox.insert('', 0, text=str(i), values=[vaue[0], vaue[2], vaue[4], vaue[5], vaue[6], vaue[11]])
+
+        tk.Button(doctopframe, text="Veaw", command=lambda ls=listtotalsbox: self.perform_veiw(ls), **self.button_style).pack(side="left",padx=5)
+        #Enddaystr = self.on_slip.cget('text')
+        
+        tk.Button(doctopframe, text="Undo", command=lambda ls=listtotalsbox: self.undoselecteddoc(ls), **self.button_style).pack(side="left",padx=5)
+        #Enddaystr = self.on_slip.cget('text')
+        
+
+        tk.Button(doctopframe, text="Delete", command=lambda ls=listtotalsbox: self.deleselecteddoc(ls), **self.button_style).pack(side="left",padx=5)
+
+    def undoselecteddoc(self, getlistbox):
+        if getlistbox == None:
+            if self.listbox:
+                getlistbox = self.listbox
+            else:
+                return
+        item = getlistbox.focus()  # Get the item that was clicked
+        if item:
+            item_text = getlistbox.item(item, "values")  # Get the text values of the item
+            doc_id = getlistbox.item(item, "text")
+            barcode = item_text[0]
+            ApproveFrame.undo_item(self, barcode)
+        
+    def deleselecteddoc(self, givenlistbox):
+        item = givenlistbox.focus()  # Get the item that was clicked
+        if item:
+            item_text = givenlistbox.item(item, "values")  # Get the text values of the item
+            id = givenlistbox.item(item, "text")
+            barcode = item_text[0]
+            answer = tk.messagebox.askquestion("Question", "Deleteing Document With out Undoing Will mess in Stock and other Datas. Do you what to delete "+str(barcode)+" ?")
+            if answer == 'yes':
+                # Delete the product from the database
+                Update_table_database('DELETE FROM doc_table WHERE doc_barcode=?', (barcode,))
+                self.perform_search()
+                
     def load_payment(self, p_text, from_d, to_d):
         try:
             load_payment = json.loads(p_text)
@@ -1311,34 +1411,24 @@ class DocForm(tk.Frame):
         pass
     
     def perform_delet(self):
-        item = self.listbox.focus()  # Get the item that was clicked
-        if item:
-            item_text = self.listbox.item(item, "values")  # Get the text values of the item
-            id = self.listbox.item(item, "text")
-            barcode = item_text[0]
-            answer = tk.messagebox.askquestion("Question", "Do you what to delete "+str(barcode)+" ?")
-            if answer == 'yes':
-                # Delete the product from the database
-                Update_table_database('DELETE FROM doc_table WHERE doc_barcode=?', (barcode,))
+        pass
                 
-    def perform_veiw(self):
-        item = self.listbox.focus()  # Get the item that was clicked
+    def perform_veiw(self, getlistbox):
+        if getlistbox == None:
+            if self.listbox:
+                getlistbox = self.listbox
+            else:
+                return
+        item = getlistbox.focus()  # Get the item that was clicked
         if item:
-            item_text = self.listbox.item(item, "values")  # Get the text values of the item
-            doc_id = self.listbox.item(item, "text")
+            item_text = getlistbox.item(item, "values")  # Get the text values of the item
+            doc_id = getlistbox.item(item, "text")
             barcode = item_text[0]
             doc_ = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))[0]
             if doc_:
                  #TODO: MAKE IT SEND SELECTEd SHOP
                 ApproveFrame(self, self.user_info, self.shop[0], [barcode], [], 1)
-                '''answer = tk.messagebox.askquestion("Question", "Do you what to print "+str(barcode)+" ?")
-                if answer == 'yes':
-                    #print(str(doc_))
-                    doc_edit_form = load_slip(doc_, doc_id)
-                    print("don loding slip : \n\n" + str(doc_edit_form))
-                    self.user = self.master.master.master.master.user
-                    # TODO: Make It send selected shop to print_slip
-                    PrinterForm.print_slip(self, self.user_info, self.shop[0], doc_edit_form, 1) # TODO chack in setting if paper cut allowed'''
+
 
     # Function to perform the search and display the results in the listbox
     def perform_search(self):
@@ -1643,7 +1733,7 @@ class DocForm(tk.Frame):
 
             vv.append([year, month, day, hour, minute, float(index['price'])-float(index['discount'])])
             '''
-            item = self.listbox.insert('', 'end', text=index['id'], values=(index['doc_barcode'], index['extension_barcode'], index['At_Shop_Id'], index['user_id'], index['Seller_id'], index['customer_id'], index['pid'], index['qty'], index['price'], index['discount'], index['tax'], index['doc_created_date'], index['doc_expire_date'], index['doc_updated_date'], index['item'],  index['payments']))
+            item = self.listbox.insert('', 0, text=index['id'], values=(index['doc_barcode'], index['extension_barcode'], index['At_Shop_Id'], index['user_id'], index['Seller_id'], index['customer_id'], index['pid'], index['qty'], index['price'], index['discount'], index['tax'], index['doc_created_date'], index['doc_expire_date'], index['doc_updated_date'], index['item'],  index['payments']))
             id = self.listbox.item(item, "text")
             item_text = self.listbox.item(item, "values")
 

@@ -11,11 +11,11 @@ current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(current_dir, '..')
 sys.path.append(MAIN_dir)
 
-from M.Product import ProductForm
 from D.ItemSelector import ItemSelectorWidget
 from C.Product.ProductEdtion import ProductQueckEditionForm
 from D.ChooseCustemr import CreateUserDialog
 from D.Doc.Loaddoc import *
+from D.ApprovedDisplay import ApproveFrame
 from C.List import *
 
 from C.API.Get import *
@@ -29,7 +29,7 @@ db_path = os.path.join(data_dir, 'my_database.db')
 import tkinter as tk
 from tkinter import ttk
 
-class search_entry(ttk.Entry):
+class search_entry(tk.Entry):
     def __init__(self, master, Shops_info, user, Shops, *args, **kwargs):
         self.master = master
         self.user = user
@@ -46,18 +46,26 @@ class search_entry(ttk.Entry):
             else:
                 self.homemaster = self.homemaster.master
                         
-        ttk.Entry.__init__(self, master, *args, **kwargs)
-        self.var = self["textvariable"]
-        if self.var == '':
-            self.var = self["textvariable"] = tk.StringVar()
-
+        tk.Entry.__init__(self, master, *args, **kwargs)
+        self.entrymsg = "Search or Create Productes, Users, Documes, Action Or Promotions"
+        self.var = self["textvariable"] = tk.StringVar()
+        self.setplaceholdervar()
+            
         self.chacke_ifitisallowed()
         self.var.trace('w', lambda name, index, mode: self.changed())
         self.bind("<Up>", self.treeview_naigation)
         self.bind("<Down>", self.treeview_naigation)
         self.bind("<Return>", self.select)
         self.bind("<Insert>", lambda _:self.Done_search())
-        self.bind("<Escape>", lambda _: self.var.set(''))
+        def chackvar():
+            if self.var.get() == self.entrymsg:
+                self.removplaceholdervar()
+            else:
+                self.config(fg='black')
+                
+        self.bind("<KeyPress>", lambda _: chackvar())
+        
+        self.bind("<Escape>", lambda _: self.removplaceholdervar())
 
         # Initialize search type
         self.selected_indexd = -1;
@@ -67,7 +75,29 @@ class search_entry(ttk.Entry):
         self.all_items = []
         self.selected_products = []
         self.debounce_id = None
-
+        
+    def setplaceholdervar(self):
+        if self.var.get() == self.entrymsg or self.var.get() == "":
+            self.removplaceholdervar()
+        else:
+            self.delete(0, 'end')
+            self.config(fg='grey')
+            self.var.set(self.entrymsg)
+        
+    def removplaceholdervar(self):
+        if self.var.get() == self.entrymsg:
+            self.config(fg='black')
+            self.delete(0, 'end')
+            self.var.set('')
+        else:
+            self.config(fg='grey')
+            self.var.set(self.entrymsg)
+        
+        if self.main_frame:
+            self.main_frame.destroy()
+            self.main_frame = None
+            self.lb_up = False
+            
     def chacke_ifitisallowed(self):
         shop_obj = self.homemaster.Shops[self.homemaster.on_Shop]
         self.perm_actions = Chacke_Security(self, self.homemaster.user, shop_obj, 24, 'User Need Permetion To Search For Products')
@@ -119,27 +149,6 @@ class search_entry(ttk.Entry):
                 Total_Actions += 1
             Total_price += price
         self.Done_btn.config(text="Done \n Total Item Counted " + str(Total_qty) + " Total Price "+ str(Total_price)+ " Total User "+ str(Total_User)+ " Total Documents "+ str(Total_Document)+ " Total Actions "+ str(Total_Actions))
-    
-    def Selectd_item_delete(self, item_id, extra_data, selected_type):
-        selected_item_info = None
-        for item_info in self.selected_products:
-            if item_info['values']['id'] == item_id:
-                selected_item_info = item_info
-                if(item_info['type'] == 'ITEM'):
-                    shop = extra_data[0].get()
-                    code = extra_data[1].get()
-                    color = extra_data[2].get()
-                    size = extra_data[3].get()
-                    qty = extra_data[4].get()
-                    barcode = extra_data[6].cget('text')
-                    index = 0
-                    for data in item_info['extra_data']:
-                        if data[0] == shop and data[1] == code and data[2] == color and data[3] == size:
-                            item_info['extra_data'].remove(item_info['extra_data'][index])
-                            break
-                        index += 1
-                break
-            # Todo UpdaTE TO DATA BASE
 
     def Selectd_item_add(self, item_id, extra_data, selected_type):
         selected_item_info = None
@@ -152,10 +161,10 @@ class search_entry(ttk.Entry):
                     color = extra_data[2].get()
                     size = extra_data[3].get()
                     qty = extra_data[4].get()
-                    barcode = extra_data[5].cget('text')
-                    qtyleft = extra_data[6].cget('text')
+                    qtyleft = extra_data[5].cget('text')
                     if qty == '':
                         qty = '0'
+                    barcode = extra_data[6].cget('text')
                     index = 0
                     foundtyp = 0
                     for data in item_info['extra_data']:
@@ -174,7 +183,7 @@ class search_entry(ttk.Entry):
                     if foundtyp == 0:
                         if str(qty) != extra_data[4].get():
                             if(selected_type != []):
-                                item_info['extra_data'][index][5].append(selected_type)
+                                item_info['extra_data'][index][6].append(selected_type)
                             else:
                                 item_info['extra_data'][index][4] = qty
                         else:
@@ -212,51 +221,7 @@ class search_entry(ttk.Entry):
                     break
         #print(self.selected_products)
         self.Update_selected_Ifo()
-
-    def AddorSave_stock(self, event_type, item_id, extra_data, selected_type):
-        shop = extra_data[0].get()
-        code = extra_data[1].get()
-        color = extra_data[2].get()
-        size = extra_data[3].get()
-        qty = extra_data[4].get()
-        barcode = extra_data[5].cget('text')
-        if qty == '':
-            qty = '0'
-        index = 0
-        foundtyp = 0
-        for item_info in self.selected_products:
-            if item_info['values']['id'] == item_id:
-                if(item_info['type'] == 'ITEM'):
-                    for data in item_info['extra_data']:
-                        if data[0] == shop and data[1] == code and data[2] == color and data[3] == size:
-                            if(selected_type != []):
-                                #print("item_info['extra_data'][index][7] : ", item_info['extra_data'][index][7])
-                                #print("selected_type[0] : ", selected_type[0])
-                                for t, typ in enumerate(item_info['extra_data'][index][7]):
-                                    if(typ[0] == selected_type[0]):
-                                        item_info['extra_data'][index][7][t][1] += int(qty)
-                                        foundtyp = 1
-                            elif qty != '' and data[4] != '':
-                                data[4] = float(data[4]) + float(qty)
-                            break
-                        index += 1
-                    if foundtyp == 0:
-                        if str(qty) != extra_data[4].get():
-                            if(selected_type != []):
-                                item_info['extra_data'][index][7].append(selected_type)
-                            else:
-                                item_info['extra_data'][index][4] = qty
-                        else:
-                            typ = []
-                            if(selected_type != []):
-                                typ = [selected_type]
-                            
-                            data = [shop, code, color, size, qty, extra_data[5].cget('text'), barcode, typ]                    
-                            item_info['extra_data'].append(data)  
-                            # Todo update to data base
-                            # make even doc saved with not save stock but save the doc with the item and its qty and type if exist and when open the doc get the stock info and update it to the doc and if the stock is not exist show it with 0 qty and red color          
-                break
-
+        
     def Selectd_item_remove(self, item_id, extra_data, selected_type):
         selected_item_info = None
         for item_info in self.selected_products:
@@ -268,7 +233,7 @@ class search_entry(ttk.Entry):
                     color = extra_data[2].get()
                     size = extra_data[3].get()
                     qty = extra_data[4].get()
-                    barcode = extra_data[5].cget('text')
+                    barcode = extra_data[6].cget('text')
                     index = 0
                     foundtyp = 0
                     for data in item_info['extra_data']:
@@ -310,16 +275,13 @@ class search_entry(ttk.Entry):
         #print(self.selected_products)
         self.Update_selected_Ifo()
         
-    def Get_next_seletion(self, item_id, inputs, item_list, event_type='None', add_stock=None, del_stock=None):
-        if event_type == 'None':
-            return ProductForm.Get_next_seletion(self, "Save", inputs, item_list)
-        
+    def Get_next_seletion(self, item_id, inputs, item_list):
         shop = inputs[0].get()
         code = inputs[1].get()
         color = inputs[2].get()
         size = inputs[3].get()
         qty = inputs[4].get()
-        barcode = inputs[5].cget('text')
+        barcode = inputs[6].cget('text')
         if item_list['item_list']:
             #print(str(item_list['item_list']))
             info_list = item_list['item_list']
@@ -331,30 +293,25 @@ class search_entry(ttk.Entry):
                 if self.homemaster.Selected_Shop != "" and self.homemaster.Selected_Shop in sv:
                    inputs[0].set(self.homemaster.Selected_Shop)
                 elif self.Shops_Names[0] in sv:
-                    if not event_type == 'KEYPRESS':
-                        inputs[0].set(self.Shops_Names[0])
+                    inputs[0].set(self.Shops_Names[0])
                 shop = inputs[0].get()
             
-            found = 0
             for i0, sh in enumerate(info_list):
                 if sh[0] == shop or i0 == 0:
                     shv = [shc[0] for shc in info_list]
                     inputs[0].config(values=shv)
                     if len(shv) > 1 and inputs[0].get() == "":
-                        if not event_type == 'KEYPRESS':
-                            inputs[0].focus_set()
-                            inputs[0].selection_range(0, tk.END)
+                        inputs[0].focus_set()
+                        inputs[0].selection_range(0, tk.END)
                     for i1, codes in enumerate(sh[1]):
                         if codes[0] == code or i1 == 0:
                             cov = [cc[0] for cc in sh[1]]
                             inputs[1].config(values=cov)
                             if len(cov) > 1 and inputs[1].get() == "":
-                                if not event_type == 'KEYPRESS':
-                                    inputs[1].focus_set()
-                                    inputs[1].selection_range(0, tk.END)
+                                inputs[1].focus_set()
+                                inputs[1].selection_range(0, tk.END)
                             if len(cov) == 1 or codes[0] == code:
-                                if not event_type == 'KEYPRESS':
-                                    inputs[1].set(codes[0])
+                                inputs[1].set(codes[0])
                                 code = inputs[1].get()
                                 
                             for i2, c in enumerate(codes[1]):
@@ -362,51 +319,37 @@ class search_entry(ttk.Entry):
                                     cv = [colorc[0] for colorc in codes[1]]
                                     inputs[2].config(values=cv)
                                     if len(cv) > 1 and sh[0] == shop and inputs[2].get() == "":
-                                        if not event_type == 'KEYPRESS':
-                                            inputs[2].focus_set()
-                                            inputs[2].selection_range(0, tk.END)
+                                        inputs[2].focus_set()
+                                        inputs[2].selection_range(0, tk.END)
                                     if len(cv) == 1 or c[0] == color:
-                                        if not event_type == 'KEYPRESS':
-                                            inputs[2].set(c[0])
+                                        inputs[2].set(c[0])
                                         color = inputs[2].get()
                                     for i3, s in enumerate(c[1]):
                                         if s[0] == size or i3 == 0:
                                             siv = [si[0] for si in c[1]]
                                             inputs[3].config(values=siv)
                                             if len(siv) > 1 and sh[0] == shop and codes[0] == code and inputs[3].get() == "":
-                                                if not event_type == 'KEYPRESS':
-                                                    inputs[3].focus_set()
+                                                inputs[3].focus_set()
                                                 inputs[3].selection_range(0, tk.END)
                                             if len(siv) == 1 or s[0] == size:
-                                                if not event_type == 'KEYPRESS':
-                                                    inputs[3].set(siv[0])
+                                                inputs[3].set(siv[0])
                                                 size = inputs[3].get()
                                             # TODO: SICURTY IF NOT ALLWOD TO SHOW QTY Left
                                             #print(s[1])
                                             #print(s[1][0])
                                             #print(s[1][0][5])
-                                            found = 1
-                                            if add_stock != None and del_stock != None:
-                                                add_stock.config(text="Save Changes")
-                                                del_stock.grid(row=1, column=6)
-
-                                            if not event_type == 'KEYPRESS':
-                                                inputs[4].set(float(s[1][0][4]))
+                                            
+                                            inputs[4].set(float(s[1][0][4]))
                                             inputs[5].config(text=s[1][0][4])
                                             if(len(s[1]) > 1):
                                                 inputs[7].grid(row=0, column=5)
                                                 for t in s[1]:
                                                     ttk.Button(inputs[8], command=lambda j=item_id, v=inputs, st=[t[1], 1, t[2]]: self.Selectd_item_add(j, v, st), text=t[1].replace("[", "").replace("]", "").replace("\"", "")+" With " + str(t[2])).pack()
                                             if sh[0] == shop and codes[0] == code and c[0] == color and s[0] == size:
-                                                if not event_type == 'KEYPRESS':
-                                                    inputs[4].focus_set()
-                                                    inputs[4].selection_range(0, tk.END)
+                                                inputs[4].focus_set()
+                                                inputs[4].selection_range(0, tk.END)
                                                 return
-            if found == 0 and add_stock and del_stock:        
-                print("type not found")
-                add_stock.config(text="Add Stock")
-                del_stock.grid_forget()     
-    
+                                            
     def create_info_getter(self, sid, index, parent):
         info = self.all_items[index]
         item = info[2]
@@ -427,14 +370,6 @@ class search_entry(ttk.Entry):
         #print("user shop ")
         #print(str(self.user['User_work_shop']))
         selected_item_info = {'values': item, 'type': 'ITEM', 'extra_data': [], 'item_list': item_list}
-        
-        na = ttk.Entry(parent, text=f"{item['name']}")
-        na.grid(row=0, column=2, padx=5, pady=5, sticky=tk.W)
-        na.insert(0, f"{item['name']}")
-        price = ttk.Entry(parent, text=f"{item['price']}")
-        price.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
-        price.delete(0, tk.END)
-        price.insert(0, f"{item['price']}")
 
         barcode = ttk.Label(parent, text="barcode")
         
@@ -489,33 +424,23 @@ class search_entry(ttk.Entry):
         typebtn = ttk.Button(parent, text='type', command= show_type)
         actionbtn = ttk.Button(parent, text='Action', command=show_action).grid(row=0, column=5, sticky=tk.E)
         
-        data = [shop, code, color, size, qty, barcode, qtyleft, price, price, na, typebtn, type_frame, actionbtn, action_frame]
-        
-            
-        ttk.Button(moreinfo_frame, text='Hold', command=lambda i=item['id'], v=data: self.Selectd_item_add(i, v, [])).grid(row=0, column=5, padx=5, pady=5, sticky=tk.W)
-        ttk.Button(moreinfo_frame, text='Return', command=lambda i=item['id'], v=data: self.Selectd_item_remove(i, v, [])).grid(row=0, column=6, padx=5, pady=5, sticky=tk.W)
-        add_stock = ttk.Button(moreinfo_frame, text='Save Changes', command=lambda index=item['id'], d=data, v=item_list: ProductForm.SAVE_Product_Queck_CHANGES(self, index, d, v)).grid(row=1, column=5, padx=5, pady=5, sticky=tk.W)
-        del_stock = ttk.Button(moreinfo_frame, text='Delete', command=lambda i=item['id'], v=data: self.Selectd_item_delete(i, v, [])).grid(row=1, column=6, padx=5, pady=5, sticky=tk.W)
+        data = [shop, code, color, size, qty, qtyleft, barcode, typebtn, type_frame, actionbtn, action_frame]
         
         if sid == -1:
-            self.Get_next_seletion(item['id'], data, selected_item_info, 'INITIAL', add_stock, del_stock)
-        
+            self.Get_next_seletion(item['id'], data, selected_item_info)
+            
         self.selected_products.append(selected_item_info)
-        
-        shop.bind("<<ComboboxSelected>>", lambda  _, j=item['id'], i=data, v=selected_item_info, a=add_stock, d=del_stock: self.Get_next_seletion(j, i, v, 'COMBOBOX', a, d))
-        code.bind("<<ComboboxSelected>>", lambda  _, j=item['id'], i=data, v=selected_item_info, a=add_stock, d=del_stock: self.Get_next_seletion(j, i, v, 'COMBOBOX', a, d))
-        color.bind("<<ComboboxSelected>>", lambda  _, j=item['id'], i=data, v=selected_item_info, a=add_stock, d=del_stock: self.Get_next_seletion(j, i, v, 'COMBOBOX', a, d))
-        size.bind("<<ComboboxSelected>>", lambda  _, j=item['id'], i=data, v=selected_item_info, a=add_stock, d=del_stock: self.Get_next_seletion(j, i, v, 'COMBOBOX', a, d))
-        
-        shop.bind("<KeyPress>", lambda  _, j=item['id'], i=data, v=selected_item_info, a=add_stock, d=del_stock: self.Get_next_seletion(j, i, v, 'KEYPRESS', a, d))
-        code.bind("<KeyPress>", lambda  _, j=item['id'], i=data, v=selected_item_info, a=add_stock, d=del_stock: self.Get_next_seletion(j, i, v, 'KEYPRESS', a, d))
-        color.bind("<KeyPress>", lambda  _, j=item['id'], i=data, v=selected_item_info, a=add_stock, d=del_stock: self.Get_next_seletion(j, i, v, 'KEYPRESS', a, d))
-        size.bind("<KeyPress>", lambda  _, j=item['id'], i=data, v=selected_item_info, a=add_stock, d=del_stock: self.Get_next_seletion(j, i, v, 'KEYPRESS', a, d))
-    
+        shop.bind("<<ComboboxSelected>>", lambda  _, j=item['id'], i=data, v=selected_item_info: self.Get_next_seletion(j, i, v))
+        code.bind("<<ComboboxSelected>>", lambda  _, j=item['id'], i=data, v=selected_item_info: self.Get_next_seletion(j, i, v))
+        color.bind("<<ComboboxSelected>>", lambda  _, j=item['id'], i=data, v=selected_item_info: self.Get_next_seletion(j, i, v))
+        size.bind("<<ComboboxSelected>>", lambda  _, j=item['id'], i=data, v=selected_item_info: self.Get_next_seletion(j, i, v))
         qty.bind("<Return>", lambda _, i=item['id'], v=data: self.Selectd_item_add(i, v, []))
         qty.bind("<Delete>", lambda _, i=item['id'], v=data: self.Selectd_item_remove(i, v, []))
         #qty.config(command=lambda  i=data, v=selected_item_info: self.Get_next_seletion(i, v))
+        ttk.Button(moreinfo_frame, text='Add', command=lambda i=item['id'], v=data: self.Selectd_item_add(i, v, [])).grid(row=0, column=5, padx=5, pady=5, sticky=tk.W)
+        ttk.Button(moreinfo_frame, text='Remove', command=lambda i=item['id'], v=data: self.Selectd_item_remove(i, v, [])).grid(row=0, column=6, padx=5, pady=5, sticky=tk.W)
         
+                        
     def toggle_selected(self, item_id, var, parent):
         if var.get():
             i = 0
@@ -545,11 +470,9 @@ class search_entry(ttk.Entry):
             i = 0
             for item_info in self.selected_products:
                 if item_info['type'] == 'ITEM' and item_info['values'][0] == item_id or item_info['type'] == 'DOCUMENT' and item_info['values']['doc_barcode'] == item_id:
-                    #print(parent.winfo_children())
                     self.selected_products.remove(self.selected_products[i])
                     break
                 i+=1
-        #print(self.selected_products)
         self.Update_selected_Ifo()
         
     def changed(self):
@@ -557,8 +480,7 @@ class search_entry(ttk.Entry):
             self.Load_Shop_items()
         if self.debounce_id is not None:
                 self.after_cancel(self.debounce_id)
-                
-        if self.var.get() == '' and self.main_frame:
+        if self.var == '' and self.main_frame:
             self.main_frame.destroy()
             self.lb_up = False
         else:
@@ -575,7 +497,7 @@ class search_entry(ttk.Entry):
                 self.Contener_frame.pack(side=tk.LEFT, fill=tk.X)
                 #self.main_frame.pack_forget()  # Hide the main frame initially
                     
-                self.canvas = tk.Canvas(self.Contener_frame, width=screen_width-(screen_width/3), height=screen_height-(screen_height/3))
+                self.canvas = tk.Canvas(self.Contener_frame, width =screen_width-(screen_width/3), height=screen_height-(screen_height/3))
                 self.canvas.pack(side=tk.TOP, fill=tk.BOTH)
                 self.scrollbar = ttk.Scrollbar(self.main_frame, command=self.canvas.yview)
                 self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y, expand=1)
@@ -635,11 +557,7 @@ class search_entry(ttk.Entry):
                 self.Cancel_btn.pack(fill='x', expand=True, pady=10, padx=10)
                 self.Cancel_btn = ttk.Button(self.lb, text='Create New Actions', command=self.cancel_search, width=screen_width-(screen_width/3))
                 self.Cancel_btn.pack(fill='x', expand=True, pady=10, padx=10)
-                '''
-                self.chacke_ifitisallowed()
-                if self.lb_up:
-                    self.main_frame.destroy()
-                    self.lb_up = False'''
+
             
     def create_new_item(self):
         for child in self.lb.winfo_children():
@@ -651,8 +569,8 @@ class search_entry(ttk.Entry):
         for child in self.lb.winfo_children():
             child.destroy()
         newuser = CreateUserDialog(self.lb)
-        newuser.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)                  
-                
+        newuser.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+          
     def load_more_items(self, words):
             w = self.grid_size()[0]
             h = self.grid_size()[1]
@@ -671,17 +589,14 @@ class search_entry(ttk.Entry):
                     #f.grid(row=len(self.lb.winfo_children()), column=0, pady=1, sticky=tk.EW)
                     f.pack(fill='x', expand=True, pady=10, padx=10)
                     s = len([item for selecteditem in self.selected_products if item['id'] == selecteditem['values']['id']]) > 0
-                    ttk.Label(f, text="Name : ", wraplength=150).grid(row=0, column=1, columnspan=2, sticky=tk.W)
-                    name = ttk.Label(f, text=f"{item['name']}", wraplength=150).grid(row=0, column=2, columnspan=2, sticky=tk.W)
-                    ttk.Label(f, text="Price :", wraplength=70).grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
-                    price = ttk.Label(f, text=f"{item['price']}", wraplength=70).grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
-                    
                     if s:
                         self.create_info_getter(s, w, f)
                     var = tk.BooleanVar()
                     var.set(s)
                     checkbox = ttk.Checkbutton(f, variable=var, command=lambda i=item['id'], v=var, p=f: self.toggle_selected(i, v, p))
                     checkbox.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+                    ttk.Label(f, text=f"Name: {item['name']}", wraplength=150).grid(row=0, column=1, columnspan=2, sticky=tk.W)
+                    ttk.Label(f, text=f"Price: {item['price']}", wraplength=70).grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
                     qty_info_list = json.loads(item['more_info'])
                     qty = 0
                     def sub_list(ls, qty):
@@ -695,14 +610,6 @@ class search_entry(ttk.Entry):
                                                 comen_qty = float(l[4])
                                             # TODO: FOR 2ps and more than one ps what to do
                                             qty += float(l[4])  
-                                        '''
-                                        ischar = any(char.isalpha() for char in l[4])
-                                        if not ischar and (isinstance(float(l[4]), float) or isinstance(int(l[4]), int)):
-                                            if comen_qty == 0:
-                                                comen_qty = float(l[4])
-                                            # TODO: FOR 2ps and more than one ps what to do
-                                            qty += float(l[4])
-                                        '''
                                     except Exception:
                                         print(f"Error processing item {l}")
                                 elif len(l) == 2:
@@ -722,6 +629,7 @@ class search_entry(ttk.Entry):
                     var.set(len([item for selecteditem in self.selected_products if item['doc_barcode'] == selecteditem[0]]) > 0)
                     checkbox = ttk.Checkbutton(f, variable=var, command=lambda i=item['doc_barcode'], v=var, p=f: self.toggle_selected(i, v, p))
                     checkbox.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+                    ttk.Button(f, text='Pre Veaw Document', command=lambda BARCODS=[item['doc_barcode']]:ApproveFrame(self, self.user, self.Shops[0], BARCODS, [], 1)).grid()
                     ttk.Label(f, text=f"Document : " + item['doc_barcode']+" Coustemur : " + str(item['customer_id']) + "\n Qty : " + str(item['qty']) +"  price : " + str(item['price']) +"\n Date : " + str(item['doc_created_date']) + "\n", wraplength=150).grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
                     #tk.Button(f, text='Remove', command=lambda i=item['id'], v=None: self.Selectd_item_remove(i, v)).grid(row=1, column=4, padx=5, pady=5, sticky=tk.W)
 
@@ -736,6 +644,8 @@ class search_entry(ttk.Entry):
                     checkbox = ttk.Checkbutton(f, variable=var, command=lambda i=item['User_name'], v=var, p=f: self.toggle_selected(i, v, p))
                     checkbox.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
                     ttk.Label(f, text=f"USER Name : " + item['User_name'], wraplength=150).grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
+                    if info[3] and len(info[3]):
+                        ttk.Button(f, text='Veaw All User Document', command=lambda BARCODS=info[3]:ApproveFrame(self, self.user, self.Shops[0], BARCODS, [], 1)).grid()
                     #tk.Button(f, text='Remove', command=lambda i=item['id'], v=None: self.Selectd_item_remove(i, v)).grid(row=1, column=4, padx=5, pady=5, sticky=tk.W)
 
                 elif(info[0] == 'ACTIONS'):
@@ -825,15 +735,18 @@ class search_entry(ttk.Entry):
                 for row in rows:
                     User_name = row['User_name']
                     if User_name not in unique_user_results:
-                        barcode_results.append(["USERS", User_name, row])
-                        unique_user_results.append(User_name)
                         docs = search_documents("", "", "", "", "", "", User_name,
                             "", "", "", "", "", "", "", "")
+                        getdoc = []
                         for doc in docs:
                             barcode = doc['doc_barcode']
                             if barcode not in unique_barcode_results:
                                 barcode_results.append(["DOCUMENT", barcode, doc])
                                 unique_barcode_results.append(barcode)
+                            getdoc.append(barcode)
+                        
+                        barcode_results.append(["USERS", User_name, row, getdoc])
+                        unique_user_results.append(User_name)
                         
             results.extend(items_results)
             results.extend(Actions_results)
@@ -891,7 +804,7 @@ class search_entry(ttk.Entry):
                 p.get_ex_doc_payments(item_info)
                 p.update_info()
                  
-        self.var.set("")
+        self.setplaceholdervar()
         self.lb_up = False
         self.items = []
         self.all_items = []
