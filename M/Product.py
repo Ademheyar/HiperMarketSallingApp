@@ -175,10 +175,10 @@ class ProductForm(ttk.Frame):
         self.treeitem_List_canvas = tk.Canvas(self.treeList_Frame, bg=self.bg_dark, highlightthickness=0)
         self.treeitem_List_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
         
-        self.treeitem_List_yscrollbar = ttk.Scrollbar(self.treeList_Frame, orient='vertical', command=self.treeitem_List_canvas.yview)
+        self.treeitem_List_yscrollbar = tk.Scrollbar(self.treeList_Frame, orient='vertical', command=self.treeitem_List_canvas.yview, bg=self.bg_light, activebackground=self.accent_blue)
         self.treeitem_List_yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        self.treeitem_List_xscrollbar = ttk.Scrollbar(self.treeList_Frame_contaner_frame, orient='horizontal', command=self.treeitem_List_canvas.xview)
+        self.treeitem_List_xscrollbar = tk.Scrollbar(self.treeList_Frame_contaner_frame, orient='horizontal', command=self.treeitem_List_canvas.xview, bg=self.bg_light, activebackground=self.accent_blue)
         self.treeitem_List_xscrollbar.pack(side=tk.TOP, fill=tk.X)
         
         self.treeitem_List_canvas.configure(xscrollcommand=self.treeitem_List_xscrollbar.set, yscrollcommand=self.treeitem_List_yscrollbar.set)
@@ -228,10 +228,10 @@ class ProductForm(ttk.Frame):
         self.item_List_canvas = tk.Canvas(self.List_Frame, bg=self.bg_dark, highlightthickness=0)
         self.item_List_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
         
-        self.item_List_yscrollbar = ttk.Scrollbar(self.List_Frame, orient='vertical', command=self.item_List_canvas.yview)
+        self.item_List_yscrollbar = tk.Scrollbar(self.List_Frame, orient='vertical', command=self.item_List_canvas.yview, bg=self.bg_light, activebackground=self.accent_blue)
         self.item_List_yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        self.item_List_xscrollbar= ttk.Scrollbar(self.List_Frame_contaner_frame, orient='horizontal', command=self.item_List_canvas.xview)
+        self.item_List_xscrollbar = tk.Scrollbar(self.List_Frame_contaner_frame, orient='horizontal', command=self.item_List_canvas.xview, bg=self.bg_light, activebackground=self.accent_blue)
         self.item_List_xscrollbar.pack(side=tk.TOP, fill=tk.X)
         
         self.item_List_canvas.configure(xscrollcommand=self.item_List_xscrollbar.set, yscrollcommand=self.item_List_yscrollbar.set)

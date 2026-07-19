@@ -35,6 +35,14 @@ class search_entry(tk.Entry):
         self.user = user
         self.Shops = Shops
         self.Shops_Names = [shop['Shop_name'] for shop in self.Shops]
+        
+        # Professional blue color scheme
+        self.bg_dark = "#0d47a1"      # Deep blue
+        self.bg_light = "#1565c0"     # Darker blue
+        self.accent_blue = "#1976d2"  # Medium blue
+        self.text_light = "#ffffff"   # White text
+        self.bg_darker = "#0a3d91"    # Even darker blue
+        
         self.homemaster = self
         self.main_frame = None
         p = 0
@@ -497,9 +505,9 @@ class search_entry(tk.Entry):
                 self.Contener_frame.pack(side=tk.LEFT, fill=tk.X)
                 #self.main_frame.pack_forget()  # Hide the main frame initially
                     
-                self.canvas = tk.Canvas(self.Contener_frame, width =screen_width-(screen_width/3), height=screen_height-(screen_height/3))
+                self.canvas = tk.Canvas(self.Contener_frame, width =screen_width-(screen_width/3), height=screen_height-(screen_height/3), bg=self.bg_dark, highlightthickness=0)
                 self.canvas.pack(side=tk.TOP, fill=tk.BOTH)
-                self.scrollbar = ttk.Scrollbar(self.main_frame, command=self.canvas.yview)
+                self.scrollbar = tk.Scrollbar(self.main_frame, command=self.canvas.yview, bg=self.bg_light, activebackground=self.accent_blue)
                 self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y, expand=1)
                 self.canvas.configure(yscrollcommand=self.scrollbar.set)
                     
@@ -585,7 +593,7 @@ class search_entry(tk.Entry):
                 if(info[0] == 'ITEM'):
                     #print("word: " + str(len(item)))
                     #print("item: " + str(item))
-                    f = tk.Frame(self.lb, width=screen_width-(screen_width/3), bg="#0d47a1", highlightthickness=2, highlightbackground="black")
+                    f = tk.Frame(self.lb, width=screen_width-(screen_width/3), bg=self.bg_dark, highlightthickness=2, highlightbackground=self.accent_blue)
                     #f.grid(row=len(self.lb.winfo_children()), column=0, pady=1, sticky=tk.EW)
                     f.pack(fill='x', expand=True, pady=10, padx=10)
                     s = len([item for selecteditem in self.selected_products if item['id'] == selecteditem['values']['id']]) > 0
@@ -622,7 +630,7 @@ class search_entry(tk.Entry):
                 elif(info[0] == 'DOCUMENT'):
                     #print("word: " + str(len(item)))
                     #print("Documents: " + str(item))
-                    f = tk.Frame(self.lb, width=screen_width-(screen_width/3), bg="#0d47a1", highlightthickness=2, highlightbackground="black")
+                    f = tk.Frame(self.lb, width=screen_width-(screen_width/3), bg=self.bg_dark, highlightthickness=2, highlightbackground=self.accent_blue)
                     #f.grid(row=len(self.lb.winfo_children()), column=0, pady=1, sticky=tk.EW)
                     f.pack(fill='x', expand=True, pady=10, padx=10)
                     var = tk.BooleanVar()
@@ -636,7 +644,7 @@ class search_entry(tk.Entry):
                 elif(info[0] == 'USERS'):
                     #print("word: " + str(len(item)))
                     #print("Documents: " + str(item))
-                    f = tk.Frame(self.lb, width=screen_width-(screen_width/3), bg="#0d47a1", highlightthickness=2, highlightbackground="black")
+                    f = tk.Frame(self.lb, width=screen_width-(screen_width/3), bg=self.bg_dark, highlightthickness=2, highlightbackground=self.accent_blue)
                     #f.grid(row=len(self.lb.winfo_children()), column=0, pady=1, sticky=tk.EW)
                     f.pack(fill='x', expand=True, pady=10, padx=10)
                     var = tk.BooleanVar()
@@ -651,7 +659,7 @@ class search_entry(tk.Entry):
                 elif(info[0] == 'ACTIONS'):
                     #print("word: " + str(len(item)))
                     #print("ACTIONS: " + str(item))
-                    f = tk.Frame(self.lb, width=screen_width-(screen_width/3), bg="#0d47a1", highlightthickness=2, highlightbackground="black")
+                    f = tk.Frame(self.lb, width=screen_width-(screen_width/3), bg=self.bg_dark, highlightthickness=2, highlightbackground=self.accent_blue)
                     #f.grid(row=len(self.lb.winfo_children()), column=0, pady=1, sticky=tk.EW)
                     f.pack(fill='x', expand=True, pady=10, padx=10)
                     var = tk.BooleanVar()
@@ -820,10 +828,10 @@ class search_entry(tk.Entry):
                 self.selected_indexd = 0;
             
             elif event.keysym == 'Up':
-                self.lb.winfo_children()[self.selected_indexd].configure(bg="#0d47a1")
+                self.lb.winfo_children()[self.selected_indexd].configure(bg=self.bg_dark)
                 self.selected_indexd -= 1;
             elif event.keysym == 'Down':
-                self.lb.winfo_children()[self.selected_indexd].configure(bg="#0d47a1")
+                self.lb.winfo_children()[self.selected_indexd].configure(bg=self.bg_dark)
                 self.selected_indexd += 1;
                 
             if self.selected_indexd <= -1:
@@ -833,7 +841,7 @@ class search_entry(tk.Entry):
             elif self.selected_indexd == len(self.lb.winfo_children())-1 and len(self.all_items) != len(self.lb.winfo_children()):
                 self.load_more_items(self.all_items)
                 
-            self.lb.winfo_children()[self.selected_indexd].configure(bg="#1a1a2e")
+            self.lb.winfo_children()[self.selected_indexd].configure(bg=self.bg_light)
 
         
                 

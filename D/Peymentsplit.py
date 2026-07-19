@@ -10,127 +10,160 @@ class PaymentForm(tk.Tk):
         self.master = master
         self.ex_pid = []
         self.left = 0
+        
+        # Color scheme
+        self.bg_dark = "#0d47a1"      # Deep blue
+        self.bg_light = "#1565c0"     # Darker blue
+        self.accent_blue = "#1976d2"  # Medium blue
+        self.text_light = "#ffffff"   # White text
+        self.bg_darker = "#0a3d91"    # Even darker blue
+        self.bg_lighter = "#1976d2"   # Medium blue for contrast
+        self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
+        
         # create a Toplevel window for the payment form
         self.payment_form = tk.Toplevel(self.master)
         self.payment_form.title("Payment Split Form")
+        self.payment_form.configure(bg=self.bg_dark)
 
         # calculate the center coordinates of the screen
         screen_width = self.master.winfo_screenwidth()
         screen_height = self.master.winfo_screenheight()
-        x = (screen_width / 2) - (500 / 2)  # 500 is the width of the Payment Form window
-        y = (screen_height / 2) - (500 / 2)  # 500 is the height of the Payment Form window
+        x = (screen_width / 2) - (700 / 2)
+        y = (screen_height / 2) - (550 / 2)
 
         # set the position of the Payment Form window to center
-        self.payment_form.geometry(f"500x550+{int(x)}+{int(y)}")
+        self.payment_form.geometry(f"700x550+{int(x)}+{int(y)}")
+        self.payment_form.grid_rowconfigure(2, weight=1)
+        self.payment_form.grid_columnconfigure(0, weight=1)
         
-        # New frame at the top of the main frame
-        self.top_extantion_frame = tk.Frame(self.payment_form, bg="white", height=100)
-        self.top_extantion_frame.grid(row=0, column=0, sticky="nsew", columnspan=6)
+        # Extension frame at the top
+        self.top_extantion_frame = tk.Frame(self.payment_form, bg=self.bg_light, height=60)
+        self.top_extantion_frame.grid(row=0, column=0, sticky="nsew", padx=10, pady=5)
         
-        # New frame at the top of the main frame
-        self.top_frame = tk.Frame(self.payment_form, bg="red", height=100)
-        self.top_frame.grid(row=1, column=0, sticky="nsew", columnspan=4)
+        # Payment input frame
+        self.top_frame = tk.Frame(self.payment_form, bg=self.bg_darker)
+        self.top_frame.grid(row=1, column=0, sticky="nsew", padx=10, pady=5)
+        self.top_frame.columnconfigure((0, 1, 2, 3), weight=1)
+        self.top_frame.rowconfigure((0, 1), weight=1)
 
-        # Create a label and an entry widget for the search box
-        self.search_label = tk.Label(self.top_frame, text="Search:", bg="red", fg="white", font=("Arial", 12))
-        self.search_label.grid(row=0, column=0, sticky="nsew")
-        # create a variable to store the selected value
+        # Payment Type Label and Combobox
+        self.search_label = tk.Label(self.top_frame, text="Payment Type:", bg=self.bg_darker, fg=self.text_light, font=("Arial", 11, "bold"))
+        self.search_label.grid(row=0, column=0, sticky="w", padx=5, pady=5)
+        
         self.selected_value = tk.StringVar()
-
-        # create the combo box
-        self.search_entry = ttk.Combobox(self.top_frame, width=20, font=("Arial", 12), textvariable=self.selected_value)
-        #tk.Entry
-        self.search_entry.grid(row=0, column=1, sticky="nsew", columnspan=2)
+        self.search_entry = ttk.Combobox(self.top_frame, width=18, font=("Arial", 11), textvariable=self.selected_value)
+        self.search_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
+        
         options = []
         for spt, row in enumerate(self.master.Shop_Payment_Tools):
             options.append(row[0])
-        # set the list of options
         self.search_entry['values'] = options
-        #combo_box['values'] = options
-        self.get_extantion_barcode = tk.Entry(self.top_frame, width=15, font=("Arial", 12))
-        self.get_extantion_barcode.grid(row=0, column=3, sticky="nsew")
 
-        # set the default value
-        #combo_box.current(0)
-        self.search_label = tk.Label(self.top_frame, text="Amount:", bg="red", fg="white", font=("Arial", 12))
-        self.search_label.grid(row=1, column=0, sticky="nsew")
-        self.get_amount_entry = tk.Entry(self.top_frame, width=15, font=("Arial", 12))
-        self.get_amount_entry.grid(row=1, column=1, sticky="nsew")
-
-        # Create 4 button widgets and grid(row=0, column=0, sticky="nsew")
-        self.button3 = tk.Button(self.top_frame, text="Add", bg="red", fg="white", font=("Arial", 12), command=self.add_payment)
-        self.button3.grid(row=1, column=2, sticky="nsew")
-        self.button4 = tk.Button(self.top_frame, text="remove", bg="red", fg="white", font=("Arial", 12), command=self.remove_payment)
-        self.button4.grid(row=1, column=3, sticky="nsew")
+        # Reference/Barcode Entry
+        self.ref_label = tk.Label(self.top_frame, text="Reference:", bg=self.bg_darker, fg=self.text_light, font=("Arial", 11, "bold"))
+        self.ref_label.grid(row=0, column=2, sticky="w", padx=5, pady=5)
         
+        self.get_extantion_barcode = tk.Entry(self.top_frame, width=15, font=("Arial", 11), bg=self.bg_light, fg=self.text_light)
+        self.get_extantion_barcode.grid(row=0, column=3, sticky="ew", padx=5, pady=5)
 
-        self.Frame_contaner_frame = tk.Frame(self.payment_form, bg="black")
-        self.Frame_contaner_frame.grid(row=2, column=0, columnspan=6)
+        # Amount Label and Entry
+        self.amount_label = tk.Label(self.top_frame, text="Amount:", bg=self.bg_darker, fg=self.text_light, font=("Arial", 11, "bold"))
+        self.amount_label.grid(row=1, column=0, sticky="w", padx=5, pady=5)
         
-        self.List_Frame_contaner_frame = tk.Frame(self.Frame_contaner_frame, bg="red")
+        self.get_amount_entry = tk.Entry(self.top_frame, width=15, font=("Arial", 11), bg=self.bg_light, fg=self.text_light)
+        self.get_amount_entry.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
+
+        # Add and Remove buttons
+        self.button3 = tk.Button(self.top_frame, text="Add", command=self.add_payment, **self.button_style)
+        self.button3.grid(row=1, column=2, sticky="ew", padx=5, pady=5)
+        
+        self.button4 = tk.Button(self.top_frame, text="Remove", command=self.remove_payment, **self.button_style)
+        self.button4.grid(row=1, column=3, sticky="ew", padx=5, pady=5)
+        
+        # Payments list container
+        self.Frame_contaner_frame = tk.Frame(self.payment_form, bg=self.bg_dark)
+        self.Frame_contaner_frame.grid(row=2, column=0, sticky="nsew", padx=10, pady=5)
+        self.payment_form.grid_rowconfigure(2, weight=1)
+        
+        self.List_Frame_contaner_frame = tk.Frame(self.Frame_contaner_frame, bg=self.bg_dark)
         self.List_Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
-        self.List_Frame = tk.Frame(self.List_Frame_contaner_frame, bg="blue")
+        self.List_Frame = tk.Frame(self.List_Frame_contaner_frame, bg=self.bg_dark)
         self.List_Frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         
-        self.item_List_canvas = tk.Canvas(self.List_Frame)
+        self.item_List_canvas = tk.Canvas(self.List_Frame, bg=self.bg_dark, highlightthickness=0)
         self.item_List_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
         
-        self.item_List_yscrollbar = tk.Scrollbar(self.List_Frame, orient='vertical', command=self.item_List_canvas.yview)
+        self.item_List_yscrollbar = tk.Scrollbar(self.List_Frame, orient='vertical', command=self.item_List_canvas.yview, bg=self.bg_light)
         self.item_List_yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        self.item_List_xscrollbar = tk.Scrollbar(self.List_Frame_contaner_frame, orient='horizontal', command=self.item_List_canvas.xview)
+        self.item_List_xscrollbar = tk.Scrollbar(self.List_Frame_contaner_frame, orient='horizontal', command=self.item_List_canvas.xview, bg=self.bg_light)
         self.item_List_xscrollbar.pack(side=tk.TOP, fill=tk.X)
         
         self.item_List_canvas.configure(xscrollcommand=self.item_List_xscrollbar.set, yscrollcommand=self.item_List_yscrollbar.set)
-        #self.New_item_contener_canvas.bind('<Configure>', lambda e: self.New_item_contener_canvas.configure(scrollregion=self.New_item_contener_canvas.bbox("all")))
 
-        self.item_List_frame = tk.Frame(self.item_List_canvas, bg="green")
+        self.item_List_frame = tk.Frame(self.item_List_canvas, bg=self.bg_dark)
         self.item_List_canvas.create_window((0, 0), window=self.item_List_frame, anchor=tk.NW)
         self.item_List_frame.bind('<Configure>', lambda e: self.item_List_canvas.configure(scrollregion=self.item_List_canvas.bbox("all")))
 
-
-        # New listbox in the main frame
-        self.list_payment = ttk.Treeview(self.item_List_frame, columns=("Peyment Type", "Paid", "Paid Date", "Updated Date", "User", "Paid", "Extantion Bracodes"))
+        # Payment list treeview
+        self.list_payment = ttk.Treeview(self.item_List_frame, columns=("Peyment Type", "Paid", "Paid Date", "Updated Date", "User", "Paid", "Extantion Bracodes"), height=10)
         self.list_payment.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.list_payment.heading("#0", text="ID", anchor=tk.W)
         self.list_payment.column("#0", stretch=tk.NO, width=50)
         self.list_payment.heading("#1", text="Peyment Type", anchor=tk.W)
-        self.list_payment.column("#1", stretch=tk.NO, width=250)
+        self.list_payment.column("#1", stretch=tk.NO, width=150)
         self.list_payment.heading("#2", text="Paid", anchor=tk.W)
-        self.list_payment.column("#2", stretch=tk.NO, width=50)
+        self.list_payment.column("#2", stretch=tk.NO, width=80)
         self.list_payment.heading("#3", text="Paid Date", anchor=tk.W)
-        self.list_payment.column("#3", stretch=tk.NO, width=50)
+        self.list_payment.column("#3", stretch=tk.NO, width=80)
         self.list_payment.heading("#4", text="Updated Date", anchor=tk.W)
-        self.list_payment.column("#4", stretch=tk.NO, width=250)
+        self.list_payment.column("#4", stretch=tk.NO, width=120)
         self.list_payment.heading("#5", text="User", anchor=tk.W)
-        self.list_payment.column("#5", stretch=tk.NO, width=250)
+        self.list_payment.column("#5", stretch=tk.NO, width=100)
         self.list_payment.heading("#6", text="Paid", anchor=tk.W)
-        self.list_payment.column("#6", stretch=tk.NO, width=250)
-        self.list_payment.heading("#7", text="Extantion Bracodes", anchor=tk.W)
-        self.list_payment.column("#7", stretch=tk.NO, width=250)
-        self.list_payment.grid(row=2, column=0, sticky="nsew", rowspan=2, columnspan=4)
+        self.list_payment.column("#6", stretch=tk.NO, width=80)
+        self.list_payment.heading("#7", text="Reference", anchor=tk.W)
+        self.list_payment.column("#7", stretch=tk.NO, width=120)
 
-        # New frame next to list_items in the main frame
-        self.midel_frame = tk.Frame(self.payment_form, height=int(screen_height * 0.90))
-        self.midel_frame.grid(row=4, column=0, sticky="nsew", columnspan=6)
+        # Summary frame at the bottom
+        self.midel_frame = tk.Frame(self.payment_form, bg=self.bg_lighter, height=120)
+        self.midel_frame.grid(row=3, column=0, sticky="nsew", padx=10, pady=5)
+        self.payment_form.grid_rowconfigure(3, weight=0)
+        self.midel_frame.columnconfigure((0, 1), weight=1)
+        self.midel_frame.rowconfigure((0, 1, 2, 3), weight=1)
 
-        self.total_items_label = tk.Label(self.midel_frame, text="Price : " + str(self.master.total))
-        self.total_items_label.grid(row=0, column=0, sticky="nsew")
-        self.Price_label = tk.Label(self.midel_frame, text="Price : " + str(self.master.total), font=("Arial", 12))
-        self.Price_label.grid(row=0, column=1, sticky="nsew")
-        self.After_Price_label = tk.Label(self.midel_frame, text="Price After discount : " + str(self.master.disc))
-        self.After_Price_label.grid(row=1, column=0, sticky="nsew")
-        self.Amount_pide_form_label = tk.Label(self.midel_frame, text="Amount Pide : " + str(self.master.pid))
-        self.Amount_pide_form_label.grid(row=1, column=1, sticky="nsew")
-        self.Amount_Left_form_label = tk.Label(self.midel_frame, text="Amount : ", font=("Arial", 15))
-        self.Amount_Left_form_label.grid(row=2, column=0, sticky="nsew")
+        # Summary labels
+        self.total_items_label = tk.Label(self.midel_frame, text="Total Items: 0", font=("Arial", 11, "bold"), 
+                                         bg=self.bg_light, fg=self.text_light)
+        self.total_items_label.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
         
-        self.continue_btn = tk.Button(self.midel_frame, text="Continue", command=self.continue_pyment)
-        self.continue_btn.grid(row=4, column=0, sticky="nsew", columnspan=2)
+        self.Price_label = tk.Label(self.midel_frame, text="Total Price: 0", font=("Arial", 11, "bold"), 
+                                   bg=self.bg_light, fg=self.text_light)
+        self.Price_label.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
+        
+        self.After_Price_label = tk.Label(self.midel_frame, text="Price After Discount: 0", font=("Arial", 11, "bold"), 
+                                         bg=self.bg_light, fg=self.text_light)
+        self.After_Price_label.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
+        
+        self.Amount_pide_form_label = tk.Label(self.midel_frame, text="Amount Paid: 0", font=("Arial", 11, "bold"), 
+                                              bg=self.bg_light, fg=self.text_light)
+        self.Amount_pide_form_label.grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
+        
+        self.Amount_Left_form_label = tk.Label(self.midel_frame, text="Remaining: 0", font=("Arial", 13, "bold"), 
+                                              bg=self.accent_blue, fg=self.text_light)
+        self.Amount_Left_form_label.grid(row=2, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
+        
+        # Buttons frame
+        buttons_frame = tk.Frame(self.payment_form, bg=self.bg_dark)
+        buttons_frame.grid(row=4, column=0, sticky="ew", padx=10, pady=5)
+        buttons_frame.columnconfigure((0, 1), weight=1)
+        
+        self.continue_btn = tk.Button(buttons_frame, text="Continue", command=self.continue_pyment, **self.button_style)
+        self.continue_btn.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
 
-        self.close_btn = tk.Button(self.midel_frame, text="Close", command=self.payment_form.destroy)
-        self.close_btn.grid(row=4, column=2, sticky="nsew", columnspan=2)
+        self.close_btn = tk.Button(buttons_frame, text="Close", command=self.payment_form.destroy, **self.button_style)
+        self.close_btn.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
 
         # show the Payment Form window
         self.payment_form.transient(self.master)

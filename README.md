@@ -97,6 +97,7 @@ Feel free to customize this README file to suit your specific project needs. Pro
 Good luck with your Point of Sale application development!
 
 
+if pip is not pathed use py or pythion -m than pip install packeg name
 
 python -m pip install --upgrade pip
 pip install pywin32
@@ -106,3 +107,4 @@ pip install python-barcode
 pip install PyPDF2
 pip install fpdf
 pip install PyMuPDF
+py -m Scripts.pywin32_postinstall -install
