@@ -1,13 +1,15 @@
 import tkinter as tk
-from tkinter import ttk
+from PIL import Image, ImageTk
+from tkinter import ttk, filedialog
+import os, shutil
 import sqlite3
 import shutil
 import datetime
-import os
 import atexit
 import sys
 import json
 import ast
+
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(os.path.join(current_dir, '..'), '..')
@@ -34,113 +36,843 @@ from C.API.Get import *
 from C.API.API import *
 from C.API.Set import *
 
-Shop_deff_type = "[['MANS', [['ACCESSORIES', []], ['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['WOMANS', [['ACCESSORIES', []], ['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['DRESS', [['SUNDRESS', []], ['COCKTAIL', []], ['MAXI', []], ['SHIFT', []], ['BODYCON', []], ['A-LINE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['SPORTBRA', []], ['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['KIDS', [['ACCESSORIES', []], ['GIRLS', [['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['DRESS', [['SUNDRESS', []], ['COCKTAIL', []], ['MAXI', []], ['SHIFT', []], ['BODYCON', []], ['A-LINE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['SPORTBRA', []], ['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['BOYS', [['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]], ['FORKIDS', [['TROUSER', []], ['SHOES', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['HOODIES', []], ['JACKET', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['TRENCH COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]]]], ['FOREVERYONE', [['ACCESSORIES', []], ['SHOES', []], ['TROUSER', []], ['TOP', [['T-SHIRT', []], ['SHIRT', []], ['BLOUSES', []], ['POLO SHIRT', []], ['TANK', []], ['SWEATER', []], ['BLAZER', []]]], ['BOTTOM', [['JEAN', []], ['PANT', []], ['SHORT', []], ['SKIRT', []], ['LEGGING', []], ['CULOTTE', []]]], ['OUTERWEAR', [['COAT', []], ['RIN COAT', []], ['PARKA', []], ['WINDBREAKER', []], ['TRENCHCOAT', []]]], ['ACTIVEWEAR', [['ATHLETICSHORTS', []], ['JOGGINGPANT', []], ['SPORTJACKET', []], ['YOGAPANT', []], ['PREFORMANCETOP', []]]]]]]"
+Shop_deff_type = [["MANS",[
+                    ["ACCESSORIES",[
+                        ["BAG",[
+                            ["BACKPACK BAG", []],
+                            ["DUFFLE BAG", []],
+                            ["LAPTOP BAG", []],
+                            ["WALLET BAG", []],
+                            ["BELT BAG", []],
+                            ["HAND BAG", []],
+                            ["TOTE", []],
+                            ["CLUTCH BAG", []],
+                            ["CROSSBODY", []]
+                        ]],
+                        ["JEWELRY",[
+                            ["WATCH", []],
+                            ["BRACELET", []],
+                            ["RING", []],
+                            ["CUFFLINKS", []],
+                            ["EARING", []],
+                            ["NECKLACE", []],
+                            ["ANKLET", []]
+                        ]],
+                        ["HEADWEAR", [
+                            ["CAP", []],
+                            ["HAT", []],
+                            ["BEANIE", []],
+                            ["DURAG", []],
+                            ["HIJAB", []],
+                            ["SCARF", []],
+                            ["HEADBAND", []]
+                        ]],
+                        ["EYEWEAR", [
+                            ["SUNGLASSES", []],
+                            ["GLASSES", []],
+                            ["EYELASH", []],
+                            ["EYELANCE", []]
+                        ]],
+                        ["BELT", []],
+                        ["HAIR ACCESSORIES", []],
+                        ["OTHERS", [
+                            ["SOCKS", []],
+                            ["GLOVES", []],
+                            ["SHOELACE", []],
+                            ["TIE", []],
+                            ["BOWTIE", []],
+                            ["SHAWL", []],
+                            ["TIGHTS", []]
+                        ]],
+                    ]],
+                    ["SHOES", [
+                        ["CASUAL", [
+                            ["SNEAKERS", []],
+                            ["LOAFERS", []],
+                            ["FLATS", []],
+                            ["SANDALS", []]
+                        ]],
+                        ["FORMAL", [
+                            ["OXFORD", []],
+                            ["DERBY", []],
+                            ["SUIT SHOES", []],
+                            ["HEELS", []],
+                            ["PUMPS", []],
+                            ["WEDGES", []]
+                        ]],
+                        ["SPORT SHOES", [
+                            ["RUNNING SHOES", []],
+                            ["TRAINING SHOES", []]
+                        ]],
+                        ["BOOTS", [
+                            ["CHELSEA", []],
+                            ["COMBAT", []],
+                            ["WORK BOOTS", []],
+                            ["ANKLE BOOTS", []],
+                            ["KNEE HIGH BOOTS", []],
+                            ["FORMAL BOOTS", []]
+                        ]]
+                    ]],
+                    ["TOP", [
+                        ["T-SHIRT", []],
+                        ["SHIRT", []],
+                        ["BLOUSES", []],
+                        ["POLO SHIRT", []],
+                        ["TANK", []],
+                        ["SWEATER", []],
+                        ["HOODIES", []],
+                        ["JACKET", []],
+                        ["BLAZER", []],
+                        ["CROP TOP", []]
+                    ]],
+                    ["BOTTOM", [
+                        ["JEAN", []],
+                        ["PANT", []],
+                        ["SHORT", []],
+                        ["SKIRT", []],
+                        ["LEGGING", []],
+                        ["CULOTTE", []],
+                        ["CHINOS", []],
+                        ["TROUSERS", []],
+                        ["SUIT PANT", []],
+                        ["JOGGERS", []],
+                        ["PALAZZO", []]
+                    ]],
+                    ["OUTERWEAR", [
+                        ["COAT", []],
+                        ["TRENCH COAT", []],
+                        ["PARKA", []],
+                        ["WINDBREAKER", []],
+                        ["LEZER JACKET", []],
+                        ["RIN COAT JACKET", []],
+                        ["BOMBER JACKET", []],
+                        ["CARDIGAN", []],
+                        ["DENIM JACKET", []]
+                    ]],
+                    ["ACTIVEWEAR", [
+                        ["ATHLETICSHORTS", []],
+                        ["JOGGINGPANT", []],
+                        ["SPORTJACKET", []],
+                        ["YOGAPANT", []],
+                        ["PREFORMANCETOP", []]
+                    ]],
+                    ["TRADITIONAL", [
+                        ["KURTA", []],
+                        ["SHERWANI", []],
+                        ["THOBE", []],
+                        ["KURTI", []],
+                        ["SAREE", []],
+                        ["HIJAB DRESS", []],
+                        ["ABAYA", []],
+                        ["KAFTAN", []]
+                    ]],
+                    ["DRESS", [
+                        ["CASUAL DRESS", []],
+                        ["MAXI DRESS", []],
+                        ["EVENING DRESS", []],
+                        ["SUMMER DRESS", []],
+                        ["ABAYA DRESS", []]
+                    ]]
+                ]], 
+                ["WOMANS", [["ACCESSORIES",[
+                        ["BAG",[
+                            ["BACKPACK BAG", []],
+                            ["DUFFLE BAG", []],
+                            ["LAPTOP BAG", []],
+                            ["WALLET BAG", []],
+                            ["BELT BAG", []],
+                            ["HAND BAG", []],
+                            ["TOTE", []],
+                            ["CLUTCH BAG", []],
+                            ["CROSSBODY", []]
+                        ]],
+                        ["JEWELRY",[
+                            ["WATCH", []],
+                            ["BRACELET", []],
+                            ["RING", []],
+                            ["CUFFLINKS", []],
+                            ["EARING", []],
+                            ["NECKLACE", []],
+                            ["ANKLET", []]
+                        ]],
+                        ["HEADWEAR", [
+                            ["CAP", []],
+                            ["HAT", []],
+                            ["BEANIE", []],
+                            ["DURAG", []],
+                            ["HIJAB", []],
+                            ["SCARF", []],
+                            ["HEADBAND", []]
+                        ]],
+                        ["EYEWEAR", [
+                            ["SUNGLASSES", []],
+                            ["GLASSES", []],
+                            ["EYELASH", []],
+                            ["EYELANCE", []]
+                        ]],
+                        ["BELT", []],
+                        ["HAIR ACCESSORIES", []],
+                        ["OTHERS", [
+                            ["SOCKS", []],
+                            ["GLOVES", []],
+                            ["SHOELACE", []],
+                            ["TIE", []],
+                            ["BOWTIE", []],
+                            ["SHAWL", []],
+                            ["TIGHTS", []]
+                        ]],
+                    ]],
+                    ["SHOES", [
+                        ["CASUAL", [
+                            ["SNEAKERS", []],
+                            ["LOAFERS", []],
+                            ["FLATS", []],
+                            ["SANDALS", []]
+                        ]],
+                        ["FORMAL", [
+                            ["OXFORD", []],
+                            ["DERBY", []],
+                            ["SUIT SHOES", []],
+                            ["HEELS", []],
+                            ["PUMPS", []],
+                            ["WEDGES", []]
+                        ]],
+                        ["SPORT SHOES", [
+                            ["RUNNING SHOES", []],
+                            ["TRAINING SHOES", []]
+                        ]],
+                        ["BOOTS", [
+                            ["CHELSEA", []],
+                            ["COMBAT", []],
+                            ["WORK BOOTS", []],
+                            ["ANKLE BOOTS", []],
+                            ["KNEE HIGH BOOTS", []],
+                            ["FORMAL BOOTS", []]
+                        ]]
+                    ]],
+                    ["TOP", [
+                        ["T-SHIRT", []],
+                        ["SHIRT", []],
+                        ["BLOUSES", []],
+                        ["POLO SHIRT", []],
+                        ["TANK", []],
+                        ["SWEATER", []],
+                        ["HOODIES", []],
+                        ["JACKET", []],
+                        ["BLAZER", []],
+                        ["CROP TOP", []]
+                    ]],
+                    ["BOTTOM", [
+                        ["JEAN", []],
+                        ["PANT", []],
+                        ["SHORT", []],
+                        ["SKIRT", []],
+                        ["LEGGING", []],
+                        ["CULOTTE", []],
+                        ["CHINOS", []],
+                        ["TROUSERS", []],
+                        ["SUIT PANT", []],
+                        ["JOGGERS", []],
+                        ["PALAZZO", []]
+                    ]],
+                    ["OUTERWEAR", [
+                        ["COAT", []],
+                        ["TRENCH COAT", []],
+                        ["PARKA", []],
+                        ["WINDBREAKER", []],
+                        ["LEZER JACKET", []],
+                        ["RIN COAT JACKET", []],
+                        ["BOMBER JACKET", []],
+                        ["CARDIGAN", []],
+                        ["DENIM JACKET", []]
+                    ]],
+                    ["ACTIVEWEAR", [
+                        ["ATHLETICSHORTS", []],
+                        ["JOGGINGPANT", []],
+                        ["SPORTJACKET", []],
+                        ["YOGAPANT", []],
+                        ["PREFORMANCETOP", []]
+                    ]],
+                    ["TRADITIONAL", [
+                        ["KURTA", []],
+                        ["SHERWANI", []],
+                        ["THOBE", []],
+                        ["KURTI", []],
+                        ["SAREE", []],
+                        ["HIJAB DRESS", []],
+                        ["ABAYA", []],
+                        ["KAFTAN", []]
+                    ]],
+                    ["DRESS", [
+                        ["CASUAL DRESS", []],
+                        ["MAXI DRESS", []],
+                        ["EVENING DRESS", []],
+                        ["SUMMER DRESS", []],
+                        ["ABAYA DRESS", []]
+                    ]]
+                ]],
+                ["KIDS", [["GIRLS", [["ACCESSORIES",[
+                        ["BAG",[
+                            ["BACKPACK BAG", []],
+                            ["DUFFLE BAG", []],
+                            ["LAPTOP BAG", []],
+                            ["WALLET BAG", []],
+                            ["BELT BAG", []],
+                            ["HAND BAG", []],
+                            ["TOTE", []],
+                            ["CLUTCH BAG", []],
+                            ["CROSSBODY", []]
+                        ]],
+                        ["JEWELRY",[
+                            ["WATCH", []],
+                            ["BRACELET", []],
+                            ["RING", []],
+                            ["CUFFLINKS", []],
+                            ["EARING", []],
+                            ["NECKLACE", []],
+                            ["ANKLET", []]
+                        ]],
+                        ["HEADWEAR", [
+                            ["CAP", []],
+                            ["HAT", []],
+                            ["BEANIE", []],
+                            ["DURAG", []],
+                            ["HIJAB", []],
+                            ["SCARF", []],
+                            ["HEADBAND", []]
+                        ]],
+                        ["EYEWEAR", [
+                            ["SUNGLASSES", []],
+                            ["GLASSES", []],
+                            ["EYELASH", []],
+                            ["EYELANCE", []]
+                        ]],
+                        ["BELT", []],
+                        ["HAIR ACCESSORIES", []],
+                        ["OTHERS", [
+                            ["SOCKS", []],
+                            ["GLOVES", []],
+                            ["SHOELACE", []],
+                            ["TIE", []],
+                            ["BOWTIE", []],
+                            ["SHAWL", []],
+                            ["TIGHTS", []]
+                        ]],
+                    ]],
+                    ["SHOES", [
+                        ["CASUAL", [
+                            ["SNEAKERS", []],
+                            ["LOAFERS", []],
+                            ["FLATS", []],
+                            ["SANDALS", []]
+                        ]],
+                        ["FORMAL", [
+                            ["OXFORD", []],
+                            ["DERBY", []],
+                            ["SUIT SHOES", []],
+                            ["HEELS", []],
+                            ["PUMPS", []],
+                            ["WEDGES", []]
+                        ]],
+                        ["SPORT SHOES", [
+                            ["RUNNING SHOES", []],
+                            ["TRAINING SHOES", []]
+                        ]],
+                        ["BOOTS", [
+                            ["CHELSEA", []],
+                            ["COMBAT", []],
+                            ["WORK BOOTS", []],
+                            ["ANKLE BOOTS", []],
+                            ["KNEE HIGH BOOTS", []],
+                            ["FORMAL BOOTS", []]
+                        ]]
+                    ]],
+                    ["TOP", [
+                        ["T-SHIRT", []],
+                        ["SHIRT", []],
+                        ["BLOUSES", []],
+                        ["POLO SHIRT", []],
+                        ["TANK", []],
+                        ["SWEATER", []],
+                        ["HOODIES", []],
+                        ["JACKET", []],
+                        ["BLAZER", []],
+                        ["CROP TOP", []]
+                    ]],
+                    ["BOTTOM", [
+                        ["JEAN", []],
+                        ["PANT", []],
+                        ["SHORT", []],
+                        ["SKIRT", []],
+                        ["LEGGING", []],
+                        ["CULOTTE", []],
+                        ["CHINOS", []],
+                        ["TROUSERS", []],
+                        ["SUIT PANT", []],
+                        ["JOGGERS", []],
+                        ["PALAZZO", []]
+                    ]],
+                    ["OUTERWEAR", [
+                        ["COAT", []],
+                        ["TRENCH COAT", []],
+                        ["PARKA", []],
+                        ["WINDBREAKER", []],
+                        ["LEZER JACKET", []],
+                        ["RIN COAT JACKET", []],
+                        ["BOMBER JACKET", []],
+                        ["CARDIGAN", []],
+                        ["DENIM JACKET", []]
+                    ]],
+                    ["ACTIVEWEAR", [
+                        ["ATHLETICSHORTS", []],
+                        ["JOGGINGPANT", []],
+                        ["SPORTJACKET", []],
+                        ["YOGAPANT", []],
+                        ["PREFORMANCETOP", []]
+                    ]],
+                    ["TRADITIONAL", [
+                        ["KURTA", []],
+                        ["SHERWANI", []],
+                        ["THOBE", []],
+                        ["KURTI", []],
+                        ["SAREE", []],
+                        ["HIJAB DRESS", []],
+                        ["ABAYA", []],
+                        ["KAFTAN", []]
+                    ]],
+                    ["DRESS", [
+                        ["CASUAL DRESS", []],
+                        ["MAXI DRESS", []],
+                        ["EVENING DRESS", []],
+                        ["SUMMER DRESS", []],
+                        ["ABAYA DRESS", []]
+                    ]]
+                ]],
+                ["BOYS", [["ACCESSORIES",[
+                        ["BAG",[
+                            ["BACKPACK BAG", []],
+                            ["DUFFLE BAG", []],
+                            ["LAPTOP BAG", []],
+                            ["WALLET BAG", []],
+                            ["BELT BAG", []],
+                            ["HAND BAG", []],
+                            ["TOTE", []],
+                            ["CLUTCH BAG", []],
+                            ["CROSSBODY", []]
+                        ]],
+                        ["JEWELRY",[
+                            ["WATCH", []],
+                            ["BRACELET", []],
+                            ["RING", []],
+                            ["CUFFLINKS", []],
+                            ["EARING", []],
+                            ["NECKLACE", []],
+                            ["ANKLET", []]
+                        ]],
+                        ["HEADWEAR", [
+                            ["CAP", []],
+                            ["HAT", []],
+                            ["BEANIE", []],
+                            ["DURAG", []],
+                            ["HIJAB", []],
+                            ["SCARF", []],
+                            ["HEADBAND", []]
+                        ]],
+                        ["EYEWEAR", [
+                            ["SUNGLASSES", []],
+                            ["GLASSES", []],
+                            ["EYELASH", []],
+                            ["EYELANCE", []]
+                        ]],
+                        ["BELT", []],
+                        ["HAIR ACCESSORIES", []],
+                        ["OTHERS", [
+                            ["SOCKS", []],
+                            ["GLOVES", []],
+                            ["SHOELACE", []],
+                            ["TIE", []],
+                            ["BOWTIE", []],
+                            ["SHAWL", []],
+                            ["TIGHTS", []]
+                        ]],
+                    ]],
+                    ["SHOES", [
+                        ["CASUAL", [
+                            ["SNEAKERS", []],
+                            ["LOAFERS", []],
+                            ["FLATS", []],
+                            ["SANDALS", []]
+                        ]],
+                        ["FORMAL", [
+                            ["OXFORD", []],
+                            ["DERBY", []],
+                            ["SUIT SHOES", []],
+                            ["HEELS", []],
+                            ["PUMPS", []],
+                            ["WEDGES", []]
+                        ]],
+                        ["SPORT SHOES", [
+                            ["RUNNING SHOES", []],
+                            ["TRAINING SHOES", []]
+                        ]],
+                        ["BOOTS", [
+                            ["CHELSEA", []],
+                            ["COMBAT", []],
+                            ["WORK BOOTS", []],
+                            ["ANKLE BOOTS", []],
+                            ["KNEE HIGH BOOTS", []],
+                            ["FORMAL BOOTS", []]
+                        ]]
+                    ]],
+                    ["TOP", [
+                        ["T-SHIRT", []],
+                        ["SHIRT", []],
+                        ["BLOUSES", []],
+                        ["POLO SHIRT", []],
+                        ["TANK", []],
+                        ["SWEATER", []],
+                        ["HOODIES", []],
+                        ["JACKET", []],
+                        ["BLAZER", []],
+                        ["CROP TOP", []]
+                    ]],
+                    ["BOTTOM", [
+                        ["JEAN", []],
+                        ["PANT", []],
+                        ["SHORT", []],
+                        ["SKIRT", []],
+                        ["LEGGING", []],
+                        ["CULOTTE", []],
+                        ["CHINOS", []],
+                        ["TROUSERS", []],
+                        ["SUIT PANT", []],
+                        ["JOGGERS", []],
+                        ["PALAZZO", []]
+                    ]],
+                    ["OUTERWEAR", [
+                        ["COAT", []],
+                        ["TRENCH COAT", []],
+                        ["PARKA", []],
+                        ["WINDBREAKER", []],
+                        ["LEZER JACKET", []],
+                        ["RIN COAT JACKET", []],
+                        ["BOMBER JACKET", []],
+                        ["CARDIGAN", []],
+                        ["DENIM JACKET", []]
+                    ]],
+                    ["ACTIVEWEAR", [
+                        ["ATHLETICSHORTS", []],
+                        ["JOGGINGPANT", []],
+                        ["SPORTJACKET", []],
+                        ["YOGAPANT", []],
+                        ["PREFORMANCETOP", []]
+                    ]],
+                    ["TRADITIONAL", [
+                        ["KURTA", []],
+                        ["SHERWANI", []],
+                        ["THOBE", []],
+                        ["KURTI", []],
+                        ["SAREE", []],
+                        ["HIJAB DRESS", []],
+                        ["ABAYA", []],
+                        ["KAFTAN", []]
+                    ]],
+                    ["DRESS", [
+                        ["CASUAL DRESS", []],
+                        ["MAXI DRESS", []],
+                        ["EVENING DRESS", []],
+                        ["SUMMER DRESS", []],
+                        ["ABAYA DRESS", []]
+                    ]]
+                ]],
+                ["FORKIDS", [["ACCESSORIES",[
+                        ["BAG",[
+                            ["BACKPACK BAG", []],
+                            ["DUFFLE BAG", []],
+                            ["LAPTOP BAG", []],
+                            ["WALLET BAG", []],
+                            ["BELT BAG", []],
+                            ["HAND BAG", []],
+                            ["TOTE", []],
+                            ["CLUTCH BAG", []],
+                            ["CROSSBODY", []]
+                        ]],
+                        ["JEWELRY",[
+                            ["WATCH", []],
+                            ["BRACELET", []],
+                            ["RING", []],
+                            ["CUFFLINKS", []],
+                            ["EARING", []],
+                            ["NECKLACE", []],
+                            ["ANKLET", []]
+                        ]],
+                        ["HEADWEAR", [
+                            ["CAP", []],
+                            ["HAT", []],
+                            ["BEANIE", []],
+                            ["DURAG", []],
+                            ["HIJAB", []],
+                            ["SCARF", []],
+                            ["HEADBAND", []]
+                        ]],
+                        ["EYEWEAR", [
+                            ["SUNGLASSES", []],
+                            ["GLASSES", []],
+                            ["EYELASH", []],
+                            ["EYELANCE", []]
+                        ]],
+                        ["BELT", []],
+                        ["HAIR ACCESSORIES", []],
+                        ["OTHERS", [
+                            ["SOCKS", []],
+                            ["GLOVES", []],
+                            ["SHOELACE", []],
+                            ["TIE", []],
+                            ["BOWTIE", []],
+                            ["SHAWL", []],
+                            ["TIGHTS", []]
+                        ]],
+                    ]],
+                    ["SHOES", [
+                        ["CASUAL", [
+                            ["SNEAKERS", []],
+                            ["LOAFERS", []],
+                            ["FLATS", []],
+                            ["SANDALS", []]
+                        ]],
+                        ["FORMAL", [
+                            ["OXFORD", []],
+                            ["DERBY", []],
+                            ["SUIT SHOES", []],
+                            ["HEELS", []],
+                            ["PUMPS", []],
+                            ["WEDGES", []]
+                        ]],
+                        ["SPORT SHOES", [
+                            ["RUNNING SHOES", []],
+                            ["TRAINING SHOES", []]
+                        ]],
+                        ["BOOTS", [
+                            ["CHELSEA", []],
+                            ["COMBAT", []],
+                            ["WORK BOOTS", []],
+                            ["ANKLE BOOTS", []],
+                            ["KNEE HIGH BOOTS", []],
+                            ["FORMAL BOOTS", []]
+                        ]]
+                    ]],
+                    ["TOP", [
+                        ["T-SHIRT", []],
+                        ["SHIRT", []],
+                        ["BLOUSES", []],
+                        ["POLO SHIRT", []],
+                        ["TANK", []],
+                        ["SWEATER", []],
+                        ["HOODIES", []],
+                        ["JACKET", []],
+                        ["BLAZER", []],
+                        ["CROP TOP", []]
+                    ]],
+                    ["BOTTOM", [
+                        ["JEAN", []],
+                        ["PANT", []],
+                        ["SHORT", []],
+                        ["SKIRT", []],
+                        ["LEGGING", []],
+                        ["CULOTTE", []],
+                        ["CHINOS", []],
+                        ["TROUSERS", []],
+                        ["SUIT PANT", []],
+                        ["JOGGERS", []],
+                        ["PALAZZO", []]
+                    ]],
+                    ["OUTERWEAR", [
+                        ["COAT", []],
+                        ["TRENCH COAT", []],
+                        ["PARKA", []],
+                        ["WINDBREAKER", []],
+                        ["LEZER JACKET", []],
+                        ["RIN COAT JACKET", []],
+                        ["BOMBER JACKET", []],
+                        ["CARDIGAN", []],
+                        ["DENIM JACKET", []]
+                    ]],
+                    ["ACTIVEWEAR", [
+                        ["ATHLETICSHORTS", []],
+                        ["JOGGINGPANT", []],
+                        ["SPORTJACKET", []],
+                        ["YOGAPANT", []],
+                        ["PREFORMANCETOP", []]
+                    ]],
+                    ["TRADITIONAL", [
+                        ["KURTA", []],
+                        ["SHERWANI", []],
+                        ["THOBE", []],
+                        ["KURTI", []],
+                        ["SAREE", []],
+                        ["HIJAB DRESS", []],
+                        ["ABAYA", []],
+                        ["KAFTAN", []]
+                    ]],
+                    ["DRESS", [
+                        ["CASUAL DRESS", []],
+                        ["MAXI DRESS", []],
+                        ["EVENING DRESS", []],
+                        ["SUMMER DRESS", []],
+                        ["ABAYA DRESS", []]
+                    ]]
+                ]]
+                ]],
+                ["FOREVERYONE", [["ACCESSORIES",[
+                        ["BAG",[
+                            ["BACKPACK BAG", []],
+                            ["DUFFLE BAG", []],
+                            ["LAPTOP BAG", []],
+                            ["WALLET BAG", []],
+                            ["BELT BAG", []],
+                            ["HAND BAG", []],
+                            ["TOTE", []],
+                            ["CLUTCH BAG", []],
+                            ["CROSSBODY", []]
+                        ]],
+                        ["JEWELRY",[
+                            ["WATCH", []],
+                            ["BRACELET", []],
+                            ["RING", []],
+                            ["CUFFLINKS", []],
+                            ["EARING", []],
+                            ["NECKLACE", []],
+                            ["ANKLET", []]
+                        ]],
+                        ["HEADWEAR", [
+                            ["CAP", []],
+                            ["HAT", []],
+                            ["BEANIE", []],
+                            ["DURAG", []],
+                            ["HIJAB", []],
+                            ["SCARF", []],
+                            ["HEADBAND", []]
+                        ]],
+                        ["EYEWEAR", [
+                            ["SUNGLASSES", []],
+                            ["GLASSES", []],
+                            ["EYELASH", []],
+                            ["EYELANCE", []]
+                        ]],
+                        ["BELT", []],
+                        ["HAIR ACCESSORIES", []],
+                        ["OTHERS", [
+                            ["SOCKS", []],
+                            ["GLOVES", []],
+                            ["SHOELACE", []],
+                            ["TIE", []],
+                            ["BOWTIE", []],
+                            ["SHAWL", []],
+                            ["TIGHTS", []]
+                        ]],
+                    ]],
+                    ["SHOES", [
+                        ["CASUAL", [
+                            ["SNEAKERS", []],
+                            ["LOAFERS", []],
+                            ["FLATS", []],
+                            ["SANDALS", []]
+                        ]],
+                        ["FORMAL", [
+                            ["OXFORD", []],
+                            ["DERBY", []],
+                            ["SUIT SHOES", []],
+                            ["HEELS", []],
+                            ["PUMPS", []],
+                            ["WEDGES", []]
+                        ]],
+                        ["SPORT SHOES", [
+                            ["RUNNING SHOES", []],
+                            ["TRAINING SHOES", []]
+                        ]],
+                        ["BOOTS", [
+                            ["CHELSEA", []],
+                            ["COMBAT", []],
+                            ["WORK BOOTS", []],
+                            ["ANKLE BOOTS", []],
+                            ["KNEE HIGH BOOTS", []],
+                            ["FORMAL BOOTS", []]
+                        ]]
+                    ]],
+                    ["TOP", [
+                        ["T-SHIRT", []],
+                        ["SHIRT", []],
+                        ["BLOUSES", []],
+                        ["POLO SHIRT", []],
+                        ["TANK", []],
+                        ["SWEATER", []],
+                        ["HOODIES", []],
+                        ["JACKET", []],
+                        ["BLAZER", []],
+                        ["CROP TOP", []]
+                    ]],
+                    ["BOTTOM", [
+                        ["JEAN", []],
+                        ["PANT", []],
+                        ["SHORT", []],
+                        ["SKIRT", []],
+                        ["LEGGING", []],
+                        ["CULOTTE", []],
+                        ["CHINOS", []],
+                        ["TROUSERS", []],
+                        ["SUIT PANT", []],
+                        ["JOGGERS", []],
+                        ["PALAZZO", []]
+                    ]],
+                    ["OUTERWEAR", [
+                        ["COAT", []],
+                        ["TRENCH COAT", []],
+                        ["PARKA", []],
+                        ["WINDBREAKER", []],
+                        ["LEZER JACKET", []],
+                        ["RIN COAT JACKET", []],
+                        ["BOMBER JACKET", []],
+                        ["CARDIGAN", []],
+                        ["DENIM JACKET", []]
+                    ]],
+                    ["ACTIVEWEAR", [
+                        ["ATHLETICSHORTS", []],
+                        ["JOGGINGPANT", []],
+                        ["SPORTJACKET", []],
+                        ["YOGAPANT", []],
+                        ["PREFORMANCETOP", []]
+                    ]],
+                    ["TRADITIONAL", [
+                        ["KURTA", []],
+                        ["SHERWANI", []],
+                        ["THOBE", []],
+                        ["KURTI", []],
+                        ["SAREE", []],
+                        ["HIJAB DRESS", []],
+                        ["ABAYA", []],
+                        ["KAFTAN", []]
+                    ]],
+                    ["DRESS", [
+                        ["CASUAL DRESS", []],
+                        ["MAXI DRESS", []],
+                        ["EVENING DRESS", []],
+                        ["SUMMER DRESS", []],
+                        ["ABAYA DRESS", []]
+                    ]]
+                ]]]
+
 slip_order_type=["*", "#", "-", "_", "=", "~", "LOGO", "Information", "About", "Phone_No", "Receipt_no", "Extnsion_Receipt_no", "Date", "Updated_date", "Due_date", "User", "Seller", "Customer", "Item", "Rules"]
 
-access_types=[  "USER CAN INITIALIZE SYSTEM", # 0 0
-                "USER CAN SEE PAYMENT TOOL BUTTONS", # 1 0
-                "USER CAN USE CASH PAYMENT TOOL", # 2 0
-                "USER CAN USE CARD PAYMENT TOOL", # 3 0
-                "USER CAN USE CREADIT PAYMENT TOOL", # 4 0
-                "USER CAN USE CASHOUT PAYMENT TOOL", # 5 0
-                "USER CAN USE CASHIN PAYMENT TOOL", # 6 0
-                "USER CAN USE OTHER PAYMENT TOOL", # 7 0
-                "USER CAN CREATE UKNOWN ITEMS", # 8 0
-                "USER CAN SEARCH PRODUCTS", # 9 0
-                "USER CAN CREATE NEW ORDER", # 10 0
-                "USER CAN VOIDE ORDER", # 11 0
-                "USER CAN CHANGE ORDER", # 12 0
-                "USER CAN DELETE ITEM FROM ORDER", # 13 0
-                "USER CAN CHANGE ITEM QTY", # 14 0
-                "USER CAN CHANGE ITEM PRICE", # 15 0
-                "USER CAN CHANGE ITEM DISCOUNT", # 16 0
-                "USER CAN CHANGE ITEM Type", # 17 0
-                "USER CAN APPLY TOTAL DISCOUNT", # 18 0
-                "USER CAN FINALIZE ORDER", # 19 0
-                "USER CAN CREATE USER/COSTUMER INFO", # 20 0
-                "USER CAN SEARCH USER/COSTUMER INFO", # 21 0
-                "USER CAN SALL ORDER", # 22 0
-                "USER CAN SEARCH DOCUMENTS", # 23 0
-                "USER CAN SEARCH ACTIONS", # 24 1
-                "USER CAN UPLOAD", # 25 0
 
-
-                "USER CAN SEE MANAGER", # 26 1      
-                    "USER CAN SEE DOCUMENT MANAGER", # 27 1
-                    "USER CAN SEE PRODUCTE MANAGER", # 28 1
-                    "USER CAN SEE USER MANAGER", # 29 1
-                    "USER CAN SEE TOOL MANAGER", # 30 1
-                    "USER CAN SEE ACTIONS MANAGER", # 31 1
-                "USER CAN SEARCH TOOLS", # 32 1
-
-                    
-                "USER CAN CREATE OR CHANGE PRODUCT", # 33 2
-                "USER CAN CHANGE PRODUCTS NAME", # 34 2
-                "USER CAN CHANGE PRODUCT PRICE", # 35 2
-                "USER CAN CHANGE PRODUCTS TYPE", # 36 2 ??
-                "USER CAN CHANGE PRODUCTS IMAGE", # 37 2 ??
-                "USER CAN CREATE NEW TOOLS", # 38 2
-                "USER CAN CHANGE TOOLS ACTIONS", # 39 2
-                "USER CAN CHANGE USER/COSTUMER INFO", # 40 2
-                "USER CAN CREATE NEW ACTIONS", # 41 2
-                "USER CAN FILTER ACTIONS", # 42 2
-                "USER CAN EXPORT ACTIONS", # 43 2
-                "USER CAN CHANGE RECORDED DOCUMENTS", # 44 2
-                "USER CAN SEE TOTAL SALE", # 45 2
-                  
-
-                "USER CAN CHANGE PRODUCT COST", # 46 3
-                "USER CAN CHANGE PRODUCTS TAX", # 47 3
-                "USER CAN CHANGE PRODUCTS PROFITE PERSENT", # 48 3
-                "USER CAN CHANGE PRODUCTS STOCK QTY", # 49 3
-                "USER CAN CHANGE TOOLS TYPE", # 50 3
-                "USER CAN DELETE TOOLS", # 51 3
-                "USER CAN SEE DOCUMENT MANAGER", # 52 3
-                    "USER CAN CREATE NEW DOCUMENTS", # 53 3
-                    "USER CAN CHANGE RECORDED DOCUMENTS", # 54 3
-                "USER CAN SEE SETTINGS MANAGER", # 55 3
-                    "USER CAN SEE EXPENSES MANAGER", # 56 3
-                        "USER CAN SEARCH EXPENSES", # 57 3
-                    "USER CAN SEE WORKERS MANAGER", # 58 3
-                        "USER CAN SEARCH WORKERS", # 59 3
-
-
-                "USER CAN CREATE NEW WORKERS", # 60 4
-                "USER CAN CHANGE WORKERS INFO", # 61 4
-                "USER CAN DELETE WORKERS", # 62 4
-                "USER CAN CHANGE SLIP SETTING", # 63 4
-                "USER CAN SHOW PRODUCTES COST", # 64 4
-                "USER CAN CHANGE TOOLS SETTING", # 65 4
-                "USER CAN CHANGE STOCK SETTING", # 66 4
-                "USER CAN CHANGE USER SETTING", # 67 4
-                "USER CAN CHANGE PRODUCTE STOCK", # 68 4
-                "USER CAN CHANGE PRODUTS", # 69 4
-                "USER CAN REMOVE PRODUCTES", # 70 4
-                "USER CAN CREATE NEW WORKER INFO", # 71 4
-                "USER CAN REMOVE COSTUMER INFO", # 72 4
-
-
-                "USER CAN SEE PROFIT", # 73 5
-                "USER CAN CHANGE EXPENSES", # 74 5
-                "USER CAN CREATE NEW EXPENSES", # 75 5
-                "USER CAN DELETE EXPENSES", # 76 5
-                "USER CAN CHANGE STOCK SETTING", # 77 5
-                "USER CAN CHANGE EXPENSES SETTING", # 78 5
-                "USER CAN CHANGE DOCUMENT SETTING", # 79 5
-                "USER CAN DELETE PRODUTS", # 80 5
-                "USER CAN DELETE RECORDED DOCUMENTS", # 81 5
-                "USER CAN CHANGE USER TYPE", # 82 5
-                "USER CAN CREATE ADMINS USERS", # 83 5
-                "USER CAN SEE REPORT MANAGER", # 84 5
-                    "USER CAN SEE SALES REPORTS", # 85 5
-                    "USER CAN SEE STOCK REPORTS", # 86 5
-                    "USER CAN SEE USER REPORTS", # 87 5
-                    "USER CAN SEE EXPENSES REPORTS", # 88 5
-                "USER CAN SEE SHOP SETTING", # 89 5
-                    "USER CAN CHANGE SHOP SETTING" # 90 5
-              ]
-
-# 0, 0, 0, 0, 0, 0 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,1 , 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
+Shop_Types = [
+    "Grocery & Food Store", "Clothing & Accessories Store", "Electtronics & Tech Store", "Health &Beauty Store",
+    "Home & Living Store", "Food Service Store", "Servives",
+    "Supermarket", "Convenience Store", "Bakery", "Butchery",
+    "Boutique", "Shoes", "Electronics", "Mobile Phones",
+    "Pharmacy", "Cosmetics", "Furniture", "Hardware",
+    "Restaurant", "Fast Food", "Coffee Shop", "Liquor Store",
+    "Stationery", "Auto Parts", "Pet Shop", "Online Store", "Other"
+]
 
 # Function to search for documents in the doc_table SQLite database table
 def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_barcode=None, 
@@ -184,7 +916,7 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
     if doc_updated_date is not None and doc_updated_date is not '':
         query += f" AND doc_updated_date='{doc_updated_date}'"
     
-    print(query+"\n")
+    #print(query+"\n")
     # Execute the SQL query and return the results as a list of tuples
     Update_table_database(query, (*given,))
     results = cur.fetchall()
@@ -201,244 +933,472 @@ class Shop_SettingForm(ttk.Notebook):
         self.Shop = shop
         self.Shops = [shop]
         self.slip_order_list = []
+
+        self.homemaster = self
+        while(True):
+            if hasattr(self.homemaster, 'onDisplayFrame'):
+                break
+            else:
+                self.homemaster = self.homemaster.master
+                
+        self.bg_dark = "#0d47a1"      # Deep blue
+        self.bg_light = "#1565c0"     # Darker blue
+        self.accent_blue = "#1976d2"  # Medium blue
+        self.text_light = "#ffffff"   # White text
+        self.bg_darker = "#0a3d91"    # Even darker blue
+        self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
+
+
         
+        self.ShopInfo = tk.Frame(self , bg=self.bg_dark)
+        self.ShopInfo.pack()
+        self.add(self.ShopInfo, text="Shop Info")
+        
+        self.ShopInfoFrame_contaner_frame = tk.Frame(self.ShopInfo , bg=self.bg_dark)
+        self.ShopInfoFrame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        self.ShopInfoList_Frame_contaner_frame = tk.Frame(self.ShopInfoFrame_contaner_frame, bg=self.bg_dark)
+        self.ShopInfoList_Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        self.ShopInfoList_Frame = tk.Frame(self.ShopInfoList_Frame_contaner_frame, bg=self.bg_dark)
+        self.ShopInfoList_Frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        
+        self.ShopInfoitem_List_canvas = tk.Canvas(self.ShopInfoList_Frame, bg=self.bg_dark, highlightthickness=0)
+        self.ShopInfoitem_List_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        self.ShopInfoitem_List_yscrollbar = tk.Scrollbar(self.ShopInfoList_Frame, orient='vertical', 
+                                                 command=self.ShopInfoitem_List_canvas.yview, bg=self.bg_light, activebackground=self.accent_blue)
+        self.ShopInfoitem_List_yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.ShopInfoitem_List_xscrollbar = tk.Scrollbar(self.ShopInfoList_Frame_contaner_frame, orient='horizontal', 
+                                                 command=self.ShopInfoitem_List_canvas.xview, bg=self.bg_light, activebackground=self.accent_blue)
+        self.ShopInfoitem_List_xscrollbar.pack(side=tk.TOP, fill=tk.X)
+        
+        self.ShopInfoitem_List_canvas.configure(xscrollcommand=self.ShopInfoitem_List_xscrollbar.set, 
+                                       yscrollcommand=self.ShopInfoitem_List_yscrollbar.set)
+
         # Create the frame for the Shop Info
-        self.Shop_listinfo_frame = tk.Frame(self)
-        self.Shop_listinfo_frame.pack()
-        self.add(self.Shop_listinfo_frame, text="Shop Info")
+        self.Shop_listinfo_frame = tk.Frame(self.ShopInfoitem_List_canvas, bg=self.bg_dark, bd=2, relief="raised")
+        self.Shop_listinfo_frame.columnconfigure((0), weight=1)
+        self.Shop_listinfo_frame.columnconfigure((1), weight=1)
+        self.Shop_listinfo_frame.columnconfigure((2), weight=1)
+        self.Shop_listinfo_frame.columnconfigure((3), weight=1)
+        self.Shop_listinfo_frame.columnconfigure((4), weight=1)
+        self.Shop_listinfo_frame.columnconfigure((5), weight=1)
+        self.Shop_listinfo_frame.columnconfigure((6), weight=1)
+        self.Shop_listinfo_frame.columnconfigure((7), weight=1)
+        self.Shop_listinfo_frame.columnconfigure((8), weight=1)
+        self.Shop_listinfo_frame.columnconfigure((9), weight=1)
+        self.Shop_listinfo_frame.columnconfigure((10), weight=1)
+        self.Shop_listinfo_frame.columnconfigure((11), weight=1)
+        self.Shop_listinfo_frame.columnconfigure((12), weight=1)
+        self.Shop_listinfo_frame.columnconfigure((13), weight=1)
+        self.Shop_listinfo_frame.columnconfigure((14), weight=1)
+        #self.Shop_listinfo_frame.rowconfigure((0), weight=1)
         
 
+        
+        self.window_id = self.ShopInfoitem_List_canvas.create_window((0, 0), window=self.Shop_listinfo_frame, anchor="nw")
+        
+        def resize(event):
+            
+            screen_width = self.winfo_screenwidth()
+            screen_height = self.winfo_screenheight()
+        
+            self.ShopInfoitem_List_canvas.configure(scrollregion=self.ShopInfoitem_List_canvas.bbox("all"))
+            self.ShopInfoitem_List_canvas.itemconfig(self.window_id, width=screen_width-(screen_width/10))
+        self.Shop_listinfo_frame.bind('<Configure>', resize)
+
+
+
+        self.Shop_rate = 0
+        self.Shop_profile_frame = tk.Frame(self.Shop_listinfo_frame, bg=self.bg_dark)
+        self.Shop_profile_frame.grid(row=0, column=2, rowspan=4, columnspan=2, sticky='ew')
+
+        self.Shop_avatar_label = tk.Label(self.Shop_profile_frame, bg=self.bg_dark)
+        self.Shop_avatar_label.pack(pady=10)
+        self.Shop_avatar_label.bind("<Button-1>", lambda _: self.change_shop_image())
+        
+        self.Shop_rate_frame = tk.Frame(self.Shop_listinfo_frame, bg=self.bg_dark)
+        self.Shop_rate_frame.grid(row=4, column=3, columnspan=2, sticky='ew')
+
+        self.Shop_rate20_label = tk.Label(self.Shop_rate_frame, bg=self.bg_dark)
+        self.Shop_rate20_label.pack(side="left", pady=10)
+        self.Shop_rate20_label.bind("<Button-1>", lambda _: self.change_rate_image(20))
+        self.Shop_rate40_label = tk.Label(self.Shop_rate_frame, bg=self.bg_dark)
+        self.Shop_rate40_label.pack(side="left", pady=10)
+        self.Shop_rate40_label.bind("<Button-1>", lambda _: self.change_rate_image(40))
+        self.Shop_rate60_label = tk.Label(self.Shop_rate_frame, bg=self.bg_dark)
+        self.Shop_rate60_label.pack(side="left", pady=10)
+        self.Shop_rate60_label.bind("<Button-1>", lambda _: self.change_rate_image(60))
+        self.Shop_rate80_label = tk.Label(self.Shop_rate_frame, bg=self.bg_dark)
+        self.Shop_rate80_label.pack(side="left", pady=10)
+        self.Shop_rate80_label.bind("<Button-1>", lambda _: self.change_rate_image(80))
+        self.Shop_rate100_label = tk.Label(self.Shop_rate_frame, bg=self.bg_dark)
+        self.Shop_rate100_label.pack(side="left", pady=10)
+        self.Shop_rate100_label.bind("<Button-1>", lambda _: self.change_rate_image(100))
+        
+        
+        self.Shop_info_label = tk.Label(self.Shop_listinfo_frame, text='Shop Informations:', bg=self.bg_dark, fg=self.text_light)
+        self.Shop_info_label.grid(row=0, column=5, columnspan=6, sticky='ew')
+        
+        self.Shop_startedDate_label = tk.Label(self.Shop_listinfo_frame, text='Since ', bg=self.bg_dark, fg=self.text_light)
+        self.Shop_startedDate_label.grid(row=1, column=6, columnspan=3, sticky='ew')
+        
+        self.Shop_isenabled_var = tk.IntVar()
+        self.Shop_isenabled_var.set(1)
+        self.Shop_isenabled_date_Checkbutton = tk.Checkbutton(self.Shop_listinfo_frame, text='Shop Is Enabled :', bg=self.bg_dark, variable=self.Shop_isenabled_var) # , fg=self.text_light
+        self.Shop_isenabled_date_Checkbutton.grid(row=4, column=6, columnspan=3)
+
+
+
+
 
         
-        self.Shop_name_label = tk.Label(self.Shop_listinfo_frame, text='Shop_name:')
-        self.Shop_name_label.grid(row=0, column=0, sticky=tk.W)
+        self.Brand_rate = 0
+        self.Brand_profile_frame = tk.Frame(self.Shop_listinfo_frame, bg=self.bg_dark)
+        self.Brand_profile_frame.grid(row=0, column=10, rowspan=4, columnspan=2, sticky='ew')
+
+        self.Brand_avatar_label = tk.Label(self.Brand_profile_frame, bg=self.bg_dark)
+        self.Brand_avatar_label.pack(pady=10)
+        self.Brand_avatar_label.bind("<Button-1>", lambda _: self.change_Brand_image())
+        
+        self.Brand_rate_frame = tk.Frame(self.Shop_listinfo_frame, bg=self.bg_dark)
+        self.Brand_rate_frame.grid(row=4, column=11, columnspan=2, sticky='ew')
+
+        self.Brand_rate20_label = tk.Label(self.Brand_rate_frame, bg=self.bg_dark)
+        self.Brand_rate20_label.pack(side="left", pady=10)
+        self.Brand_rate20_label.bind("<Button-1>", lambda _: self.change_Brand_rate_image(20))
+        self.Brand_rate40_label = tk.Label(self.Brand_rate_frame, bg=self.bg_dark)
+        self.Brand_rate40_label.pack(side="left", pady=10)
+        self.Brand_rate40_label.bind("<Button-1>", lambda _: self.change_Brand_rate_image(40))
+        self.Brand_rate60_label = tk.Label(self.Brand_rate_frame, bg=self.bg_dark)
+        self.Brand_rate60_label.pack(side="left", pady=10)
+        self.Brand_rate60_label.bind("<Button-1>", lambda _: self.change_Brand_rate_image(60))
+        self.Brand_rate80_label = tk.Label(self.Brand_rate_frame, bg=self.bg_dark)
+        self.Brand_rate80_label.pack(side="left", pady=10)
+        self.Brand_rate80_label.bind("<Button-1>", lambda _: self.change_Brand_rate_image(80))
+        self.Brand_rate100_label = tk.Label(self.Brand_rate_frame, bg=self.bg_dark)
+        self.Brand_rate100_label.pack(side="left", pady=10)
+        self.Brand_rate100_label.bind("<Button-1>", lambda _: self.change_Brand_rate_image(100))
+        
+            
+        self.Shop_name_label = tk.Label(self.Shop_listinfo_frame, text='Shop Name:', bg=self.bg_dark, fg=self.text_light)
+        self.Shop_name_label.grid(row=6, column=0, columnspan=5, sticky=tk.W)
         self.Shop_name_entry = tk.Entry(self.Shop_listinfo_frame)
-        self.Shop_name_entry.grid(row=0, column=1, sticky=tk.W)
+        self.Shop_name_entry.grid(row=7, column=1, columnspan=5, sticky="nsew")
 
-        self.Shop_brand_name_label = tk.Label(self.Shop_listinfo_frame, text='Shop_brand_name:')
-        self.Shop_brand_name_label.grid(row=1, column=0, sticky=tk.W)
+        self.Shop_brand_name_label = tk.Label(self.Shop_listinfo_frame, text='Shop Brand Name:', bg=self.bg_dark, fg=self.text_light)
+        self.Shop_brand_name_label.grid(row=6, column=7, columnspan=5, sticky=tk.W)
         self.Shop_brand_name_entry = tk.Entry(self.Shop_listinfo_frame)
-        self.Shop_brand_name_entry.grid(row=1, column=1, sticky=tk.W)
+        self.Shop_brand_name_entry.grid(row=7, column=8, columnspan=5, sticky="nsew")
+
         
-        self.Shop_type_label = tk.Label(self.Shop_listinfo_frame, text='Shop_type:')
-        self.Shop_type_label.grid(row=2, column=0, sticky=tk.W)
-        self.Shop_type_entry = tk.Entry(self.Shop_listinfo_frame)
-        self.Shop_type_entry.grid(row=2, column=1, sticky=tk.W)
+        self.Shop_types_var = tk.StringVar()  # displayed in the combobox
+
+        # Combobox for User ID (shows user_name but stores user_id)
+        self.Shop_type_label = tk.Label(self.Shop_listinfo_frame, text='Shop Type:', bg=self.bg_dark, fg=self.text_light)
+        self.Shop_type_label.grid(row=8, column=0, columnspan=5, sticky=tk.W)
         
-        self.Shop_oweners_id_label = tk.Label(self.Shop_listinfo_frame, text='Shop_oweners_id:')
-        self.Shop_oweners_id_label.grid(row=3, column=0, sticky=tk.W)
-        self.Shop_oweners_id_entry = tk.Entry(self.Shop_listinfo_frame)
-        self.Shop_oweners_id_entry.grid(row=3, column=1, sticky=tk.W)
-        
-        self.Shop_links_label = tk.Label(self.Shop_listinfo_frame, text='????')
-        self.Shop_links_label.grid(row=4, column=0, sticky=tk.W)
-        self.Shop_links_entry = tk.Entry(self.Shop_listinfo_frame)
-        self.Shop_links_entry.grid(row=4, column=1, sticky=tk.W)
-        
-        self.Shop_email_label = tk.Label(self.Shop_listinfo_frame, text='Shop_email:')
-        self.Shop_email_label.grid(row=5, column=0, sticky=tk.W)
-        self.Shop_email_entry = tk.Entry(self.Shop_listinfo_frame)
-        self.Shop_email_entry.grid(row=5, column=1, sticky=tk.W)
-        
-        self.Shop_phone_num_label = tk.Label(self.Shop_listinfo_frame, text='Shop_phone_num:')
-        self.Shop_phone_num_label.grid(row=6, column=0, sticky=tk.W)
-        self.Shop_phone_num_entry = tk.Entry(self.Shop_listinfo_frame)
-        self.Shop_phone_num_entry.grid(row=6, column=1, sticky=tk.W)
-        
-        self.Shop_country_label = tk.Label(self.Shop_listinfo_frame, text='Shop_country:')
-        self.Shop_country_label.grid(row=7, column=0, sticky=tk.W)
-        self.Shop_country_entry = tk.Entry(self.Shop_listinfo_frame)
-        self.Shop_country_entry.grid(row=7, column=1, sticky=tk.W)
-        
-        self.Shop_location_label = tk.Label(self.Shop_listinfo_frame, text='Shop_location:')
-        self.Shop_location_label.grid(row=8, column=0, sticky=tk.W)
-        self.Shop_location_entry = tk.Entry(self.Shop_listinfo_frame)
-        self.Shop_location_entry.grid(row=8, column=1, sticky=tk.W)
+        self.Shop_type_entry = ttk.Combobox(self.Shop_listinfo_frame, textvariable=self.Shop_types_var, values=Shop_Types, state='readonly')
+        self.Shop_type_entry.grid(row=9, column=1, columnspan=5, sticky="nsew")
 
-        self.Shop_link_label = tk.Label(self.Shop_listinfo_frame, text='Shop API link :')
-        self.Shop_link_label.grid(row=9, column=0, sticky=tk.W)
-        self.Shop_link_entry = tk.Entry(self.Shop_listinfo_frame)
-        self.Shop_link_entry.grid(row=9, column=1, sticky=tk.W)
-        
-        self.Shop_about_label = tk.Label(self.Shop_listinfo_frame, text='Shop Social Medias :')
-        self.Shop_about_label.grid(row=10, column=0, sticky=tk.W)
-        self.Shop_about_entry = tk.Entry(self.Shop_listinfo_frame)
-        self.Shop_about_entry.grid(row=10, column=1, sticky=tk.W)
+        # Create the label and entry for the user ID search
+        user_info = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM USERS', ())  
+        # prepare names lists with a blank first entry for null selection
+        self.user_names = [''] + [u['User_name'] for u in user_info] if user_info else ['']
+        self.customer_names = [''] + [u['User_name'] for u in user_info] if user_info else ['']
+        self.seller_names = [''] + [u['User_name'] for u in user_info] if user_info else ['']
+        self.At_shop_names = [''] + [u['User_name'] for u in user_info] if user_info else ['']
 
-
-        self.Shop_rules_label = tk.Label(self.Shop_listinfo_frame, text='Shop_rules:')
-        self.Shop_rules_label.grid(row=11, column=0, sticky=tk.W)
-        self.Shop_rules_entry = tk.Entry(self.Shop_listinfo_frame)
-        self.Shop_rules_entry.grid(row=11, column=1, sticky=tk.W)
-
-        self.Shop_workers_label = tk.Label(self.Shop_listinfo_frame, text='Shop_workers:')
-        self.Shop_workers_label.grid(row=12, column=0, sticky=tk.W)
-        self.Shop_workers_entry = tk.Entry(self.Shop_listinfo_frame)
-        self.Shop_workers_entry.grid(row=12, column=1, sticky=tk.W)
-        
-        self.Shop_password_label = tk.Label(self.Shop_listinfo_frame, text='Shop_password:')
-        self.Shop_password_label.grid(row=13, column=0, sticky=tk.W)
-        self.Shop_password_entry = tk.Entry(self.Shop_listinfo_frame)
-        self.Shop_password_entry.grid(row=13, column=1, sticky=tk.W)
-        
-
-        self.save_button = tk.Button(self.Shop_listinfo_frame, text="SAVE", font=("Arial", 12), command=self.save_shop_info)
-        self.save_button.grid(row=14, column=1, sticky="nsew")
-
-
-
-
-        # Create the frame for the user details
-        
-        self.inventory = []
-        self.selected_type_path = None
-        self.selected_type_path_parent = None
-        
-        self.Type_details_frame = tk.Frame(self)
-        self.Type_details_frame.pack()
-        
-        self.add(self.Type_details_frame, text="Categories")
-        self.tree = ttk.Treeview(self.Type_details_frame, columns=
-                                 ("Shop Name", "Code", "Color", "Size", "Barcode",
-                                  "Qtyfirst", "Qty", "cdate", "update"))
-        self.tree.grid(row=0, column=0, sticky=tk.E, columnspan=4)
-        self.tree.bind('<<TreeviewSelect>>', self.on_path_select)
-        #self.tree.pack(side=tk.LEFT, expand=True)
-        self.tree.heading("#0", text="Shop Name", anchor=tk.W)
-        self.tree.column("#0", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#1", text="Code", anchor=tk.W)
-        self.tree.column("#1", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#2", text="Color", anchor=tk.W)
-        self.tree.column("#2", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#3", text="Size", anchor=tk.W)
-        self.tree.column("#3", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#4", text="Barcode", anchor=tk.W)
-        self.tree.column("#4", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#5", text="Qtyfirst", anchor=tk.W)
-        self.tree.column("#5", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#6", text="Qty", anchor=tk.W)
-        self.tree.column("#6", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#7", text="cdate", anchor=tk.W)
-        self.tree.column("#7", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#8", text="update", anchor=tk.W)
-        self.tree.column("#8", stretch=tk.NO, minwidth=25, width=125)
-        
-
-
-        self.selected_label = tk.Label(self.Type_details_frame, text='No selected')
-        self.selected_label.grid(row=5, column=0, sticky=tk.E)
-
-
-        self.cear_button = tk.Button(self.Type_details_frame, text='clear', command=self.clear_selected_path)
-        self.cear_button.grid(row=6, column=0, sticky=tk.E)
-
-        self.types_label = tk.Label(self.Type_details_frame, text='No value')
-        self.types_label.grid(row=7, column=0, sticky=tk.E)
-        
-        self.type_value_label = tk.Label(self.Type_details_frame, text='new value')
-        self.type_value_label.grid(row=8, column=0, sticky=tk.E)
-        self.type_value_entry = tk.Entry(self.Type_details_frame)
-        self.type_value_entry.grid(row=8, column=1, sticky=tk.E)
-
-        self.add_new_button = tk.Button(self.Type_details_frame, text='Add New', command=self.add_new_value)
-        self.add_new_button.grid(row=9, column=0, sticky=tk.E)
-        self.dele_type_button = tk.Button(self.Type_details_frame, text='DELETE', command=self.dele_selected)
-        self.dele_type_button.grid(row=9, column=1, sticky=tk.E)
-        self.cear_button = tk.Button(self.Type_details_frame, text='Defalute', command=self.Set_Deffalute_type_value)
-        self.cear_button.grid(row=10, column=0, sticky=tk.E)
-        self.change_button = tk.Button(self.Type_details_frame, text='Done', command=self.convert_to_text)
-        self.change_button.grid(row=10, column=1, sticky=tk.E)
-
-
-
-
-        # Create the frame for the user details
-        self.slip_details_frame = tk.Frame(self)
-        self.slip_details_frame.pack()
-        
-        self.add(self.slip_details_frame, text="slip info")
-        self.Shops_Names = [shop['Shop_name'] for shop in self.Shops]                            
-        self.User_Shopes_Combobox = ttk.Combobox(self.slip_details_frame, values=self.Shops_Names, width=10)
-        self.User_Shopes_Combobox.grid(row=0, column=0, sticky="nsew")
-        self.User_Shopes_Combobox.current(0)
-        
-        self.slip_option_var = tk.StringVar()
-        #self.slip_option_var.set("")
-        self.slip_option_dropdown = tk.OptionMenu(self.slip_details_frame, self.slip_option_var, *slip_order_type, command=self.on_new_order_selected)
-        self.slip_option_dropdown.grid(row=1, column=0, sticky="nsew")
-        self.Dele_button = tk.Button(self.slip_details_frame, text="Delete", font=("Arial", 12), command=self.dele_slip_order)
-        self.Dele_button.grid(row=1, column=1, sticky="nsew")
-        
-
-        self.UP_button = tk.Button(self.slip_details_frame, text="UP", font=("Arial", 12), command= lambda: self.move_slip_order("UP"))
-        self.UP_button.grid(row=2, column=0, sticky="nsew")
-        self.DOWN_button = tk.Button(self.slip_details_frame, text="DOWN", font=("Arial", 12), command=lambda: self.move_slip_order("DOWN"))
-        self.DOWN_button.grid(row=3, column=0, sticky="nsew")
-
-        # New listbox in the main frame
-        self.slip_order_list_items = tk.Listbox(self.slip_details_frame)
-        self.slip_order_list_items.grid(row=2, column=1, rowspan=2, sticky=tk.N)
-
-        self.slip_width_label = tk.Label(self.slip_details_frame, text='slip_width:')
-        self.slip_width_label.grid(row=5, column=0, sticky=tk.W)
-        self.slip_width_entry = tk.Entry(self.slip_details_frame)
-        self.slip_width_entry.grid(row=5, column=1, sticky=tk.W)
-        self.slip_width_var = tk.StringVar()
-        self.slip_width_entry["textvariable"] = self.slip_width_var
-        self.slip_width_var.trace('w', self.slip_width_changed)
-
-
-        self.slip_hight_label = tk.Label(self.slip_details_frame, text='slip_hight:')
-        self.slip_hight_label.grid(row=5, column=2, sticky=tk.W)
-        self.slip_hight_entry = tk.Entry(self.slip_details_frame)
-        self.slip_hight_entry.grid(row=5, column=3, sticky=tk.W)
-        self.slip_hight_var = tk.StringVar()
-        self.slip_hight_entry["textvariable"] = self.slip_hight_var
-        self.slip_hight_var.trace('w', self.slip_hight_changed)
-        
-        # Create the frame for the Shop Info
-        self.USER_SECURITY_listinfo_frame = tk.Frame(self)
-        self.USER_SECURITY_listinfo_frame.pack()
-        self.add(self.USER_SECURITY_listinfo_frame, text="USER & SECURITY")
-        
-        self.USER_SECURITY_list_box = ttk.Treeview(self.USER_SECURITY_listinfo_frame)
-        self.USER_SECURITY_list_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.USER_SECURITY_list_box.bind('<<TreeviewSelect>>', self.USER_SECURITY_on_select)
-
-        self.USER_SECURITY_list_box['columns'] = ("Access", "Level")
-        self.USER_SECURITY_list_box.heading("#0", text="Access")
-        self.USER_SECURITY_list_box.heading("#1", text="Level")
-        Shop_Security_Levels = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4]
-        if self.Shop and self.Shop['Shop_Security_Levels']:
-            Shop_Security_Levels = json.loads(self.Shop['Shop_Security_Levels'])
-        else:
-            pass
-            # TODO : SAVE DEFAULT SECURITY LEVELS TO SHOP OR ALL WEBSITES HAS TO GIVE DEFAULT SECURITY LEVELS
-            '''s = Update_Shop(self.Shop['Shop_link'], self.user, ['Shop_Security_Levels'], [json.dumps(Shop_Security_Levels)], ['Shop_Id'], [self.Shop['Shop_Id']])
-            if s:
-                # TODO : CHANGE SHOP SELECTED ONLY
-                if isinstance(s, list) and len(s) > 0:
-                    self.Shops = s
-                    self.Shop = s[0]
+        # maps including blank -> ''
+        self.user_map = {'': ''}
+        self.user_map_id = {'': ''}
+        if user_info:
+            for u in user_info:
+                if u['User_id'] is None:
+                    uid = u['Id']
                 else:
-                    self.Shops = [s]
-                    self.Shop = s
-                self.master.master.master.master.master.Shops[0] = self.Shop
-            ''' 
-        for l, Level in enumerate(access_types):
-            if len(Shop_Security_Levels) > l:
-                self.USER_SECURITY_list_box.insert('', 'end', text=Level, values=(str(Shop_Security_Levels[l])))
+                    uid = u['User_id']
+                self.user_map[u['User_name']] = str(uid)
+                self.user_map_id[str(uid)] = u['User_name']
+
+        self.user_id_var = tk.StringVar()    # will store the actual user_id (used by perform_search via .get())
+        self.user_name_var = tk.StringVar()  # displayed in the combobox
+
+        # Combobox for User ID (shows user_name but stores user_id)
+        self.user_id_label = tk.Label(self.Shop_listinfo_frame, text="Shop Owner:", bg=self.bg_dark, fg=self.text_light)
+        self.user_id_label.grid(row=8, column=7, columnspan=5, sticky=tk.W)
         
+        self.user_combobox = ttk.Combobox(self.Shop_listinfo_frame, textvariable=self.user_name_var, values=self.user_names)
+        self.user_combobox.grid(row=9, column=8, columnspan=5, sticky="nsew")
+
+
+        def _on_user_selected(event=None):
+            name = self.user_name_var.get()
+            self.user_id_var.set(self.user_map.get(name, ''))
+            
+        def on_keyrelease(event=None):
+            #print("on_keyrelease ")
+            typed = self.user_combobox.get().lower()
+            if typed == '':
+                self.user_combobox['values'] = self.user_names
+            else:
+                filtered = [item for item in self.user_names if typed in item.lower()]
+                self.user_combobox['values'] = filtered
+                if filtered:
+                    self.user_combobox.event_generate('<Down>')
+            self.user_combobox.focus()
+            self.user_combobox.icursor(tk.END)
+            
+        self.user_name_var.trace('w', lambda name, index, mode: on_keyrelease())
+        self.user_combobox.bind('<<ComboboxSelected>>', _on_user_selected)
+        
+        self.Shop_link_label = tk.Label(self.Shop_listinfo_frame, text='Shop API Link :', bg=self.bg_dark, fg=self.text_light)
+        self.Shop_link_label.grid(row=10, column=0, columnspan=5, sticky=tk.W)
+        self.Shop_link_entry = tk.Entry(self.Shop_listinfo_frame)
+        self.Shop_link_entry.grid(row=11, column=1, columnspan=5, sticky="nsew")
+        
+        self.Shop_email_label = tk.Label(self.Shop_listinfo_frame, text='Shop Email :', bg=self.bg_dark, fg=self.text_light)
+        self.Shop_email_label.grid(row=10, column=7, columnspan=5, sticky=tk.W)
+        self.Shop_email_entry = tk.Entry(self.Shop_listinfo_frame)
+        self.Shop_email_entry.grid(row=11, column=8, columnspan=5, sticky="nsew")
+
+
+        self.Shop_about_label = tk.Label(self.Shop_listinfo_frame, text='Shop About :', bg=self.bg_dark, fg=self.text_light)
+        self.Shop_about_label.grid(row=12, column=0, columnspan=5, sticky=tk.W)
+        self.Shop_about_entry = tk.Entry(self.Shop_listinfo_frame)
+        self.Shop_about_entry.grid(row=13, column=1, columnspan=5, sticky="nsew")
+        
+        self.Shop_country_label = tk.Label(self.Shop_listinfo_frame, text='Shop Country:', bg=self.bg_dark, fg=self.text_light)
+        self.Shop_country_label.grid(row=14, column=7, columnspan=5, sticky=tk.W)
+        self.Shop_country_entry = tk.Entry(self.Shop_listinfo_frame)
+        self.Shop_country_entry.grid(row=15, column=8, columnspan=5, sticky="nsew")
+        
+        self.Shop_password_label = tk.Label(self.Shop_listinfo_frame, text='Shop Password:', bg=self.bg_dark, fg=self.text_light)
+        self.Shop_password_label.grid(row=14, column=0, columnspan=5, sticky=tk.W)
+        self.Shop_password_entry = tk.Entry(self.Shop_listinfo_frame,  show="*", bg="#ffffff", fg="#0d47a1", font=("Roboto", 11), relief=tk.FLAT, bd=2)
+        self.Shop_password_entry.grid(row=15, column=1, columnspan=5, sticky="nsew")
+        
+        self.Shop_Contact_label = tk.Label(self.Shop_listinfo_frame, text='Shop Contact:', bg=self.bg_dark, fg=self.text_light)
+        self.Shop_Contact_label.grid(row=12, column=7, columnspan=5, sticky=tk.W)
+        self.Shop_Contact_entry = tk.Entry(self.Shop_listinfo_frame)
+        self.Shop_Contact_entry.grid(row=13, column=8, columnspan=5, sticky="nsew")
+        
+
+        
+        
+        # ----------------------     Phone Number
+        self.Shop_phone_nums = "" 
+        self.Shop_phone_num_label = tk.Label(self.Shop_listinfo_frame, text='Shop Phone Numbers:', bg=self.bg_dark, fg=self.text_light)
+        self.Shop_phone_num_label.grid(row=16, column=0, columnspan=5, sticky=tk.W)
+        self.Shop_phone_nums_list = tk.Listbox(self.Shop_listinfo_frame)
+        self.Shop_phone_nums_list.grid(row=17, column=1, columnspan=5, sticky="nsew")
+
+        def load_Shop_phone_num():
+            self.Shop_phone_nums_list.delete(0, tk.END)
+            infos = self.Shop_phone_nums.split("=")
+            for l in infos:
+                    self.Shop_phone_nums_list.insert(tk.END, str(l))
+        self.load_Shop_phone_num = load_Shop_phone_num
+
+        self.Shop_phone_num_entry = tk.Entry(self.Shop_listinfo_frame)
+        self.Shop_phone_num_entry.grid(row=18, column=0, columnspan=3, sticky="nsew")
+        
+        def Shop_phone_num_add():
+            v = self.Shop_phone_num_entry.get()
+            if self.Shop_phone_nums == "":
+                self.Shop_phone_nums = v
+            else:
+                self.Shop_phone_nums += "=" + v
+            load_Shop_phone_num()
+            
+        def Shop_phone_num_Remove():
+            current_selection_indexes = self.Shop_phone_nums_list.curselection()
+            if not current_selection_indexes:
+                return
+            infos = self.Shop_phone_nums.split("=")
+            newnums = ""
+            for i, l in enumerate(infos):
+                if not i == current_selection_indexes[0]:
+                    if newnums == "":
+                        newnums = l
+                    else:
+                        newnums += "=" + l
+            if not newnums == "":
+               self.Shop_phone_nums= newnums
+            load_Shop_phone_num()
+               
+        self.add_shop_pno_button = tk.Button(self.Shop_listinfo_frame, text='Add', command=Shop_phone_num_add, **self.button_style)
+        self.add_shop_pno_button.grid(row=18, column=4, sticky=tk.E)
+        self.remove_shop_pno_button = tk.Button(self.Shop_listinfo_frame, text='Remove', command=Shop_phone_num_Remove, **self.button_style)
+        self.remove_shop_pno_button.grid(row=18, column=5, sticky=tk.E)
+        # ------------------------------
+
+        
+        # ----------------------   Link 
+        self.Shop_slinks = ""
+        self.Shop_slink_label = tk.Label(self.Shop_listinfo_frame, text='Shop Social Links :', bg=self.bg_dark, fg=self.text_light)
+        self.Shop_slink_label.grid(row=16, column=7, columnspan=5, sticky=tk.W)
+        self.Shop_slink_list = tk.Listbox(self.Shop_listinfo_frame)
+        self.Shop_slink_list.grid(row=17, column=8, columnspan=5, sticky="nsew")
+
+        self.Shop_slink_entry = tk.Entry(self.Shop_listinfo_frame)
+        self.Shop_slink_entry.grid(row=18, column=7, columnspan=3, sticky="nsew")
+        
+        def load_Shop_slink():
+            self.Shop_slink_list.delete(0, tk.END)
+            infos = self.Shop_slinks.split("+")
+            for l in infos:
+                    self.Shop_slink_list.insert(tk.END, str(l))
+        self.load_Shop_slink = load_Shop_slink
+       
+        def Shop_slink_changed():
+            v = self.Shop_slink_entry.get()
+            if self.Shop_slinks == "":
+                self.Shop_slinks = v
+            else:
+                self.Shop_slinks += "+" + v
+            load_Shop_slink()
+            
+        def Shop_slink_Remove():
+            current_selection_indexes = self.Shop_slink_list.curselection()
+            if not current_selection_indexes:
+                return
+            infos = self.Shop_slinks.split("+")
+            newnums = ""
+            for i, l in enumerate(infos):
+                if not i == current_selection_indexes[0]:
+                    if newnums == "":
+                        newnums = l
+                    else:
+                        newnums += "+" + l
+            if not newnums == "":
+               self.Shop_slinks= newnums
+            load_Shop_slink()
+
+        
+        self.add_Shop_slink_button = tk.Button(self.Shop_listinfo_frame, text='Add', command=Shop_slink_changed, **self.button_style)
+        self.add_Shop_slink_button.grid(row=18, column=10, sticky=tk.E)
+        self.remove_Shop_slink_button = tk.Button(self.Shop_listinfo_frame, text='Remove', command=Shop_slink_Remove, **self.button_style)
+        self.remove_Shop_slink_button.grid(row=18, column=11, sticky=tk.E)
+        # ------------------------------
+
+
+        # ----------------------   Location 
+        self.Shop_locations = ""
+        self.Shop_location_label = tk.Label(self.Shop_listinfo_frame, text='Shop Location:', bg=self.bg_dark, fg=self.text_light)
+        self.Shop_location_label.grid(row=19, column=0, columnspan=5, sticky=tk.W)
+        self.Shop_location_list = tk.Listbox(self.Shop_listinfo_frame)
+        self.Shop_location_list.grid(row=20, column=1, columnspan=5, sticky="nsew")
+
+        self.Shop_location_entry = tk.Entry(self.Shop_listinfo_frame)
+        self.Shop_location_entry.grid(row=21, column=1, columnspan=3, sticky="nsew")
+        
+        def load_Shop_location():
+            self.Shop_location_list.delete(0, tk.END)
+            infos = self.Shop_locations.split("=")
+            for l in infos:
+                self.Shop_location_list.insert(tk.END, str(l))
+        self.load_Shop_location = load_Shop_location
+        
+        
+        def Shop_location_changed():
+            v = self.Shop_location_entry.get()
+            if self.Shop_locations == "":
+                self.Shop_locations = v
+            else:
+                self.Shop_locations += "=" + v
+            load_Shop_location()
+            
+        def Shop_location_Remove():
+            current_selection_indexes = self.Shop_location_list.curselection()
+            if not current_selection_indexes:
+                return
+            infos = self.Shop_locations.split("=")
+            newnums = ""
+            for i, l in enumerate(infos):
+                if not i == current_selection_indexes[0]:
+                    if newnums == "":
+                        newnums = l
+                    else:
+                        newnums += "=" + l
+            if not newnums == "":
+               self.Shop_locations= newnums
+            load_Shop_location()
+        
+
+        
+        self.add_Shop_location_button = tk.Button(self.Shop_listinfo_frame, text='Add', command=Shop_location_changed, **self.button_style)
+        self.add_Shop_location_button.grid(row=21, column=4, sticky=tk.E)
+        self.remove_Shop_location_button = tk.Button(self.Shop_listinfo_frame, text='Remove', command=Shop_location_Remove, **self.button_style)
+        self.remove_Shop_location_button.grid(row=21, column=5, sticky=tk.E)
+        # ------------------------------
+
+
+        # ----------------------   Rules 
+        self.Shop_rules = ""
+        self.Shop_rules_label = tk.Label(self.Shop_listinfo_frame, text='Shop Rules:', bg=self.bg_dark, fg=self.text_light)
+        self.Shop_rules_label.grid(row=19, column=7, columnspan=5, sticky=tk.W)
+        self.Shop_rules_list = tk.Listbox(self.Shop_listinfo_frame)
+        self.Shop_rules_list.grid(row=20, column=8, columnspan=5, sticky="nsew")
+
+        self.Shop_rules_entry = tk.Entry(self.Shop_listinfo_frame)
+        self.Shop_rules_entry.grid(row=21, column=7, columnspan=3, sticky="nsew")
+        
+        def load_Shop_rules():
+            self.Shop_rules_list.delete(0, tk.END)
+            infos = self.Shop_rules.split("+")
+            for l in infos:
+                    self.Shop_rules_list.insert(tk.END, str(l))
+        self.load_Shop_rules = load_Shop_rules
+        
+        
+        def Shop_rules_changed():
+            v = self.Shop_rules_entry.get()
+            if self.Shop_rules == "":
+                self.Shop_rules = v
+            else:
+                self.Shop_rules += "+" + v
+            load_Shop_rules()
+            
+        def Shop_rules_Remove():
+            current_selection_indexes = self.Shop_rules_list.curselection()
+            if not current_selection_indexes:
+                return
+            infos = self.Shop_rules.split("+")
+            newnums = ""
+            for i, l in enumerate(infos):
+                if not i == current_selection_indexes[0]:
+                    if newnums == "":
+                        newnums = l
+                    else:
+                        newnums += "+" + l
+            if not newnums == "":
+               self.Shop_rules= newnums
+            load_Shop_rules()
+
+        
+        self.add_Shop_rules_button = tk.Button(self.Shop_listinfo_frame, text='Add', command=Shop_rules_changed, **self.button_style)
+        self.add_Shop_rules_button.grid(row=21, column=10, sticky=tk.E)
+        self.remove_Shop_rules_button = tk.Button(self.Shop_listinfo_frame, text='Remove', command=Shop_rules_Remove, **self.button_style)
+        self.remove_Shop_rules_button.grid(row=21, column=11, sticky=tk.E)
+        # ------------------------------
+
+
+        self.save_button = tk.Button(self.Shop_listinfo_frame, text="SAVE CHANGE", command=self.save_shop_info, **self.button_style)
+        self.save_button.grid(row=22, column=5, columnspan=5, sticky="nsew")
+
         # Create the frame for the Shop Info
-        self.Expenses_frame = ExpensesForm(self, user, self.Shops)
+        self.Expenses_frame = ExpensesForm(self, user, self.Shops, bg=self.bg_dark)
         self.Expenses_frame.pack()
         self.add(self.Expenses_frame, text="Shop Expenses")
         
         
         # Create the frame for the Shop Info
-        self.Workers_frame = WorkersForm(self, user, self.Shops)
+        self.Workers_frame = WorkersForm(self, user, self.Shops, self.Shop, bg=self.bg_dark)
         self.Workers_frame.pack()
-        self.add(self.Workers_frame, text="Shop Workers")
+        self.add(self.Workers_frame, text="Workers & SECURITY Levels")
         
         
         '''self.Shop_listinfo_frame.grid_columnconfigure(0, weight=5)
@@ -479,11 +1439,146 @@ class Shop_SettingForm(ttk.Notebook):
         self.details_frame = tk.Frame(self.Shop_listinfo_frame)
         self.details_frame.grid(row=3, column=5, columnspan=3)'''
         
+        # Create the frame for the user details
+        
+        self.inventory = []
+        self.selected_type_path = None
+        self.selected_type_path_parent = None
+        
+        self.Type_details_frame = tk.Frame(self, bg=self.bg_dark)
+        self.Type_details_frame.pack(fill=tk.BOTH, expand=True)
 
+        self.add(self.Type_details_frame, text="Others...")
+        
+        self.Frame_contaner_frame = tk.Frame(self.Type_details_frame, bg=self.bg_dark)
+        self.Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+
+        self.List_Frame_contaner_frame = tk.Frame(self.Frame_contaner_frame, bg=self.bg_dark)
+        self.List_Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Frame Form catagori Control
+        self.catagori_controler_frame = tk.Frame(self.List_Frame_contaner_frame, bg=self.bg_dark)
+        self.catagori_controler_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=False)
+        
+
+        self.type_value_label = tk.Label(self.catagori_controler_frame, text='Value', bg=self.bg_dark, fg=self.text_light)
+        self.type_value_label.grid(row=0, column=0, sticky=tk.E)
+        self.type_value_entry = tk.Entry(self.catagori_controler_frame)
+        self.type_value_entry.grid(row=0, column=1, columnspan=3, sticky=tk.E)
+        self.add_new_button = tk.Button(self.catagori_controler_frame, text='Add', command=self.add_new_value, **self.button_style)
+        self.add_new_button.grid(row=0, column=4, sticky=tk.E)
+        
+        self.cear_button = tk.Button(self.catagori_controler_frame, text='Clear Selection', command=self.clear_selected_path, **self.button_style)
+        self.cear_button.grid(row=0, column=5, sticky=tk.E)
+        self.dele_type_button = tk.Button(self.catagori_controler_frame, text='DELETE Selected', command=self.dele_selected, **self.button_style)
+        self.dele_type_button.grid(row=0, column=6, sticky=tk.E)
+        self.cear_button = tk.Button(self.catagori_controler_frame, text='Defalute', command=self.Set_Deffalute_type_value, **self.button_style)
+        self.cear_button.grid(row=0, column=7, sticky=tk.E)
+        
+        self.selected_label = tk.Label(self.catagori_controler_frame, text='No selected', bg=self.bg_dark, fg=self.text_light)
+        self.selected_label.grid(row=1, column=0, columnspan=1000, sticky=tk.E)
+
+
+        self.List_Frame = tk.Frame(self.List_Frame_contaner_frame, bg=self.bg_dark)
+        self.List_Frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        
+        self.item_List_canvas = tk.Canvas(self.List_Frame, bg=self.bg_dark, highlightthickness=0)
+        self.item_List_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
+
+
+        
+        self.tree = ttk.Treeview(self.item_List_canvas, columns=
+                                 ("Shop Name", "Code", "Color", "Size", "Barcode",
+                                  "Qtyfirst", "Qty", "cdate", "update"))
+        self.tree.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.tree.bind('<<TreeviewSelect>>', self.on_path_select)
+        #self.tree.pack(side=tk.LEFT, expand=True)
+        self.tree.heading("#0", text="Type", anchor=tk.W)
+        
+        self.item_List_yscrollbar = tk.Scrollbar(self.List_Frame, orient='vertical', 
+                                                 command=self.tree.yview, bg=self.bg_light, activebackground=self.accent_blue)
+        self.item_List_yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.item_List_xscrollbar = tk.Scrollbar(self.List_Frame_contaner_frame, orient='horizontal', 
+                                                 command=self.tree.xview, bg=self.bg_light, activebackground=self.accent_blue)
+        self.item_List_xscrollbar.pack(side=tk.TOP, fill=tk.X)
+        
+        self.tree.configure(xscrollcommand=self.item_List_xscrollbar.set, 
+                                       yscrollcommand=self.item_List_yscrollbar.set)
+
+
+        self.item_List_canvas.create_window((0, 0), window=self.tree, anchor=tk.NW)
+        #self.tree.bind('<Configure>', lambda e: self.item_List_canvas.configure(scrollregion=self.item_List_canvas.bbox("all")))
+
+        self.catagory_Display_frame = tk.Frame(self.List_Frame_contaner_frame, bg=self.bg_dark)
+        self.catagory_Display_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+
+        # Slip controlling Frame
+        self.slip_frame = tk.Frame(self.catagory_Display_frame, bg=self.bg_dark)
+        self.slip_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=False)
+        
+        # Create the frame for the user details
+        self.Shops_Names = [shop['Shop_name'] for shop in self.Shops]                            
+        self.User_Shopes_Combobox = ttk.Combobox(self.slip_frame, values=self.Shops_Names, width=10)
+        self.User_Shopes_Combobox.grid(row=7, column=0, sticky="nsew")
+        self.User_Shopes_Combobox.current(0)
+        
+        self.slip_option_var = tk.StringVar()
+        #self.slip_option_var.set("")
+        self.slip_option_dropdown = tk.OptionMenu(self.slip_frame, self.slip_option_var, *slip_order_type, command=self.on_new_order_selected)
+        self.slip_option_dropdown.grid(row=8, column=0, sticky="nsew")
+        self.Dele_button = tk.Button(self.slip_frame, text="Delete", font=("Arial", 12), command=self.dele_slip_order)
+        self.Dele_button.grid(row=8, column=1, sticky="nsew")
+        
+
+        self.UP_button = tk.Button(self.slip_frame, text="UP", font=("Arial", 12), command= lambda: self.move_slip_order("UP"))
+        self.UP_button.grid(row=9, column=0, sticky="nsew")
+        self.DOWN_button = tk.Button(self.slip_frame, text="DOWN", font=("Arial", 12), command=lambda: self.move_slip_order("DOWN"))
+        self.DOWN_button.grid(row=10, column=0, sticky="nsew")
+
+        # New listbox in the main frame
+        self.slip_order_list_items = tk.Listbox(self.slip_frame)
+        self.slip_order_list_items.grid(row=9, column=1, rowspan=2, sticky=tk.N)
+
+        self.slip_width_label = tk.Label(self.slip_frame, text='slip_width:', bg=self.bg_dark, fg=self.text_light)
+        self.slip_width_label.grid(row=11, column=0, sticky=tk.W)
+        self.slip_width_entry = tk.Entry(self.slip_frame)
+        self.slip_width_entry.grid(row=11, column=1, sticky=tk.W)
+        self.slip_width_var = tk.StringVar()
+        self.slip_width_entry["textvariable"] = self.slip_width_var
+        self.slip_width_var.trace('w', self.slip_width_changed)
+
+
+        self.slip_hight_label = tk.Label(self.slip_frame, text='slip_hight:', bg=self.bg_dark, fg=self.text_light)
+        self.slip_hight_label.grid(row=12, column=0, sticky=tk.W)
+        self.slip_hight_entry = tk.Entry(self.slip_frame)
+        self.slip_hight_entry.grid(row=12, column=1, sticky=tk.W)
+        self.slip_hight_var = tk.StringVar()
+        self.slip_hight_entry["textvariable"] = self.slip_hight_var
+        self.slip_hight_var.trace('w', self.slip_hight_changed)
+
+        
+        
+
+
+        # Rghit Controlling fram
+        self.controler_frame = tk.Frame(self.Type_details_frame, bg=self.bg_dark)
+        self.controler_frame.pack(side=tk.TOP, fill=tk.BOTH)
+        
         #self.load_setting()
+        
         self.load_slip_order()
         self.load_shop_info()
-        self.load_type_info()
+        self.Load_type_value() 
+        
+
+        self.load_shop_image()
+
+        self.load_rate_image()
+        self.load_Brand_rate_image()
+        self.load_Brand_image()
         
         # Pack the widgets for the product tab2
         #self.update_product_listbox()
@@ -492,18 +1587,19 @@ class Shop_SettingForm(ttk.Notebook):
 
     # typeing catagorry
     def load_type_info(self):
-        shop_ = self.Shops[0]
-        if shop_:
-            text = shop_['Shop_Items_type']
-            #print("loading type setting : " + str(text))
-            if text and text != "":
-                qty_info_list = load_list(text)
-                def sub(ls, parent):
-                    for l in ls:
-                        n = self.tree.insert(parent, "end", text=l[0])
-                        sub(l[1], n)
-                if qty_info_list:
-                    sub(qty_info_list, "")
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        if self.Shop_deff_type and self.Shop_deff_type != "":
+            try:
+                qty_info_list = json.loads(self.Shop_deff_type)
+            except Exception as e:
+                qty_info_list = Shop_deff_type
+            def sub(ls, parent):
+                for l in ls:
+                    n = self.tree.insert(parent, "end", text=l[0])
+                    sub(l[1], n)
+            if qty_info_list:
+                sub(qty_info_list, "")
 
     def dele_selected(self):
         item = self.tree.selection()[0]
@@ -512,6 +1608,7 @@ class Shop_SettingForm(ttk.Notebook):
         self.selected_type_path = self.tree.parent(parent_item)
         txt = self.tree.item(self.selected_type_path, "text")
         self.load_path(parent_item, txt)
+        self.convert_to_text()
 
     def on_path_select(self, event):
         item = self.tree.selection()[0]
@@ -522,14 +1619,22 @@ class Shop_SettingForm(ttk.Notebook):
         self.load_path(parent_item, txt)
         
     def load_path(self, parent_item, text):
+        parent_names = []
+        parent_names.append(text)
         while parent_item:
-            text += " " + self.tree.item(parent_item, "text")
+            name = self.tree.item(parent_item, "text")
+            parent_names.append(name)
             parent_item = self.tree.parent(parent_item)
+        p = len(parent_names)-1
+        text = "\\"
+        while not p < 0:
+            text += parent_names[p] + "\\"
+            p-=1
         self.selected_label.config(text=text)
 
     def clear_selected_path(self):
         self.selected_type_path = None
-        self.selected_label.config(text="")
+        self.selected_label.config(text="\\")
         
     
     def add_new_value(self):
@@ -538,6 +1643,7 @@ class Shop_SettingForm(ttk.Notebook):
         else:
             self.selected_type_path = self.tree.insert("", "end", text=self.type_value_entry.get())
         self.load_path(self.selected_type_path, "")
+        self.convert_to_text()
         
     # Create the "Change" button
     def build_nested_list(self, item):
@@ -551,106 +1657,255 @@ class Shop_SettingForm(ttk.Notebook):
         else:
             return []
         
-    def Set_Deffalute_type_value(self):
-        shop_ = self.Shops[0]
+    def Load_type_value(self):
+        shop_ = self.Shop
         if shop_:
-            shop_['Shop_Items_type'] = Shop_deff_type
-            Update_table_database('UPDATE Shops SET Shop_Items_type=? WHERE Shop_id=?', (Shop_deff_type, shop_['Shop_Id']))
+            self.Shop_deff_type = shop_['Shop_Items_type']
             self.load_type_info()
+            
+    def Set_Deffalute_type_value(self):
+        answer = tk.messagebox.askquestion("Question", "This Will Change All Edited Catagory To System Deffalut one. Change To System Deffalut ?")
+        if answer == 'yes':
+            self.Shop_deff_type = json.dumps(Shop_deff_type)
+            self.load_type_info()
+            self.convert_to_text()
+        else:
+            self.type_value_entry.delete(0, tk.END)
+            self.type_value_entry.insert(0, self.Shop_deff_type)
         
     def convert_to_text(self):
         nested_list = []
         for item in self.tree.get_children():
             child_text = self.tree.item(item, "text")
             nested_list.append([child_text, self.build_nested_list(item)])
-        text = str(nested_list)
-        self.types_label.config(text=text)
-        shop_ = self.Shops[0]
+        text = json.dumps(nested_list)
+        shop_ = self.Shop
         if shop_:
             Update_table_database('UPDATE Shops SET Shop_Items_type=? WHERE Shop_id=?', (text, shop_['Shop_Id']))
+            self.homemaster.Shops_info['Selected_Shop']['Shop_Items_type'] = text
+            self.Shop_deff_type = text
 
+    def load_Brand_rate_image(self):
+        ratingimglist = [self.Brand_rate20_label, self.Brand_rate40_label, self.Brand_rate60_label, self.Brand_rate80_label, self.Brand_rate100_label]
+        for i, img_frame in enumerate(ratingimglist):
+            if (i+1)*20 == self.Brand_rate or ( ((i+1)*20)-20 < self.Brand_rate and self.Brand_rate > 0):
+                img = Image.open(MAIN_dir+"\\data\\Icon\\rating\\star2.png").resize((20, 20))
+                img = ImageTk.PhotoImage(img)
+                img_frame.config(image=img)
+                img_frame.image = img
+            elif ((i+1)*20)-10 == self.Brand_rate or ( ((i+1)*20)-30 < self.Brand_rate and self.Brand_rate > 0):
+                img = Image.open(MAIN_dir+"\\data\\Icon\\rating\\star1.png").resize((20, 20))
+                img = ImageTk.PhotoImage(img)
+                img_frame.config(image=img)
+                img_frame.image = img
+            else:
+                img = Image.open(MAIN_dir+"\\data\\Icon\\rating\\star0.png").resize((20, 20))
+                img = ImageTk.PhotoImage(img)
+                img_frame.config(image=img)
+                img_frame.image = img
+                
+    def change_Brand_rate_image(self, changeto):
+        if self.Brand_rate == changeto:
+            self.Brand_rate = changeto-20
+        elif self.Brand_rate == changeto-10:
+            self.Brand_rate = changeto
+        else:
+            self.Brand_rate = changeto-10
+        self.load_Brand_rate_image()
+
+    def load_rate_image(self):
+        ratingimglist = [self.Shop_rate20_label, self.Shop_rate40_label, self.Shop_rate60_label, self.Shop_rate80_label, self.Shop_rate100_label]
+        for i, img_frame in enumerate(ratingimglist):
+            if (i+1)*20 == self.Shop_rate or ( ((i+1)*20)-20 < self.Shop_rate and self.Shop_rate > 0):
+                img = Image.open(MAIN_dir+"\\data\\Icon\\rating\\star2.png").resize((20, 20))
+                img = ImageTk.PhotoImage(img)
+                img_frame.config(image=img)
+                img_frame.image = img
+            elif ((i+1)*20)-10 == self.Shop_rate or ( ((i+1)*20)-30 < self.Shop_rate and self.Shop_rate > 0):
+                img = Image.open(MAIN_dir+"\\data\\Icon\\rating\\star1.png").resize((20, 20))
+                img = ImageTk.PhotoImage(img)
+                img_frame.config(image=img)
+                img_frame.image = img
+            else:
+                img = Image.open(MAIN_dir+"\\data\\Icon\\rating\\star0.png").resize((20, 20))
+                img = ImageTk.PhotoImage(img)
+                img_frame.config(image=img)
+                img_frame.image = img
+                
+    def change_rate_image(self, changeto):
+        if self.Shop_rate == changeto:
+            self.Shop_rate = changeto-20
+        elif self.Shop_rate == changeto-10:
+            self.Shop_rate = changeto
+        else:
+            self.Shop_rate = changeto-10
+        self.load_rate_image()
+        
+    def change_shop_rate(self):
+        self.Shop_rate = int(self.Shop_rate) + 10
+        self.load_rate_image()
+        
+    def change_shop_image(self):
+        file_source = filedialog.askopenfilename(filetypes=[("Image Files", "*.png *.jpg *.jpeg")])
+        dest_folder = MAIN_dir+"\\data\\Company\\"+ str(self.Shop_brand_name_entry.get()) + "\\"+ str(self.Shop_name_entry.get())
+        imag_file_name  = "ProfileImage.jpg"
+        # make sur folder is there
+        os.makedirs(dest_folder, exist_ok=True)
+        # join name and folder path
+        dest_full_path = os.path.join(dest_folder, imag_file_name)
+        # copy it to dest folder
+        shutil.copy2(file_source, dest_full_path)
+        self.load_shop_image()
+        # TODO : MAKE SUIRE IT IS UPLODED TO WEBSITE 
+            
+    def load_shop_image(self):
+        # load image
+        #file = filedialog.askopenfilename(filetypes=[("Image Files", "*.png *.jpg *.jpeg")])
+        if os.path.exists(MAIN_dir+"\\data\\Company\\"+ str(self.Shop_brand_name_entry.get()) + "\\"+ str(self.Shop_name_entry.get()) + "\\ProfileImage.jpg"):
+            Shop_img = Image.open(MAIN_dir+"\\data\\Company\\"+ str(self.Shop_brand_name_entry.get()) + "\\"+ str(self.Shop_name_entry.get()) + "\\ProfileImage.jpg").resize((100, 100))
+            Shop_img = ImageTk.PhotoImage(Shop_img)
+            self.Shop_avatar_label.config(image=Shop_img)
+            self.Shop_avatar_label.image = Shop_img
+        else:
+            # place holder
+            shop_img = Image.open(MAIN_dir+"\\data\\Icon\\no_Profile_image.jpg").resize((100, 100))
+            shop_img = ImageTk.PhotoImage(shop_img)
+            self.Shop_avatar_label.config(image=shop_img)
+            self.Shop_avatar_label.image = shop_img
+
+    def change_Brand_image(self):
+        file_source = filedialog.askopenfilename(filetypes=[("Image Files", "*.png *.jpg *.jpeg")])
+        dest_folder = MAIN_dir+"\\data\\Company\\"+ str(self.Shop_brand_name_entry.get())
+        imag_file_name  = "ProfileImage.jpg"
+        # make sur folder is there
+        os.makedirs(dest_folder, exist_ok=True)
+        # join name and folder path
+        dest_full_path = os.path.join(dest_folder, imag_file_name)
+        # copy it to dest folder
+        shutil.copy2(file_source, dest_full_path)
+        self.load_Brand_image()
+        # TODO : MAKE SUIRE IT IS UPLODED TO WEBSITE 
+        
+    def load_Brand_image(self):
+        # load Brand
+        if os.path.exists(MAIN_dir+"\\data\\Company\\"+ str(self.Shop_brand_name_entry.get()) + "\\ProfileImage.jpg"):
+            Brand_img = Image.open(MAIN_dir+"\\data\\Company\\"+ str(self.Shop_brand_name_entry.get()) + "\\ProfileImage.jpg").resize((100, 100))
+            Brand_img = ImageTk.PhotoImage(Brand_img)
+            self.Brand_avatar_label.config(image=Brand_img)
+            self.Brand_avatar_label.image = Brand_img
+        else:
+            # place holder
+            Brand_img = Image.open(MAIN_dir+"\\data\\Icon\\no_Profile_image.jpg").resize((100, 100))
+            Brand_img = ImageTk.PhotoImage(Brand_img)
+            self.Brand_avatar_label.config(image=Brand_img)
+            self.Brand_avatar_label.image = Brand_img
+        
     # shop profile  
     def load_shop_info(self):
-        print("loading shop info", self.Shops)
+        #print("loading shop info", self.Shops)
         shop_ = self.Shops[0]
         if shop_ != None and shop_ != []: 
-            '''if "+" in str(shop_[24]):
-                print("str(results[24]) "+str(str(shop_[24])))
-                k = 0
-                for order in str(shop_[24]).split("+"):
-                    if order != "" and k < len(self.USER_SECURITY_list_box.get_children()):
-                        values = self.USER_SECURITY_list_box.item(self.USER_SECURITY_list_box.get_children()[k])['values']
-                        values[0] = order
-                        self.USER_SECURITY_list_box.item(self.USER_SECURITY_list_box.get_children()[k], values=values)
-                    k+=1'''
-            
             self.Shop_name_entry.delete(0, tk.END)
             self.Shop_name_entry.insert(0, str(shop_['Shop_name']))
             self.Shop_brand_name_entry.delete(0, tk.END)
             self.Shop_brand_name_entry.insert(0, str(shop_['Shop_brand_name']))
-            self.Shop_oweners_id_entry.delete(0, tk.END)
-            self.Shop_oweners_id_entry.insert(0, str(shop_['Shop_oweners_id']))
+
+            self.load_shop_image()
+            self.load_Brand_image()
+
+            self.user_name_var.set(self.user_map_id.get(shop_['Shop_oweners_id'], ''))
+            self.user_id_var.set(self.user_map.get(shop_['Shop_oweners_id'], ''))
+            
+            self.Shop_email_entry.delete(0, tk.END)
+            self.Shop_email_entry.insert(0, str(shop_['Shop_email']))
             self.Shop_about_entry.delete(0, tk.END)
             self.Shop_about_entry.insert(0, str(shop_['Shop_about']))
+            self.Shop_country_entry.delete(0, tk.END)
+            self.Shop_country_entry.insert(0, str(shop_['Shop_country']))
+            self.Shop_password_entry.delete(0, tk.END)
+            self.Shop_password_entry.insert(0, str(shop_['Shop_password']))
             self.Shop_link_entry.delete(0, tk.END)
             self.Shop_link_entry.insert(0, str(shop_['Shop_link']))
+            self.Shop_Contact_entry.delete(0, tk.END)
+            self.Shop_Contact_entry.insert(0, str(shop_['Shop_contact']))
+            self.Shop_startedDate_label.config(text="since "+str(str(shop_['Company_Started_Date']).split(" ")[0].split("-")[0]))
+            if shop_['Shop_isenabled'] and shop_['Shop_isenabled'] == "1":
+                self.Shop_isenabled_var.set(1)
+            else:
+                self.Shop_isenabled_var.set(0)
+            self.Shop_types_var.set(str(shop_['Shop_type']))
+
+            if shop_['Shop_rate'] and not shop_['Shop_rate'] == "":
+                self.Shop_rate = int(shop_['Shop_rate'])
+
+            
+            self.Shop_slinks = str(shop_['Shop_SocLinks'])
+            self.Shop_rules =str(shop_['Shop_rules'])
+            
             #self.Shop_phone_num_entry.delete(0, tk.END)
-            #self.Shop_phone_num_entry.insert(0, str(shop_['Shop_phone_num']))
-            self.Shop_location_entry.delete(0, tk.END)
-            self.Shop_location_entry.insert(0, str(shop_['Shop_location']))
-            self.Shop_rules_entry.delete(0, tk.END)
-            self.Shop_rules_entry.insert(0, str(shop_['Shop_rules']))
-        
-        '''self.Shop_name_entry = tk.Entry(self.Shop_listinfo_frame)
-            self.Shop_brand_name_entry = tk.Entry(self.Shop_listinfo_frame)
-            self.Shop_type_entry = tk.Entry(self.Shop_listinfo_frame)
-            self.Shop_oweners_id_entry = tk.Entry(self.Shop_listinfo_frame)
-            self.Shop_about_entry = tk.Entry(self.Shop_listinfo_frame)
-            self.Shop_email_entry = tk.Entry(self.Shop_listinfo_frame)
-            self.Shop_phone_num_entry = tk.Entry(self.Shop_listinfo_frame)
-            self.Shop_country_entry = tk.Entry(self.Shop_listinfo_frame)
-            self.Shop_location_entry = tk.Entry(self.Shop_listinfo_frame)
-            self.Shop_about_entry = tk.Entry(self.Shop_listinfo_frame)
-            self.Shop_about_entry = tk.Entry(self.Shop_listinfo_frame)
-            self.Shop_workers_entry = tk.Entry(self.Shop_listinfo_frame)
-            self.Shop_password_entry = tk.Entry(self.Shop_listinfo_frame)'''
+            v = str(shop_['Shop_Adress_Information'])
+            if v and "+" in v:
+                infos = v.split("+")
+                for l in infos:
+                    info = l.split("=")
+                    if "Location" == info[0]:
+                        self.Shop_locations = info[1]+ "="
+                    if "Phone Number" == info[0]:
+                        self.Shop_phone_nums = info[1]+ "="
+            self.load_Shop_phone_num()
+            self.load_Shop_location()
+            self.load_Shop_rules()
+            self.load_Shop_slink()
     
-    def USER_SECURITY_on_select(self, *arg):
-        if self.Shop:
-            # Modify the quantity of the item as required
-            if len(self.USER_SECURITY_list_box.selection()) > 0:
-                for a in self.USER_SECURITY_list_box.selection():
-                    values = self.USER_SECURITY_list_box.item(a)['values']
-                    text = self.USER_SECURITY_list_box.item(a)['text']
-                    i = GetvalueForm(self, values[0], ["Change Access Level of " + text])
-                    if not i.value[0] == None and not i.value[0] == "" and i.value[0] > -1:
-                        values[0] = i.value[0]
-                        self.USER_SECURITY_list_box.item(a, values=values)
-                Shop_Security_Levels = []
-                for q in self.USER_SECURITY_list_box.get_children():
-                    values = self.USER_SECURITY_list_box.item(q)['values']
-                    Shop_Security_Levels.append(values[0])
-                
-                
-                Update_table_database('UPDATE Shops SET Shop_Security_Levels=? WHERE Shop_id=?',
-                        (json.dumps(Shop_Security_Levels), self.Shop['Shop_Id']))               
+                 
     def save_shop_info(self):
         # TODO : CHANGE SHOP SELECTED ONLY
         shop_ = self.Shops[0]
         if shop_:
-            # TODO MAKE NICE WAY TO RESIVE INFGORMATIONS
-            shop_info =  self.Shop_location_entry.get() # "Phone Number="+self.Shop_phone_num_entry.get()+"+Location="+self.Shop_location_entry.get()
             if shop_['Shop_Id']:
                 idq = 'Shop_Id'
                 idv = shop_['Shop_Id']
             else:
                 idq = 'Id'
                 idv = shop_['Id']
-            s = Update_Shop(None, None, ['Shop_name', 'Shop_brand_name', 'Shop_link', 'Shop_location', 'Shop_rules', 'Shop_about'], [self.Shop_name_entry.get(), self.Shop_brand_name_entry.get(), self.Shop_link_entry.get(), shop_info, self.Shop_rules_entry.get(), self.Shop_about_entry.get()], [idq], [idv])
+            self.user_id_var.set(self.user_map.get(str(self.user_name_var.get()), ''))
+            self.Shop_name_entry.get()
+            #'Shop_name'
+            self.Shop_brand_name_entry.get()
+            #'Shop_brand_name'
+            self.user_id_var.get()
+            #'Shop_oweners_id'
+            self.Shop_email_entry.get()
+            #'Shop_email'
+            self.Shop_about_entry.get()
+            #'Shop_about'
+            self.Shop_country_entry.get()
+            #'Shop_country'
+            self.Shop_password_entry.get()
+            #'Shop_password'
+            self.Shop_link_entry.get()
+            #'Shop_link'
+            self.Shop_Contact_entry.get()
+            #'Shop_contact'
+            self.Shop_isenabled_var.get()
+            #'Shop_isenabled'
+            self.Shop_types_var.get()
+            #'Shop_type'
+            #self.Shop_rate
+            #'Shop_rate'
+            #self.Shop_slinks
+            #'Shop_SocLinks'
+            #self.Shop_rules
+            #'Shop_rules'
+            #shop_info
+            #'Shop_Adress_Information'
+            
+            shop_info =  "Phone Number="+str(self.Shop_phone_nums)+"+Location="+str(self.Shop_locations)             
+            s = Update_Shop(None, None, ['Shop_name', 'Shop_brand_name', 'Shop_oweners_id', 'Shop_email', 'Shop_about', 'Shop_country', 'Shop_password', 'Shop_link', 'Shop_contact', 'Shop_isenabled', 'Shop_type', 'Shop_rate', 'Shop_SocLinks', 'Shop_rules', 'Shop_Adress_Information'], [self.Shop_name_entry.get(), self.Shop_brand_name_entry.get(), self.user_id_var.get(), self.Shop_email_entry.get(), self.Shop_about_entry.get(), self.Shop_country_entry.get(), self.Shop_password_entry.get(), self.Shop_link_entry.get(), self.Shop_Contact_entry.get(), self.Shop_isenabled_var.get(), self.Shop_types_var.get(), self.Shop_rate, self.Shop_slinks, self.Shop_rules, shop_info], [idq], [idv])
             
             #  = fetch_as_dict_list("SELECT * FROM Shops WHERE " + idq + "=?", (str(idv),))
             if s:
-                print("s "+str(s))
+                #print("s "+str(s))
                 if isinstance(s, list) and len(s) > 0:
                     self.Shops = s
                     self.master.master.master.master.master.Shops[0] = s
@@ -664,10 +1919,10 @@ class Shop_SettingForm(ttk.Notebook):
             self.slip_order_list_items.delete(0, tk.END)
             for order in self.slip_order_list[1]:
                 if order:
-                    print("order "+str(order))
-                    print("str(slip_order_type[int(order)]) "+str(order[0]))
+                    #print("order "+str(order))
+                    #print("str(slip_order_type[int(order)]) "+str(order[0]))
                     self.slip_order_list_items.insert(tk.END, str(slip_order_type[int(order[0])]))
-            print("displaying self.slip_order_list[1] ", self.slip_order_list[1])
+            #print("displaying self.slip_order_list[1] ", self.slip_order_list[1])
             if not len(self.slip_order_list[0]) >= 2:
                 self.slip_order_list[0] = ["40", "20"]
 
@@ -689,13 +1944,13 @@ class Shop_SettingForm(ttk.Notebook):
         slip_order_list_str = json.dumps(self.slip_order_list)
         self.Shops[selected_shop_index]['Shop_Slip_Settings'] = slip_order_list_str
         Update_table_database('UPDATE Shops SET Shop_Slip_Settings=? WHERE Shop_id=?', (slip_order_list_str, self.Shops[selected_shop_index]['Shop_Id']))
-        print("updated self.slip_order_list[1] ", self.slip_order_list[1])
+        #print("updated self.slip_order_list[1] ", self.slip_order_list[1])
         self.refrash_slip_order()
 
     def on_new_order_selected(self, *arg):
-        print("add self.slip_order_list[1] ", self.slip_order_list[1])
+        #print("add self.slip_order_list[1] ", self.slip_order_list[1])
         self.slip_order_list[1].append([slip_order_type.index(str(self.slip_option_var.get()))])
-        print("added self.slip_order_list[1] ", self.slip_order_list[1])
+        #print("added self.slip_order_list[1] ", self.slip_order_list[1])
         
         self.update_slip_order()
         
@@ -706,8 +1961,8 @@ class Shop_SettingForm(ttk.Notebook):
         
         if self.slip_order_list:
             on = 0
-            print("self.slip_order_list[1] ", self.slip_order_list[1])
-            print("self.slip_order_list[1] len  ", len(self.slip_order_list[1]))
+            #print("self.slip_order_list[1] ", self.slip_order_list[1])
+            #print("self.slip_order_list[1] len  ", len(self.slip_order_list[1]))
             for index in reversed(current_selection):
                 del self.slip_order_list[1][index]
         self.update_slip_order()
@@ -763,10 +2018,10 @@ class Shop_SettingForm(ttk.Notebook):
 
     
     def chacke_remaber_printer(self):
-        print("chacke_remaber_printer")
+        #print("chacke_remaber_printer")
         if int(self.Remamber_printer_int.get()):
             b = fetch_as_dict_list("SELECT * FROM setting WHERE User_id = ?", (self.user['User_id'],))
-            print("user " + str(self.user[0]) + " found " +str(b))
+            #print("user " + str(self.user[0]) + " found " +str(b))
             printers = list_available_printers()
             if b and len(b) > 0 and b[0][3] == "" or not b:
                 dialog = PrinterSelectionDialog(self, printers)
@@ -785,7 +2040,7 @@ class Shop_SettingForm(ttk.Notebook):
             
             
     def chacke_ask_seller(self):
-        print("going to make seller ask or not...")
+        #print("going to make seller ask or not...")
         Update_table_database('UPDATE setting SET Get_seller=? WHERE user_id=?', (int(self.ask_seller_int.get()), self.user['User_id']))
         
 
@@ -852,8 +2107,9 @@ class Shop_SettingForm(ttk.Notebook):
                 p["size"] == v[0]:
                     if p["barcode"] == self.bracode_entry.get() and p["qtyfirst"] == v[1] and \
                         p["qty"] == v[1]:
-                        print("issame!!!" + str(p)) # TODO: show same earror
+                        #print("issame!!!" + str(p)) # TODO: show same earror
                         #    cdate#    update
+                        pass
                     else:
                         self.inventory[i]["barcode"] = self.bracode_entry.get()
                         self.inventory[i]["qty"] = v[1]
@@ -999,10 +2255,10 @@ class Shop_SettingForm(ttk.Notebook):
         self.Item_To_Update_tab_listbox.column("#14", stretch=tk.NO, minwidth=25, width=100) 
 
     def perform_search_Item_size_chack(self):
-        item = fetch_as_dict_list('SELECT * FROM product', ())
+        item = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM product', ())
         
         for it in item:
-            print("item["+str(it[0])+"]  : " + str(it[12]))
+            #print("item["+str(it[0])+"]  : " + str(it[12]))
             qty_info_list = []
             if "\"{" in str(it[12]):
                 qty_info_list = read_code(it[12], "", str(it[2]), "", "")[4]
@@ -1086,7 +2342,7 @@ class Shop_SettingForm(ttk.Notebook):
                         pay[1] += float(pay_pid)
                         break
                 if found == 0:
-                    print("new payment :" + str([pay_type, pay_pid]))
+                    #print("new payment :" + str([pay_type, pay_pid]))
                     self.pyment_used.append([pay_type, float(pay_pid)])
                 index += 1
 
@@ -1227,8 +2483,8 @@ class Shop_SettingForm(ttk.Notebook):
             shop_name, nested_items = s
             color, nested_items2 = nested_items
             size, nested_items3 = nested_items2
-            print("shop name : " + shop_name)
-            print("shop nested_item : " + str(nested_items))
+            #print("shop name : " + shop_name)
+            #print("shop nested_item : " + str(nested_items))
             barcode, qtyfirst, qty, cdate, update = nested_items3
             self.add_info_(shop_name, color, size, barcode, qtyfirst, qty, cdate, update)
     
@@ -1298,19 +2554,19 @@ class Shop_SettingForm(ttk.Notebook):
     
     def update_tree(self):
         self.tree.delete(*self.tree.get_children())
-        print("gount tot add tree ")
+        #print("gount tot add tree ")
         for shop in self.nested_list:
-            print("shop")
+            #print("shop")
             shop_name_node = self.tree.insert("", "end", text=shop[0])
             for code in shop[1]:
-                print("code")
+                #print("code")
                 code_node = self.tree.insert(shop_name_node, "end", text=code[0])
                 for color in code[1]:
                     color_node = self.tree.insert(code_node, "end", text=color[0])
                     for size in color[1]:
                         size_node = self.tree.insert(color_node, "end", text=size[0])
                         for value in size[1]:
-                            print("value : " + str(value))
+                            #print("value : " + str(value))
                             barcode, qtyfirst, qty, patern, imgs, cdate, update = value
                             if barcode and qtyfirst and qty and cdate and update:
                                 self.tree.insert(size_node, "end", text=value[0], values=(barcode, qtyfirst, qty, cdate, update))
@@ -1351,14 +2607,15 @@ class Shop_SettingForm(ttk.Notebook):
         found = 0 
         i = 0
         for a in self.tree.selection():
-            print(str(self.tree.item(a)))
+            #print(str(self.tree.item(a)))
             for p in self.inventory:
                 if p["shop_name"] == self.shop_name_entry.get() and p["color"] == self.color_entry.get() and \
                 p["size"] == self.size_entry.get():
                     if p["barcode"] == self.bracode_entry.get() and p["qtyfirst"] == self.qty_entry.get() and \
                         p["qty"] == self.qty_entry.get():
-                        print("issame!!!" + str(p)) # TODO: show same earror
+                        #print("issame!!!" + str(p)) # TODO: show same earror
                         #    cdate#    update
+                        pass
                     else:
                         self.inventory[i]["barcode"] = self.bracode_entry.get()
                         self.inventory[i]["qty"] = self.qty_entry.get()
@@ -1411,8 +2668,9 @@ class Shop_SettingForm(ttk.Notebook):
                p["size"] == self.size_entry.get():
                 if p["barcode"] == self.bracode_entry.get() and p["qtyfirst"] == self.qty_entry.get() and \
                     p["qty"] == self.qty_entry.get():
-                    print("issame!!!" + str(p)) # TODO: show same earror
+                    #print("issame!!!" + str(p)) # TODO: show same earror
                     #    cdate#    update
+                    pass
                 else:
                     self.inventory[i]["barcode"] = self.bracode_entry.get()
                     self.inventory[i]["qty"] = self.qty_entry.get()
@@ -1424,7 +2682,7 @@ class Shop_SettingForm(ttk.Notebook):
         #{'shop_name': '1', 'color': '2', 'size': '3', 'barcode': '4', 'qtyfirst': '4', 'qty': '4', 'cdate': '', 'update': ''}
                 #return (p["barcode"], p["qtyfirst"], p["qty"], p["cdate"], p["update"])
         found, self.nested_list = add_new_list(self.nested_list, self.shop_name_entry.get() + "|" + self.code_entry.get() + "|" + self.color_entry.get() + "|" + self.size_entry.get() , [self.bracode_entry.get(), self.qty_entry.get(), self.qty_entry.get(), "", self.images_entry.get(), "", ""])
-        print("self.nested_list : " + str(self.nested_list))
+        #print("self.nested_list : " + str(self.nested_list))
         if found:
             self.add_info_(self.shop_name_entry.get(), self.code_entry.get(), self.color_entry.get(), self.size_entry.get(), self.bracode_entry.get(), self.qty_entry.get(), self.qty_entry.get(), "", self.images_entry.get(), "", "")
             
@@ -1541,7 +2799,7 @@ class Shop_SettingForm(ttk.Notebook):
         if len(vv) > 0:
             self.graph_value, self.graph_value0, tilte = make_list(vv)
         
-            print("pself.graph_value0 :" + str(self.graph_value0))
+            #print("pself.graph_value0 :" + str(self.graph_value0))
             draw_cart(int(self.style_var.get()), self.chart_canvas, self.next_button, self.prev_button, self.graph_value0, int(self.which_var.get()), 1, 0)
             draw_cart(int(self.style_var.get()), self.chart2_canvas, None, None, self.graph_value0, int(self.which_var.get()), 1, 0)
             self.display_products(self.graph_value0, int(self.which_var.get()))
@@ -1671,7 +2929,7 @@ class Shop_SettingForm(ttk.Notebook):
         default_quantity = int(self.default_quantity_change_var.get())
         active = int(self.active_var.get())
             
-        print(str([name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active]))
+        #print(str([name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active]))
         
         item = ""
         doc_type = ""
@@ -1687,15 +2945,15 @@ class Shop_SettingForm(ttk.Notebook):
             # Get the ID of the most recently added item
             Update_table_database('INSERT INTO product (name, code, type, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active))
             new_item_id = fetch_as_dict_list("SELECT last_insert_rowid()")[0]
-            print("new_product_id : " + str(new_item_id) + " barcode : " + str(brcod))
+            #print("new_product_id : " + str(new_item_id) + " barcode : " + str(brcod))
             item += f"(:{new_item_id}:,:{name}:,:{code}:,:{typ}:,:{barcode}:,:{at_shop}:,:{quantity}:,:{cost}:,:{tax}:,:{price}:,:{include_tax}:,:{price_change}:,:{more_info}:,:{images}:,:{description}:,:{service}:,:{default_quantity}:,:{active}:)"
-            print("item : " + str(item))
+            #print("item : " + str(item))
         else:
             product_id = int(self.list_box.item(self.list_box.selection())['values'][0])
-            print("product_id : " + str(product_id) + " barcode : " + str(brcod))
+            #print("product_id : " + str(product_id) + " barcode : " + str(brcod))
             doc_type = "Update_Items"
             item += f"(:{product_id}:,:{name}:,:{code}:,:{typ}:,:{barcode}:,:{at_shop}:,:{quantity}:,:{cost}:,:{tax}:,:{price}:,:{include_tax}:,:{price_change}:,:{more_info}:,:{images}:,:{description}:,:{service}:,:{default_quantity}:,:{active}:)"
-            print("item : " + str(item))
+            #print("item : " + str(item))
             # Update the product in the database
             Update_table_database('UPDATE product SET name=?, code=?, type=?, barcode=?, at_shop=?, quantity=?, cost=?, tax=?, price=?, include_tax=?, price_change=?, more_info=?, images=?, description=?, service=?, default_quantity=?, active=? WHERE id=?', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active, product_id))
         
@@ -1705,11 +2963,11 @@ class Shop_SettingForm(ttk.Notebook):
             Update_table_database('INSERT INTO upload_doc (doc_barcode, extension_barcode, user_id, customer_id, type, item, qty, price, discount, tax, payments, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', ("23-200-" + str(brcod), "extension_barcode", self.master.master.master.master.user, self.master.master.master.master.custemr, doc_type, item, 1, 0, 0, 0, "payments_", "doc_created_date", "doc_expire_date", "doc_updated_date"))
 
             
-            print("Data inserted successfully into the upload_doc table.")
+            #print("Data inserted successfully into the upload_doc table.")
         except Exception as e:
-            print("Error occurred while inserting data into the upload_doc table:")
-            print(str(e))
-
+            #print("Error occurred while inserting data into the upload_doc table:")
+            #print(str(e))
+            pass
 
 
         # Clear the product details widgets

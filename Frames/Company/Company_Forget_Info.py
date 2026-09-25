@@ -29,12 +29,9 @@ class Company_Forget_Info_Frame(tk.Frame):
         self.Canceal_callback = Canceal_callback
         self.User_data = User_data
         self.Shop_data = Shop_data
-
-        self.User_Info_Frame = tk.Frame(self, bg="gray", height=screen_height, width=screen_width)
-        self.User_Info_Frame.pack()
         
-        self.details_frame = tk.Frame(self.User_Info_Frame, height=screen_height, width=screen_width)
-        self.details_frame.place(relx=0.5, rely=0.5, anchor="center")
+        self.details_frame = tk.Frame(self, bg="#0d47a1")
+        self.details_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
          # Create the widgets for the user details
         tk.Label(self.details_frame,

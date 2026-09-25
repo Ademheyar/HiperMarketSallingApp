@@ -66,6 +66,14 @@ class User_Forget_Info_Frame(tk.Frame):
         self.Canceal_callback = Canceal_callback
         self.User_data = User_data
 
+        self.Found_User = None
+        self.MainApplication = self
+        while(True):
+            if hasattr(self.MainApplication, 'MainApplication_root'):
+                break
+            else:
+                self.MainApplication = self.MainApplication.master
+                
         # Android-style dark blue color scheme
         bg_dark = "#0d47a1"      # Deep blue
         bg_light = "#1565c0"     # Darker blue
@@ -73,11 +81,8 @@ class User_Forget_Info_Frame(tk.Frame):
         accent_red = "#d32f2f"   # Red for errors or important messages
         text_light = "#ffffff"
 
-        self.User_Info_Frame = tk.Frame(self, bg=bg_dark, height=screen_height, width=screen_width)
-        self.User_Info_Frame.pack()
-        
-        self.details_frame = tk.Frame(self.User_Info_Frame, bg=bg_dark, height=screen_height, width=screen_width)
-        self.details_frame.place(relx=0.5, rely=0.5, anchor="center")
+        self.details_frame = tk.Frame(self, bg=bg_dark)
+        self.details_frame.pack(side=tk.TOP, fill=tk.X, expand=True)
 
         # Create the widgets for the user details
         tk.Label(self.details_frame,
@@ -93,27 +98,49 @@ class User_Forget_Info_Frame(tk.Frame):
         self.f_and_lname_label = tk.Label(self.details_frame, text='First and Last Name :', bg=bg_dark, fg=text_light)
         self.fname_entry = tk.Entry(self.details_frame, bg=bg_light, fg=text_light, insertbackground=text_light)
         self.lname_entry = tk.Entry(self.details_frame, bg=bg_light, fg=text_light, insertbackground=text_light)
+        self.fname_entry.insert(0, "Yussuf")
+        self.lname_entry.insert(0, "abdul")
         self.gender_label = tk.Label(self.details_frame, text='Gender :', bg=bg_dark, fg=text_light)
-        self.gender_entry = tk.Entry(self.details_frame, bg=bg_light, fg=text_light, insertbackground=text_light)
+        self.gendert_var = tk.StringVar()  # gender selecter
+        self.gendert_var.set("MALE")
+        self.gender_Combobox = ttk.Combobox(self.details_frame, textvariable=self.gendert_var, values=["MALE", "FEMALE", "Prefer Not to Say"], state='readonly')
         self.id_num_label = tk.Label(self.details_frame, text='Id No :', bg=bg_dark, fg=text_light)
         self.id_num_entry = tk.Entry(self.details_frame, bg=bg_light, fg=text_light, insertbackground=text_light)
+        self.id_num_entry.insert(0, "01234")
         self.home_no_label = tk.Label(self.details_frame, text='Home No :', bg=bg_dark, fg=text_light)
         self.home_no_entry = tk.Entry(self.details_frame, bg=bg_light, fg=text_light, insertbackground=text_light)
+        self.home_no_entry.insert(0, "365")
         self.cuntry_label = tk.Label(self.details_frame, text='Country :', bg=bg_dark, fg=text_light)
-        self.cuntry_entry = tk.Entry(self.details_frame, bg=bg_light, fg=text_light, insertbackground=text_light)
+        self.cuntry_var = tk.StringVar()  # country selecter
+        self.cuntry_Combobox = ttk.Combobox(self.details_frame, textvariable=self.cuntry_var, values=sorted(self.MainApplication.COUNTRIES_WITH_CITIES.keys()), state='readonly')
+        
+        self.cuntry_label.grid(row=7, column=0, padx=5, pady=5, sticky=tk.W)
+        self.cuntry_Combobox.grid(row=7, column=1, padx=5, pady=5, sticky=tk.W)
+        self.cuntry_var.set(sorted(self.MainApplication.COUNTRIES_WITH_CITIES.keys())[0])
+        
+        self.city_label = tk.Label(self.details_frame, text='City :', bg=bg_dark, fg=text_light)
+        self.city_var = tk.StringVar()  # country selecter
+        self.city_Combobox = ttk.Combobox(self.details_frame, textvariable=self.city_var, values=self.MainApplication.COUNTRIES_WITH_CITIES.get(self.cuntry_var.get(), []), state='readonly')
+        self.city_label.grid(row=8, column=0, padx=5, pady=5, sticky=tk.W)
+        self.city_Combobox.grid(row=8, column=1, padx=5, pady=5, sticky=tk.W)
+        self.city_var.set(self.MainApplication.COUNTRIES_WITH_CITIES.get(self.cuntry_var.get(), [])[0])
+
+        def  cuntry_changed():
+            self.city_Combobox['values'] = self.MainApplication.COUNTRIES_WITH_CITIES.get(self.cuntry_var.get(), [])
+            self.city_var.set(str(self.MainApplication.COUNTRIES_WITH_CITIES.get(self.cuntry_var.get(), [])[0] if len(self.MainApplication.COUNTRIES_WITH_CITIES.get(self.cuntry_var.get(), [])) else "") )
+        
+        self.cuntry_var.trace('w', lambda name, index, mode: cuntry_changed())
         
         self.f_and_lname_label.grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
         self.fname_entry.grid(row=2, column=1, padx=5, pady=5, sticky=tk.W)
         self.lname_entry.grid(row=3, column=1, padx=5, pady=5, sticky=tk.W)
         self.gender_label.grid(row=4, column=0, padx=5, pady=5, sticky=tk.W)
-        self.gender_entry.grid(row=4, column=1, padx=5, pady=5, sticky=tk.W)
+        self.gender_Combobox.grid(row=4, column=1, padx=5, pady=5, sticky=tk.W)
         self.id_num_label.grid(row=5, column=0, padx=5, pady=5, sticky=tk.W)
         self.id_num_entry.grid(row=5, column=1, padx=5, pady=5, sticky=tk.W) 
         self.home_no_label.grid(row=6, column=0, padx=5, pady=5, sticky=tk.W)
         self.home_no_entry.grid(row=6, column=1, padx=5, pady=5, sticky=tk.W)
-        self.cuntry_label.grid(row=7, column=0, padx=5, pady=5, sticky=tk.W)
-        self.cuntry_entry.grid(row=7, column=1, padx=5, pady=5, sticky=tk.W)
-        
+                              
         tk.Label(self.details_frame,
              text="At Least Fill 3.",
              bg=bg_dark, fg=accent_blue, font=("Arial", 10)
@@ -123,16 +150,17 @@ class User_Forget_Info_Frame(tk.Frame):
         self.name_entry = tk.Entry(self.details_frame, bg=bg_light, fg=text_light, insertbackground=text_light)
         self.password_num0_label = tk.Label(self.details_frame, text='Password :', bg=bg_dark, fg=text_light)
         self.password_num0_entry = tk.Entry(self.details_frame, show="*", bg=bg_light, fg=text_light, insertbackground=text_light)
+        self.password_num1_label = tk.Label(self.details_frame, text='New Password :', bg=bg_dark, fg=text_light)
         self.password_num1_entry = tk.Entry(self.details_frame, show="*", bg=bg_light, fg=text_light, insertbackground=text_light)
         self.show_password_var = tk.IntVar()
         self.show_password_checkbutton = tk.Checkbutton(self.details_frame, text='Show Passwords', variable=self.show_password_var, bg=bg_dark, fg=text_light, selectcolor=bg_light)
         self.show_password_checkbutton.bind("<Button-1>", self.show_password_fuc)
+        self.reset_button = tk.Button(self.details_frame, text='Reset New Password', command=self.reset_user, bg=accent_blue, fg=text_light, font=("Arial", 10, "bold"), padx=10, pady=5)
+        
         self.phone_num_label = tk.Label(self.details_frame, text='Phone No :', bg=bg_dark, fg=text_light)
         self.phone_num_entry = tk.Entry(self.details_frame, bg=bg_light, fg=text_light, insertbackground=text_light)
         self.email_label = tk.Label(self.details_frame, text='Email :', bg=bg_dark, fg=text_light)
         self.email_entry = tk.Entry(self.details_frame, bg=bg_light, fg=text_light, insertbackground=text_light)
-        self.addres_label = tk.Label(self.details_frame, text='Address :', bg=bg_dark, fg=text_light)
-        self.addres_entry = tk.Entry(self.details_frame, bg=bg_light, fg=text_light, insertbackground=text_light)
         self.type_label = tk.Label(self.details_frame, text='Type :', bg=bg_dark, fg=text_light)
         self.type_entry = tk.Entry(self.details_frame, bg=bg_light, fg=text_light, insertbackground=text_light)
         self.about_label = tk.Label(self.details_frame, text='About :', bg=bg_dark, fg=text_light)
@@ -141,7 +169,6 @@ class User_Forget_Info_Frame(tk.Frame):
         self.shops_entry = tk.Entry(self.details_frame, bg=bg_light, fg=text_light, insertbackground=text_light)
         self.work_shop_label = tk.Label(self.details_frame, text='Work Shop :', bg=bg_dark, fg=text_light)
         self.work_shop_entry = tk.Entry(self.details_frame, bg=bg_light, fg=text_light, insertbackground=text_light)
-        self.acsess_entry = tk.Entry(self.details_frame, bg=bg_light, fg=text_light, insertbackground=text_light)
         self.pimg_entry = tk.Entry(self.details_frame, bg=bg_light, fg=text_light, insertbackground=text_light)
         
         self.name_label.grid(row=2, column=2, padx=5, pady=5, sticky=tk.W)
@@ -153,21 +180,15 @@ class User_Forget_Info_Frame(tk.Frame):
         self.phone_num_entry.grid(row=5, column=3, padx=5, pady=5, sticky=tk.W)
         self.email_label.grid(row=6, column=2, padx=5, pady=5, sticky=tk.W)
         self.email_entry.grid(row=6, column=3, padx=5, pady=5, sticky=tk.W)
-        self.addres_label.grid(row=7, column=2, padx=5, pady=5, sticky=tk.W)
-        self.addres_entry.grid(row=7, column=3, padx=5, pady=5, sticky=tk.W)
-        self.type_label.grid(row=8, column=2, padx=5, pady=5, sticky=tk.W)
-        self.type_entry.grid(row=8, column=3, padx=5, pady=5, sticky=tk.W)
-        self.about_label.grid(row=9, column=2, padx=5, pady=5, sticky=tk.W)
-        self.about_entry.grid(row=9, column=3, padx=5, pady=5, sticky=tk.W)
+        self.type_label.grid(row=7, column=2, padx=5, pady=5, sticky=tk.W)
+        self.type_entry.grid(row=7, column=3, padx=5, pady=5, sticky=tk.W)
+        self.about_label.grid(row=8, column=2, padx=5, pady=5, sticky=tk.W)
+        self.about_entry.grid(row=8, column=3, padx=5, pady=5, sticky=tk.W)
 
         self.fname_entry.bind('<KeyRelease>', self.on_name_entry)
         self.lname_entry.bind('<KeyRelease>', self.on_name_entry)
         self.name_entry.bind('<KeyRelease>', self.on_name_entry)
         
-        self.forget_password_label = tk.Label(self.details_frame, text="", fg=accent_red, bg=bg_dark, cursor="hand2", font=("Arial", 10, "underline"))
-        self.forget_password_label.grid(row=17, column=0, columnspan=3, padx=5, pady=5, sticky=tk.W)
-        self.forget_password_label.bind("<Button-1>", self.forget_password_fuc)
-        self.Found_User_id_var = ""
         
         self.find_button = tk.Button(self.details_frame, text='Find', command=self.find_user, bg=accent_blue, fg=text_light, font=("Arial", 10, "bold"), padx=10, pady=5)
         self.cancle_button = tk.Button(self.details_frame, text='Cancel', command=self.canceal_callback, bg=bg_light, fg=text_light, font=("Arial", 10, "bold"), padx=10, pady=5)
@@ -195,35 +216,29 @@ class User_Forget_Info_Frame(tk.Frame):
            self.password_num1_entry.config(show="*")
     
     def on_name_entry(self, event):
-        if self.fname_entry.get() != "" and self.lname_entry.get() != "":
-            if event.widget != self.name_entry and self.name_entry.get() != str(self.fname_entry.get()[0]+self.lname_entry.get()[0] + " " + self.fname_entry.get()):
+        if event.widget != self.name_entry and len(self.fname_entry.get()) > 0 and len(self.lname_entry.get()) > 0:
+            if self.name_entry.get() != str(self.fname_entry.get()[0]+self.lname_entry.get()[0] + " " + self.fname_entry.get()):
                self.name_entry.delete(0, tk.END)
                self.name_entry.insert(0, self.fname_entry.get()[0]+self.lname_entry.get()[0] + " " + self.fname_entry.get())
-        else:
-            self.name_entry.delete(0, tk.END)
+            self.email_entry.delete(0, tk.END)
+            self.email_entry.insert(0, self.fname_entry.get()+self.lname_entry.get()+"@gmail.com")
             
-        Update_table_database('SELECT * FROM Users WHERE (User_fname=? AND User_Lname=? AND User_name=?) OR User_name=?',
-                    (self.fname_entry.get(), self.lname_entry.get(), self.name_entry.get(), self.name_entry.get()))
-        users = cur.fetchall()
+        users = fetch_as_dict_list(self.MainApplication.link_entry.get(), 'SELECT * FROM Users WHERE (User_fname=? AND User_Lname=? AND User_name=?) OR User_name=?', (self.fname_entry.get(), self.lname_entry.get(), self.name_entry.get(), self.name_entry.get()))
         if users:
             for user in users:
-               if user[1] == self.name_entry.get():
-                  self.forget_password_label.grid(row=17, column=0, columnspan=3, padx=5, pady=5, sticky=tk.W)
-                  self.Found_User_id_var = user[0];
-                  self.add_button.config(text="Find")
+               if user['User_name'] == self.name_entry.get():
+                  self.Found_User = user;    
+                  self.find_button.config(text="Find")
                   return
         else:
-            
-            self.forget_password_label.grid_remove()
-            self.add_button.config(text="Find")
+            self.find_button.config(text="Find")
 
 
     def clear_user_details_widget(self):
-        
         self.fname_entry.delete(0, "end")
         self.lname_entry.delete(0, "end")
         self.name_entry.delete(0, "end")
-        self.gender_entry.delete(0, "end")
+        self.gendert_var.set("")
         self.cuntry_entry.delete(0, "end")
         self.phone_num_entry.delete(0, "end")
         self.email_entry.delete(0, "end")
@@ -235,10 +250,24 @@ class User_Forget_Info_Frame(tk.Frame):
         self.about_entry.delete(0, "end")
         self.shops_entry.delete(0, "end")
         self.work_shop_entry.delete(0, "end")
-        self.acsess_entry.delete(0, "end")
+        self.city_var.set('')
         self.pimg_entry.delete(0, "end")
+        self.reset_button.grid_forget()
+        self.password_num1_label.grid_forget()
+        self.password_num1_entry.grid_forget()
 
-    # Define the function for adding a new user
+    def reset_user(self):
+        if self.Found_User != None:
+            new_password = self.password_num1_entry.get()
+            if new_password != "":
+                Update_table_database('UPDATE Users SET User_password=? WHERE User_id=?', (new_password, self.Found_User['User_id']))
+                tk.Label(self.master.master.master.Error_list_frame, text="New password reseted.", fg="Green").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
+                self.clear_user_details_widget()
+            else:
+                tk.Label(self.master.master.master.Error_list_frame, text="Please enter a new password to reset your password.", fg="Red").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
+        else:
+            tk.Label(self.master.master.master.Error_list_frame, text="No user found to reset the password for. Please find your account first.", fg="Red").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
+
     def find_user(self):
         # Get the values from the user details widgets
         # get Main information this most be filled to find the user account, if the user found fill the rest of the information and show the forget password label to allow the user to reset his password if he forget it
@@ -246,54 +275,78 @@ class User_Forget_Info_Frame(tk.Frame):
         User_Lname = self.lname_entry.get()
         User_id_pp_num = self.id_num_entry.get()
         User_home_no = self.home_no_entry.get()
-        User_country = self.cuntry_entry.get()
+        User_country = self.cuntry_var.get()
+        User_address = self.city_var.get()
         # those abouve are the main information to fill check if it is filled
         if User_fname == "" or User_Lname == "" or (User_id_pp_num == "" and User_home_no == "" and User_country == ""):
-            self.forget_password_label.config(text="Please At least fill the first and last name and one of the id number, home number, or country.")
-            self.forget_password_label.grid(row=17, column=0, columnspan=3, padx=5, pady=5, sticky=tk.W)
+            tk.Label(self.master.master.master.Error_list_frame, text="Please At least fill the first and last name \nand one of the id number, home number, or country.", fg="Red").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
             return
-        main_information = {'User_fname': User_fname, 'User_Lname': User_Lname, 'User_id_pp_num': User_id_pp_num, 'User_home_no': User_home_no, 'User_country': User_country}
+        main_information = {'User_fname': User_fname, 'User_Lname': User_Lname, 'User_id_pp_num': User_id_pp_num, 'User_home_no': User_home_no, 'User_country': User_country, 'User_address': User_address}
         
         # get the rest of the information if the user found to fill the user details widgets and allow the user to reset his password if he forget it
         User_name = self.name_entry.get()
         User_password0 = self.password_num0_entry.get()
-        User_gender = self.gender_entry.get()
+        User_gender = self.gendert_var.get()
         User_phone_num = self.phone_num_entry.get()
         User_email = self.email_entry.get()
-        User_address = self.addres_entry.get()
         User_type = self.type_entry.get()
         User_about = self.about_entry.get()
         User_shop = self.shops_entry.get()
         User_work_shop = self.work_shop_entry.get()
-        User_access = self.acsess_entry.get()
         # at list fill 3 of the main information to find the user account
-        randum_informations = {'User_name': User_name, 'User_password': User_password0, 'User_gender': User_gender, 'User_phone_num': User_phone_num, 'User_email': User_email, 'User_address': User_address, 'User_type': User_type, 'User_about': User_about, 'User_shop': User_shop, 'User_work_shop': User_work_shop, 'User_access': User_access}
+        randum_informations = {'User_name': User_name, 'User_password': User_password0, 'User_gender': User_gender, 'User_phone_num': User_phone_num, 'User_email': User_email, 'User_type': User_type, 'User_about': User_about, 'User_shop': User_shop, 'User_work_shop': User_work_shop}
         randum_informations_filled = 0
         for key, value in randum_informations.items():
             # only add the information that is filled to the randum_informations_filled dictionary to use it to fill the user details widgets if the user found
-            if value != "":
+            if value != "" and value != None:
                 randum_informations_filled += 1
                 main_information[key] = value
         if randum_informations_filled < 3:
-            self.forget_password_label.config(text="Please fill at least 3 of the randum information to find your account.")
-            self.forget_password_label.grid(row=17, column=0, columnspan=3, padx=5, pady=5, sticky=tk.W)
+            tk.Label(self.master.master.master.Error_list_frame, text="Please fill at least 3 of the randum information to find your account.", fg="Red").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
             return
         
         if main_information:
             if self.find_button.cget("text") == "Find":  
-
                 main_information_query = " AND ".join([f"{key}=?" for key in main_information.keys()])
                 main_information_values = tuple(main_information.values())
-                Update_table_database(f'SELECT * FROM Users WHERE {main_information_query}', main_information_values)
-                user = cur.fetchone()
+                user = fetch_as_dict_list(self.MainApplication.link_entry.get(), "SELECT * FROM Users WHERE "+main_information_query, main_information_values)
                 if user:
-
-                    self.forget_password_label.config(text="User found! You can now reset your password if you forget it.")
-                    self.forget_password_label.grid(row=17, column=0, columnspan=3, padx=5, pady=5, sticky=tk.W)
-                    self.Found_User_id_var = user[0]
-                    self.add_button.config(text="Reset Password")
+                    user = user[0]
+                    tk.Label(self.master.master.master.Error_list_frame, text="User found! You can now reset your password if you forget it.", fg="Green").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
+                    self.fname_entry.delete(0, tk.END)
+                    self.fname_entry.insert(0, user["User_fname"])
+                    self.lname_entry.delete(0, tk.END)
+                    self.lname_entry.insert(0, user["User_Lname"])
+                    self.id_num_entry.delete(0, tk.END)
+                    self.id_num_entry.insert(0, user["User_id_pp_num"])
+                    self.home_no_entry.delete(0, tk.END)
+                    self.home_no_entry.insert(0, user["User_home_no"])
+                    self.cuntry_var.set(user["User_country"])
+                    self.city_var.set(user["User_address"])
+                    self.name_entry.delete(0, tk.END)
+                    self.name_entry.insert(0, user["User_name"])
+                    self.password_num0_entry.delete(0, tk.END)
+                    self.password_num0_entry.insert(0, user["User_password"])
+                    self.gendert_var.set(user["User_gender"])
+                    self.phone_num_entry.delete(0, tk.END)
+                    self.phone_num_entry.insert(0, user["User_phone_num"])
+                    self.email_entry.delete(0, tk.END)
+                    self.email_entry.insert(0, user["User_email"])
+                    self.type_entry.delete(0, tk.END)
+                    self.type_entry.insert(0, user["User_type"])
+                    self.about_entry.delete(0, tk.END)
+                    self.about_entry.insert(0, user["User_about"])
+                    self.shops_entry.delete(0, tk.END)
+                    self.shops_entry.insert(0, user["User_shop"])
+                    self.work_shop_entry.delete(0, tk.END)
+                    self.work_shop_entry.insert(0, user["User_work_shop"])
+                    
+                    
+                    self.Found_User = user
+                    self.reset_button.grid(row=4, column=4, padx=5, pady=10, sticky=tk.W)
+                    self.password_num1_label.grid(row=3, column=4, padx=5, pady=5, sticky=tk.W)
+                    self.password_num1_entry.grid(row=3, column=5, padx=5, pady=5, sticky=tk.W)
                     # fill the user details widgets with the rest of the information if it is filled
-                    # TODO: only fill the user details widgets with the information that is filled in the randum_informations dictionary to avoid filling the user details widgets with empty values if the user found but some of the randum information is not filled
                     # TODO: SAND INFORAMATION TO OUT EMAIL IF THE USER FORGET HIS PASSWORD AND HE WANT TO RESET IT or see
                     for key in randum_informations.keys():
                         if key in main_information:
@@ -304,19 +357,7 @@ class User_Forget_Info_Frame(tk.Frame):
                             elif key == "User_password":
                                 self.password_num0_entry.delete(0, tk.END)
                                 self.password_num0_entry.insert(0, value)
-            if self.find_button.cget("text") == "Reset Password":
-                if self.Found_User_id_var != "":
-                    new_password = self.password_num0_entry.get()
-                    if new_password == "":
-                        self.forget_password_label.config(text="Please enter a new password to reset your password.")
-                        self.forget_password_label.grid(row=17, column=0, columnspan=3, padx=5, pady=5, sticky=tk.W)
-                        return
-                    Update_table_database('UPDATE Users SET User_password=? WHERE User_id=?', (new_password, self.Found_User_id_var))
-                    conn.commit()
-                    self.forget_password_label.config(text="Password reset successfully! You can now log in with your new password.")
-                    self.forget_password_label.grid(row=17, column=0, columnspan=3, padx=5, pady=5, sticky=tk.W)
-                    self.clear_user_details_widget()
-                    self.add_button.config(text="Find")
+                    return
                 else:
-                    self.forget_password_label.config(text="No user found to reset the password for. Please find your account first.")
-                    self.forget_password_label.grid(row=17, column=0, columnspan=3, padx=5, pady=5, sticky=tk.W)
+                    tk.Label(self.master.master.master.Error_list_frame, text="User Not found!.", fg="red").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
+                    

@@ -36,15 +36,22 @@ from C.Product.selecttype import *
 
 class ExpensesForm(tk.Frame):
     """Frame to list, search and edit the shop expenses."""
-    def __init__(self, master, User, Shops):
-        tk.Frame.__init__(self, master)
+    def __init__(self, master, User, Shops, **arg):
+        tk.Frame.__init__(self, master, **arg)
         self.selected_shop_filter = ""
         self.user = User
         self.shops = Shops
         self.shop_expenses = []  # flattened list of (shop_id, shop_name, shop_brand, index, expense_list)
 
+        self.bg_dark = "#0d47a1"      # Deep blue
+        self.bg_light = "#1565c0"     # Darker blue
+        self.accent_blue = "#1976d2"  # Medium blue
+        self.text_light = "#ffffff"   # White text
+        self.bg_darker = "#0a3d91"    # Even darker blue
+        self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
+        
         # Create the search bar frame and widgets
-        self.search_frame = tk.Frame(self)
+        self.search_frame = tk.Frame(self, bg=self.bg_dark)
         self.search_frame.pack(side=tk.TOP, padx=5, pady=5)
         self.search_var = tk.StringVar()
         self.search_entry = tk.Entry(self.search_frame, textvariable=self.search_var)
@@ -53,50 +60,28 @@ class ExpensesForm(tk.Frame):
         self.search_var.trace_add("write", lambda *a: self.update_search_results())
 
         # Frame that will contain the canvas and scrollbars
-        self.canvas_container = tk.Frame(self)
-        self.canvas_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # Create the list box
+        self.Frame_contaner_frame = tk.Frame(self, bg=self.bg_dark)
+        self.Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Create the listbox to display search results
+        self.tree = ttk.Treeview(self.Frame_contaner_frame)        
+        self.tree.bind('<<TreeviewSelect>>', self.on_select)
+        #self.tree.bind("<Button-1>", self.on_treeview_double_click)
+        #self.listbox.grid_propagate(False)
 
-        self.list_container = tk.Frame(self.canvas_container)
-        self.list_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        # Frame that holds the canvas (so we can hide/show easily)
-        self.canvas_frame = tk.Frame(self.list_container)
-        self.canvas_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        # Add vertical scrollbar
+        tree_scrollbar_y = ttk.Scrollbar(self.Frame_contaner_frame, orient='vertical', command=self.tree.yview)
+        self.tree.configure(yscrollcommand=tree_scrollbar_y.set)
+        tree_scrollbar_y.pack(side='right', fill='y')
 
-        # Canvas for scrolling the inner frame
-        self.item_canvas = tk.Canvas(self.canvas_frame)
-        self.item_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
-
-        self.canvas_v_scroll = tk.Scrollbar(self.canvas_frame, orient='vertical', command=self.item_canvas.yview)
-        self.canvas_v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-
-        self.canvas_h_scroll = tk.Scrollbar(self.list_container, orient='horizontal', command=self.item_canvas.xview)
-        self.canvas_h_scroll.pack(side=tk.TOP, fill=tk.X)
-
-        self.item_canvas.configure(xscrollcommand=self.canvas_h_scroll.set, yscrollcommand=self.canvas_v_scroll.set)
-
-        # Inner frame placed inside the canvas
-        self.canvas_inner_frame = tk.Frame(self.item_canvas)
-        self._inner_window = self.item_canvas.create_window((0, 0), window=self.canvas_inner_frame, anchor=tk.NW)
-        self.canvas_inner_frame.bind('<Configure>', lambda _: self.item_canvas.configure(scrollregion=self.item_canvas.bbox("all")))
-        self.item_canvas.bind('<Configure>', lambda e: self.item_canvas.itemconfigure(self._inner_window, width=e.width))
-
-        # Frame inside inner frame to hold treeview and its scrollbars
-        self.tree_frame = tk.Frame(self.canvas_inner_frame)
-        self.tree_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-        # Treeview for expenses
-        self.tree = ttk.Treeview(self.tree_frame, show='headings')
-
-        # configure treeview scroll commands
-        self.tree_v_scroll = ttk.Scrollbar(self.tree_frame, orient='vertical', command=self.tree.yview)
-        self.tree_h_scroll = ttk.Scrollbar(self.tree_frame, orient='horizontal', command=self.tree.xview)
-        self.tree.configure(yscrollcommand=self.tree_v_scroll.set, xscrollcommand=self.tree_h_scroll.set)
-
-        # pack tree and scrollbars inside the tree_frame
-        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.tree_v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        self.tree_h_scroll.pack(side=tk.BOTTOM, fill=tk.X)
+        # Add horizontal scrollbar
+        tree_scrollbar_x = ttk.Scrollbar(self.Frame_contaner_frame, orient='horizontal', command=self.tree.xview)
+        self.tree.configure(xscrollcommand=tree_scrollbar_x.set)
+        tree_scrollbar_x.pack(side='bottom', fill='x', )
+        
+        self.tree.pack(side='top', fill='both', expand=True)
 
         # Columns: keep hidden shop identifiers at the end to make editing/deleting reliable
         self.tree['columns'] = ("Index", "Title", "Amount", "Category", "Date", "Ref", "Description", "ShopID", "ShopName", "ShopBrand")
@@ -122,46 +107,46 @@ class ExpensesForm(tk.Frame):
         self.tree.bind('<<TreeviewSelect>>', self.on_select)
 
         # Details / edit frame
-        self.details_frame = tk.Frame(self)
+        self.details_frame = tk.Frame(self, bg=self.bg_dark)
         self.selected_shop_id = ""
         self.selected_shop_name = ""
         self.selected_shop_brand = ""
         self.selected_id = None
 
         # Form frame inside details
-        self.form_frame = tk.Frame(self.details_frame)
+        self.form_frame = tk.Frame(self.details_frame, bg=self.bg_dark)
         # Fields: Title (name), Description (code), Amount (typ), Category (short_key), Date (access), Ref (Times)
-        self.title_label = tk.Label(self.form_frame, text='Title:')
+        self.title_label = tk.Label(self.form_frame, text='Title:', bg=self.bg_dark)
         self.title_entry = tk.Entry(self.form_frame)
         self.title_entry.bind('<KeyRelease>', self.on_title_entry)
 
-        self.description_label = tk.Label(self.form_frame, text='Description:')
+        self.description_label = tk.Label(self.form_frame, text='Description:', bg=self.bg_dark)
         self.description_entry = tk.Entry(self.form_frame)
 
-        self.amount_label = tk.Label(self.form_frame, text='Amount:')
+        self.amount_label = tk.Label(self.form_frame, text='Amount:', bg=self.bg_dark)
         self.amount_entry = tk.Entry(self.form_frame)
 
-        self.category_label = tk.Label(self.form_frame, text='Category:')
+        self.category_label = tk.Label(self.form_frame, text='Category:', bg=self.bg_dark)
         self.category_var = tk.StringVar()
         self.category_combo = ttk.Combobox(self.form_frame, textvariable=self.category_var,
                     values=['Rent', 'Salary', 'Utilities', 'Supplies', 'Maintenance', 'Other'], width=20)
         self.category_combo.set('Other')
 
-        self.date_label = tk.Label(self.form_frame, text='Date (YYYY-MM-DD):')
+        self.date_label = tk.Label(self.form_frame, text='Date (YYYY-MM-DD):', bg=self.bg_dark)
         self.date_entry = tk.Entry(self.form_frame)
         self.date_entry.insert(0, datetime.date.today().strftime('%Y-%m-%d'))
         self.date_today_btn = tk.Button(self.form_frame, text='Today',
                 command=lambda: (self.date_entry.delete(0, tk.END),
-                self.date_entry.insert(0, datetime.date.today().strftime('%Y-%m-%d'))))
+                self.date_entry.insert(0, datetime.date.today().strftime('%Y-%m-%d'))), **self.button_style)
 
-        self.ref_label = tk.Label(self.form_frame, text='Receipt / Ref:')
+        self.ref_label = tk.Label(self.form_frame, text='Receipt / Ref:', bg=self.bg_dark)
         self.ref_entry = tk.Entry(self.form_frame)
 
-        self.notes_label = tk.Label(self.form_frame, text='Notes:')
+        self.notes_label = tk.Label(self.form_frame, text='Notes:', bg=self.bg_dark)
         self.notes_entry = tk.Entry(self.form_frame, width=40)
 
         # Recurrence widgets (kept but not required for search/edit)
-        self.recur_frame = tk.Frame(self.form_frame, bd=0)
+        self.recur_frame = tk.Frame(self.form_frame, bd=0, bg=self.bg_dark)
         self.repeats_var = tk.IntVar(value=0)
 
         def _toggle_repeats():
@@ -178,7 +163,7 @@ class ExpensesForm(tk.Frame):
         self.freq_var = tk.StringVar(value='Monthly')
         self.freq_combo = ttk.Combobox(self.recur_frame, textvariable=self.freq_var,
                     values=['Daily', 'Weekly', 'Monthly', 'Yearly'], state=tk.DISABLED, width=10)
-        self.end_label = tk.Label(self.recur_frame, text='End:')
+        self.end_label = tk.Label(self.recur_frame, text='End:', bg=self.bg_dark)
         self.end_entry = tk.Entry(self.recur_frame, width=12, state=tk.DISABLED)
         self.end_today_btn = tk.Button(self.recur_frame, text='Today',
                     command=lambda: (self.end_entry.delete(0, tk.END),
@@ -215,16 +200,16 @@ class ExpensesForm(tk.Frame):
         self.form_frame.grid(row=0, column=0, padx=5, pady=5, sticky=tk.N+tk.S+tk.E+tk.W)
 
         # Action buttons
-        self.add_button = tk.Button(self.details_frame, text='New', command=self.add_tool)
-        self.cancel_button = tk.Button(self.details_frame, text='Cancel', command=self.hide_add_form)
+        self.add_button = tk.Button(self.details_frame, text='New', command=self.add_tool, **self.button_style)
+        self.cancel_button = tk.Button(self.details_frame, text='Cancel', command=self.hide_add_form, **self.button_style)
         self.add_button.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
         self.cancel_button.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
 
-        self.add_new_button = tk.Button(self.search_frame, text='Add Expense', command=self.show_add_form)
+        self.add_new_button = tk.Button(self.search_frame, text='Add Expense', command=self.show_add_form, **self.button_style)
         self.add_new_button.pack(side=tk.LEFT, padx=5, pady=5)
-        self.change_button = tk.Button(self.search_frame, text='Change', command=self.show_change_form, state=tk.DISABLED)
+        self.change_button = tk.Button(self.search_frame, text='Change', command=self.show_change_form, state=tk.DISABLED, **self.button_style)
         self.change_button.pack(side=tk.LEFT, padx=5, pady=5)
-        self.delete_button = tk.Button(self.search_frame, text='Delete', command=self.delete_tool, state=tk.DISABLED)
+        self.delete_button = tk.Button(self.search_frame, text='Delete', command=self.delete_tool, state=tk.DISABLED, **self.button_style)
         self.delete_button.pack(side=tk.LEFT, padx=5, pady=5)
 
         # initial load
@@ -247,15 +232,15 @@ class ExpensesForm(tk.Frame):
 
     def show_add_form(self):
         self.clear_tool_details_widget()
-        # hide the list area (canvas_frame)
-        self.canvas_frame.pack_forget()
+        # hide the list area (Frame_contaner_frame)
+        self.Frame_contaner_frame.pack_forget()
         self.details_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=True)
 
     def hide_add_form(self):
         self.clear_tool_details_widget()
         self.details_frame.pack_forget()
         # show the list area again
-        self.canvas_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.Frame_contaner_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
     def show_change_form(self):
         sel = self.tree.selection()
@@ -263,7 +248,7 @@ class ExpensesForm(tk.Frame):
             return
 
         # hide the list area and show details
-        self.canvas_frame.pack_forget()
+        self.Frame_contaner_frame.pack_forget()
         vals = self.tree.item(sel[0])['values']
         self.change_expense = vals
         # values mapped: Index, Title, Amount, Category, Date, Ref, Description, ShopID, ShopName, ShopBrand, ... (extra fields may exist)

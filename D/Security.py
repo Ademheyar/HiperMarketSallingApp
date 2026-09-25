@@ -28,6 +28,20 @@ class SecurityForm(tk.Toplevel):
         super().__init__(master)
         self.master = master
         
+        self.MainApplication = self
+        while(True):
+            if hasattr(self.MainApplication, 'MainApplication_root'):
+                break
+            else:
+                self.MainApplication = self.MainApplication.master
+        
+        self.homemaster = self
+        while(True):
+            if hasattr(self.homemaster, 'onDisplayFrame'):
+                break
+            else:
+                self.homemaster = self.homemaster.master
+                
         self._credentials_shown = True
 
         # create a Toplevel window for the security form
@@ -40,7 +54,7 @@ class SecurityForm(tk.Toplevel):
         # make the frame bigger
         screen_width = self.master.winfo_screenwidth()
         screen_height = self.master.winfo_screenheight()
-        width, height = 900, 600
+        width, height = 900, 500
         # Ensure window doesn't exceed screen boundaries
         width = min(width, screen_width)
         height = min(height, screen_height)
@@ -49,15 +63,15 @@ class SecurityForm(tk.Toplevel):
         x = 100
         y = 100
         self.Security_form.geometry(f"{width}x{height}+{x}+{y}")
-
+        self.selected_indexd = 0
 
         # Android-style dark blue color scheme
-        bg_dark = "#0d47a1"      # Deep blue
-        bg_light = "#1565c0"     # Darker blue
-        accent_blue = "#1976d2"  # Medium blue
-        text_light = "#ffffff"
-        
-        self.Security_form.configure(bg=bg_dark)
+        self.bg_dark = "#0d47a1"      # Deep blue
+        self.bg_light = "#1565c0"     # Darker blue
+        self.accent_blue = "#1976d2"  # Medium blue
+        self.text_light = "#ffffff"
+        self._credentials_shown = False
+        self.Security_form.configure(bg=self.bg_dark)
 
         # layout
         for r in range(9):
@@ -65,8 +79,6 @@ class SecurityForm(tk.Toplevel):
         for c in range(4):
             self.Security_form.grid_columnconfigure(c, weight=1)
 
-        # load logged users from loged.txt
-        self.load_logged_users()
 
         # load last/previous info
         self.last_info = self._load_last_info()
@@ -76,116 +88,90 @@ class SecurityForm(tk.Toplevel):
             self.Security_form,
             text=whatfor,
             anchor="w",
-            bg=bg_dark,
-            fg=text_light,
+            bg=self.bg_dark,
+            fg=self.text_light,
             font=("Roboto", 14, "bold")
         )
-        self.instruction_label.grid(row=0, column=1, columnspan=int(width/(len(whatfor)+1)), sticky="ew", padx=12, pady=(12, 8))
-
-        # container for user buttons with horizontal scrolling
-        self._create_user_buttons_container()
+        self.instruction_label.pack(side="top")
+        
+        self.Top_display_frame = tk.Frame(self.Security_form, bg=self.bg_light)
+        self.Top_display_frame.pack(side="top", fill='both', expand=1)
+        
 
         # selection state
         self.selected_user_var = tk.StringVar(value="")
-
-        # Credentials frame (hidden initially)
-        self.credentials_frame = tk.Frame(self.Security_form, bg=bg_light)
-        self.credentials_frame.grid(row=2, column=0, columnspan=4, sticky="ew", padx=8, pady=8)
-        self._credentials_shown = True
-
-        # Username entry
-        username_label = tk.Label(
-            self.credentials_frame,
-            text='Username:',
-            bg=bg_light,
-            fg=text_light,
-            font=("Roboto", 11)
-        )
-        username_label.grid(row=0, column=0, sticky=tk.W, padx=12, pady=8)
+        # Link section
         
-        self.entered_username_entry = tk.Entry(
-            self.credentials_frame,
-            bg="#ffffff",
-            fg="#0d47a1",
-            font=("Roboto", 11),
+        self.Link_frame = tk.Frame(self.Security_form, bg=self.bg_light)
+        self.Link_frame.pack(side="left", fill='both', expand=True)
+        if whatfor == "Please select your user account and enter your credentials":
+            btntext = "Close"
+        else:
+            btntext = "OK Skip"
+        self.button_BACK_close = tk.Button(
+            self.Link_frame,
+            text=btntext,
+            command=self.close_fun,
+            bg="#424242",
+            fg=self.text_light,
+            font=("Roboto", 8, "bold"),
             relief=tk.FLAT,
-            bd=2
-        )
-        self.entered_username_entry.grid(row=0, column=1, columnspan=2, sticky="ew", padx=12, pady=8)
-        self.forgetuserbtn = tk.Button(
-            self.credentials_frame,
-            text="Clear User Log History?",
-            command=self.forget_username,
-            bg=bg_light,
-            fg=text_light,
-            font=("Roboto", 10),
-            relief=tk.FLAT,
-            activebackground="#1565c0",
-            activeforeground=text_light,
+            activebackground="#616161",
+            activeforeground=self.text_light,
             padx=10,
             pady=8
         )
-        # Password entry
-        password_label = tk.Label(
-            self.credentials_frame,
-            text='Password:',
-            bg=bg_light,
-            fg=text_light,
-            font=("Roboto", 11)
-        )
-        password_label.grid(row=1, column=0, sticky=tk.W, padx=12, pady=8)
-        
-        self.entered_password_entry = tk.Entry(
-            self.credentials_frame,
-            show="*",
-            bg="#ffffff",
-            fg="#0d47a1",
-            font=("Roboto", 11),
-            relief=tk.FLAT,
-            bd=2
-        )
-        self.entered_password_entry.grid(row=1, column=1, columnspan=2, sticky="ew", padx=12, pady=8)
-        self.entered_password_entry.bind("<Return>", lambda event: self.log_in())  # allow Enter key to trigger login
-        
-        self.log_in_button = tk.Button(
-            self.credentials_frame,
-            text="Log In",
-            command=self.log_in,
-            bg=accent_blue,
-            fg=text_light,
-            font=("Roboto", 10, "bold"),
+        self.button_BACK_close.pack(side="left")
+        # Buttons with Android Material style
+        self.link_button = tk.Button(
+            self.Link_frame,
+            text="Check",
+            command=lambda: self.cacke_linked(),
+            bg=self.accent_blue,
+            fg=self.text_light,
+            font=("Roboto", 8, "bold"),
             relief=tk.FLAT,
             activebackground="#1565c0",
-            activeforeground=text_light,
+            activeforeground=self.text_light,
             padx=10,
             pady=8
         )
-        self.log_in_button.grid(row=2, column=1, sticky="ew", padx=6, pady=8)
-        #self.log_in_button.configure(state='disabled')
+        self.link_button.pack(side="left")
+        
+        self.user_linkes = []
+        self.selected_linke = tk.StringVar()
+        
+        self.MainApplication.link_entry = ttk.Combobox(self.Link_frame, values=self.user_linkes, textvariable=self.selected_linke, width=10)
+        self.MainApplication.link_entry.pack(side="right", fill="x", expand=True)
+        
+        
+        
 
-        b = fetch_as_dict_list("SELECT * FROM setting", ())
 
+        
+        self.Linklist_frame = tk.Frame(self.Security_form, bg=self.bg_light)
+        self.Linklist_frame.pack(side="right")
         # Error list frame with vertical scrollbar
         self.master.Error_list_frame_canvas = tk.Canvas(
-            self.Security_form,
+            self.Linklist_frame,
             height=80,
             highlightthickness=0,
-            bg=bg_light
+            bg=self.bg_light
         )
         self.master.Error_list_scrollbar = tk.Scrollbar(
-            self.Security_form,
+            self.Linklist_frame,
             orient="vertical",
             command=self.master.Error_list_frame_canvas.yview,
-            bg=bg_dark,
-            activebackground=accent_blue
+            bg=self.bg_dark,
+            activebackground=self.accent_blue
         )
         self.master.Error_list_frame_canvas.configure(yscrollcommand=self.master.Error_list_scrollbar.set)
 
-        self.master.Error_list_frame = tk.Frame(self.master.Error_list_frame_canvas, bg=bg_light)
+        self.master.Error_list_frame = tk.Frame(self.master.Error_list_frame_canvas, bg=self.bg_light)
         self.master.Error_list_frame_canvas.create_window((0, 0), window=self.master.Error_list_frame, anchor="nw")
 
-        self.master.Error_list_frame_canvas.grid(row=7, column=0, columnspan=4, sticky="nsew")
-        self.master.Error_list_scrollbar.grid(row=7, column=4, sticky="ns")
+        self.master.Error_list_frame_canvas.pack(side="left", fill="both", expand=True)
+        self.master.Error_list_scrollbar.pack(side="right", fill="y", expand=True)
 
         self.master.Error_list_frame.bind(
             "<Configure>",
@@ -194,76 +180,6 @@ class SecurityForm(tk.Toplevel):
             )
         )
         
-        # Link section
-        self.master.link_entry = tk.Entry(
-            self.Security_form,
-            bg="#ffffff",
-            fg="#0d47a1",
-            font=("Roboto", 10),
-            relief=tk.FLAT,
-            bd=2
-        )
-        self.master.link_entry.insert(0, "http://localhost/HiperMarketSit/API/API.php")
-        self.master.link_entry.grid(row=8, column=0, columnspan=4, sticky="we", padx=12, pady=8)
-
-        # Buttons with Android Material style
-        self.link_button = tk.Button(
-            self.Security_form,
-            text="Check",
-            command=lambda: self.cacke_linked(),
-            bg=accent_blue,
-            fg=text_light,
-            font=("Roboto", 10, "bold"),
-            relief=tk.FLAT,
-            activebackground="#1565c0",
-            activeforeground=text_light,
-            padx=10,
-            pady=8
-        )
-        self.link_button.grid(row=8, column=3, sticky="e", padx=6, pady=8)
-        
-        if whatfor == "Please select your user account and enter your credentials":
-            btntext = "Close"
-        else:
-            btntext = "OK Skip"
-        self.button_BACK_close = tk.Button(
-            self.Security_form,
-            text=btntext,
-            command=self.close_fun,
-            bg="#424242",
-            fg=text_light,
-            font=("Roboto", 10, "bold"),
-            relief=tk.FLAT,
-            activebackground="#616161",
-            activeforeground=text_light,
-            padx=10,
-            pady=8
-        )
-        self.button_BACK_close.grid(row=8, column=4, sticky="e", padx=12, pady=8)
-
-        # Links section
-        self.forget_password_label = tk.Label(
-            self.Security_form,
-            text="Forgot Password?",
-            fg="#64b5f6",
-            bg=bg_dark,
-            cursor="hand2",
-            font=("Roboto", 10, "underline")
-        )
-        self.forget_password_label.grid(row=9, column=0, sticky="w", padx=12, pady=8)
-        self.forget_password_label.bind("<Button-1>", self.forget_password_fuc)
-
-        self.Create_new_label = tk.Label(
-            self.Security_form,
-            text="Create Account",
-            fg="#64b5f6",
-            bg=bg_dark,
-            cursor="hand2",
-            font=("Roboto", 10, "underline")
-        )
-        self.Create_new_label.grid(row=9, column=3, sticky="e", padx=12, pady=8)
-        self.Create_new_label.bind("<Button-1>", self.Create_new_user)
-
         # Preselect current or previous if available
         preset_name = None
         if self.last_info.get('current'):
@@ -277,8 +193,13 @@ class SecurityForm(tk.Toplevel):
         if preset_name:
             self.selected_user_var.set(preset_name)
 
-        # render user buttons
+        # load logged users from loged.txt
+        self.load_logged_users()
+        # container for user buttons with horizontal scrolling
         self._render_user_buttons()
+        self.bind("<Up>", self.treeview_naigation)
+        self.bind("<Down>", self.treeview_naigation)
+        self.bind("<Return>", self.Selectd)
 
         # modal
         self.attributes('-topmost', True)
@@ -286,6 +207,38 @@ class SecurityForm(tk.Toplevel):
         self.Security_form.grab_set()
         self.Security_form.focus_set()
         self.master.wait_window(self.Security_form)
+        
+
+    def Selectd(self, event):
+        if self.user_buttons_frame and self._credentials_shown == True:
+            names = ["New User"] + self.user_names
+            self._on_user_button_pressed(names[self.selected_indexd])
+            
+    def treeview_naigation(self, event):
+        if not (event.keysym == "Up" or event.keysym == "Down"):
+            self.Security_form.focus_set()
+        if self.user_buttons_frame and self._credentials_shown == True:
+            if self.selected_indexd == -1:
+                self.selected_indexd = 0
+                
+            if self.user_buttons_frame and len(self.user_buttons_frame.winfo_children()):
+                if self.selected_indexd > len(self.user_buttons_frame.winfo_children()):
+                    self.selected_indexd = 0
+                
+                elif event.keysym == 'Up':
+                    self.user_buttons_frame.winfo_children()[self.selected_indexd].configure(bg=self.accent_blue)
+                    self.selected_indexd -= 1
+                elif event.keysym == 'Down':
+                    self.user_buttons_frame.winfo_children()[self.selected_indexd].configure(bg=self.accent_blue)
+                    self.selected_indexd += 1
+                    
+                if self.selected_indexd <= -1:
+                    self.selected_indexd = len(self.user_buttons_frame.winfo_children())-1
+                elif self.selected_indexd >= len(self.user_buttons_frame.winfo_children()):
+                    self.selected_indexd = 0
+                    
+            self.user_buttons_frame.winfo_children()[self.selected_indexd].configure(bg="blue")
+
 
         
 
@@ -294,24 +247,37 @@ class SecurityForm(tk.Toplevel):
         #print("Loading logged users from: " + loged_path)
         self.user_map = {}
         self.user_names = []
+        self.user_linkes = []
         if os.path.exists(loged_path):
-            print("loged.txt found, loading users.")
-            try:
+            #print("loged.txt found, loading users.")
                 with open(loged_path, 'r', encoding='utf-8') as f:
                     #print("Reading loged.txt...")
+                    fal, sec = [], []
                     for line in f:
                         line = line.strip()
                         if not line:
                             continue
-                        parts = line.split(':', 1)
-                        if len(parts) == 2:
-                            print("Processing line: " + line)
-                            user_id, user_name = parts
+                        #print("line > ", line)
+                        parts = line.split('|')
+                        #print("len line > ", len(parts))
+                        if len(parts) == 3:
+                            user_id, user_name, User_url = parts
+                            #print("Processing line: " + user_id)
+                            #print("Processing user_name: " + user_name)
+                            #print("Processing User_url: " + User_url)
                             self.user_map[user_name] = user_id
                             self.user_names.append(user_name)
-            except Exception:
-                print("Error loading logged users from loged.txt")
-                pass
+                            self.user_linkes.append(User_url)
+                            self.MainApplication.link_entry['values'] = self.user_linkes                            
+                            if User_url in sec or not User_url in fal and islinked(User_url):
+                                lb = tk.Label(self.master.Error_list_frame, text=str(user_name) + " Url " + "Connection Secsesfull", fg="green")
+                                lb.pack(side=tk.BOTTOM, fill=tk.X, expand=True)
+                                self.selected_linke.set(User_url)
+                                sec.append(User_url)
+                            else:
+                                fal.append(User_url)
+                                lb = tk.Label(self.master.Error_list_frame, text=str(user_name) + " Url " + "Connection Filed", fg="red")
+                                lb.pack(side=tk.BOTTOM, fill=tk.X, expand=True)
 
     # instance-bound helper to update the logged-user list/file when a user logs in.
     # Use: self.update_logged_user("Alice", 5) or self.update_logged_user("Alice")
@@ -331,8 +297,13 @@ class SecurityForm(tk.Toplevel):
             loged_path = os.path.join(data_dir, 'loged.txt')
             with open(loged_path, 'w', encoding='utf-8') as f:
                 #print("Saving users...")
+                i=-1
                 for name, idv in self.user_map.items():
-                    f.write(f"{idv}:{name}\n")
+                    i +=1
+                    url = self.selected_linke.get()
+                    if url == "" or not islinked(url):
+                        url = self.user_linkes[i]
+                    f.write(f"{idv}|{name}|{url}\n")
                 #print("Users saved.")
                 return True
         except Exception:
@@ -342,36 +313,28 @@ class SecurityForm(tk.Toplevel):
         if self.button_BACK_close['text'] == "Close" or self.button_BACK_close['text'] == "OK Skip":
             self.Security_form.destroy()
         else:
-            self._hide_credentials_page() 
+            self._render_user_buttons() 
     
     def forget_password_fuc(self, event):
         # hide credentials frame and restore user selection canvas + scrollbar
-        try:
-            self.credentials_frame.grid_remove()
-        except Exception:
-            pass
-        self.user_Forget_Info_Frame = User_Forget_Info_Frame(self.Security_form, self._hide_credentials_page, None)
-        self.user_Forget_Info_Frame.grid(row=2, column=0, sticky="nsew")
+        for child in self.Top_display_frame.winfo_children():
+            child.destroy()
+        self.Top_display_frame.columnconfigure((0, 1, 2, 3), weight=1)
+        self.Top_display_frame.rowconfigure((0, 1, 2, 3), weight=1)
 
-        # disable login until a user is chosen again (existing handlers will enable it)
-        try:
-            self.log_in_button.configure(state='disabled')
-        except Exception:
-            pass
-        self._credentials_shown = False
+        self.user_Forget_Info_Frame = User_Forget_Info_Frame(self.Top_display_frame, self._render_user_buttons, None)
+        self.user_Forget_Info_Frame.pack(side=tk.TOP, fill=tk.X, expand=True)
+
         self.button_BACK_close['text'] = "Back"
 
-        # self.master.show_frame("User_Forget_Info_Frame")
-        pass
-
     def cacke_linked(self):
-        link = self.master.link_entry.get()
+        link = self.MainApplication.link_entry.get()
         if islinked(link):
             lb = tk.Label(self.master.Error_list_frame, text="Connection Secsesfull", fg="green")
-            lb.pack(side=tk.TOP, fill=tk.X, expand=True)
+            lb.pack(side=tk.BOTTOM, fill=tk.X, expand=True)
         else:
-            lb = tk.Label(self.master.Error_list_frame, text="Connection Filed", bg="#fcfafb", fg="red")
-            lb.pack(side=tk.TOP, fill=tk.X, expand=True)
+            lb = tk.Label(self.master.Error_list_frame, text="Connection Filed", fg="red")
+            lb.pack(side=tk.BOTTOM, fill=tk.X, expand=True)
 
     def Create_new_user(self, event):
        # we going to chack connection befor creating new user
@@ -379,56 +342,66 @@ class SecurityForm(tk.Toplevel):
         # create_frame = self.master.show_frame("User_Info_Frame")
         
         # hide credentials frame and restore user selection canvas + scrollbar
-        try:
-            self.credentials_frame.grid_remove()
-        except Exception:
-            pass
-
-        self.user_Info_Frame = User_Info_Frame(self.Security_form, self._hide_credentials_page, None, self.master.link_entry.get())
-        self.user_Info_Frame.grid(row=2, column=0, sticky="nsew")
+        
+        for child in self.Top_display_frame.winfo_children():
+            child.destroy()
+        self.Top_display_frame.columnconfigure((0, 1, 2, 3), weight=1)
+        self.Top_display_frame.rowconfigure((0, 1, 2, 3), weight=1)
+        
+        #self.Top_display_frame.columnconfigure((0, 1, 2, 3), weight=1)
+        #self.Top_display_frame.rowconfigure((0, 1, 2, 3), weight=1)
+        
+        self.user_Info_Frame = User_Info_Frame(self.Top_display_frame, self._render_user_buttons, None, self.MainApplication.link_entry.get())
+        self.user_Info_Frame.pack(side=tk.TOP, fill=tk.X, expand=True)
 
         # disable login until a user is chosen again (existing handlers will enable it)
         try:
             self.log_in_button.configure(state='disabled')
         except Exception:
             pass
-        self._credentials_shown = False
         self.button_BACK_close['text'] = "Back"
 
     def log_in(self):
+        
         entered_username = self.entered_username_entry.get()
         entered_password = self.entered_password_entry.get()
-        link = self.master.link_entry.get()
-        print("Attempting login for user: " + entered_username)
+        for child in self.Top_display_frame.winfo_children():
+            child.destroy()
+        self.Top_display_frame.columnconfigure((0, 1, 2, 3), weight=1)
+        self.Top_display_frame.rowconfigure((0, 1, 2, 3), weight=1)
+
+        link = self.MainApplication.link_entry.get()
+        #print("Attempting login for user: " + entered_username)
         user = Get_User(link, ["User_name", "User_password"], [entered_username, entered_password])
-        print("Login result: " + str(user))
+        #print("Login result: " + str(user))
         if isinstance(user, list) and len(user) > 0 and user[0] != 'User_id':
             user = user[0]
         if user:
-            print("User : ", user)
+            #print("User : ", user)
             self.Security_form.Loged_User = user
             if not 'Id' in user:
                 lb = tk.Label(self.master.Error_list_frame, text="Online Login Secsesfull", fg="green")
-                lb.pack(side=tk.TOP, fill=tk.X, expand=True)
+                lb.pack(side=tk.BOTTOM, fill=tk.X, expand=True)
                 answer = tk.messagebox.askquestion("Question", "User Data has been found online. for fast performance better to download datas. Do you what to download user data?", parent=self.Security_form)
                 if answer == 'yes':
                     offlineuser = Add_User_data_From_list(user)
                     if offlineuser:
-                        lb = tk.Label(self.master.Error_list_frame, text="Data Downloaded Successfully", bg="#1565c0", fg="Green").pack(side=tk.TOP, fill=tk.X, expand=True)
+                        lb = tk.Label(self.master.Error_list_frame, text="Data Downloaded Successfully", fg="Green").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
                         user = offlineuser
                     else:
-                        lb = tk.Label(self.master.Error_list_frame, text="User Data Download Filed", bg="#1565c0", fg="red").pack(side=tk.TOP, fill=tk.X, expand=True)
+                        lb = tk.Label(self.master.Error_list_frame, text="User Data Download Filed", fg="red").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
                 else:
-                    lb = tk.Label(self.master.Error_list_frame, text="User Data Found Online", bg="#1565c0", fg="Green").pack(side=tk.TOP, fill=tk.X, expand=True)
+                    lb = tk.Label(self.master.Error_list_frame, text="User Data Found Online", fg="Green").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
             else:     
-                lb = tk.Label(self.master.Error_list_frame, text="Offline Login Secsesfull", bg="#1565c0", fg="Green").pack(side=tk.TOP, fill=tk.X, expand=True)
+                lb = tk.Label(self.master.Error_list_frame, text="Offline Login Secsesfull", fg="Green").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
             
-            print("Logged User : ", user)
+            #print("Logged User : ", user)
             if user:
-                select_User_Company_State_Frame = Select_User_Company_State_Frame(self.Security_form, self._show_credentials_page, user, link)
-                select_User_Company_State_Frame.grid(row=2, column=1, columnspan=8, sticky="nsew")
+                select_User_Company_State_Frame = Select_User_Company_State_Frame(self.Top_display_frame, self._show_credentials_page, user, link)
+                select_User_Company_State_Frame.grid(row=2, column=0, columnspan=8, sticky="nsew")
                 select_User_Company_State_Frame.Link = link
                 select_User_Company_State_Frame.User_data = user
+                self.homemaster.Link = link
                 if user:
                     self.Security_form.Loged_User = user
                 else:
@@ -456,8 +429,14 @@ class SecurityForm(tk.Toplevel):
     def _create_user_buttons_container(self):
         # Create a canvas + horizontal scrollbar and an internal frame to hold buttons.
         # This allows horizontal scrolling when there are more buttons than fit.
-        self.user_buttons_canvas = tk.Canvas(self.Security_form, height=120, highlightthickness=0, bg="#0d47a1")
-        self.user_buttons_scrollbar = tk.Scrollbar(self.Security_form, orient="horizontal", command=self.user_buttons_canvas.xview, bg="#0d47a1", activebackground="#1976d2", troughcolor="#0d47a1")
+        #clear space to create buttons
+        for child in self.Top_display_frame.winfo_children():
+            child.destroy()
+        self.Top_display_frame.columnconfigure((0, 1, 2, 3), weight=1)
+        self.Top_display_frame.rowconfigure((0, 1, 2, 3), weight=1)
+
+        self.user_buttons_canvas  = tk.Canvas(self.Top_display_frame, highlightthickness=0, bg="#0d47a1")
+        self.user_buttons_scrollbar = tk.Scrollbar(self.Top_display_frame, orient="horizontal", command=self.user_buttons_canvas.xview, bg="#0d47a1", activebackground="#1976d2", troughcolor="#0d47a1")
         self.user_buttons_canvas.configure(xscrollcommand=self.user_buttons_scrollbar.set)
 
         # internal frame inside canvas
@@ -465,14 +444,57 @@ class SecurityForm(tk.Toplevel):
         # Create window without width restriction so inner frame can expand horizontally
         self.user_buttons_canvas.create_window((0, 0), window=self.user_buttons_inner, anchor="nw")
 
+        self.forget_password_label = tk.Label(
+            self.Top_display_frame,
+            text="Forgot Password?",
+            fg="#64b5f6",
+            bg="#1565c0",
+            cursor="hand2",
+            font=("Roboto", 10, "underline")
+        )
+        self.forget_password_label.bind("<Button-1>", self.forget_password_fuc)
+
+        self.Create_new_label = tk.Label(
+            self.Top_display_frame,
+            text="Create Account",
+            fg="#64b5f6",
+            bg="#1565c0",
+            cursor="hand2",
+            font=("Roboto", 10, "underline")
+        )
+        self.Create_new_label.bind("<Button-1>", self.Create_new_user)
         # grid the canvas + scrollbar into the parent grid cell
         #self.user_buttons_canvas.grid(row=1, column=0, columnspan=4, sticky="nsew")
         #self.user_buttons_scrollbar.grid(row=5, column=0, columnspan=4, sticky="nsew")
 
         # keep references for later
         self.user_buttons_frame = self.user_buttons_inner
+        
+
+        self.user_buttons_canvas.grid(row=1, column=0, columnspan=4, sticky="nsew", padx=8, pady=(0, 0))
+        self.forget_password_label.grid(row=3, column=0, sticky="w", padx=12, pady=8)
+        self.Create_new_label.grid(row=3, column=3, sticky="w", padx=12, pady=8)
+        self.user_buttons_scrollbar.grid(row=4, column=0, columnspan=4, sticky="nsew", padx=8, pady=(0, 8))
+
+
         self.user_buttons_canvas.bind("<Configure>", self._on_buttons_canvas_configure)
         self.user_buttons_inner.bind("<Configure>", self._update_buttons_scrollregion)
+
+        
+        # disable login until a user is chosen again (existing handlers will enable it)
+        try:
+            self.log_in_button.configure(state='disabled')
+        except Exception:
+            pass
+        self._credentials_shown = True
+        if self.instruction_label.cget("text") == "Please select your user account and enter your credentials":
+            self.button_BACK_close['text'] = "Close"
+        else:
+            self.button_BACK_close['text'] = "OK Skip"
+        self.bind("<Up>", self.treeview_naigation)
+        self.bind("<Down>", self.treeview_naigation)
+        self.bind("<Return>", self.Selectd)
+        self.Security_form.focus_set()
 
     def _on_buttons_canvas_configure(self, event):
         # Called when canvas size changes; update scrollregion and optionally resize buttons for equal sizing.
@@ -509,12 +531,9 @@ class SecurityForm(tk.Toplevel):
             pass
 
     def _render_user_buttons(self):
-        if len(self.user_names) == 0:
-            return
-        
-        self._hide_credentials_page()
-        print("Rendering user buttons...")
-        print("User names: " + str(self.user_names))
+        self._create_user_buttons_container()
+        #print("Rendering user buttons...")
+        #print("User names: " + str(self.user_names))
         # clear existing
         for child in self.user_buttons_frame.winfo_children():
             child.destroy()
@@ -572,17 +591,20 @@ class SecurityForm(tk.Toplevel):
         # ensure inner frame requested width is preserved so horizontal scrollbar appears when needed
         self._update_buttons_scrollregion()
         self._adjust_button_widths()
+        self.Security_form.focus_set()
+
 
     def _on_new_user_pressed(self):
         # when New User pressed, go to credential page and allow entering username/password
+        self._show_credentials_page()
         self.forgetuserbtn.grid_remove()  # hide the "Forgot Username?" button in new user mode
         self.selected_user_var.set("")
-        self._show_credentials_page()
         self.button_BACK_close['text'] = "Back"
         self.entered_username_entry.configure(state='normal')
         self.entered_username_entry.delete(0, tk.END)
         self.log_in_button.configure(state='normal')
         self.entered_username_entry.focus_set()
+        self._credentials_shown = False
 
 
     def forget_username(self):
@@ -615,16 +637,20 @@ class SecurityForm(tk.Toplevel):
             self.credentials_frame.grid_remove()
         except Exception:
             pass
-        self.forgetuserbtn.grid_remove()  # hide the "Forgot Username?" button in new user mode
+        #self.forgetuserbtn.grid_remove()  # hide the "Forgot Username?" button in new user mode
         self._update_buttons_scrollregion()
         self._adjust_button_widths()
         self._render_user_buttons()
 
     def _on_user_button_pressed(self, name):
-        # when an existing user button is pressed, go to credential page and prefill username (readonly)
-        self.forgetuserbtn.grid(row=0, column=3, sticky="e", padx=12, pady=8)        
-        self.selected_user_var.set(name)
         self._show_credentials_page()
+        # when an existing user button is pressed, go to credential page and prefill username (readonly)
+        self.forgetuserbtn.grid(row=0, column=3, sticky="e", padx=12, pady=8)
+        for n, nam in enumerate(self.user_names):
+            if nam == name and len(self.user_linkes) > n:
+                url = self.user_linkes[n]
+                self.selected_linke.set(url)
+        self.selected_user_var.set(name)
         self.button_BACK_close['text'] = "Back"
         self.entered_username_entry.configure(state='normal')
         self.entered_username_entry.delete(0, tk.END)
@@ -633,6 +659,7 @@ class SecurityForm(tk.Toplevel):
         self.entered_username_entry.configure(state='disabled')
         self.log_in_button.configure(state='normal')
         self.entered_password_entry.focus_set()
+        self._credentials_shown = False
 
     def _select_user(self, name):
         # select without immediately showing credentials
@@ -643,6 +670,7 @@ class SecurityForm(tk.Toplevel):
         self.entered_username_entry.insert(0, name)
         self.entered_username_entry.configure(state='disabled')
         self.log_in_button.configure(state='normal')
+        self._credentials_shown = False
 
     def _load_last_info(self):
         try:
@@ -670,54 +698,88 @@ class SecurityForm(tk.Toplevel):
                 self._on_user_button_pressed(r[0]['User_name'])
 
     def _show_credentials_page(self):
-        if self._credentials_shown:
-            return
-        # hide user selection canvas so credential frame can be shown
-        try:
-            self.user_buttons_canvas.grid_remove()
-        except Exception:
-            pass
-        # hide scrollbar as well if present
-        try:
-            if hasattr(self, "user_buttons_scrollbar") and self.user_buttons_scrollbar:
-                self.user_buttons_scrollbar.grid_remove()
-        except Exception:
-            pass
-        # place credentials_frame
+        
+        for child in self.Top_display_frame.winfo_children():
+            child.destroy()
+        self.Top_display_frame.columnconfigure((0, 1, 2, 3), weight=1)
+        self.Top_display_frame.rowconfigure((0, 1, 2, 3), weight=1)
+
+        # Credentials frame (hidden initially)
+        self.credentials_frame = tk.Frame(self.Top_display_frame, bg=self.bg_light)
         self.credentials_frame.grid(row=2, column=0, columnspan=4, sticky="ew", padx=8, pady=8)
-        self._credentials_shown = True
+        self._credentials_shown = False
+        # Username entry
+        username_label = tk.Label(
+            self.credentials_frame,
+            text='Username:',
+            bg=self.bg_light,
+            fg=self.text_light,
+            font=("Roboto", 11)
+        )
+        username_label.grid(row=0, column=0, sticky=tk.W, padx=12, pady=8)
+        
+        self.entered_username_entry = tk.Entry(
+            self.credentials_frame,
+            bg="#ffffff",
+            fg="#0d47a1",
+            font=("Roboto", 11),
+            relief=tk.FLAT,
+            bd=2
+        )
+        self.entered_username_entry.grid(row=0, column=1, columnspan=2, sticky="ew", padx=12, pady=8)
+        self.forgetuserbtn = tk.Button(
+            self.credentials_frame,
+            text="Clear User Log History?",
+            command=self.forget_username,
+            bg=self.bg_light,
+            fg=self.text_light,
+            font=("Roboto", 10),
+            relief=tk.FLAT,
+            activebackground="#1565c0",
+            activeforeground=self.text_light,
+            padx=10,
+            pady=8
+        )
+        # Password entry
+        password_label = tk.Label(
+            self.credentials_frame,
+            text='Password:',
+            bg=self.bg_light,
+            fg=self.text_light,
+            font=("Roboto", 11)
+        )
+        password_label.grid(row=1, column=0, sticky=tk.W, padx=12, pady=8)
+        
+        self.entered_password_entry = tk.Entry(
+            self.credentials_frame,
+            show="*",
+            bg="#ffffff",
+            fg="#0d47a1",
+            font=("Roboto", 11),
+            relief=tk.FLAT,
+            bd=2
+        )
+        self.entered_password_entry.grid(row=1, column=1, columnspan=2, sticky="ew", padx=12, pady=8)
+        self.entered_password_entry.bind("<Return>", lambda event: self.log_in())  # allow Enter key to trigger login
+        
+        self.log_in_button = tk.Button(
+            self.credentials_frame,
+            text="Log In",
+            command=self.log_in,
+            bg=self.accent_blue,
+            fg=self.text_light,
+            font=("Roboto", 10, "bold"),
+            relief=tk.FLAT,
+            activebackground="#1565c0",
+            activeforeground=self.text_light,
+            padx=10,
+            pady=8
+        )
+        self.log_in_button.grid(row=2, column=1, sticky="ew", padx=6, pady=8)
+        #self.log_in_button.configure(state='disabled')
+        # place credentials_frame
         self.button_BACK_close['text'] = "Back"
 
-    def _hide_credentials_page(self):
-        print("Hiding credentials page...")
-        # hide credentials frame and restore user selection canvas + scrollbar
-        if not self._credentials_shown:
-            return
-        try:
-            self.credentials_frame.grid_remove()
-        except Exception:
-            pass
-        # restore canvas and scrollbar to their original grid positions
-        try:
-            self.user_buttons_canvas.grid(row=1, column=0, columnspan=4, sticky="nsew", padx=8, pady=(0, 0))
-        except Exception:
-            print("Error restoring user buttons canvas")
-            pass
-        try:
-            if hasattr(self, "user_buttons_scrollbar") and self.user_buttons_scrollbar:
-                self.user_buttons_scrollbar.grid(row=3, column=0, columnspan=4, sticky="nsew", padx=8, pady=(0, 8))
-        except Exception:
-            pass
-        # disable login until a user is chosen again (existing handlers will enable it)
-        try:
-            self.log_in_button.configure(state='disabled')
-        except Exception:
-            pass
-        self._credentials_shown = False
-        if self.instruction_label.cget("text") == "Please select your user account and enter your credentials":
-            self.button_BACK_close['text'] = "Close"
-        else:
-            self.button_BACK_close['text'] = "OK Skip"
 
     def add_num(self, event=None):
         # validate and perform login
@@ -727,7 +789,7 @@ class SecurityForm(tk.Toplevel):
             username = self.entered_username_entry.get().strip()
             password = self.entered_password_entry.get()
             if not username:
-                print("No username entered for new user mode")
+                #print("No username entered for new user mode")
                 return
             users = fetch_as_dict_list("SELECT * FROM USERS WHERE User_name=? AND User_password=?", (username, password))
         else:
@@ -755,21 +817,22 @@ class SecurityForm(tk.Toplevel):
                return
 
         # fallback: invalid credentials
-        print("Invalid username or password")
+        #print("Invalid username or password")
         # keep window open for retry
 
 def Security_get_user(self):
-    print("Security_get_user")
+    #print("Security_get_user")
     secur = SecurityForm(self, "Hiper Market Login Security")
+    
     if secur.Security_form.Loged_User == None:
         return False
     return True
 
 def Chacke_Security(self, user, Shop, onlevel, Whatfor=""):
     # user: expected to be a dict-like object earlier in code; keep original logic but improve fallback
-    print("Chacke_Security ", Whatfor)
-    print("load_shop_info user :"+str(user))
-    print("load_shop_info Shop :"+str(Shop))
+    #print("Chacke_Security ", Whatfor)
+    #print("load_shop_info user :"+str(user))
+    #print("load_shop_info Shop :"+str(Shop))
     results = None
     self.User_work_shops = []
     if not Shop.get('Shop_Security_Levels'):
@@ -779,12 +842,12 @@ def Chacke_Security(self, user, Shop, onlevel, Whatfor=""):
             Shop_Security_Levels = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4]
     else:
         Shop_Security_Levels = json.loads(Shop['Shop_Security_Levels'])
-    print("load_shop_info Shop_Security_Levels :"+str(Shop_Security_Levels))
+    #print("load_shop_info Shop_Security_Levels :"+str(Shop_Security_Levels))
     # fallback to original logic used earlier (if user is dict-like)
     if user and isinstance(user, dict) and user.get('User_work_shop') and user.get('User_work_shop') != "" and Shop_Security_Levels:
         User_work_shops = json.loads(user['User_work_shop'])
         for User_work_shop in User_work_shops:
-            print("load_shop_info User_work_shop :"+str(User_work_shop))
+            #print("load_shop_info User_work_shop :"+str(User_work_shop))
             if User_work_shop[1] == Shop['Shop_name'] and User_work_shop[2] == Shop['Shop_brand_name']:
                 try:
                     user_level = float(User_work_shop[3][0])
@@ -796,14 +859,14 @@ def Chacke_Security(self, user, Shop, onlevel, Whatfor=""):
                 except Exception:
                     shop_required_level = 0.0
 
-                print("load_shop_info onlevel :"+str(onlevel))
-                print("load_shop_info user_level :"+str(user_level))
-                print("load_shop_info shop_required_level :"+str(shop_required_level))
+                #print("load_shop_info onlevel :"+str(onlevel))
+                #print("load_shop_info user_level :"+str(user_level))
+                #print("load_shop_info shop_required_level :"+str(shop_required_level))
                 if user_level >= shop_required_level:
-                    print("load_shop_info user_level level ok :"+str(user_level))
+                    #print("load_shop_info user_level level ok :"+str(user_level))
                     return True
                 else:
-                    print("load_shop_info user_level level not ok :"+str(user_level))
+                    #print("load_shop_info user_level level not ok :"+str(user_level))
                     # request an elevated login (will allow selecting last/previous user or entering new)
                     secur = SecurityForm(self, "Security Elevation", Whatfor)
                     if secur.Security_form.Loged_User:
@@ -811,21 +874,21 @@ def Chacke_Security(self, user, Shop, onlevel, Whatfor=""):
                             workshops_json = secur.Security_form.Loged_User['User_work_shop']
                             if isinstance(workshops_json, str):
                                 workshops = json.loads(workshops_json)
-                                print("load_shop_info secur.Security_form.Loged_User workshops :"+str(workshops))
+                                #print("load_shop_info secur.Security_form.Loged_User workshops :"+str(workshops))
                                 for workshop in workshops:
                                     shop_name = workshop[1]
                                     shop_brand = workshop[2]
                                     access_list = workshop[3]     
-                                    print("load_shop_info secur.Security_form.Loged_User level not ok :"+str(access_list[0]))
-                                    print("load_shop_info secur.Security_form.Loged_User shop_required_level level :"+str(shop_required_level))
-                                    print("load_shop_info secur.Security_form.Loged_User onlevel :"+str(Shop_Security_Levels[onlevel]))
+                                    #print("load_shop_info secur.Security_form.Loged_User level not ok :"+str(access_list[0]))
+                                    #print("load_shop_info secur.Security_form.Loged_User shop_required_level level :"+str(shop_required_level))
+                                    #print("load_shop_info secur.Security_form.Loged_User onlevel :"+str(Shop_Security_Levels[onlevel]))
                                     if access_list[0] is not None and float(access_list[0]) >= float(shop_required_level) or str(access_list[0]) == str(Shop_Security_Levels[onlevel]):
-                                        print("load_shop_info secur.Security_form.Loged_User level ok :"+str(access_list[0]))
+                                        #print("load_shop_info secur.Security_form.Loged_User level ok :"+str(access_list[0]))
                                         return True
                         except Exception as e:
-                            print(f"Error parsing workshops: {e}")
+                            #print(f"Error parsing workshops: {e}")
                             logged_level = None  
-                    print("load_shop_info secur.Security_form.Loged_User not found or level not ok")
+                    #print("load_shop_info secur.Security_form.Loged_User not found or level not ok")
                     return False  
     else:
         # fallback to original logic for non-dict user (legacy support)

@@ -43,6 +43,20 @@ class DocForm(tk.Frame):
         self.shop = shop
         self.user_info = user
 
+        self.MainApplication = self
+        while(True):
+            if hasattr(self.MainApplication, 'MainApplication_root'):
+                break
+            else:
+                self.MainApplication = self.MainApplication.master
+                
+        self.homemaster = self
+        while(True):
+            if hasattr(self.homemaster, 'onDisplayFrame'):
+                break
+            else:
+                self.homemaster = self.homemaster.master
+                
         # Android-style dark blue color scheme
         self.bg_dark = "#0d47a1"      # Deep blue
         self.bg_light = "#1565c0"     # Darker blue
@@ -52,7 +66,14 @@ class DocForm(tk.Frame):
         self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
         
         
+        self.tools_styel = {'Main_Frame_color' : "#0d47a1",
+                            'Text_color' :"#eaeaea",
+                            'accent_green' : "#0f3460",
+                            'accent_yellow' : "#e94560",
+                            'text_light' : "#eaeaea",
+                            'text_secondary' : "#b0b0b0"}
 
+        self.Reoport_Infos = {"Salle_by_DateandTime" : []}
         
         # Notebook widget - CENTER_NOTEBOK
         self.start_value = datetime.datetime.now().strftime('%Y-%m-%d')
@@ -62,33 +83,33 @@ class DocForm(tk.Frame):
         self.center_notebook.pack(side="top", fill="both", expand=True)
 
 
-        self.Frame_contaner_frame = tk.Frame(self.center_notebook)
+        self.Frame_contaner_frame = tk.Frame(self.center_notebook, bg=self.bg_dark)
         self.Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
-        self.List_Frame_contaner_frame = tk.Frame(self.Frame_contaner_frame)
+        self.List_Frame_contaner_frame = tk.Frame(self.Frame_contaner_frame, bg=self.bg_dark)
         self.List_Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
-        self.List_Frame = tk.Frame(self.List_Frame_contaner_frame)
+        self.List_Frame = tk.Frame(self.List_Frame_contaner_frame, bg=self.bg_dark)
         self.List_Frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         
-        self.item_List_canvas = tk.Canvas(self.List_Frame)
+        self.item_List_canvas = tk.Canvas(self.List_Frame, bg=self.bg_dark)
         self.item_List_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
         
-        self.item_List_yscrollbar = tk.Scrollbar(self.List_Frame, orient='vertical', command=self.item_List_canvas.yview)
+        self.item_List_yscrollbar = tk.Scrollbar(self.List_Frame, orient='vertical', command=self.item_List_canvas.yview, bg=self.bg_dark)
         self.item_List_yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        self.item_List_xscrollbar = tk.Scrollbar(self.List_Frame_contaner_frame, orient='horizontal', command=self.item_List_canvas.xview)
+        self.item_List_xscrollbar = tk.Scrollbar(self.List_Frame_contaner_frame, orient='horizontal', command=self.item_List_canvas.xview, bg=self.bg_dark)
         self.item_List_xscrollbar.pack(side=tk.TOP, fill=tk.X)
         
         self.item_List_canvas.configure(xscrollcommand=self.item_List_xscrollbar.set, yscrollcommand=self.item_List_yscrollbar.set)
         #self.New_item_contener_canvas.bind('<Configure>', lambda e: self.New_item_contener_canvas.configure(scrollregion=self.New_item_contener_canvas.bbox("all")))
 
-        self.Selected_item_Display_frame = tk.Frame(self.item_List_canvas)
+        self.Selected_item_Display_frame = tk.Frame(self.item_List_canvas, bg=self.bg_dark)
         self.item_List_canvas.create_window((0, 0), window=self.Selected_item_Display_frame, anchor=tk.NW)
         self.Selected_item_Display_frame.bind('<Configure>', lambda e: self.item_List_canvas.configure(scrollregion=self.item_List_canvas.bbox("all")))
 
         
-        self.Doc_tab = ttk.Frame(self.Selected_item_Display_frame)
+        self.Doc_tab = tk.Frame(self.Selected_item_Display_frame, bg=self.bg_dark)
         self.Doc_tab.grid()
 
         # Add tabs to the self.center_notebook
@@ -115,62 +136,66 @@ class DocForm(tk.Frame):
 
 
         
-        self.details_frame = tk.Frame(self.Doc_tab)
+        self.details_frame = tk.Frame(self.Doc_tab, bg=self.bg_dark)
         self.details_frame.grid(row=0, column=0, rowspan=5, sticky="nsew")
         
         # Create the label and entry for the document ID search
-        self.doc_id_label = tk.Label(self.details_frame, text="Document ID:")
+        self.doc_id_label = tk.Label(self.details_frame, text="Document ID:", bg=self.bg_dark, fg=self.text_light)
         self.doc_id_label.grid(row=0, column=0)
         self.doc_id_entry = tk.Entry(self.details_frame)
         self.doc_id_entry.grid(row=1, column=0)
 
         # Create the label and entry for the document type search
-        self.doc_type_label = tk.Label(self.details_frame, text="Document Type:")
+        self.doc_type_label = tk.Label(self.details_frame, text="Document Type:", bg=self.bg_dark, fg=self.text_light)
         self.doc_type_label.grid(row=0, column=1)
         self.doc_type_entry = tk.Entry(self.details_frame)
         self.doc_type_entry.grid(row=1, column=1)
 
         # Create the label and entry for the document barcode search
-        self.doc_barcode_label = tk.Label(self.details_frame, text="Document Barcode:")
+        self.doc_barcode_label = tk.Label(self.details_frame, text="Document Barcode:", bg=self.bg_dark, fg=self.text_light)
         self.doc_barcode_label.grid(row=0, column=2)
         self.doc_barcode_entry = tk.Entry(self.details_frame)
         self.doc_barcode_entry.grid(row=1, column=2)
 
         # Create the label and entry for the extension barcode search
-        self.extension_barcode_label = tk.Label(self.details_frame, text="Extension Barcode:")
+        self.extension_barcode_label = tk.Label(self.details_frame, text="Extension Barcode:", bg=self.bg_dark, fg=self.text_light)
         self.extension_barcode_label.grid(row=0, column=3)
         self.extension_barcode_entry = tk.Entry(self.details_frame)
         self.extension_barcode_entry.grid(row=1, column=3)
 
         # Create the label and entry for the item search
-        self.item_label = tk.Label(self.details_frame, text="Item:")
+        self.item_label = tk.Label(self.details_frame, text="Item:", bg=self.bg_dark, fg=self.text_light)
         self.item_label.grid(row=0, column=4)
         self.item_entry = tk.Entry(self.details_frame)
         self.item_entry.grid(row=1, column=4)
 
         # Create the label and entry for the sold item info search
-        self.sold_item_info_label = tk.Label(self.details_frame, text="Sold Item Info:")
+        self.sold_item_info_label = tk.Label(self.details_frame, text="Sold Item Info:", bg=self.bg_dark, fg=self.text_light)
         self.sold_item_info_label.grid(row=0, column=5)
         self.sold_item_info_entry = tk.Entry(self.details_frame)
         self.sold_item_info_entry.grid(row=1, column=5)
 
 
         # Create the label and entry for the discount search
-        self.discount_label = tk.Label(self.details_frame, text="Discount:")
+        self.discount_label = tk.Label(self.details_frame, text="Discount:", bg=self.bg_dark, fg=self.text_light)
         self.discount_label.grid(row=0, column=6)
         self.discount_entry = tk.Entry(self.details_frame)
         self.discount_entry.grid(row=1, column=6)
-        
-        
+
+
         # Create the label and entry for the user ID search
-        user_info = fetch_as_dict_list('SELECT * FROM USERS', ())  
+        user_info = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM USERS', ())  
         # prepare names lists with a blank first entry for null selection
         self.user_names = [''] + [u['User_name'] for u in user_info] if user_info else ['']
         self.customer_names = [''] + [u['User_name'] for u in user_info] if user_info else ['']
+        self.seller_names = [''] + [u['User_name'] for u in user_info] if user_info else ['']
+        self.At_shop_names = [''] + [u['User_name'] for u in user_info] if user_info else ['']
 
         # maps including blank -> ''
         self.user_map = {'': ''}
         self.customer_map = {'': ''}
+        self.seller_map = {'': ''}
+        self.At_shop_map = {'': ''}
         if user_info:
             for u in user_info:
                 if u['User_id'] is None:
@@ -179,21 +204,37 @@ class DocForm(tk.Frame):
                     uid = u['User_id']
                 self.user_map[u['User_name']] = str(uid)
                 self.customer_map[u['User_name']] = str(uid)
+                self.seller_map[u['User_name']] = str(uid)
 
         self.user_id_var = tk.StringVar()    # will store the actual user_id (used by perform_search via .get())
         self.user_name_var = tk.StringVar()  # displayed in the combobox
 
-        self.user_combobox = ttk.Combobox(self.details_frame, textvariable=self.user_name_var, values=self.user_names, state='readonly')
+        # Combobox for User ID (shows user_name but stores user_id)
+        self.user_id_label = tk.Label(self.details_frame, text="User ID:", bg=self.bg_dark, fg=self.text_light)
+        self.user_id_label.grid(row=2, column=0)
+        
+        self.user_combobox = ttk.Combobox(self.details_frame, textvariable=self.user_name_var, values=self.user_names)
         self.user_combobox.grid(row=3, column=0)
 
-        # Combobox for User ID (shows user_name but stores user_id)
-        self.user_id_label = tk.Label(self.details_frame, text="User ID:")
-        self.user_id_label.grid(row=2, column=0)
 
         def _on_user_selected(event=None):
             name = self.user_name_var.get()
             self.user_id_var.set(self.user_map.get(name, ''))
 
+        def user_on_keyrelease(event=None):
+            #print("on_keyrelease ")
+            typed = self.user_combobox.get().lower()
+            if typed == '':
+                self.user_combobox['values'] = self.user_names
+            else:
+                filtered = [item for item in self.user_names if typed in item.lower()]
+                self.user_combobox['values'] = filtered
+                if filtered:
+                    self.user_combobox.event_generate('<Down>')
+            self.user_combobox.focus()
+            self.user_combobox.icursor(tk.END)
+            
+        self.user_name_var.trace('w', lambda name, index, mode: user_on_keyrelease())
         self.user_combobox.bind('<<ComboboxSelected>>', _on_user_selected)
 
         # Set default selection:
@@ -237,108 +278,191 @@ class DocForm(tk.Frame):
         # Keep compatibility with other code using self.user_name_entry.get()
         self.user_name_entry = self.user_id_var
 
+        
+        # Create the label and entry for the customer ID search
+        self.At_shop_label = tk.Label(self.details_frame, text="At Shop:", bg=self.bg_dark, fg=self.text_light)
+        self.At_shop_label.grid(row=2, column=1)
+
+        self.At_shop_var = tk.StringVar()    # will store the actual At_shop (used by perform_search via .get())
+        self.At_shop_name_var = tk.StringVar()  # displayed in the combobox
+        self.At_shop_combobox = ttk.Combobox(self.details_frame, textvariable=self.At_shop_name_var, values=self.homemaster.Shops_brands)
+        self.At_shop_combobox.grid(row=3, column=1)
+        self.At_shop_name_var.set(self.homemaster.Shops_brands[0])
+        # Combobox for At_shop ID (shows At_shop_name but stores At_shop) 
+
+        def _on_At_shop_selected(event=None):
+            name = self.At_shop_name_var.get()
+            self.At_shop_var.set(self.At_shop_map.get(name, ''))
+
+        def At_shop_on_keyrelease(event=None):
+            #print("on_keyrelease ")
+            typed = self.At_shop_combobox.get().lower()
+            if typed == '':
+                self.At_shop_combobox['values'] = self.homemaster.Shops_brands
+            else:
+                filtered = [item for item in self.homemaster.Shops_brands if typed in item.lower()]
+                self.At_shop_combobox['values'] = filtered
+                if filtered:
+                    self.At_shop_combobox.event_generate('<Down>')
+            self.At_shop_combobox.focus()
+            self.At_shop_combobox.icursor(tk.END)
+            
+        self.At_shop_name_var.trace('w', lambda name, index, mode: At_shop_on_keyrelease())
+        self.At_shop_combobox.bind('<<ComboboxSelected>>', _on_At_shop_selected)
 
         # Create the label and entry for the customer ID search
-        self.customer_id_label = tk.Label(self.details_frame, text="Customer ID:")
-        self.customer_id_label.grid(row=2, column=1)
+        self.customer_id_label = tk.Label(self.details_frame, text="Customer ID:", bg=self.bg_dark, fg=self.text_light)
+        self.customer_id_label.grid(row=2, column=2)
 
         self.customer_id_var = tk.StringVar()    # will store the actual customer_id (used by perform_search via .get())
         self.customer_name_var = tk.StringVar()  # displayed in the combobox
-        self.customer_combobox = ttk.Combobox(self.details_frame, textvariable=self.customer_name_var, values=self.customer_names, state='readonly')
-        self.customer_combobox.grid(row=3, column=1)
+        self.customer_combobox = ttk.Combobox(self.details_frame, textvariable=self.customer_name_var, values=self.customer_names)
+        self.customer_combobox.grid(row=3, column=2)
         # Combobox for Customer ID (shows customer_name but stores customer_id) 
 
         def _on_customer_selected(event=None):
             name = self.customer_name_var.get()
             self.customer_id_var.set(self.customer_map.get(name, ''))
 
+        def customer_on_keyrelease(event=None):
+            #print("on_keyrelease ")
+            typed = self.customer_combobox.get().lower()
+            if typed == '':
+                self.customer_combobox['values'] = self.customer_names
+            else:
+                filtered = [item for item in self.customer_names if typed in item.lower()]
+                self.customer_combobox['values'] = filtered
+                if filtered:
+                    self.customer_combobox.event_generate('<Down>')
+            self.customer_combobox.focus()
+            self.customer_combobox.icursor(tk.END)
+            
+        self.customer_name_var.trace('w', lambda name, index, mode: customer_on_keyrelease())
         self.customer_combobox.bind('<<ComboboxSelected>>', _on_customer_selected)
+
+        # Create the label and entry for the customer ID search
+        self.seller_id_label = tk.Label(self.details_frame, text="Seller ID:", bg=self.bg_dark, fg=self.text_light)
+        self.seller_id_label.grid(row=2, column=3)
+
+        self.seller_id__var = tk.StringVar()    # will store the actual customer_id (used by perform_search via .get())
+        self.seller_name_var = tk.StringVar()  # displayed in the combobox
+        self.seller_id_combobox = ttk.Combobox(self.details_frame, textvariable=self.seller_name_var, values=self.seller_names)
+        self.seller_id_combobox.grid(row=3, column=3)
+        # Combobox for Customer ID (shows customer_name but stores customer_id) 
+
+        def _on_seller_selected(event=None):
+            name = self.seller_name_var.get()
+            self.seller_id__var.set(self.seller_map.get(name, ''))
+
+        def seller_on_keyrelease(event=None):
+            #print("on_keyrelease ")
+            typed = self.seller_id_combobox.get().lower()
+            if typed == '':
+                self.seller_id_combobox['values'] = self.seller_names
+            else:
+                filtered = [item for item in self.seller_names if typed in item.lower()]
+                self.seller_id_combobox['values'] = filtered
+                if filtered:
+                    self.seller_id_combobox.event_generate('<Down>')
+            self.seller_id_combobox.focus()
+            self.seller_id_combobox.icursor(tk.END)
+            
+        self.seller_name_var.trace('w', lambda name, index, mode: seller_on_keyrelease())
+        self.seller_id_combobox.bind('<<ComboboxSelected>>', _on_seller_selected)
+        
+        
+        # Create the label and entry for the tax search
         # TODO: Set default selection if available
         # Keep the original attribute name so other code calling self.customer_name_entry.get() continues to work.
         self.customer_name_entry = self.customer_id_var
 
-        # Create the label and entry for the tax search
-        self.seller_id_label = tk.Label(self.details_frame, text="Seller ID:")
-        self.seller_id_label.grid(row=2, column=2)
-        self.seller_id_entry = tk.Entry(self.details_frame)
-        self.seller_id_entry.grid(row=3, column=2)
-
         self.doc_created_date_var = tk.IntVar()
         self.doc_created_date_var.set(1)
-        self.doc_created_date_Checkbutton = tk.Checkbutton(self.details_frame, text='Created Date', variable=self.doc_created_date_var)
-        self.doc_created_date_Checkbutton.grid(row=2, column=3)
+        self.doc_created_date_Checkbutton = tk.Checkbutton(self.details_frame, text='Created Date', bg=self.bg_dark, variable=self.doc_created_date_var) # , fg=self.text_light
+        self.doc_created_date_Checkbutton.grid(row=2, column=4)
 
         self.doc_expire_date_var = tk.IntVar()
         self.doc_expire_date_var.set(1)
-        self.doc_expire_date_Checkbutton = tk.Checkbutton(self.details_frame, text='Expire Date', variable=self.doc_expire_date_var)
-        self.doc_expire_date_Checkbutton.grid(row=2, column=4)
+        self.doc_expire_date_Checkbutton = tk.Checkbutton(self.details_frame, text='Expire Date', bg=self.bg_dark, variable=self.doc_expire_date_var) # , fg=self.text_light
+        self.doc_expire_date_Checkbutton.grid(row=2, column=5)
 
         self.doc_updated_date_var = tk.IntVar()
         self.doc_updated_date_var.set(1)
-        self.doc_updated_date_Checkbutton = tk.Checkbutton(self.details_frame, text='Updated Date', variable=self.doc_updated_date_var)
-        self.doc_updated_date_Checkbutton.grid(row=2, column=5)
+        self.doc_updated_date_Checkbutton = tk.Checkbutton(self.details_frame, text='Updated Date', bg=self.bg_dark, variable=self.doc_updated_date_var) # , fg=self.text_light
+        self.doc_updated_date_Checkbutton.grid(row=2, column=6)
         
         self.date_from_Entry = tk.Entry(self.details_frame)
         self.date_from_Entry.insert(0, self.start_value)
-        self.date_from_Entry.grid(row=3, column=3)
+        self.date_from_Entry.grid(row=3, column=4)
         
         self.date_to_Entry = tk.Entry(self.details_frame)
         self.date_to_Entry.insert(0, self.start_value)
-        self.date_to_Entry.grid(row=3, column=4)
-        
-        self.GetDate_button = tk.Button(self.details_frame, text="GetDate", command=self.fix_date, **self.button_style)
-        self.GetDate_button.grid(row=3, column=5, sticky="nsew")
+        self.date_to_Entry.grid(row=3, column=5)
+
 
         # Create the search button
         self.search_button = tk.Button(self.details_frame, text="Search", command=self.perform_search, **self.button_style)
-        self.search_button.grid(row=2, column=6)
+        self.search_button.grid(row=4, column=0)
         self.print_button = tk.Button(self.details_frame, text="Veiw", command=lambda: self.perform_veiw(None), **self.button_style)
-        self.print_button.grid(row=2, column=7)
+        self.print_button.grid(row=4, column=1)
 
         # Create the search button
         self.delet_button = tk.Button(self.details_frame, text="Delet", command=lambda: self.deleselecteddoc(None), **self.button_style)
-        self.delet_button.grid(row=3, column=6)
+        self.delet_button.grid(row=4, column=2)
         self.undot_button = tk.Button(self.details_frame, text="Undo", command=lambda: self.undoselecteddoc(None), **self.button_style)
-        self.undot_button.grid(row=3, column=7)
-        self.total_info = tk.Label(self.details_frame, text="TOTAL DOC : 0\nITEMS : 0 COUNTED\nGrand Total : 0", font=("Arial", 11))
-        self.total_info.grid(row=0, column=8, rowspan=2)
-
+        self.undot_button.grid(row=4, column=3)
+        
+        self.GetDate_button = tk.Button(self.details_frame, text="GetDate", command=self.fix_date, **self.button_style)
+        self.GetDate_button.grid(row=4, column=4, sticky="nsew")
 
         self.info_notebook = ttk.Notebook(self.Doc_tab)
         self.info_notebook.grid(row=5, column=0, rowspan=5, columnspan=7, sticky="nsew")
                 
-
-        # Notebook widget - CENTER_NOTEBOK
-        self.graph_value = {}
-        self.graph_value0 = [["A", 10], ["B", 90], ["C", 50], ["D", 100], ["E", 65], ["F", 500], ["G", 1000], ["H", 85], ["I", 5]]
-
         self.perform_search()
-
-    def creat_info(self, user_id, vv, collected_values, count_doc, count_items, counted, itemsProfit):
-        user_name = user_id
-        if user_id is None or user_id == '':
-            user_name = "All Users"
-        else:
-            user_info = fetch_as_dict_list('SELECT * FROM USERS WHERE User_name=?', (str(user_id)))
-            if user_info:
-                user = user_info[0]['User_name']
-                user_name = user
-            else:
-                user_info = fetch_as_dict_list('SELECT * FROM USERS WHERE User_id=?', (str(user_id)))  
-                if user_info:
-                    user = user_info[0]['User_name']
-                    user_name = user
-                else:
-                    user_info = fetch_as_dict_list('SELECT * FROM USERS WHERE Id=?', (str(user_id)))  
-                    if user_info:
-                        user_name = user_info[0]['User_name']
-
-        self.home_tab = ttk.Frame(self.Doc_tab)
-        self.home_tab.grid(row=6, column=0, columnspan=7, rowspan=3, sticky="nsew")
         
+    def creat_info(self, collected_values, count_doc, count_items, counted, itemsProfit):
+
+
+        
+        #  Grap showing code
         # Add tabs to the self.center_notebook
-        self.info_notebook.add(self.home_tab, text= user_name)
+        self.Report_tab = tk.Frame(self.user_info_notebook, bg=self.bg_dark)
+        self.Report_tab.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        # Add tabs to the self.center_notebook
+        self.user_info_notebook.add(self.Report_tab, text='Report')
+
+
+        self.Manu_Frame = tk.Frame(self.Report_tab, bg=self.bg_dark)
+        self.Manu_Frame.pack(side=tk.TOP, fill=tk.X, expand=1)
         
+        self.ShowReport_var1 = tk.StringVar()
+        self.ShowReport_var1.set("Show Report By Date And Time")
+        self.ShowReport_dropdown1 = tk.OptionMenu(self.Manu_Frame, self.ShowReport_var1, "Show Report By Date And Time", "Show Report By Date And Time", "3", "4")
+        self.ShowReport_dropdown1.grid(row=0, column=0, sticky="nsew")
+
+
+
+        self.graps_Frame = tk.Frame(self.Report_tab, bg=self.bg_dark)
+        self.graps_Frame.pack(side=tk.TOP, fill=tk.X, expand=1)
+
+        # self.Reoport_Infos = {"Salle_by_DateandTime" : Salle_by_DateandTime}
+        def Collect_grap(*arg):
+            for widget in self.graps_Frame.winfo_children():
+                widget.destroy()
+                
+            if self.ShowReport_var1.get() == "Show Report By Date And Time":
+                self.grap_Frame = tk.Frame(self.graps_Frame, bg=self.bg_dark)
+                self.grap_Frame.pack(side=tk.TOP, fill=tk.X, expand=1)
+                draw_cart(self.grap_Frame, self.tools_styel, [self.Reoport_Infos["Salle_by_DateandTime"]], "Top Of The Ege", "Bar Chart")
+
+        self.ShowReport_var1.trace("w", Collect_grap)
+        Collect_grap()
+
+
+        self.home_tab = tk.Frame(self.Report_tab, bg=self.bg_dark)
+        self.home_tab.pack(side=tk.TOP, fill=tk.X, expand=1)
+        
+
         self.home_tab.grid_columnconfigure(0, weight=1)
         self.home_tab.grid_columnconfigure(1, weight=1)
         self.home_tab.grid_columnconfigure(2, weight=1)
@@ -352,11 +476,372 @@ class DocForm(tk.Frame):
         self.home_tab.grid_rowconfigure(1, weight=1)
         self.home_tab.grid_rowconfigure(2, weight=1)
         self.home_tab.grid_rowconfigure(3, weight=1)
-
         
-        self.listtotals_tab = ttk.Frame(self.home_tab)
-        # moved listtotals_tab to top of home_tab (row 0) and push other widgets down
-        self.listtotals_tab.grid(row=0, column=0, columnspan=7, rowspan=5, sticky="nsew")
+        # New listbox in the main frame
+        self.list_items = tk.Listbox(self.home_tab)
+        self.list_items.grid(row=0, column=0, rowspan=7, columnspan=1, sticky=tk.N)
+
+        self.list_items.delete(0, tk.END)
+        
+        self.Total_Cash_paid_doc = tk.Label(self.home_tab, text="Cash pid :", font=("Arial", 11), bg=self.bg_dark, fg=self.text_light)
+        self.Total_Cash_paid_doc.grid(row=0, column=1)
+
+        self.Total_Card_paid_doc = tk.Label(self.home_tab, text="Card pid :", font=("Arial", 11), bg=self.bg_dark, fg=self.text_light)
+        self.Total_Card_paid_doc.grid(row=1, column=1)
+
+        self.Total_Card_IN_doc = tk.Label(self.home_tab, text="Card pid : 0.00", font=("Arial", 11), bg=self.bg_dark, fg=self.text_light)
+        self.Total_Card_IN_doc.grid(row=2, column=1)
+
+        self.Total_paid_doc = tk.Label(self.home_tab, text="Total pid:", font=("Arial", 11), bg=self.bg_dark, fg=self.text_light)
+        self.Total_paid_doc.grid(row=3, column=1)
+
+        # Column 4 CashOut
+        self.Total_Cash_Outs_doc = tk.Label(self.home_tab, text="Cash Outs: 0.00", font=("Arial", 11), bg=self.bg_dark, fg=self.text_light)
+        self.Total_Cash_Outs_doc.grid(row=0, column=2)
+
+        self.Total_Card_Outs_doc = tk.Label(self.home_tab, text="Card Outs : 0.00", font=("Arial", 11), bg=self.bg_dark, fg=self.text_light)
+        self.Total_Card_Outs_doc.grid(row=1, column=2)
+        # ensure accumulator exists (do not reset each shop iteration)
+        if not hasattr(self, '_accumulated_expenses'):
+            self._accumulated_expenses = 0.0
+        
+        txt = "Expenses : 0.00"
+        for shop in self.shop:
+            # if self.Selected_Shop and shop.get('Shop_name') != self.Selected_Shop:
+            #    continue
+            if not shop:
+                continue
+            self._accumulated_expenses = 0.0
+            #print("Processing shop:", shop.get('Shop_name', 'Unknown'))
+            shop_exp = []
+            if shop.get('Shop_Expenses'):
+                #print("Shop Expenses data:", str(shop.get('Shop_Expenses')))
+                try:
+                    shop_exp = json.loads(shop.get('Shop_Expenses'))
+                except Exception:
+                    shop_exp = []
+
+            # compute shop expenses falling inside current date range (prorated per-day for monthly/yearly/etc.)
+            def _parse_date(s):
+                if not s:
+                    return None
+                s = str(s).strip()
+                s0 = s.split(" ")[0].split("_")[0]
+                parts = re.findall(r'\d+', s0)
+                # Accept YYYY-MM-DD or DD-MM-YYYY (3 parts)
+                if len(parts) >= 3:
+                    try:
+                        if len(parts[0]) == 4:
+                            y, m, d = parts[0], parts[1], parts[2]
+                        else:
+                            d, m, y = parts[0], parts[1], parts[2]
+                        return datetime.date(int(y), int(m), int(d))
+                    except Exception:
+                        return None
+                # Accept Year-Month or Month-Year (2 parts) -> treat as first day of month
+                if len(parts) == 2:
+                    try:
+                        # detect which part is year (4 digits) else guess
+                        if len(parts[0]) == 4:
+                            y, m = parts[0], parts[1]
+                        elif len(parts[1]) == 4:
+                            m, y = parts[0], parts[1]
+                        else:
+                            # fallback: if first part > 31 assume it's year
+                            if int(parts[0]) > 31:
+                                y, m = parts[0], parts[1]
+                            else:
+                                m, y = parts[0], parts[1]
+                        return datetime.date(int(y), int(m), 1)
+                    except Exception:
+                        return None
+                # single token that looks like a year or unknown -> fail
+                return None
+
+            def _to_float(x):
+                try:
+                    if x is None:
+                        return 0.0
+                    s = str(x)
+                    s = re.sub(r'[^\d\.\-]', '', s)
+                    return float(s) if s != '' else 0.0
+                except Exception:
+                    return 0.0
+
+            def _add_months(d, months):
+                y = d.year + (d.month - 1 + months) // 12
+                m = (d.month - 1 + months) % 12 + 1
+                day = min(d.day, [31,
+                                  29 if (y % 4 == 0 and (y % 100 != 0 or y % 400 == 0)) else 28,
+                                  31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1])
+                return datetime.date(y, m, day)
+
+            def _add_years(d, years):
+                try:
+                    return datetime.date(d.year + years, d.month, d.day)
+                except Exception:
+                    return datetime.date(d.year + years, d.month, 28)
+
+            def _period_end_for(current_start, freq, interval):
+                # returns the end date (inclusive) of the period that starts at current_start
+                if 'day' in freq:
+                    return current_start + datetime.timedelta(days=interval - 1)
+                if 'week' in freq:
+                    return current_start + datetime.timedelta(days=7 * interval - 1)
+                if 'month' in freq:
+                    next_start = _add_months(current_start, interval)
+                    return next_start - datetime.timedelta(days=1)
+                if 'year' in freq:
+                    next_start = _add_years(current_start, interval)
+                    return next_start - datetime.timedelta(days=1)
+                # unknown freq treated as single-day occurrence
+                return current_start
+
+            shop_daily_total = 0.0
+            exp = None
+            # shop_exp is a list of expense records: [name, desc, amount, category, start_date, resp, notes, freq_combo, isrepeats, interval, end_date]
+            for i_exp, exp in enumerate(shop_exp):
+                try:
+                    #print(f"[SHOP:{shop.get('Shop_name','?')}] Expense #{i_exp} raw: {repr(exp)}")
+                    amount = _to_float(exp[2]) if len(exp) > 2 else 0.0
+                    start_date = _parse_date(exp[4]) if len(exp) > 4 else None
+                    freq = str(exp[7]).lower() if len(exp) > 7 and exp[7] is not None else ""
+                    is_repeat = exp[8] if len(exp) > 8 else False
+                    interval = int(exp[9]) if len(exp) > 9 and str(exp[9]).isdigit() else 1
+                    end_date = _parse_date(exp[10]) if len(exp) > 10 else None
+
+                    #print(f"  parsed -> amount: {amount}, start_date: {start_date}, freq: '{freq}', is_repeat: {is_repeat}, interval: {interval}, end_date: {end_date}")
+
+                    # parse user range; if parsing fails, use open-ended range so expenses without explicit end_date are still considered
+                    try:
+                        range_start = _parse_date(self.date_from_Entry.get())
+                        range_end = _parse_date(self.date_to_Entry.get())
+                    except Exception as e:
+                        #print("  error parsing user date range:", e)
+                        range_start = None
+                        range_end = None
+
+                    # If the user didn't provide a start or end date, treat the range as open-ended:
+                    # missing start -> very early date, missing end -> far future date.
+                    if range_start is None:
+                        range_start = datetime.date.min
+                    if range_end is None:
+                        range_end = datetime.date.max
+
+                    # expense must have a valid start_date to be processed
+                    if start_date is None:
+                        #print("  skipping expense: missing expense start_date ->", start_date)
+                        continue
+
+                    # overall active window for expense
+                    # if expense has no explicit end_date treat it as unbounded -> we'll clamp to user's range_end
+                    active_start = max(start_date, range_start)
+                    active_end = range_end if end_date is None else min(end_date, range_end)
+                    #print(f"  active window: {active_start} .. {active_end}")
+                    if active_start > active_end:
+                        #print("  no overlap between expense active window and user range; skipping")
+                        continue
+
+                    # determine boolean repeat flag robustly:
+                    is_repeat_flag = False
+                    try:
+                        srep = str(is_repeat).strip().lower()
+                        if srep in ("1", "true", "yes"):
+                            is_repeat_flag = True
+                        elif srep in ("0", "false", "no", ""):
+                            is_repeat_flag = False
+                        else:
+                            # if explicit repeat not set but freq clearly indicates repeating and no end date given,
+                            # assume it should repeat
+                            if any(k in freq for k in ("day", "week", "month", "year")) and end_date is None:
+                                is_repeat_flag = True
+                    except Exception:
+                        if any(k in freq for k in ("day", "week", "month", "year")) and end_date is None:
+                            is_repeat_flag = True
+                    #print(f"  is_repeat_flag evaluated to: {is_repeat_flag}")
+
+                    # Non-repeating: treat as a single occurrence on start_date (count if it falls into user's range)
+                    if not is_repeat_flag:
+                        # If start_date falls inside user's range, count it once.
+                        if start_date >= range_start and start_date <= range_end:
+                            shop_daily_total += amount
+                            #print(f"  non-repeating expense counted full amount: {amount}")
+                        else:
+                            #print("  non-repeating expense start_date outside range; not counted")
+                            pass
+                        #print(f"[SHOP:{shop.get('Shop_name','?')}] shop_daily_total after non-repeating expense: {shop_daily_total}")
+                        continue
+
+                    # Repeating: iterate occurrences and prorate per overlap days
+                    occurrence = start_date
+                    #print(f"  repeating expense. starting iterations from: {occurrence}")
+                    # fast-forward occurrence to first occurrence that could overlap active_start
+                    if 'day' in freq:
+                        step = datetime.timedelta(days=interval)
+                        if occurrence < active_start:
+                            diff = (active_start - occurrence).days
+                            skips = diff // interval
+                            #print(f"    fast-forward days: skip {skips} intervals")
+                            occurrence = occurrence + step * skips
+                            while occurrence + step - datetime.timedelta(days=1) < active_start:
+                                occurrence += step
+                                #print(f"      bump occurrence -> {occurrence}")
+                    elif 'week' in freq:
+                        step = datetime.timedelta(weeks=interval)
+                        if occurrence < active_start:
+                            diff = (active_start - occurrence).days
+                            skips = diff // (7 * interval)
+                            #print(f"    fast-forward weeks: skip {skips} intervals")
+                            occurrence = occurrence + step * skips
+                            while occurrence + step - datetime.timedelta(days=1) < active_start:
+                                occurrence += step
+                                #print(f"      bump occurrence -> {occurrence}")
+                    elif 'month' in freq:
+                        if occurrence < active_start:
+                            # step forward by whole intervals until the period that can overlap active_start is reached
+                            # use iterative bumping to avoid overshooting the previous period that still overlaps active_start
+                            while _add_months(occurrence, interval) - datetime.timedelta(days=1) < active_start:
+                                occurrence = _add_months(occurrence, interval)
+                                #print(f"    bump occurrence -> {occurrence}")
+                    elif 'year' in freq:
+                        if occurrence < active_start:
+                            # similar safe loop for yearly intervals
+                            while _add_years(occurrence, interval) - datetime.timedelta(days=1) < active_start:
+                                occurrence = _add_years(occurrence, interval)
+                                #print(f"    bump occurrence -> {occurrence}")
+                    else:
+                        # unknown freq -> if start_date in range, count once
+                        if start_date >= active_start and start_date <= active_end:
+                            shop_daily_total += amount
+                            #print(f"    unknown freq counted once: {amount}")
+                        else:
+                            #print("    unknown freq and out of range; not counted")
+                            pass
+                        continue
+
+                    # walk occurrences until beyond active_end
+                    occ_index = 0
+                    #print(f"  iterating occurrences from {occurrence} to {active_end}")
+                    while occurrence <= active_end:
+                        occ_index += 1
+                        period_start = occurrence
+                        period_end = _period_end_for(period_start, freq, interval)
+                        # clamp to overall active window
+                        overlap_start = max(period_start, active_start)
+                        overlap_end = min(period_end, active_end)
+                        #print(f"    occurrence #{occ_index}: period {period_start}..{period_end}, overlap {overlap_start}..{overlap_end}")
+                        if overlap_start <= overlap_end:
+                            days_in_period = (period_end - period_start).days + 1
+                            overlap_days = (overlap_end - overlap_start).days + 1
+                            if days_in_period <= 0:
+                                # safety fallback
+                                add_amt = amount * (overlap_days / 1.0)
+                                shop_daily_total += add_amt
+                                #print(f"      safety add {add_amt} (overlap_days {overlap_days})")
+                            else:
+                                add_amt = amount * (overlap_days / float(days_in_period))
+                                shop_daily_total += add_amt
+                                #print(f"      prorated add {add_amt} (overlap_days {overlap_days} / days_in_period {days_in_period})")
+                        else:
+                            #print("      no overlap for this occurrence")
+                            pass
+                        # advance to next occurrence
+                        if 'day' in freq:
+                            occurrence = occurrence + datetime.timedelta(days=interval)
+                        elif 'week' in freq:
+                            occurrence = occurrence + datetime.timedelta(weeks=interval)
+                        elif 'month' in freq:
+                            occurrence = _add_months(occurrence, interval)
+                        elif 'year' in freq:
+                            occurrence = _add_years(occurrence, interval)
+                        else:
+                            break
+                    #print(f"[SHOP:{shop.get('Shop_name','?')}] shop_daily_total after repeating expense: {shop_daily_total}")
+                except Exception as e:
+                    #print(f"  exception processing expense #{i_exp}: {e}")
+                    continue
+
+            def _fix_two_digit_year(raw_str, parsed_date):
+                if not parsed_date or not raw_str:
+                    return parsed_date
+                try:
+                    tok = str(raw_str).strip().split(" ")[0].split("_")[0]
+                    parts = re.findall(r'\d+', tok)
+                    if len(parts) >= 3:
+                        # parts assumed [day, month, year] or [year, month, day]; detect which by value sizes
+                        # prefer the branch that produced parsed_date already; if the last token has 2 digits, treat as two-digit year
+                        ytoken = parts[2]
+                        if len(ytoken) == 2:
+                            yy = int(ytoken)
+                            cutoff = datetime.date.today().year % 100
+                            if yy <= cutoff:
+                                year = 2000 + yy
+                            else:
+                                year = 1900 + yy
+                            # determine day/month ordering used by _parse_date: parsed_date gives us month/day we can reuse
+                            # Here assume parts[0]=day, parts[1]=month (most common "DD-MM-YY")
+                            d = int(parts[0])
+                            m = int(parts[1])
+                            return datetime.date(year, m, d)
+                except Exception:
+                    pass
+                return parsed_date
+            if not exp or not isinstance(exp, (list, tuple)):
+                #print(f"  skipping invalid expense format: {repr(exp)}")
+                continue
+
+            # apply fixes to both start_date and end_date where appropriate
+            start_date = _fix_two_digit_year(exp[4] if len(exp) > 4 else None, start_date)
+            end_date = _fix_two_digit_year(exp[10] if len(exp) > 10 else None, end_date)
+            #print(f"[SHOP:{shop.get('Shop_name','?')}] shop_daily_total after processing expenses: {shop_daily_total}")
+
+            # accumulate across shops so final label (updated each iteration) ends up with total of all shops processed)
+            self._accumulated_expenses += shop_daily_total
+
+            # display current accumulated total (will end up as the full total after the loop finishes)
+            #print(self._accumulated_expenses)
+            txt = "Expenses : -" + str(round(self._accumulated_expenses, 2))
+        
+        self.Total_Expense_doc = tk.Label(self.home_tab, text=txt, font=("Arial", 11), bg=self.bg_dark, fg=self.text_light)
+        self.Total_Expense_doc.grid(row=2, column=2)
+
+        self.Total_Out_doc = tk.Label(self.home_tab, text="Total Out: 0.00", font=("Arial", 11), bg=self.bg_dark, fg=self.text_light)
+        self.Total_Out_doc.grid(row=3, column=2)
+
+        # Column 5 Stock
+        self.Total_Cash_Stock_doc = tk.Label(self.home_tab, text="Cash Stock:", font=("Arial", 11), bg=self.bg_dark, fg=self.text_light)
+        self.Total_Cash_Stock_doc.grid(row=0, column=3)
+
+        self.Total_Card_Stock_doc = tk.Label(self.home_tab, text="Card Stock:", font=("Arial", 11), bg=self.bg_dark, fg=self.text_light)
+        self.Total_Card_Stock_doc.grid(row=1, column=3)
+
+        self.Total_Credit_Stock_doc = tk.Label(self.home_tab, text="Credit Stock:", font=("Arial", 11), bg=self.bg_dark, fg=self.text_light)
+        self.Total_Credit_Stock_doc.grid(row=2, column=3)
+
+        self.Total_Stock_doc = tk.Label(self.home_tab, text="Total Stock:", font=("Arial", 11), bg=self.bg_dark, fg=self.text_light)
+        self.Total_Stock_doc.grid(row=3, column=3)
+
+        self.doc_totalprofit_ = tk.Label(self.home_tab, text="Totale Profit :", font=("Arial", 11), bg=self.bg_dark, fg=self.text_light)
+        self.doc_totalprofit_.grid(row=0, column=4)
+        self.doc_totalprofit_afterout = tk.Label(self.home_tab, text="Totale Profit After Outs :", font=("Arial", 11), bg=self.bg_dark, fg=self.text_light)
+        self.doc_totalprofit_afterout.grid(row=1, column=4)
+        self.doc_total_afterout = tk.Label(self.home_tab, text="Totale Pid After Outs :", font=("Arial", 11), bg=self.bg_dark, fg=self.text_light)
+        self.doc_total_afterout.grid(row=2, column=4)
+        self.doc_endday_btn = tk.Button(self.home_tab, text="End Day", command=self.perform_endday, **self.button_style)
+        self.doc_endday_btn.grid(row=3, column=4, sticky="nsew")        
+
+        self.Total_Unpaid_doc = tk.Label(self.home_tab, text="Amount Unpaid:", font=("Arial", 11), bg=self.bg_dark, fg=self.text_light)
+        self.Total_Unpaid_doc.grid(row=4, column=1)
+        self.doc_total_ = tk.Label(self.home_tab, text="Totale : 0.00", font=("Arial", 15), bg=self.bg_dark, fg=self.text_light)
+        self.doc_total_.grid(row=4, column=2)
+        self.doc_gtotal_ = tk.Label(self.home_tab, text="GRAND Totale : 0.00", font=("Arial", 15), bg=self.bg_dark, fg=self.text_light)
+        self.doc_gtotal_.grid(row=4, column=3)
+
+
+        # repote_controling frame
+        
+        self.listtotals_tab = tk.Frame(self.Report_tab, bg=self.bg_dark)
+        self.listtotals_tab.pack(side=tk.TOP, fill=tk.X, expand=1)
 
         Frame_contaner_frame = tk.Frame(self.listtotals_tab)
         Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -451,429 +936,13 @@ class DocForm(tk.Frame):
                 self.listtotalsbox.insert('', 'end', text=index0_value, values=values)
         
         # Set the size of the self.listbox widget
-        self.listtotalsbox.pack(side='top', fill='both', expand=False)
-
-        def on_style_selected(*args):
-            draw_cart(int(self.style_var.get()), self.chart_canvas, self.graph_value0, int(self.which_var.get()), 1, 0)
-            draw_cart(int(self.style_var1.get()), self.chart2_canvas, self.graph_value0, int(self.which_var.get()), 2, 0)
-            self.display_products(self.graph_value0)
-
-        # self.total_doc_ITEM_counted = tk.Label(self.home_tab, text="TOTAL DOC : 0 ITEMS : 0 COUNTED", font=("Arial", 11))
-        # self.total_doc_ITEM_counted.grid(row=5, column=0)
+        self.listtotalsbox.pack(side='top', fill='both', expand=True)
         
-        # New listbox in the main frame
-        self.list_items = tk.Listbox(self.home_tab)
-        self.list_items.grid(row=5, column=0, rowspan=7, columnspan=1, sticky=tk.N)
-
         # Summary labels
         # Column 2 Counteing
-        # self.doc_payedtotal_counted = tk.Label(self.home_tab, text="Items Counted : ", font=("Arial", 11))
-        # self.doc_payedtotal_counted.grid(row=6, column=2)
-
-        # Column 2 CashIn 
-        
-        self.Total_Cash_paid_doc = tk.Label(self.home_tab, text="Cash pid :", font=("Arial", 11))
-        self.Total_Cash_paid_doc.grid(row=6, column=1)
-
-        self.Total_Card_paid_doc = tk.Label(self.home_tab, text="Card pid :", font=("Arial", 11))
-        self.Total_Card_paid_doc.grid(row=7, column=1)
-
-        self.Total_Card_IN_doc = tk.Label(self.home_tab, text="Card pid : 0.00", font=("Arial", 11))
-        self.Total_Card_IN_doc.grid(row=8, column=1)
-
-        self.Total_paid_doc = tk.Label(self.home_tab, text="Total pid:", font=("Arial", 11))
-        self.Total_paid_doc.grid(row=10, column=1)
-
-        # Column 4 CashOut
-        self.Total_Cash_Outs_doc = tk.Label(self.home_tab, text="Cash Outs: 0.00", font=("Arial", 11))
-        self.Total_Cash_Outs_doc.grid(row=6, column=2)
-
-        self.Total_Card_Outs_doc = tk.Label(self.home_tab, text="Card Outs : 0.00", font=("Arial", 11))
-        self.Total_Card_Outs_doc.grid(row=7, column=2)
-        # ensure accumulator exists (do not reset each shop iteration)
-        if not hasattr(self, '_accumulated_expenses'):
-            self._accumulated_expenses = 0.0
-        
-        txt = "Expenses : 0.00"
-        for shop in self.shop:
-            # if self.Selected_Shop and shop.get('Shop_name') != self.Selected_Shop:
-            #    continue
-            if not shop:
-                continue
-            self._accumulated_expenses = 0.0
-            print("Processing shop:", shop.get('Shop_name', 'Unknown'))
-            shop_exp = []
-            if shop.get('Shop_Expenses'):
-                print("Shop Expenses data:", str(shop.get('Shop_Expenses')))
-                try:
-                    shop_exp = json.loads(shop.get('Shop_Expenses'))
-                except Exception:
-                    shop_exp = []
-
-            # compute shop expenses falling inside current date range (prorated per-day for monthly/yearly/etc.)
-            def _parse_date(s):
-                if not s:
-                    return None
-                s = str(s).strip()
-                s0 = s.split(" ")[0].split("_")[0]
-                parts = re.findall(r'\d+', s0)
-                # Accept YYYY-MM-DD or DD-MM-YYYY (3 parts)
-                if len(parts) >= 3:
-                    try:
-                        if len(parts[0]) == 4:
-                            y, m, d = parts[0], parts[1], parts[2]
-                        else:
-                            d, m, y = parts[0], parts[1], parts[2]
-                        return datetime.date(int(y), int(m), int(d))
-                    except Exception:
-                        return None
-                # Accept Year-Month or Month-Year (2 parts) -> treat as first day of month
-                if len(parts) == 2:
-                    try:
-                        # detect which part is year (4 digits) else guess
-                        if len(parts[0]) == 4:
-                            y, m = parts[0], parts[1]
-                        elif len(parts[1]) == 4:
-                            m, y = parts[0], parts[1]
-                        else:
-                            # fallback: if first part > 31 assume it's year
-                            if int(parts[0]) > 31:
-                                y, m = parts[0], parts[1]
-                            else:
-                                m, y = parts[0], parts[1]
-                        return datetime.date(int(y), int(m), 1)
-                    except Exception:
-                        return None
-                # single token that looks like a year or unknown -> fail
-                return None
-
-            def _to_float(x):
-                try:
-                    if x is None:
-                        return 0.0
-                    s = str(x)
-                    s = re.sub(r'[^\d\.\-]', '', s)
-                    return float(s) if s != '' else 0.0
-                except Exception:
-                    return 0.0
-
-            def _add_months(d, months):
-                y = d.year + (d.month - 1 + months) // 12
-                m = (d.month - 1 + months) % 12 + 1
-                day = min(d.day, [31,
-                                  29 if (y % 4 == 0 and (y % 100 != 0 or y % 400 == 0)) else 28,
-                                  31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1])
-                return datetime.date(y, m, day)
-
-            def _add_years(d, years):
-                try:
-                    return datetime.date(d.year + years, d.month, d.day)
-                except Exception:
-                    return datetime.date(d.year + years, d.month, 28)
-
-            def _period_end_for(current_start, freq, interval):
-                # returns the end date (inclusive) of the period that starts at current_start
-                if 'day' in freq:
-                    return current_start + datetime.timedelta(days=interval - 1)
-                if 'week' in freq:
-                    return current_start + datetime.timedelta(days=7 * interval - 1)
-                if 'month' in freq:
-                    next_start = _add_months(current_start, interval)
-                    return next_start - datetime.timedelta(days=1)
-                if 'year' in freq:
-                    next_start = _add_years(current_start, interval)
-                    return next_start - datetime.timedelta(days=1)
-                # unknown freq treated as single-day occurrence
-                return current_start
-
-            shop_daily_total = 0.0
-            exp = None
-            # shop_exp is a list of expense records: [name, desc, amount, category, start_date, resp, notes, freq_combo, isrepeats, interval, end_date]
-            for i_exp, exp in enumerate(shop_exp):
-                try:
-                    print(f"[SHOP:{shop.get('Shop_name','?')}] Expense #{i_exp} raw: {repr(exp)}")
-                    amount = _to_float(exp[2]) if len(exp) > 2 else 0.0
-                    start_date = _parse_date(exp[4]) if len(exp) > 4 else None
-                    freq = str(exp[7]).lower() if len(exp) > 7 and exp[7] is not None else ""
-                    is_repeat = exp[8] if len(exp) > 8 else False
-                    interval = int(exp[9]) if len(exp) > 9 and str(exp[9]).isdigit() else 1
-                    end_date = _parse_date(exp[10]) if len(exp) > 10 else None
-
-                    print(f"  parsed -> amount: {amount}, start_date: {start_date}, freq: '{freq}', is_repeat: {is_repeat}, interval: {interval}, end_date: {end_date}")
-
-                    # parse user range; if parsing fails, use open-ended range so expenses without explicit end_date are still considered
-                    try:
-                        range_start = _parse_date(self.date_from_Entry.get())
-                        range_end = _parse_date(self.date_to_Entry.get())
-                    except Exception as e:
-                        print("  error parsing user date range:", e)
-                        range_start = None
-                        range_end = None
-
-                    # If the user didn't provide a start or end date, treat the range as open-ended:
-                    # missing start -> very early date, missing end -> far future date.
-                    if range_start is None:
-                        range_start = datetime.date.min
-                    if range_end is None:
-                        range_end = datetime.date.max
-
-                    # expense must have a valid start_date to be processed
-                    if start_date is None:
-                        print("  skipping expense: missing expense start_date ->", start_date)
-                        continue
-
-                    # overall active window for expense
-                    # if expense has no explicit end_date treat it as unbounded -> we'll clamp to user's range_end
-                    active_start = max(start_date, range_start)
-                    active_end = range_end if end_date is None else min(end_date, range_end)
-                    print(f"  active window: {active_start} .. {active_end}")
-                    if active_start > active_end:
-                        print("  no overlap between expense active window and user range; skipping")
-                        continue
-
-                    # determine boolean repeat flag robustly:
-                    is_repeat_flag = False
-                    try:
-                        srep = str(is_repeat).strip().lower()
-                        if srep in ("1", "true", "yes"):
-                            is_repeat_flag = True
-                        elif srep in ("0", "false", "no", ""):
-                            is_repeat_flag = False
-                        else:
-                            # if explicit repeat not set but freq clearly indicates repeating and no end date given,
-                            # assume it should repeat
-                            if any(k in freq for k in ("day", "week", "month", "year")) and end_date is None:
-                                is_repeat_flag = True
-                    except Exception:
-                        if any(k in freq for k in ("day", "week", "month", "year")) and end_date is None:
-                            is_repeat_flag = True
-                    print(f"  is_repeat_flag evaluated to: {is_repeat_flag}")
-
-                    # Non-repeating: treat as a single occurrence on start_date (count if it falls into user's range)
-                    if not is_repeat_flag:
-                        # If start_date falls inside user's range, count it once.
-                        if start_date >= range_start and start_date <= range_end:
-                            shop_daily_total += amount
-                            print(f"  non-repeating expense counted full amount: {amount}")
-                        else:
-                            print("  non-repeating expense start_date outside range; not counted")
-                        print(f"[SHOP:{shop.get('Shop_name','?')}] shop_daily_total after non-repeating expense: {shop_daily_total}")
-                        continue
-
-                    # Repeating: iterate occurrences and prorate per overlap days
-                    occurrence = start_date
-                    print(f"  repeating expense. starting iterations from: {occurrence}")
-                    # fast-forward occurrence to first occurrence that could overlap active_start
-                    if 'day' in freq:
-                        step = datetime.timedelta(days=interval)
-                        if occurrence < active_start:
-                            diff = (active_start - occurrence).days
-                            skips = diff // interval
-                            print(f"    fast-forward days: skip {skips} intervals")
-                            occurrence = occurrence + step * skips
-                            while occurrence + step - datetime.timedelta(days=1) < active_start:
-                                occurrence += step
-                                print(f"      bump occurrence -> {occurrence}")
-                    elif 'week' in freq:
-                        step = datetime.timedelta(weeks=interval)
-                        if occurrence < active_start:
-                            diff = (active_start - occurrence).days
-                            skips = diff // (7 * interval)
-                            print(f"    fast-forward weeks: skip {skips} intervals")
-                            occurrence = occurrence + step * skips
-                            while occurrence + step - datetime.timedelta(days=1) < active_start:
-                                occurrence += step
-                                print(f"      bump occurrence -> {occurrence}")
-                    elif 'month' in freq:
-                        if occurrence < active_start:
-                            # step forward by whole intervals until the period that can overlap active_start is reached
-                            # use iterative bumping to avoid overshooting the previous period that still overlaps active_start
-                            while _add_months(occurrence, interval) - datetime.timedelta(days=1) < active_start:
-                                occurrence = _add_months(occurrence, interval)
-                                print(f"    bump occurrence -> {occurrence}")
-                    elif 'year' in freq:
-                        if occurrence < active_start:
-                            # similar safe loop for yearly intervals
-                            while _add_years(occurrence, interval) - datetime.timedelta(days=1) < active_start:
-                                occurrence = _add_years(occurrence, interval)
-                                print(f"    bump occurrence -> {occurrence}")
-                    else:
-                        # unknown freq -> if start_date in range, count once
-                        if start_date >= active_start and start_date <= active_end:
-                            shop_daily_total += amount
-                            print(f"    unknown freq counted once: {amount}")
-                        else:
-                            print("    unknown freq and out of range; not counted")
-                        continue
-
-                    # walk occurrences until beyond active_end
-                    occ_index = 0
-                    print(f"  iterating occurrences from {occurrence} to {active_end}")
-                    while occurrence <= active_end:
-                        occ_index += 1
-                        period_start = occurrence
-                        period_end = _period_end_for(period_start, freq, interval)
-                        # clamp to overall active window
-                        overlap_start = max(period_start, active_start)
-                        overlap_end = min(period_end, active_end)
-                        print(f"    occurrence #{occ_index}: period {period_start}..{period_end}, overlap {overlap_start}..{overlap_end}")
-                        if overlap_start <= overlap_end:
-                            days_in_period = (period_end - period_start).days + 1
-                            overlap_days = (overlap_end - overlap_start).days + 1
-                            if days_in_period <= 0:
-                                # safety fallback
-                                add_amt = amount * (overlap_days / 1.0)
-                                shop_daily_total += add_amt
-                                print(f"      safety add {add_amt} (overlap_days {overlap_days})")
-                            else:
-                                add_amt = amount * (overlap_days / float(days_in_period))
-                                shop_daily_total += add_amt
-                                print(f"      prorated add {add_amt} (overlap_days {overlap_days} / days_in_period {days_in_period})")
-                        else:
-                            print("      no overlap for this occurrence")
-                        # advance to next occurrence
-                        if 'day' in freq:
-                            occurrence = occurrence + datetime.timedelta(days=interval)
-                        elif 'week' in freq:
-                            occurrence = occurrence + datetime.timedelta(weeks=interval)
-                        elif 'month' in freq:
-                            occurrence = _add_months(occurrence, interval)
-                        elif 'year' in freq:
-                            occurrence = _add_years(occurrence, interval)
-                        else:
-                            break
-                    print(f"[SHOP:{shop.get('Shop_name','?')}] shop_daily_total after repeating expense: {shop_daily_total}")
-                except Exception as e:
-                    print(f"  exception processing expense #{i_exp}: {e}")
-                    continue
-
-            def _fix_two_digit_year(raw_str, parsed_date):
-                if not parsed_date or not raw_str:
-                    return parsed_date
-                try:
-                    tok = str(raw_str).strip().split(" ")[0].split("_")[0]
-                    parts = re.findall(r'\d+', tok)
-                    if len(parts) >= 3:
-                        # parts assumed [day, month, year] or [year, month, day]; detect which by value sizes
-                        # prefer the branch that produced parsed_date already; if the last token has 2 digits, treat as two-digit year
-                        ytoken = parts[2]
-                        if len(ytoken) == 2:
-                            yy = int(ytoken)
-                            cutoff = datetime.date.today().year % 100
-                            if yy <= cutoff:
-                                year = 2000 + yy
-                            else:
-                                year = 1900 + yy
-                            # determine day/month ordering used by _parse_date: parsed_date gives us month/day we can reuse
-                            # Here assume parts[0]=day, parts[1]=month (most common "DD-MM-YY")
-                            d = int(parts[0])
-                            m = int(parts[1])
-                            return datetime.date(year, m, d)
-                except Exception:
-                    pass
-                return parsed_date
-            if not exp or not isinstance(exp, (list, tuple)):
-                print(f"  skipping invalid expense format: {repr(exp)}")
-                continue
-
-            # apply fixes to both start_date and end_date where appropriate
-            start_date = _fix_two_digit_year(exp[4] if len(exp) > 4 else None, start_date)
-            end_date = _fix_two_digit_year(exp[10] if len(exp) > 10 else None, end_date)
-            print(f"[SHOP:{shop.get('Shop_name','?')}] shop_daily_total after processing expenses: {shop_daily_total}")
-
-            # accumulate across shops so final label (updated each iteration) ends up with total of all shops processed)
-            self._accumulated_expenses += shop_daily_total
-
-            # display current accumulated total (will end up as the full total after the loop finishes)
-            print(self._accumulated_expenses)
-            txt = "Expenses : -" + str(round(self._accumulated_expenses, 2))
-        
-        self.Total_Expense_doc = tk.Label(self.home_tab, text=txt, font=("Arial", 11))
-        self.Total_Expense_doc.grid(row=8, column=2)
-
-        self.Total_Out_doc = tk.Label(self.home_tab, text="Total Out: 0.00", font=("Arial", 11))
-        self.Total_Out_doc.grid(row=10, column=2)
-
-        self.doc_totalprofit_ = tk.Label(self.home_tab, text="Totale Profit :", font=("Arial", 11))
-        self.doc_totalprofit_.grid(row=6, column=3)
-        self.doc_totalprofit_afterout = tk.Label(self.home_tab, text="Totale Profit After Outs :", font=("Arial", 11))
-        self.doc_totalprofit_afterout.grid(row=7, column=3)
-        self.doc_total_afterout = tk.Label(self.home_tab, text="Totale Pid After Outs :", font=("Arial", 11))
-        self.doc_total_afterout.grid(row=8, column=3)
-
-        # Column 5 Stock
-        self.Total_Cash_Stock_doc = tk.Label(self.home_tab, text="Cash Stock:", font=("Arial", 11))
-        self.Total_Cash_Stock_doc.grid(row=6, column=4)
-
-        self.Total_Card_Stock_doc = tk.Label(self.home_tab, text="Card Stock:", font=("Arial", 11))
-        self.Total_Card_Stock_doc.grid(row=7, column=4)
-
-        self.Total_Credit_Stock_doc = tk.Label(self.home_tab, text="Credit Stock:", font=("Arial", 11))
-        self.Total_Credit_Stock_doc.grid(row=8, column=4)
-
-        self.Total_Stock_doc = tk.Label(self.home_tab, text="Total Stock:", font=("Arial", 11))
-        self.Total_Stock_doc.grid(row=10, column=4)
-
-        self.Total_Unpaid_doc = tk.Label(self.home_tab, text="Amount Unpaid:", font=("Arial", 11))
-        self.Total_Unpaid_doc.grid(row=10, column=5)
-        self.doc_total_ = tk.Label(self.home_tab, text="Totale : 0.00", font=("Arial", 15))
-        self.doc_total_.grid(row=10, column=5)
-        self.doc_gtotal_ = tk.Label(self.home_tab, text="GRAND Totale : 0.00", font=("Arial", 15))
-        self.doc_gtotal_.grid(row=10, column=5)
-
-        self.doc_endday_btn = tk.Button(self.home_tab, text="End Day", font=("Arial", 12), command=self.perform_endday)
-        self.doc_endday_btn.grid(row=9, column=5, sticky="nsew")        
         
         
-        self.product_list = tk.Listbox(self.home_tab, width=30)
-        self.product_list.grid(row=5, column=6, rowspan=7, columnspan=1, sticky=tk.N)
-        
 
-        self.chart_canvas = tk.Canvas(self.home_tab)
-        self.chart_canvas.grid(row=13, column=0, columnspan=3, rowspan=3)
-        
-        self.chart2_canvas = tk.Canvas(self.home_tab)
-        self.chart2_canvas.grid(row=13, column=3, columnspan=2, rowspan=3)
-
-        
-        self.which_var = tk.StringVar()
-        self.which_var.set("1")
-        self.which_var.trace("w", on_style_selected)
-        self.which_dropdown = tk.OptionMenu(self.home_tab, self.which_var, "0", "1", "2", "3")
-        self.which_dropdown.grid(row=16, column=0, sticky="nsew")
-        
-        self.style_var = tk.StringVar()
-        self.style_var.set("1")
-        self.style_var.trace("w", on_style_selected)
-        self.style_dropdown = tk.OptionMenu(self.home_tab, self.style_var, "1", "2", "3", "4")
-        self.style_dropdown.grid(row=16, column=1, sticky="nsew")
-        
-        self.next_button = tk.Button(self.home_tab, text="<", font=("Arial", 12))
-        self.next_button.grid(row=16, column=2, sticky="nsew")
-        self.prev_button = tk.Button(self.home_tab, text=">", font=("Arial", 12))
-        self.prev_button.grid(row=16, column=3, sticky="nsew")
-        
-        
-        self.style_var1 = tk.StringVar()
-        self.style_var1.set("2")
-        self.style_var1.trace("w", on_style_selected)
-        self.style_dropdown1 = tk.OptionMenu(self.home_tab, self.style_var1, "1", "2", "3", "4")
-        self.style_dropdown1.grid(row=16, column=4, sticky="nsew")
-        
-        self.next_button1 = tk.Button(self.home_tab, text="<", font=("Arial", 12))
-        self.next_button1.grid(row=16, column=5, sticky="nsew")
-        self.prev_button1 = tk.Button(self.home_tab, text=">", font=("Arial", 12))
-        self.prev_button1.grid(row=16, column=6, sticky="nsew")
-        
-        if len(vv) > 0:
-            self.graph_value, self.graph_value0, tilte = make_list(vv)
-            #print("self.graph_value0 :" + str(self.graph_value0))
-            draw_cart(self.chart_canvas, self.graph_value0, int(self.which_var.get()), 1)
-            draw_cart(self.chart2_canvas, self.graph_value0, int(self.which_var.get()), 2)
-            self.display_products(self.graph_value0, int(self.which_var.get()))
-            #print(" v : " + str(vv))
-
-        self.list_items.delete(0, tk.END)
         pid = 0
 
         unpid = 0
@@ -973,8 +1042,9 @@ class DocForm(tk.Frame):
             Payment_methods.setdefault(key, 0.0)
             Payment_methods[key] += amount
 
-        # Update summary labels (rounded)
-        self.total_info.config(text="TOTAL DOC : " + str(count_doc) + "\nITEMS : " + str(count_items) + " COUNTED\nGrand Total : " + str(format(round(Gtotal, 2), ".2f")))
+        # Column 2 CashIn
+         # Update summary labels (rounded)
+        self.total_info.config(text="TOTAL DOC : " + str(count_doc) + " ITEMS : " + str(count_items) + " COUNTED Grand Total : " + str(format(round(Gtotal, 2), ".2f")))
         self.Total_Cash_paid_doc.config(text="Cash paid : " + str(format(round(Payment_methods.get('CASH', 0.0), 2), ".2f")))
         self.Total_Card_paid_doc.config(text="Card paid : " + str(format(round(Payment_methods.get('CARD', 0.0), 2), ".2f")))
         self.Total_paid_doc.config(text="Total Paid : " + str(format(round(pid, 2), ".2f")))
@@ -1027,7 +1097,86 @@ class DocForm(tk.Frame):
         self.Total_Unpaid_doc.config(text="Amount UnPaid : " + str(format(round(Payment_methods.get('UNPAID', unpid), 2), ".2f")))
         self.doc_gtotal_.config(text="GRAND Totale : " + str(format(round(Gtotal, 2), ".2f")))
 
-        #tk.Label(self.info_tab, text=" :"+str(pay[1])).pack()
+        
+
+
+
+
+
+
+
+
+        
+        
+       
+        
+        '''self.product_list = tk.Listbox(self.Report_tab, width=30)
+        self.product_list.grid(row=5, column=6, rowspan=7, columnspan=1, sticky=tk.N)
+
+
+        self.chart_canvas = tk.Canvas(self.Report_tab)
+        self.chart_canvas.grid(row=13, column=0, columnspan=3, rowspan=3)
+        
+        self.chart2_canvas = tk.Canvas(self.Report_tab)
+        self.chart2_canvas.grid(row=13, column=3, columnspan=2, rowspan=3)
+
+
+        
+        # Notebook widget - CENTER_NOTEBOK
+        self.graph_value = {}
+        self.graph_value0 = [["A", 10], ["B", 90], ["C", 50], ["D", 100], ["E", 65], ["F", 500], ["G", 1000], ["H", 85], ["I", 5]]
+
+
+        # self.total_doc_ITEM_counted = tk.Label(self.home_tab, text="TOTAL DOC : 0 ITEMS : 0 COUNTED", font=("Arial", 11), fg=self.text_light)
+        # self.total_doc_ITEM_counted.grid(row=5, column=0)
+        
+        if len(vv) > 0:
+            self.graph_value, self.graph_value0, tilte = make_list(vv)
+            #print("self.graph_value0 :" + str(self.graph_value0))
+            draw_cart(self.chart_canvas, self.graph_value0, int(self.which_var.get()), 1)
+            draw_cart(self.chart2_canvas, self.graph_value0, int(self.which_var.get()), 2)
+            self.display_products(self.graph_value0, int(self.which_var.get()))
+            #print(" v : " + str(vv))
+
+        # workers sell
+        # Add tabs to the self.center_notebook
+        
+        self.T_tab = ttk.Frame(self.Report_tab)
+        self.T_tab.grid(row=8, column=0, columnspan=7, rowspan=3, sticky="nsew")
+        
+        self.TLs_items = tk.Listbox(self.T_tab, bg="yellow")
+        self.TLs_items.grid(row=0, column=0, columnspan=5)
+        self.TL_items = tk.Listbox(self.T_tab, bg="yellow")
+        self.TL_items.grid(row=5, column=0, columnspan=5)
+
+        
+        results = []#fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM COUNT_SELL WHERE strftime('%Y-%m-%d', DATE) BETWEEN ? AND ?", (f'{self.date_from_Entry.get()}', f'{self.date_to_Entry.get()}',))
+        
+        l = []
+        
+        for result in results:
+            f = 0
+            self.TLs_items.insert(tk.END, [result[0], result[1], result[2], result[3], result[4]])
+            for item in l:
+                #print("item"+str(item))
+                if item[1] == result[1]:
+                    item[3] += result[4]
+                    f = 1
+            if f == 0:
+                l.extend([[len(l), result[1], result[2], result[4]]])
+        for ls in l:
+            self.TL_items.insert(tk.END, ls)
+        #self.get_columen()
+            
+        self.TLs_items.delete(0, tk.END)
+        self.TL_items.delete(0, tk.END)
+        
+        '''
+       
+        
+        
+        
+        
       
     def perform_endday(self):
         # Implement end day logic here
@@ -1043,7 +1192,7 @@ class DocForm(tk.Frame):
 
         # Set the position of the Payment Form window to center
         top.geometry(f"+{int(x)}+{int(y)}")
-        top.geometry("600x700")
+        top.geometry("500x600")
         top.resizable(False, False)
         top.bind("<Escape>", lambda event: top.destroy())
 
@@ -1154,18 +1303,32 @@ class DocForm(tk.Frame):
         listtotalsbox = ttk.Treeview(Selected_item_Display_frame)
         listtotalsbox['columns'] = ['No.', 'Document', 'Shop', 'Customer', 'User', 'Paid', 'Date']
         listtotalsbox.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        
+        listtotalsbox.column("#0", stretch=tk.NO, minwidth=50, width=50) 
         listtotalsbox.heading("#0", text='No.')
+        
+        listtotalsbox.column("#1", stretch=tk.NO, minwidth=100, width=100) 
         listtotalsbox.heading("#1", text='Document')
+        
+        listtotalsbox.column("#2", stretch=tk.NO, minwidth=10, width=80) 
         listtotalsbox.heading("#2", text='Shop')
+        
+        listtotalsbox.column("#3", stretch=tk.NO, minwidth=10, width=80) 
         listtotalsbox.heading("#3", text='Customer')
+        
+        listtotalsbox.column("#4", stretch=tk.NO, minwidth=10, width=80) 
         listtotalsbox.heading("#4", text='User')
+        
+        listtotalsbox.column("#5", stretch=tk.NO, minwidth=50, width=50) 
         listtotalsbox.heading("#5", text='Paid')
+        
+        listtotalsbox.column("#6", stretch=tk.NO, minwidth=100, width=100) 
         listtotalsbox.heading("#6", text='Date')
 
         if self.listbox:
             for i, iid in enumerate(self.listbox.get_children()):
                 vaue = self.listbox.item(iid, 'values')
-                listtotalsbox.insert('', 0, text=str(i), values=[vaue[0], vaue[2], vaue[4], vaue[5], vaue[6], vaue[11]])
+                listtotalsbox.insert('', 'end', text=str(i), values=[vaue[0], vaue[2], vaue[4], vaue[5], vaue[6], vaue[11]])
 
         # Buttons frame
         action_buttons_frame = tk.Frame(doctopframe, bg=self.bg_dark)
@@ -1188,28 +1351,30 @@ class DocForm(tk.Frame):
             ApproveFrame.undo_item(self, barcode)
         
     def deleselecteddoc(self, givenlistbox):
-        item = givenlistbox.focus()  # Get the item that was clicked
-        if item:
-            item_text = givenlistbox.item(item, "values")  # Get the text values of the item
-            id = givenlistbox.item(item, "text")
-            barcode = item_text[0]
-            answer = tk.messagebox.askquestion("Question", "Deleteing Document With out Undoing Will mess in Stock and other Datas. Do you what to delete "+str(barcode)+" ?")
-            if answer == 'yes':
-                # Delete the product from the database
-                Update_table_database('DELETE FROM doc_table WHERE doc_barcode=?', (barcode,))
-                self.perform_search()
-                
+         if givenlistbox and len(givenlistbox.selection()):
+            selected = givenlistbox.selection()[0]
+            if selected:
+                item_value = givenlistbox.item(selected, "values")  # Get the text values of the item
+                item_text = givenlistbox.item(selected, "text")
+                barcode = item_value[0]
+                answer = tk.messagebox.askquestion("Question", "Deleteing Document With out Undoing Will mess in Stock and other Datas. Do you what to delete "+str(barcode)+" ?")
+                if answer == 'yes':
+                    # Delete the product from the database
+                    Update_table_database('DELETE FROM doc_table WHERE doc_barcode=?', (barcode,))
+                    self.perform_search()
+                    
     def load_payment(self, p_text, from_d, to_d):
         try:
             load_payment = json.loads(p_text)
         except Exception as e:
-            print("Error occurred while loading payment data:", str(e))
+            #print("Error occurred while loading payment data:", str(e))
             return  # Stop loading if there's an error
-        print("load_payment : ", load_payment)
+        #print("load_payment : ", load_payment)
         index = 0
         new_payement_made = []
+        Total_payed = 0
         for p, item in enumerate(load_payment):
-            print("item ;" + str(item))
+            #print("item ;" + str(item))
             #for each items+
             payment_method = ""
             pay_id = item[0]
@@ -1219,6 +1384,9 @@ class DocForm(tk.Frame):
             pay_updated_date = item[4]
             pay_user = item[5]
             ispay_pide = item[6]
+            if ispay_pide:
+                Total_payed += float(pay_pid)
+                
             if len(item) > 8:
                 payment_method = item[8]
             else:
@@ -1228,26 +1396,26 @@ class DocForm(tk.Frame):
                         Shop_Payment_Toolscp = json.loads(Shop['Shop_Payment_Tools'])
                         for Shop_Payment_Tool in Shop_Payment_Toolscp:
                             Shop_Payment_Tools.append(Shop_Payment_Tool)
-                print("searching payment method for type :" + str(Shop_Payment_Tools))
+                #print("searching payment method for type :" + str(Shop_Payment_Tools))
                 for r in Shop_Payment_Tools:
-                    print("checking payment method for type :", r)
+                    #print("checking payment method for type :", r)
                     if r[0] == pay_type:
-                        print("matching payment method for type :" + pay_type)
+                        #print("matching payment method for type :" + pay_type)
                         if r:
-                            print("found payment method :" + str(r))
+                            #print("found payment method :" + str(r))
                             payment_method = r[1]
                         else:
                             payment_method = "OTHER"
-                            print("not found payment method for type : other")
+                            #print("not found payment method for type : other")
                         break
-            print("pay_pid " + str(pay_pid))
-            print("date : " + str(pay_pid_date))
+            #print("pay_pid " + str(pay_pid))
+            #print("date : " + str(pay_pid_date))
             #print("udate : " + str(pay_updated_date))
             splitedate = pay_pid_date.split(" ")[0].split("-")
             fd = from_d.split("-")
             td = to_d.split("-")
             day = ""
-            print("splitedate[2]" + splitedate[2])
+            #print("splitedate[2]" + splitedate[2])
             if len(splitedate[2]) > 2:
                 for q, v in enumerate(splitedate[2]):
                     if q == 2:
@@ -1255,16 +1423,16 @@ class DocForm(tk.Frame):
                     day += v
             else:
                 day = splitedate[2]
-            print("day " + day)
+            #print("day " + day)
             start_d = datetime.datetime(int(''.join([d for d in str(fd[0]) if d.isdigit()])), int(''.join([d for d in str(fd[1]) if d.isdigit()])), int(''.join([d for d in str(fd[2]) if d.isdigit()])))
             end_d = datetime.datetime(int(''.join([d for d in str(td[0]) if d.isdigit()])), int(''.join([d for d in str(td[1]) if d.isdigit()])), int(''.join([d for d in str(td[2]) if d.isdigit()])))
             chacke_d = datetime.datetime(int(''.join([d for d in str(splitedate[0]) if d.isdigit()])), int(''.join([d for d in str(splitedate[1]) if d.isdigit()])), int(''.join([d for d in str(day) if d.isdigit()])))
             price = item[1]
             found = 0
-            print("day " + day)
-            print("start_d " + str(start_d))
-            print("chacke_d " + str(chacke_d))
-            print("end_d " + str(end_d))
+            #print("day " + day)
+            #print("start_d " + str(start_d))
+            #print("chacke_d " + str(chacke_d))
+            #print("end_d " + str(end_d))
             if start_d <= chacke_d <= end_d:
                 for pay in self.pyment_used:
                     if pay[0] == pay_type and pay[2] == ispay_pide:
@@ -1272,7 +1440,7 @@ class DocForm(tk.Frame):
                         pay[1] += float(pay_pid)
                         break
                 if found == 0:
-                    print("new payment :" + str([pay_type, pay_pid, ispay_pide]))
+                    #print("new payment :" + str([pay_type, pay_pid, ispay_pide]))
                     self.pyment_used.append([pay_type, float(pay_pid), ispay_pide, payment_method])
                 new_found = 0
                 for pay in new_payement_made:
@@ -1283,15 +1451,12 @@ class DocForm(tk.Frame):
                 if new_found == 0:
                     new_payement_made.append([pay_type, float(pay_pid), ispay_pide, payment_method])
                 index += 1
-        return index, new_payement_made
+        return index, Total_payed, new_payement_made
         
     def close_tab(self, t_id):
         self.center_notebook.forget(t_id)
         
 
-    def on_select(self, event):
-        pass
-    
     def display_products(self, products, ind):
             self.product_list.delete(0, tk.END)
             if products:
@@ -1378,30 +1543,32 @@ class DocForm(tk.Frame):
     def on_treeview_double_click(self, event):
         item = self.listbox.focus()  # Get the item that was clicked
         #print("in dubleclicked")
-        item_text = self.listbox.item(item, "values")  # Get the text values of the item
-        id = self.listbox.item(item, "text")
+        doc_id = self.listbox.item(item, "text")
+        Selected_doc = {}
+        for index in self.homemaster.Todays_docs:
+            if index['id'] == doc_id:
+                Selected_doc = index  # Get full documete
 
-        if item:
+        if Selected_doc:
         # Detect double-click
-            print("Double-clicked item:", item_text)
+            #print("Double-clicked item:", Selected_doc)
 
-            # Add tabs to the self.center_notebook
-            if item_text[0]:
-                tab_exist = any(self.center_notebook.tab(tab_id, "text") == item_text[0] for tab_id in self.center_notebook.tabs())
-                if not tab_exist:
-                    MAIN_test_tab = ttk.Frame(self.center_notebook)
-                    self.center_notebook.add(MAIN_test_tab, text=item_text[0])
-                    test_tab = tk.Frame(MAIN_test_tab)
-                    test_tab.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-                    # Create a close button and position it at the top next to the tab title
-                    close_button1 = tk.Button(test_tab, text="X", command=lambda : self.close_tab(MAIN_test_tab))
-                    close_button1.pack(side="top", anchor="ne", padx=5, pady=2)
-                    doc_edit_form = DocEditForm(test_tab, self.master.master.master.master.Shops_info, self.user_info, self.master.master.master.master.Shops, item_text, item_text[0])
-                    doc_edit_form.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-                else:
-                    for a in self.center_notebook.tabs():
-                        print("Tab already exists!")
-                        print(str(self.center_notebook.tab(a, "text")))
+            tab_exist = any(self.center_notebook.tab(tab_id, "text") == Selected_doc['doc_barcode'] for tab_id in self.center_notebook.tabs())
+            if not tab_exist:
+                MAIN_test_tab = ttk.Frame(self.center_notebook)
+                self.center_notebook.add(MAIN_test_tab, text=Selected_doc['doc_barcode'])
+                test_tab = tk.Frame(MAIN_test_tab)
+                test_tab.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+                # Create a close button and position it at the top next to the tab title
+                close_button1 = tk.Button(test_tab, text="X", command=lambda : self.close_tab(MAIN_test_tab))
+                close_button1.pack(side="top", anchor="ne", padx=5, pady=2)
+                doc_edit_form = DocEditForm(test_tab, self.master.master.master.master.Shops_info, self.user_info, self.master.master.master.master.Shops, Selected_doc)
+                doc_edit_form.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            else:
+                for a in self.center_notebook.tabs():
+                    #print("Tab already exists!")
+                    #print(str(self.center_notebook.tab(a, "text")))
+                    pass
 
     def close_tab(self, t_id):
         self.center_notebook.forget(t_id)
@@ -1424,16 +1591,19 @@ class DocForm(tk.Frame):
             item_text = getlistbox.item(item, "values")  # Get the text values of the item
             doc_id = getlistbox.item(item, "text")
             barcode = item_text[0]
-            doc_ = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))[0]
+            doc_ = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM doc_table WHERE doc_barcode=?', (barcode,))[0]
             if doc_:
-                 #TODO: MAKE IT SEND SELECTEd SHOP
+                 #TODO: MAKEIT SEND SELECTEd SHOP
                 ApproveFrame(self, self.user_info, self.shop[0], [barcode], [], 1)
 
 
     # Function to perform the search and display the results in the listbox
     def perform_search(self):
+        
+        self.Reoport_Infos = {"Salle_by_DateandTime" : []}
+        
         # Ensure any leftover direct attributes are removed
-        for name in ('listdocs_tab', 'home_tab', 'T_tab', 'Report_tab'):
+        for name in ('listdocs_tab', 'user_tab', 'home_tab', 'T_tab', 'Report_tab'):
             if hasattr(self, name):
                 try:
                     getattr(self, name).destroy()
@@ -1444,13 +1614,45 @@ class DocForm(tk.Frame):
                 except Exception:
                     pass
         
+        user_id = self.user_name_var.get()
+        user_name = user_id
+        if user_id is None or user_id == '':
+            user_name = "All Users"
+        else:
+            user_info = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM USERS WHERE User_name=?', (str(user_id)))
+            if user_info:
+                user = user_info[0]['User_name']
+                user_name = user
+            else:
+                user_info = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM USERS WHERE User_id=?', (str(user_id)))  
+                if user_info:
+                    user = user_info[0]['User_name']
+                    user_name = user
+                else:
+                    user_info = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM USERS WHERE Id=?', (str(user_id)))  
+                    if user_info:
+                        user_name = user_info[0]['User_name']
+
+        self.user_tab = tk.Frame(self.Doc_tab, bg=self.bg_dark)
+        self.user_tab.grid(row=6, column=0, columnspan=7, rowspan=3, sticky="nsew")
+        
+        # Add tabs to the self.center_notebook
+        self.info_notebook.add(self.user_tab, text= user_name)
+        
+        self.user_info_notebook = ttk.Notebook(self.user_tab)
+        self.user_info_notebook.pack(side="top", fill="both", expand=True)
+
         self.Total_profit = 0.0
-        self.listdocs_tab = ttk.Frame(self.Doc_tab)
+        self.listdocs_tab = ttk.Frame(self.user_info_notebook)
         self.listdocs_tab.grid(row=5, column=0, columnspan=7, rowspan=5, sticky="nsew")
         
         # Add tabs to the self.center_notebook
-        self.info_notebook.add(self.listdocs_tab, text='List Docs')
+        self.user_info_notebook.add(self.listdocs_tab, text='List Docs')
 
+
+        self.total_info = tk.Label(self.listdocs_tab, text="TOTAL DOC : 0  ITEMS : 0 COUNTED  Grand Total : 0", font=("Arial", 11), bg=self.bg_dark, fg=self.text_light)
+        self.total_info.pack(side='top')
+        
         # Create the listbox to display search results
         self.listbox = ttk.Treeview(self.listdocs_tab)        
         self.listbox.bind('<<TreeviewSelect>>', self.on_select)
@@ -1486,16 +1688,17 @@ class DocForm(tk.Frame):
 
         customer_name = self.customer_name_entry.get()
         
-        seller_id = self.seller_id_entry.get()
+        seller_id = ""#self.seller_id_entry.get()
 
         # Perform the search and update the listbox with the results
-        newdoc = search_documents(doc_id, doc_type, doc_barcode, extension_barcode, item, user_name, customer_name,
+        newdoc = search_documents(self.homemaster.Link, doc_id, doc_type, doc_barcode, extension_barcode, item, user_name, customer_name,
                             sold_item_info, discount, seller_id, self.date_from_Entry.get(), self.date_to_Entry.get(), self.doc_created_date_var.get(), self.doc_expire_date_var.get(), self.doc_updated_date_var.get())
         self.listbox.delete(*self.listbox.get_children())
+        self.homemaster.Todays_docs = []
         self.Add_New_documents(newdoc)
 
-    def Add_New_documents(self, newdocs):
-        print(" newdocs : ", str(newdocs))
+    def Add_New_documents(self, newdoc):
+        #print(" newdocs : ", str(newdoc))
         # Ensure any leftover direct attributes are removed
         for name in ('home_tab', 'T_tab', 'Report_tab'):
             if hasattr(self, name):
@@ -1510,9 +1713,12 @@ class DocForm(tk.Frame):
         
 
         vv = []
-        count = 0
-        count_items = 0
-        itemsProfit = 0
+        
+        Total_payed_counted = 0
+        Total_items_counted = 0
+        Total_itemsProfit = 0
+
+        
         collecte_minutes = []
         was_on_minute = 0
         collecte_hours = []
@@ -1524,20 +1730,32 @@ class DocForm(tk.Frame):
         collecte_years = []
         was_on_year = 0
         collected_values = {}
-        is_paid, new_payement_made = None, None
+        is_paid, Total_payed, new_payement_made = None, 0, None
         
-        for index in newdocs:
-            
-            ispayed = False
+        for index in newdoc:
+            # add the new document to be user if needed for other insted of searching every time 
+            self.homemaster.Todays_docs.append(index) 
+            # get each document solde items
             try:
                 items = json.loads(index['item'])
-                is_paid, new_payement_made = self.load_payment(index['payments'], self.date_from_Entry.get(), self.date_to_Entry.get()) # LOAD PYMENT AND IT TOTAL
             except Exception as e:
-                print("Error loading payment or items:", str(e))
                 items = []
+                
+            # get each document Payment informations
+            ispayed = False
+            try:
+                # LOAD PYMENT AND IT TOTAL
+                Total_payed = 0
+                is_paid, Total_payed, new_payement_made = self.load_payment(index['payments'], self.date_from_Entry.get(), self.date_to_Entry.get()) 
+                # Count if it is payed
+                if is_paid:
+                    Total_payed_counted+=1
+            except Exception as e:
                 new_payement_made = []
-            print("New payment made: ", new_payement_made)
-            
+            #print("New payment made: ", new_payement_made)
+
+            # Culeculate Information Needed In solde Items if the Document is Sale_item
+            # Date has to be  bettwing given from-to
             # 'doc_created_date': '2026-03-14 07:49', 'doc_expire_date': '2026-03-14 07:49', 'doc_updated_date': '2026-03-14 07:49'
             # today_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
             doc_created = datetime.datetime.strptime(index['doc_created_date'].split(" ")[0], '%Y-%m-%d')
@@ -1549,45 +1767,23 @@ class DocForm(tk.Frame):
             
             if (index['type'] == "Sale_item") and iscreateddatebtn  and isupdateddatebtn: #
                 for item in items:
-                    itemProfit = 0
-                    print("item for profit calcute : " + str(item))
-                    if len(item) > 11:
-                        # we will calcute the profit here will get the cost price from the pid
-                        # item[8] = sale price
-                        # item[12] = cost price
-                        # item[7] = qty
-                        print("item for profit item[8] : " + str(item[8]))
-                        print("item for profit item[11] : " + str(item[11]))
-                        print("item for profit item[7] : " + str(item[7]))
-                        itemProfit += (float(item[8])-float(item[11]))* float(item[7])
-                    else:
-                        # this will calculate for older versuion without cost price in item list
-                        # we will calcute the profit here will get the cost price from the pid
-                        # item[8] = sale price
-                        # item[0] = pid
-                        # item[7] = qty
-                        if not item[0] == "" or not item[0] == None or not str(item[0]) == "-1":
-                            it = fetch_as_dict_list( "SELECT * FROM product WHERE id=?", (item[0],))
-                            if it and len(item) > 8:
-                                it = it[0]
-                                print("item for profit item[8] : " + str(item[8]))
-                                print("item for profit it['cost'] : " + str(it['cost']))
-                                print("item for profit item[7] : " + str(item[7]))
-                                itemProfit += (float(item[8])-float(it['cost']))* float(item[7])
-                            else:
-                                itemProfit += 0
-                        else:
-                            itemProfit += 0
-                        while True:
-                            continue
-                    print("item for profit itemProfit : " + str(itemProfit))
-                    itemsProfit += itemProfit
-                    print("item for itemsProfit : " + str(itemsProfit))
-                    count_items += len(items)
-                    if ispayed:
-                        count+=1
-            print("newdoc : " + str(index))
-            print("newdoc : " + str(index['doc_created_date']))
+                    # Price - Cost * Qty 
+                    itemProfit = (float(item[8])-float(item[11]))* float(item[7])
+                    
+                    Total_items_counted += float(item[7])
+                    Total_itemsProfit += itemProfit
+    
+            # Report Informatin needed
+            
+            # Salle_by_DateandTime
+            self.Reoport_Infos["Salle_by_DateandTime"].append([index['doc_updated_date'], Total_payed])
+
+
+            
+
+            '''
+            #print("newdoc : " + str(index))
+            #print("newdoc : " + str(index['doc_created_date']))
             raw = index.get('doc_created_date') if isinstance(index, dict) else None
             if not raw or str(raw).strip() == "":
                 now = datetime.datetime.now()
@@ -1627,7 +1823,7 @@ class DocForm(tk.Frame):
                         # unknown format -> fallback to now
                         now = datetime.datetime.now()
                         dateandtime = [now.strftime('%Y-%m-%d'), now.strftime('%H:%M:%S')]
-            '''
+            
             Time = dateandtime[1] if len(dateandtime) > 1 and dateandtime[1] else "00:00:00"
 
             # MINUTE
@@ -1744,52 +1940,12 @@ class DocForm(tk.Frame):
             'months': collecte_months,
             'years': collecte_years
         }
-        print("collected_values : " + str(collected_values))
+        #print("collected_values : " + str(collected_values))
         
-        user_id = self.user_name_var.get()
-        self.creat_info(user_id, vv, collected_values, len(self.listbox.get_children()), count_items, count, itemsProfit)    
+        self.creat_info(collected_values, len(self.listbox.get_children()), Total_items_counted, Total_payed_counted, Total_itemsProfit)    
 
 
-
-
-        # Add tabs to the self.center_notebook
         
-        self.T_tab = ttk.Frame(self.Doc_tab)
-        self.T_tab.grid(row=8, column=0, columnspan=7, rowspan=3, sticky="nsew")
-        
-        self.TLs_items = tk.Listbox(self.T_tab, bg="yellow")
-        self.TLs_items.grid(row=0, column=0, columnspan=5)
-        self.TL_items = tk.Listbox(self.T_tab, bg="yellow")
-        self.TL_items.grid(row=5, column=0, columnspan=5)
-
-        self.info_notebook.add(self.T_tab, text='IN')
-
-        results = []#fetch_as_dict_list("SELECT * FROM COUNT_SELL WHERE strftime('%Y-%m-%d', DATE) BETWEEN ? AND ?", (f'{self.date_from_Entry.get()}', f'{self.date_to_Entry.get()}',))
-        
-        l = []
-        
-        for result in results:
-            f = 0
-            self.TLs_items.insert(tk.END, [result[0], result[1], result[2], result[3], result[4]])
-            for item in l:
-                #print("item"+str(item))
-                if item[1] == result[1]:
-                    item[3] += result[4]
-                    f = 1
-            if f == 0:
-                l.extend([[len(l), result[1], result[2], result[4]]])
-        for ls in l:
-            self.TL_items.insert(tk.END, ls)
-        #self.get_columen()
-
-        self.Report_tab = ttk.Frame(self.Doc_tab)
-        self.Report_tab.grid(row=8, column=0, columnspan=7, rowspan=3, sticky="nsew")
-        
-        # Add tabs to the self.center_notebook
-        self.info_notebook.add(self.Report_tab, text='Report')
-
-        self.TLs_items.delete(0, tk.END)
-        self.TL_items.delete(0, tk.END)
 
     def load_documents(self, doc_barcodes):
         docs = self.get_documents(doc_barcodes)
@@ -1798,7 +1954,7 @@ class DocForm(tk.Frame):
     def get_documents(self, doc_barcodes):
         docs = []
         for doc_barcode in doc_barcodes:
-            doc = fetch_as_dict_list( "SELECT * FROM doc_table WHERE doc_barcode=?", (doc_barcode,))
+            doc = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM doc_table WHERE doc_barcode=?", (doc_barcode,))
             if doc:
                 docs.append(doc[0])
         return docs

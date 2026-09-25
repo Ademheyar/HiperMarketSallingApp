@@ -1,11 +1,13 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 import sqlite3
 import json
 
+from PIL import Image, ImageTk
+
 # Connect to the database or create it if it does not exist
 
-import os
+import os, shutil
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
 import os, sys
@@ -23,12 +25,38 @@ from C.API.Set import *
 
 class UserForm(tk.Frame):
     def __init__(self, parent, user_info, shop):
-        tk.Frame.__init__(self, parent)
+        
+        
+        self.bg_dark = "#0d47a1"      # Deep blue
+        self.bg_light = "#1565c0"     # Darker blue
+        self.accent_blue = "#1976d2"  # Medium blue
+        self.text_light = "#ffffff"   # White text
+        self.bg_darker = "#0a3d91"    # Even darker blue
+        self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
+
+
+        tk.Frame.__init__(self, parent, bg=self.bg_dark)
         self.user_info = user_info
         self.shop = shop
+        self.homemaster = self
+        while(True):
+            if hasattr(self.homemaster, 'onDisplayFrame'):
+                break
+            else:
+                self.homemaster = self.homemaster.master
+        #print("self.User_data : ", self.User_data)
+
+        self.MainApplication = self
+        while(True):
+            if hasattr(self.MainApplication, 'MainApplication_root'):
+                break
+            else:
+                self.MainApplication = self.MainApplication.master
+        
+        self.config( bg=self.bg_dark)
         # Create the search bar
         # Create the frame for the search bar and buttons
-        self.search_frame = tk.Frame(self)
+        self.search_frame = tk.Frame(self, bg=self.bg_dark)
         self.search_frame.pack(side=tk.TOP, padx=5, pady=5)
 
         # create a StringVar to represent the search box
@@ -41,62 +69,90 @@ class UserForm(tk.Frame):
         self.search_var.trace("w", self.update_search_results)
 
 
+        self.userlist_box_Frame = tk.Frame(self, bg=self.bg_dark)
+        self.userlist_box_Frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        
         # Create the list box
-        self.list_box = ttk.Treeview(self)
+        self.list_box = ttk.Treeview(self.userlist_box_Frame)
         self.list_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.list_box.bind('<<TreeviewSelect>>', self.on_select)
+        
+        self.item_List_yscrollbar = tk.Scrollbar(self.list_box, orient='vertical', command=self.list_box.yview, bg=self.bg_light, activebackground=self.accent_blue)
+        self.item_List_yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.item_List_xscrollbar = tk.Scrollbar(self.list_box, orient='horizontal', command=self.list_box.xview, bg=self.bg_light, activebackground=self.accent_blue)
+        self.item_List_xscrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+        
+        self.list_box.configure(xscrollcommand=self.item_List_xscrollbar.set, yscrollcommand=self.item_List_yscrollbar.set)
+
 
         self.userinfo_notebook = ttk.Notebook(self.list_box)
         self.userinfo_notebook.pack_forget()
         self.nested_list = []
 
         # Create the frame for the user details
-        self.details_frame = tk.Frame(self.userinfo_notebook)
+        self.details_frame = tk.Frame(self.userinfo_notebook, bg=self.bg_dark)
         self.details_frame.pack()
         self.userinfo_notebook.add(self.details_frame, text="info")
 
         # Create the widgets for the user details
-        self.name_label = tk.Label(self.details_frame, text='Name:')
+        self.User_image_frame = tk.Label(self.details_frame, bg=self.bg_dark)
+        self.User_image_frame.bind("<Button-1>", lambda _: self.change_User_image())
+        
+        self.name_label = tk.Label(self.details_frame, text='Name:', bg=self.bg_dark, fg=self.text_light)
         self.name_entry = tk.Entry(self.details_frame)
         self.main_name = ""
         self.name_entry.bind('<KeyRelease>', lambda: self.on_name_entry)
-        self.type_label = tk.Label(self.details_frame, text='TYPE:')
+        self.type_label = tk.Label(self.details_frame, text='TYPE:', bg=self.bg_dark, fg=self.text_light)
         self.type_entry = tk.Entry(self.details_frame)
-        self.phone_num_label = tk.Label(self.details_frame, text='PHONE NUMBER:')
+        self.phone_num_label = tk.Label(self.details_frame, text='PHONE NUMBER:', bg=self.bg_dark, fg=self.text_light)
         self.phone_num_entry = tk.Entry(self.details_frame)
-        self.email_label = tk.Label(self.details_frame, text='EMAIL:')
+        self.email_label = tk.Label(self.details_frame, text='EMAIL:', bg=self.bg_dark, fg=self.text_light)
         self.email_entry = tk.Entry(self.details_frame)
-        self.id_num_label = tk.Label(self.details_frame, text='ID Number:')
+        self.id_num_label = tk.Label(self.details_frame, text='ID Number:', bg=self.bg_dark, fg=self.text_light)
         self.id_num_entry = tk.Entry(self.details_frame)
-        self.addres_label = tk.Label(self.details_frame, text='Addres:')
-        self.addres_entry = tk.Entry(self.details_frame)
-        self.acsess_label = tk.Label(self.details_frame, text='ACSSES:')
+        self.gender_label = tk.Label(self.details_frame, text='Gender :', bg=self.bg_dark, fg=self.text_light)
+        self.gendert_var = tk.StringVar()  # gender selecter
+        self.gender_Combobox = ttk.Combobox(self.details_frame, textvariable=self.gendert_var, values=["MALE", "FEMALE", "Prefer Not to Say"], state='readonly')
+        self.acsess_label = tk.Label(self.details_frame, text='ACSSES:', bg=self.bg_dark, fg=self.text_light)
         self.acsess_entry = tk.Entry(self.details_frame)
-        
-        self.f_and_lname_label = tk.Label(self.details_frame, text='First and Last Name :')
+
+        self.f_and_lname_label = tk.Label(self.details_frame, text='First and Last Name :', bg=self.bg_dark, fg=self.text_light)
         self.fname_entry = tk.Entry(self.details_frame)
         self.lname_entry = tk.Entry(self.details_frame)
-        self.name_label = tk.Label(self.details_frame, text='User Name :')
+        self.name_label = tk.Label(self.details_frame, text='User Name :', bg=self.bg_dark, fg=self.text_light)
         self.name_entry = tk.Entry(self.details_frame)
-        self.gender_label = tk.Label(self.details_frame, text='Gender :')
-        self.gender_entry = tk.Entry(self.details_frame)
-        self.cuntry_label = tk.Label(self.details_frame, text='Cuntry :')
-        self.cuntry_entry = tk.Entry(self.details_frame)
-        self.phone_num_label = tk.Label(self.details_frame, text='Phone No :')
+        self.cuntry_label = tk.Label(self.details_frame, text='Country :', bg=self.bg_dark, fg=self.text_light)
+        self.cuntry_var = tk.StringVar()  # country selecter
+        self.cuntry_Combobox = ttk.Combobox(self.details_frame, textvariable=self.cuntry_var, values=sorted(self.MainApplication.COUNTRIES_WITH_CITIES.keys()), state='readonly')
+        self.cuntry_var.trace('w', lambda name, index, mode: cuntry_changed())
+        self.cuntry_label.grid(row=7, column=0, padx=5, pady=5, sticky=tk.W)
+        self.cuntry_Combobox.grid(row=7, column=1, padx=5, pady=5, sticky=tk.W)
+
+        
+        self.city_label = tk.Label(self.details_frame, text='City :', bg=self.bg_dark, fg=self.text_light)
+        self.city_var = tk.StringVar()  # country selecter
+        self.city_Combobox = ttk.Combobox(self.details_frame, textvariable=self.city_var, values=self.MainApplication.COUNTRIES_WITH_CITIES.get(self.cuntry_var.get(), []), state='readonly')
+        def  cuntry_changed():
+            self.city_Combobox['values'] = self.MainApplication.COUNTRIES_WITH_CITIES.get(self.cuntry_var.get(), [])
+            self.city_var.set(str(self.MainApplication.COUNTRIES_WITH_CITIES.get(self.cuntry_var.get(), [])[0] if len(self.MainApplication.COUNTRIES_WITH_CITIES.get(self.cuntry_var.get(), [])) else "") )
+        self.city_label.grid(row=8, column=0, padx=5, pady=5, sticky=tk.W)
+        self.city_Combobox.grid(row=8, column=1, padx=5, pady=5, sticky=tk.W)
+        
+        self.phone_num_label = tk.Label(self.details_frame, text='Phone No :', bg=self.bg_dark, fg=self.text_light)
         self.phone_num_entry = tk.Entry(self.details_frame)
-        self.email_label = tk.Label(self.details_frame, text='Email :')
+        self.email_label = tk.Label(self.details_frame, text='Email :', bg=self.bg_dark, fg=self.text_light)
         self.email_entry = tk.Entry(self.details_frame)
-        self.addres_label = tk.Label(self.details_frame, text='Adress :')
-        self.addres_entry = tk.Entry(self.details_frame)
-        self.id_num_label = tk.Label(self.details_frame, text='Id No :')
+        self.id_num_label = tk.Label(self.details_frame, text='Id No :', bg=self.bg_dark, fg=self.text_light)
         self.id_num_entry = tk.Entry(self.details_frame)
-        self.home_no_label = tk.Label(self.details_frame, text='Home No :')
+        self.home_no_label = tk.Label(self.details_frame, text='Home No :', bg=self.bg_dark, fg=self.text_light)
         self.home_no_entry = tk.Entry(self.details_frame)
-        self.type_label = tk.Label(self.details_frame, text='Type :')
+        self.type_label = tk.Label(self.details_frame, text='Type :', bg=self.bg_dark, fg=self.text_light)
         self.type_entry = tk.Entry(self.details_frame)
-        self.password_num_label = tk.Label(self.details_frame, text='Password :')
+        self.password_num_label = tk.Label(self.details_frame, text='Password :', bg=self.bg_dark, fg=self.text_light)
         # mask password by default
-        self.password_num_entry = tk.Entry(self.details_frame, show='*')
+        self.password_num_entry = tk.Entry(self.details_frame, show='*', bg=self.bg_dark, fg=self.text_light)
 
         # Checkbox to toggle password visibility
         self.show_password_var = tk.IntVar(value=0)
@@ -107,54 +163,48 @@ class UserForm(tk.Frame):
                 self.password_num_entry.config(show='*')
         self.show_password_cb = tk.Checkbutton(self.details_frame, text='Show Password', variable=self.show_password_var, command=_toggle_password_visibility)
         # place the checkbox (same row as password, different column)
-        self.show_password_cb.grid(row=10, column=2, padx=5, pady=5, sticky=tk.W)
-        self.about_label = tk.Label(self.details_frame, text='About :')
+        self.about_label = tk.Label(self.details_frame, text='About :', bg=self.bg_dark, fg=self.text_light)
         self.about_entry = tk.Entry(self.details_frame)
         
-        self.shops_label = tk.Label(self.details_frame, text='Shop :')
-        self.shops_entry = tk.Entry(self.details_frame)
-        self.work_shop_label = tk.Label(self.details_frame, text='Work Shop :')
+        self.WorkAt_var = tk.StringVar()  # displayed in the combobox
+        self.WorkAt = []
+        # Combobox for User ID (shows user_name but stores user_id)
+        self.WorkAt_label = tk.Label(self.details_frame, text='Work At : ', bg=self.bg_dark, fg=self.text_light)
+        self.WorkAt_Combobox = ttk.Combobox(self.details_frame, textvariable=self.WorkAt_var, values=self.WorkAt, state='readonly')
+        
+        
+        self.work_shop_label = tk.Label(self.details_frame, text=':', bg=self.bg_dark, fg=self.text_light)
         self.work_shop_entry = tk.Label(self.details_frame)
-        self.acsess_label = tk.Label(self.details_frame, text='ACSSES :')
+
+        
+        self.shops_label = tk.Label(self.details_frame, text=' :', bg=self.bg_dark, fg=self.text_light)
+        self.shops_entry = tk.Entry(self.details_frame)
+        
+        self.acsess_label = tk.Label(self.details_frame, text=':', bg=self.bg_dark, fg=self.text_light)
         self.acsess_entry = tk.Entry(self.details_frame)
-        self.pimg_label = tk.Label(self.details_frame, text='Image :')
-        self.pimg_entry = tk.Entry(self.details_frame)
         
 
-        self.add_button = tk.Button(self.details_frame, text='Add', command=self.add_user)
-        self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=self.hide_user_details_frame)
+        self.add_button = tk.Button(self.details_frame, text='Add', command=self.add_user, **self.button_style)
+        self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=self.hide_user_details_frame, **self.button_style)
 
 
 
 
         # Create the frame for the user details
-        self.doc_details_frame = tk.Frame(self.userinfo_notebook)
+        self.doc_details_frame = tk.Frame(self.userinfo_notebook, bg=self.bg_dark)
         self.doc_details_frame.pack()
         self.userinfo_notebook.add(self.doc_details_frame, text="Doc info")
 
-        self.l_frame = tk.Frame(self.doc_details_frame)
-        self.l_frame.grid(row=0, column=0)
+        self.user_docinfo_Frame = tk.Frame(self.doc_details_frame, bg=self.bg_dark)
+        self.user_docinfo_Frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
-
-        # Create the listbox to display search results
-        self.user_docinfo_listbox = ttk.Treeview(self.l_frame)        
-        #self.user_docinfo_listbox.bind('<<TreeviewSelect>>', self.on_select)
-        #self.user_docinfo_listbox.bind("<Button-1>", self.on_treeview_double_click)
-        #self.listbox.grid_propagate(False)
-
-
-        # Add vertical scrollbar
-        tree_scrollbar_y = ttk.Scrollbar(self.l_frame, orient='vertical', command=self.user_docinfo_listbox.yview)
-        self.user_docinfo_listbox.configure(yscrollcommand=tree_scrollbar_y.set)
-        tree_scrollbar_y.pack(side='right', fill='y')
-
-        # Add horizontal scrollbar
-        tree_scrollbar_x = ttk.Scrollbar(self.l_frame, orient='horizontal', command=self.user_docinfo_listbox.xview)
-        self.user_docinfo_listbox.configure(xscrollcommand=tree_scrollbar_x.set)
-        tree_scrollbar_x.pack(side='bottom', fill='x', )
-
+        
+        # Create the list box
+        self.user_docinfo_listbox = ttk.Treeview(self.user_docinfo_Frame)
+        self.user_docinfo_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.user_docinfo_listbox.bind('<<TreeviewSelect>>', self.on_select)
+        
         # Set the size of the self.listbox widget
-        self.user_docinfo_listbox.pack(side='top', fill='both', expand=True)
         self.user_docinfo_listbox['columns'] = ('doc_barcode', 'extension_barcode', 'user_id', 'customer_id', 'Type', 'Itmes', 'Qty', 'Paymen', 'price', 'disc', 'tax', 'doc_created_date', 'doc_expire_date', 'doc_updated_date')
         self.user_docinfo_listbox.heading("#0", text="ID")
         self.user_docinfo_listbox.column("#0", stretch=tk.NO, minwidth=25, width=50) 
@@ -186,9 +236,19 @@ class UserForm(tk.Frame):
         self.user_docinfo_listbox.column("#13", stretch=tk.NO, minwidth=25, width=100) 
         self.user_docinfo_listbox.heading("#14", text="doc_updated_date")
         self.user_docinfo_listbox.column("#14", stretch=tk.NO, minwidth=25, width=100)
+        
+        self.item_List_yscrollbar = tk.Scrollbar(self.user_docinfo_listbox, orient='vertical', command=self.user_docinfo_listbox.yview, bg=self.bg_light, activebackground=self.accent_blue)
+        self.item_List_yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.item_List_xscrollbar = tk.Scrollbar(self.user_docinfo_listbox, orient='horizontal', command=self.user_docinfo_listbox.xview, bg=self.bg_light, activebackground=self.accent_blue)
+        self.item_List_xscrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+        
+        self.user_docinfo_listbox.configure(xscrollcommand=self.item_List_xscrollbar.set, yscrollcommand=self.item_List_yscrollbar.set)
+
+
 
         # Create the search button
-        self.print_button = tk.Button(self.l_frame, text="Veiw Doc", command=self.perform_veiw)
+        self.print_button = tk.Button(self.user_docinfo_Frame, text="Veiw Doc", command=self.perform_veiw)
         self.print_button.pack()#.grid(row=2, column=0)
 
 
@@ -205,48 +265,58 @@ class UserForm(tk.Frame):
 
 
         # Pack the widgets for the user details
-        self.f_and_lname_label.grid(row=0, column=0, padx=5, pady=5, sticky=tk.E)
-        self.fname_entry.grid(row=0, column=1, padx=5, pady=5, sticky=tk.E)
-        self.lname_entry.grid(row=0, column=2, padx=5, pady=5, sticky=tk.W)
-        self.name_label.grid(row=1, column=0, padx=5, pady=5, sticky=tk.E)
-        self.name_entry.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
-        self.gender_label.grid(row=2, column=0, padx=5, pady=5, sticky=tk.E)
-        self.gender_entry.grid(row=2, column=1, padx=5, pady=5, sticky=tk.W)
+        
+        
+        self.User_image_frame.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
+        
+        self.f_and_lname_label.grid(row=1, column=0, padx=5, pady=5, sticky=tk.E)
+        self.fname_entry.grid(row=1, column=1, columnspan=2, padx=5, pady=5, sticky=tk.E)
+        self.lname_entry.grid(row=1, column=4, columnspan=2, padx=5, pady=5, sticky=tk.W)
+        
+        self.name_label.grid(row=2, column=0, padx=5, pady=5, sticky=tk.E)
+        self.name_entry.grid(row=2, column=1, columnspan=2, padx=5, pady=5, sticky=tk.W)
+        self.gender_label.grid(row=2, column=4, padx=5, pady=5, sticky=tk.E)
+        self.gender_Combobox.grid(row=2, column=5, columnspan=2, padx=5, pady=5, sticky=tk.W)
+        
         self.cuntry_label.grid(row=3, column=0, padx=5, pady=5, sticky=tk.E)
-        self.cuntry_entry.grid(row=3, column=1, padx=5, pady=5, sticky=tk.W)
-        self.phone_num_label.grid(row=4, column=0, padx=5, pady=5, sticky=tk.E)
-        self.phone_num_entry.grid(row=4, column=1, padx=5, pady=5, sticky=tk.W)
-        self.email_label.grid(row=5, column=0, padx=5, pady=5, sticky=tk.E)
-        self.email_entry.grid(row=5, column=1, padx=5, pady=5, sticky=tk.W)
-        self.addres_label.grid(row=6, column=0, padx=5, pady=5, sticky=tk.E)
-        self.addres_entry.grid(row=6, column=1, padx=5, pady=5, sticky=tk.W)
-        self.id_num_label.grid(row=7, column=0, padx=5, pady=5, sticky=tk.E)
-        self.id_num_entry.grid(row=7, column=1, padx=5, pady=5, sticky=tk.W)
-        self.home_no_label.grid(row=8, column=0, padx=5, pady=5, sticky=tk.E)
-        self.home_no_entry.grid(row=8, column=1, padx=5, pady=5, sticky=tk.W)
-        self.type_label.grid(row=9, column=0, padx=5, pady=5, sticky=tk.E)
-        self.type_entry.grid(row=9, column=1, padx=5, pady=5, sticky=tk.W)
-        self.password_num_label.grid(row=10, column=0, padx=5, pady=5, sticky=tk.E)
-        self.password_num_entry.grid(row=10, column=1, padx=5, pady=5, sticky=tk.W)
-        self.about_label.grid(row=11, column=0, padx=5, pady=5, sticky=tk.E)
-        self.about_entry.grid(row=11, column=1, padx=5, pady=5, sticky=tk.W)
-        self.shops_label.grid(row=12, column=0, padx=5, pady=5, sticky=tk.E)
-        self.shops_entry.grid(row=12, column=1, padx=5, pady=5, sticky=tk.W)
-        self.work_shop_label.grid(row=13, column=0, padx=5, pady=5, sticky=tk.E)
-        self.work_shop_entry.grid(row=13, column=1, padx=5, pady=5, sticky=tk.W)
-        self.acsess_label.grid(row=14, column=0, padx=5, pady=5, sticky=tk.E)
-        self.acsess_entry.grid(row=14, column=1, padx=5, pady=5, sticky=tk.W)
-        self.pimg_label.grid(row=15, column=0, padx=5, pady=5, sticky=tk.E)
-        self.pimg_entry.grid(row=15, column=1, padx=5, pady=5, sticky=tk.W)
+        self.cuntry_Combobox.grid(row=3, column=1, columnspan=2, padx=5, pady=5, sticky=tk.W)
+        self.city_label.grid(row=3, column=4, padx=5, pady=5, sticky=tk.E)
+        self.city_Combobox.grid(row=3, column=5, columnspan=2, padx=5, pady=5, sticky=tk.W)
+        
+        self.home_no_label.grid(row=4, column=0, padx=5, pady=5, sticky=tk.E)
+        self.home_no_entry.grid(row=4, column=1, columnspan=2, padx=5, pady=5, sticky=tk.W)
+        self.id_num_label.grid(row=4, column=4, padx=5, pady=5, sticky=tk.E)
+        self.id_num_entry.grid(row=4, column=5, columnspan=2, padx=5, pady=5, sticky=tk.W)
+        
+        self.phone_num_label.grid(row=5, column=0, padx=5, pady=5, sticky=tk.E)
+        self.phone_num_entry.grid(row=5, column=1, columnspan=2, padx=5, pady=5, sticky=tk.W)
+        self.email_label.grid(row=5, column=4, padx=5, pady=5, sticky=tk.E)
+        self.email_entry.grid(row=5, column=5, columnspan=2, padx=5, pady=5, sticky=tk.W)
+        
+        self.type_label.grid(row=6, column=0, padx=5, pady=5, sticky=tk.E)
+        self.type_entry.grid(row=6, column=1, columnspan=2, padx=5, pady=5, sticky=tk.W)
+        self.password_num_label.grid(row=6, column=4, padx=5, pady=5, sticky=tk.E)
+        self.password_num_entry.grid(row=6, column=5, columnspan=2, padx=5, pady=5, sticky=tk.W)
+        self.show_password_cb.grid(row=6, column=6, padx=5, pady=5, sticky=tk.W)
+        
+        self.about_label.grid(row=7, column=0, padx=5, pady=5, sticky=tk.E)
+        self.about_entry.grid(row=7, column=1, columnspan=2, padx=5, pady=5, sticky=tk.W)
+        self.acsess_label.grid(row=7, column=5, padx=5, pady=5, sticky=tk.E)
+        self.acsess_entry.grid(row=7, column=6, padx=5, pady=5, sticky=tk.W)
+        
+        self.shops_label.grid(row=8, column=0, padx=5, pady=5, sticky=tk.E)
+        self.shops_entry.grid(row=8, column=1, padx=5, pady=5, sticky=tk.W)
+        self.WorkAt_Combobox.grid(row=8, column=5, columnspan=5, sticky="nsew")
+        self.WorkAt_label.grid(row=8, column=6, columnspan=5, sticky=tk.W)
 
-        self.add_button.grid(row=17, column=0, padx=5, pady=5, sticky=tk.W)
-        self.cancle_button.grid(row=17, column=1, padx=5, pady=5, sticky=tk.W)
+        self.add_button.grid(row=13, column=0, padx=5, pady=5, sticky=tk.W)
+        self.cancle_button.grid(row=13, column=1, padx=5, pady=5, sticky=tk.W)
         self.update_user_listbox()
 
     def on_name_entry(self, event):
-        users = fetch_as_dict_list('SELECT * FROM Users', ())
+        users = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM Users', ())
         for user in users:
-            print("on_name_entry\n"+str(user['User_name']))
+            #print("on_name_entry\n"+str(user['User_name']))
             if user['User_name'] == self.name_entry.get():
                 self.add_button.config(text="Update")    
                 return
@@ -260,7 +330,7 @@ class UserForm(tk.Frame):
             item_text = self.user_docinfo_listbox.item(item, "values")  # Get the text values of the item
             id = self.user_docinfo_listbox.item(item, "text")
             barcode = item_text[0]
-            doc_ = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))[0]
+            doc_ = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))[0]
             if doc_:
                  #TODO: MAKE IT SEND SELECTEd SHOP
                 ApproveFrame(self, self.user_info, self.shop[0], [barcode], [], 1)
@@ -268,7 +338,7 @@ class UserForm(tk.Frame):
                 if answer == 'yes':
                     #print(str(doc_))
                     doc_edit_form = load_slip(doc_, doc_id)
-                    print("don loding slip : \n\n" + str(doc_edit_form))
+                    #print("don loding slip : \n\n" + str(doc_edit_form))
                     self.user = self.master.master.master.master.user
                     # TODO: Make It send selected shop to print_slip
                     PrinterForm.print_slip(self, self.user_info, self.shop[0], doc_edit_form, 1) # TODO chack in setting if paper cut allowed'''
@@ -279,7 +349,7 @@ class UserForm(tk.Frame):
             item_text = self.user_docinfo_listbox.item(item, "values")  # Get the text values of the item
             id = self.user_docinfo_listbox.item(item, "text")
             barcode = item_text[0]
-            doc_ = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))
+            doc_ = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))
             if doc_:
                 answer = tk.messagebox.askquestion("Question", "Do you what to print "+str(barcode)+" ?")
                 if answer == 'yes':
@@ -296,7 +366,7 @@ class UserForm(tk.Frame):
     def search_users(self, search_text):
         
         # Search for the entered text in the code, name, short_key, and type fields of the user table
-        results = fetch_as_dict_list("SELECT * FROM Users WHERE User_name LIKE ? OR User_address LIKE ? OR User_id_pp_num LIKE ? OR User_phone_num LIKE ? OR User_email LIKE ? OR User_type LIKE ? OR User_access LIKE ?", 
+        results = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM Users WHERE User_name LIKE ? OR User_address LIKE ? OR User_id_pp_num LIKE ? OR User_phone_num LIKE ? OR User_email LIKE ? OR User_type LIKE ? OR User_access LIKE ?", 
                     ('%' + search_text + '%','%' + search_text + '%','%' + search_text + '%','%' + search_text + '%','%' + search_text + '%','%' + search_text + '%','%' + search_text + '%'))
         
         
@@ -337,7 +407,7 @@ class UserForm(tk.Frame):
         
         # Add the users to the user listbox
         for user in users:
-            print("update_results\n"+str(user))
+            #print("update_results\n"+str(user))
             self.list_box.insert('', 'end', text=user['User_id'], values=(user['User_fname'], user['User_Lname'], user['User_name'], user['User_gender'], user['User_country'], user['User_phone_num'], user['User_email'], user['User_address']))
 
         # Hide the user details frame
@@ -350,21 +420,25 @@ class UserForm(tk.Frame):
         self.fname_entry.delete(0, "end")
         self.lname_entry.delete(0, "end")
         self.name_entry.delete(0, "end")
-        self.gender_entry.delete(0, "end")
-        self.cuntry_entry.delete(0, "end")
+        self.gendert_var.set("")
+        self.cuntry_var.set("")
+        self.city_var.set("")
         self.phone_num_entry.delete(0, "end")
         self.email_entry.delete(0, "end")
-        self.addres_entry.delete(0, "end")
         self.home_no_entry.delete(0, "end")
         self.id_num_entry.delete(0, "end")
         self.type_entry.delete(0, "end")
         self.password_num_entry.delete(0, "end")
         self.about_entry.delete(0, "end")
         self.shops_entry.delete(0, "end")
-        self.work_shop_entry.config(text="")
+        self.WorkAt_var.set("")
+        self.WorkAt = []
+        self.WorkAt_Combobox.config(value=self.WorkAt)
         self.acsess_entry.delete(0, "end")
-        self.pimg_entry.delete(0, "end")
-
+        
+        self.load_User_image()
+        
+        
     # Create the "Add New" button
     def show_user_details_frame(self):
         self.clear_user_details_widget()
@@ -375,7 +449,34 @@ class UserForm(tk.Frame):
         self.clear_user_details_widget()
         self.userinfo_notebook.pack_forget()
 
-    # Create the "Change" button
+    def change_User_image(self):
+        if not self.name_entry.get() == "":
+            file_source = filedialog.askopenfilename(filetypes=[("Image Files", "*.png *.jpg *.jpeg")])
+            dest_folder = MAIN_dir+"\\data\\Users\\" + str(self.name_entry.get())
+            imag_file_name  = "ProfileImage.jpg"
+            # make sur folder is there
+            os.makedirs(dest_folder, exist_ok=True)
+            # join name and folder path
+            dest_full_path = os.path.join(dest_folder, imag_file_name)
+            # copy it to dest folder
+            shutil.copy2(file_source, dest_full_path)
+            self.load_User_image()
+        else:
+            tk.messagebox.askquestion("Worring", "User Name Is not Given!!")
+        
+    def load_User_image(self):
+        if not self.name_entry.get() == "" and os.path.exists(MAIN_dir+"\\data\\Users\\" + str(self.name_entry.get()) + "\\ProfileImage.jpg"):
+            img = Image.open(MAIN_dir+"\\data\\Users\\" + str(self.name_entry.get()) + "\\ProfileImage.jpg").resize((100, 100))
+            img = ImageTk.PhotoImage(img)
+            self.User_image_frame.config(image=img)
+            self.User_image_frame.image = img
+        else:
+            new_img = Image.open(MAIN_dir+"\\data\\Icon\\no_Profile_image.jpg").resize((100, 100))
+            new_img = ImageTk.PhotoImage(new_img)
+            self.User_image_frame.config(image=new_img)
+            self.User_image_frame.image = new_img
+        
+   # Create the "Change" button
     def show_change_forme(self):
         selected_user = self.list_box.selection()
         if selected_user:
@@ -383,14 +484,20 @@ class UserForm(tk.Frame):
             user_id = self.list_box.item(selected_user)['text']
 
             # Delete the user from the database
-            users = fetch_as_dict_list('SELECT * FROM Users WHERE User_id=?', (user_id,))
+            users = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM Users WHERE User_id=?', (user_id,))
 
-            print("name : " + str(users))
+            #print("name : " + str(users))
             if users:
                 id = users[0]['User_id']
                 User_fname = users[0]['User_fname']
                 User_Lname = users[0]['User_Lname']
-                User_name = users[0]['User_name']
+                User_name = str(users[0]['User_fname'])[0] + str(users[0]['User_Lname'])[0] + " " +users[0]['User_fname']
+                # loade image
+                self.load_User_image() # chacke if there is image for the user by its name
+
+
+
+                
                 User_gender = users[0]['User_gender']
                 User_country = users[0]['User_country']
                 User_phone_num = users[0]['User_phone_num']
@@ -408,7 +515,6 @@ class UserForm(tk.Frame):
                 User_favoraite_items = users[0]['User_favoraite_items']
                 User_rate = users[0]['User_rate']
                 User_access = users[0]['User_access']
-                User_pimg = users[0]['User_pimg']
 
                 # Clear the current text
                 # than add new one
@@ -418,16 +524,13 @@ class UserForm(tk.Frame):
                 self.lname_entry.insert(0, str(User_Lname))
                 self.name_entry.delete(0, "end")
                 self.name_entry.insert(0, str(User_name))
-                self.gender_entry.delete(0, "end")
-                self.gender_entry.insert(0, str(User_gender))
-                self.cuntry_entry.delete(0, "end")
-                self.cuntry_entry.insert(0, str(User_country))
+                self.gendert_var.set(str(User_gender))
+                self.cuntry_var.set(str(User_country))
                 self.phone_num_entry.delete(0, "end")
                 self.phone_num_entry.insert(0, str(User_phone_num))
                 self.email_entry.delete(0, "end")
                 self.email_entry.insert(0, str(User_email))
-                self.addres_entry.delete(0, "end")
-                self.addres_entry.insert(0, str(User_address))
+                self.city_var.set(str(User_address))
                 self.home_no_entry.delete(0, "end")
                 self.home_no_entry.insert(0, str(User_home_no))
                 self.id_num_entry.delete(0, "end")
@@ -440,21 +543,36 @@ class UserForm(tk.Frame):
                 self.about_entry.insert(0, str(User_about))
                 self.shops_entry.delete(0, "end")
                 self.shops_entry.insert(0, str(User_shop))
-                self.work_shop_entry.config(text="")
                 wus = []
                 try:
                     if User_work_shop:
-                        print('User_work_shop ', User_work_shop)
+                        #print('User_work_shop ', User_work_shop)
                         wus = json.loads(User_work_shop)
                 except json.JSONDecodeError:
                     wus = []
-                self.work_shop_entry.config(text="")
+                self.WorkAt = []
                 for shop in wus:
-                    self.work_shop_entry.config(text=self.work_shop_entry.cget("text") + "Shop Name " + str(shop[1]) + " Shop Brand " + str(shop[2]) + " User Level " + str(shop[3])+";\n")
+                    workform = "Custumer"
+                    if str(shop[3][0]) == "0":
+                        workform = "Worker"
+                    if int(shop[3][0]) > 0 and int(shop[3][0]) < 5:
+                        workform = "Seller"
+                    if int(shop[3][0]) > 4 and int(shop[3][0]) < 8:
+                        workform = "SuperViser"
+                    if str(shop[3][0]) == "9":
+                        workform = "Manager"
+                    if str(shop[3][0]) == "10":
+                        workform = "Owner"
+                        
+                    self.WorkAt.append(workform + " Of " + str(shop[1]) + str(shop[2]))
+                if wus == []:
+                    self.WorkAt.append("Custumer")
+                    
+                self.WorkAt_var.set(self.WorkAt[0])
+                self.WorkAt_Combobox.config(value=self.WorkAt)
+                
                 self.acsess_entry.delete(0, "end")
                 self.acsess_entry.insert(0, str(User_access))
-                self.pimg_entry.delete(0, "end")
-                self.pimg_entry.insert(0, str(User_pimg))
                 
                 self.add_button.config(text="Update")
                 self.userinfo_notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
@@ -467,6 +585,7 @@ class UserForm(tk.Frame):
                     self.user_docinfo_listbox.delete(*self.user_docinfo_listbox.get_children())
                     for index in newdocs:
                         item = self.user_docinfo_listbox.insert('', 'end', text=index['id'], values=(index['doc_barcode'], index['extension_barcode'], index['At_Shop_Id'], index['user_id'], index['Seller_id'], index['customer_id'], index['pid'], index['qty'], index['price'], index['discount'], index['tax'], index['doc_created_date'], index['doc_expire_date'], index['doc_updated_date'], index['item'],  index['payments']))
+                self.load_User_image()
 
 
     def on_select(self, event):
@@ -480,7 +599,7 @@ class UserForm(tk.Frame):
     # Define the function for updating the user listbox
     def update_user_listbox(self):
         # Get the users from the database
-        users = fetch_as_dict_list('SELECT * FROM USERS', ())
+        users = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM USERS', ())
         self.update_results(users)
         
     # Define the function for adding a new user
@@ -488,35 +607,33 @@ class UserForm(tk.Frame):
         # Get the values from the user details widgets
         User_fname = self.fname_entry.get()
         User_Lname = self.lname_entry.get()
-        User_name = self.name_entry.get()
-        User_gender = self.gender_entry.get()
-        User_country = self.cuntry_entry.get()
+        User_name = str(self.fname_entry.get())[0] + str(self.lname_entry.get())[0] + " " +self.fname_entry.get()
+        User_gender = self.gendert_var.get()
+        User_country = self.cuntry_var.get()
         User_phone_num = self.phone_num_entry.get()
         User_email = self.email_entry.get()
-        User_address = self.addres_entry.get()
+        User_address = self.city_var.get()
         User_home_no = self.home_no_entry.get()
         User_id_pp_num = self.id_num_entry.get()
         User_type = self.type_entry.get()
         User_password = self.password_num_entry.get()
         User_about = self.about_entry.get()
         User_shop = self.shops_entry.get()
-        User_work_shop = self.work_shop_entry.cget("text")
         User_access = self.acsess_entry.get()
-        User_pimg =  self.pimg_entry.get()
-        
+        self.load_User_image()
         if self.add_button.cget("text") == "New":        
             # Insert the new user into the database
             User_likes = ""
             User_following_shop = ""
             User_favoraite_items = ""
             User_rate = ""
-            Set_User(None, ['User_fname', 'User_Lname', 'User_name', 'User_gender', 'User_country', 'User_phone_num', 'User_email', 'User_address', 'User_home_no', 'User_type', 'User_password', 'User_about', 'User_shop', 'User_work_shop', 'User_likes', 'User_following_shop', 'User_favoraite_items', 'User_rate', 'User_access', 'User_pimg'], [User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_type, User_password, User_about, User_shop, User_work_shop, User_likes, User_following_shop, User_favoraite_items, User_rate, User_access, User_pimg])
+            Set_User(None, ['User_fname', 'User_Lname', 'User_name', 'User_gender', 'User_country', 'User_phone_num', 'User_email', 'User_address', 'User_home_no', 'User_type', 'User_password', 'User_about', 'User_shop', 'User_likes', 'User_following_shop', 'User_favoraite_items', 'User_rate', 'User_access'], [User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_type, User_password, User_about, User_shop, User_likes, User_following_shop, User_favoraite_items, User_rate, User_access])
               
         else:
             user_id = int(self.list_box.item(self.list_box.selection())['text'])
-            print("user_id : " + str(user_id))
+            #print("user_id : " + str(user_id))
             # UPDATE the new user into the database
-            Update_User(None, self.user_info, ['User_fname', 'User_Lname', 'User_name', 'User_gender', 'User_country', 'User_phone_num', 'User_email', 'User_address', 'User_home_no', 'User_id_pp_num', 'User_type', 'User_password', 'User_about', 'User_shop', 'User_work_shop', 'User_access', 'User_pimg'], [User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_id_pp_num, User_type, User_password, User_about, User_shop, User_work_shop, User_access, User_pimg], ['User_id'], [user_id])
+            Update_User(None, self.user_info, ['User_fname', 'User_Lname', 'User_name', 'User_gender', 'User_country', 'User_phone_num', 'User_email', 'User_address', 'User_home_no', 'User_id_pp_num', 'User_type', 'User_password', 'User_about', 'User_shop', 'User_access'], [User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_id_pp_num, User_type, User_password, User_about, User_shop, User_access], ['User_id'], [user_id])
         # Clear the user details widgets
         self.clear_user_details_widget()
         

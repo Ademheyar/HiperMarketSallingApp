@@ -26,35 +26,57 @@ db_path = os.path.join(data_dir, 'my_database.db')
 # this will fetch data as dict list from data base
 # query : str = the sql query
 # values : tuple = the values to be used in the query
-def fetch_as_dict_list(query, values):
-    # print("fetch_as_dict_list query : ", query)
-    # print("fetch_as_dict_list values : ", values)
-    try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        cursor.execute(query, values)
-        items = cursor.fetchall()
-        # print("items len", len(items))
-        columns = [col[0] for col in cursor.description]
-        #print("columns")
-        #print(str(columns))
-        #print("items len", len(items))
-        results = []
-        for row in items:
-            #print("row")
-            #print(str(row))
+def fetch_as_dict_list(Link, query, values):
+    result = None
+    print("fetch_as_dict_list Link ", Link)
+    if Link and len(Link) > 5 and islinked(Link):
+        entry = {'Do': "Get", 'QUERYS': query, 'QUERYVALUES': values }
+        response_data = Sand_API(Link, entry)
+        if response_data and not response_data == []:
+            if response_data['status'] == 'success':
+                print("SHOP FOUND ", response_data)
+                '''if response_data['Value']:
+                    print("Fetch FOUND : ", response_data['Value'])
+                    return response_data['Value']
+                else:
+                    #print("SHOP NOT FOUND")
+                    result = None'''
+            else:
+                #print("There is Error FOUND")
+                result = None
+    else:
+        #print("API Error")
+        pass
+    
+    if result == None:
+        # #print("fetch_as_dict_list query : ", query)
+        # #print("fetch_as_dict_list values : ", values)
+        try:
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            cursor.execute(query, values)
+            items = cursor.fetchall()
+            # #print("items len", len(items))
+            columns = [col[0] for col in cursor.description]
+            #print("columns")
+            #print(str(columns))
             #print("items len", len(items))
-            if len(columns) != len(row):
-                raise ValueError("Mismatch between number of columns and rows "+ str(len(columns)) + ", "+ str(len(row)))
+            results = []
+            for row in items:
+                #print("row")
+                #print(str(row))
+                #print("items len", len(items))
+                if len(columns) != len(row):
+                    raise ValueError("Mismatch between number of columns and rows "+ str(len(columns)) + ", "+ str(len(row)))
+                    
+                results.append(dict(zip(columns, row)))
                 
-            results.append(dict(zip(columns, row)))
-            
-        conn.commit()
-        conn.close()
-        return results
-    except Exception as e:   
-        print("Error executing query:", e)
-        return []
+            conn.commit()
+            conn.close()
+            return results
+        except Exception as e:   
+            #print("Error executing query:", e)
+            return []
 
 
 # USER
@@ -72,13 +94,13 @@ def Get_WORKER(Link, ARG, VALUE):
         if not response_data == []:
             if response_data['status'] == 'success':
                 if response_data['Value']:
-                    print("USER FOUND")
+                    #print("USER FOUND")
                     return response_data['Value']
                 else:
-                    print("USER NOT FOUND")
+                    #print("USER NOT FOUND")
                     return []
             else:
-                print("There is Error FOUND")
+                #print("There is Error FOUND")
                 return False
         break
 
@@ -104,20 +126,22 @@ def Get_User(Link, ARG, VALUE):
         if not response_data == [] and response_data:
             if response_data['status'] == 'success':
                 if response_data['Value']:
-                    print("USER FOUND")
+                    #print("USER FOUND")
                     return response_data['Value']
                 else:
-                    print("USER NOT FOUND")
+                    #print("USER NOT FOUND")
                     return []
             else:
-                print("There is Error FOUND")
+                #print("There is Error FOUND")
+                pass
     else:
-        print("API Error Geting user")
+        #print("API Error Geting user")
+        pass
 
 
-    print("query ", query)
-    print("value ", value)
-    users = fetch_as_dict_list("SELECT * FROM Users WHERE" + query, value)
+    #print("query ", query)
+    #print("value ", value)
+    users = fetch_as_dict_list(Link, "SELECT * FROM Users WHERE" + query, value)
     if users:
         return users
 
@@ -147,42 +171,43 @@ def Get_Shop(Link, user, ARG, ShopsVALUE):
         if response_data and not response_data == []:
             if response_data['status'] == 'success':
                 if response_data['Value']:
-                    print("SHOP FOUND : ", response_data['Value'])
+                    #print("SHOP FOUND : ", response_data['Value'])
                     return response_data['Value']
                 else:
-                    print("SHOP NOT FOUND")
+                    #print("SHOP NOT FOUND")
                     Shop = None
             else:
-                print("There is Error FOUND")
+                #print("There is Error FOUND")
                 Shop = None
     else:
-        print("API Error")
+        #print("API Error")
+        pass
 
-    print("shop query ", query)
-    print("shop value ", value)
+    #print("shop query ", query)
+    #print("shop value ", value)
     if query == "":
-        Shops = fetch_as_dict_list("SELECT * FROM Shops", ())
+        Shops = fetch_as_dict_list(Link, "SELECT * FROM Shops", ())
     else:
-        Shops = fetch_as_dict_list("SELECT * FROM Shops WHERE" + query, value)
+        Shops = fetch_as_dict_list(Link, "SELECT * FROM Shops WHERE" + query, value)
     if Shops:
         return Shops
 
 
 # GET USER WORK SHOPS FROM LOCAL DATABASE Or Online
 def Get_all_User_work_shops_info(Link, user, User_work_shops):
-    print("Link : " + str(Link))
+    #print("Link : " + str(Link))
     Shops = []
     if User_work_shops and user:
         for Shop in User_work_shops:
-            print("Shop : " + str(Shop))
+            #print("Shop : " + str(Shop))
             s = Get_Shop(Link, user, ["Shop_Id", "Shop_name", "Shop_brand_name"], [str(Shop[0]), str(Shop[1]), str(Shop[2])])
-            print("s : " + str(s))
+            #print("s : " + str(s))
             if s:
                 if isinstance(s, list) and len(s) > 0:
                     Shops.append(s[0])
                 else:
                     Shops.append(s)
-                print("Shops : ", Shops)
+                #print("Shops : ", Shops)
     return Shops
 
 
@@ -200,14 +225,38 @@ def Get_Setting(user, ARG, VALUE):
                 value = (VALUE[a], )
             if a+1 < len(ARG):
                 query += " AND"
-    setting = fetch_as_dict_list("SELECT * FROM setting WHERE " + query, value)
-    return setting
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute(query, values)
+        items = cursor.fetchall()
+        # #print("items len", len(items))
+        columns = [col[0] for col in cursor.description]
+        #print("columns")
+        #print(str(columns))
+        #print("items len", len(items))
+        results = []
+        for row in items:
+            #print("row")
+            #print(str(row))
+            #print("items len", len(items))
+            if len(columns) != len(row):
+                raise ValueError("Mismatch between number of columns and rows "+ str(len(columns)) + ", "+ str(len(row)))
+                
+            results.append(dict(zip(columns, row)))
+            
+        conn.commit()
+        conn.close()
+        return results
+    except Exception as e:   
+        #print("Error executing query:", e)
+        return []
     
 # END OF FILE
 
 
 # Function to search for documentsin the doc_table SQLite database table
-def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_barcode=None, 
+def search_documents(Link, doc_id=None, doc_type=None, doc_barcode=None, extension_barcode=None, 
                     item=None, user_id=None, customer_id=None, sold_item_info=None, discount=None, 
                     seller_id=None, date_from=None, date_to=None, doc_created_date=None, doc_expire_date=None, doc_updated_date=None):
     given = []
@@ -270,5 +319,5 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
     
     #print("search documents Query:", str([query, (*given,)])+"\n")
     # Execute the SQL query and return the results as a list of tuples
-    results = fetch_as_dict_list(query, (given))
+    results = fetch_as_dict_list(Link, query, (given))
     return results

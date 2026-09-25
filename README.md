@@ -107,4 +107,5 @@ pip install python-barcode
 pip install PyPDF2
 pip install fpdf
 pip install PyMuPDF
+pip install pillow
 py -m Scripts.pywin32_postinstall -install

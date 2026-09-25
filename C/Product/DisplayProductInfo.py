@@ -61,6 +61,20 @@ class ProductFullInfoForm(ttk.Notebook):
         accent_yellow = "#e94560" # Energy red
         text_light = "#eaeaea"   # Light gray
         text_secondary = "#b0b0b0" # Secondary text
+        self.bg_dark = "#0d47a1"      # Deep blue
+        self.bg_light = "#1565c0"     # Darker blue
+        self.accent_blue = "#1976d2"  # Medium blue
+        self.text_light = "#ffffff"   # White text
+        self.bg_darker = "#0a3d91"    # Even darker blue
+        self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
+        
+        self.tools_styel = {'Main_Frame_color' : "#0d47a1",
+                            'Text_color' :"#eaeaea",
+                            'accent_green' : "#0f3460",
+                            'accent_yellow' : "#e94560",
+                            'text_light' : "#eaeaea",
+                            'text_secondary' : "#b0b0b0"}
+        
         self.searched_items = searched_items
         self.Shops_info = Shops_info
         ttk.Notebook.__init__(self, master)
@@ -72,6 +86,20 @@ class ProductFullInfoForm(ttk.Notebook):
         self.notebook_frame = self
         
         
+        self.master = master
+        self.MainApplication = self
+        while(True):
+            if hasattr(self.MainApplication, 'MainApplication_root'):
+                break
+            else:
+                self.MainApplication = self.MainApplication.master
+                
+        self.homemaster = self
+        while(True):
+            if hasattr(self.homemaster, 'onDisplayFrame'):
+                break
+            else:
+                self.homemaster = self.homemaster.master
         self.Product_listinfo_frame = ttk.Frame(self.notebook_frame)#, bg=bg_dark)
         self.Product_listinfo_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.notebook_frame.add(self.Product_listinfo_frame, text="Products Info")
@@ -93,25 +121,45 @@ class ProductFullInfoForm(ttk.Notebook):
         self.item_List_frame = ttk.Frame(self.item_List_canvas)#, bg=bg_dark)
         self.item_List_canvas.create_window((0, 0), window=self.item_List_frame, anchor=tk.NW)
         self.item_List_frame.bind('<Configure>', lambda e: self.item_List_canvas.configure(scrollregion=self.item_List_canvas.bbox("all")))
+        self.start_value = datetime.datetime.now().strftime('%Y-%m-%d')
+        self.end_value = self.start_value
+        self.Show_var = tk.StringVar()
+        self.Show_var.set("Count Product Stock By Code")
+        self.Show_dropdown = tk.OptionMenu(self.item_List_frame, self.Show_var, "Count Product By Code",
+                                                                                "Count Product Stock By Code",
+                                                                                "Product Total Salle By Date",
+                                                                                "Product Total Salle By Code")
+        self.Show_dropdown.grid(row=0, column=0, columnspan=3, sticky=tk.W)
 
-        self.chart_canvas_Frame = tk.Frame(self.item_List_frame, bg=bg_dark, relief='sunken', bd=2)
-        self.chart_canvas_Frame.grid(row=1, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+        self.date_from_Entry = tk.Entry(self.item_List_frame)
+        self.date_from_Entry.insert(0, self.start_value)
+        self.date_from_Entry.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
         
-        self.product_list = tk.Listbox(self.item_List_frame, selectmode=tk.SINGLE, width=30, bg=bg_medium, fg=text_light, font=("Arial", 10), highlightbackground=accent_green)
-        self.product_list.grid(row=6, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
-
+        self.date_to_Entry = tk.Entry(self.item_List_frame)
+        self.date_to_Entry.insert(0, self.start_value)
+        self.date_to_Entry.grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
+        
+        self.GetDate_button = tk.Button(self.item_List_frame, text="GetDate", command=self.fix_date, **self.button_style)
+        self.GetDate_button.grid(row=1, column=2, sticky="nsew", padx=5, pady=5)
+        
+        
         self.details_frame = ttk.Frame(self.item_List_frame) # , bg=bg_dark, relief='raised', bd=1)
-        self.details_frame.grid(row=6, column=2, columnspan=3, padx=10, pady=10, sticky="nsew")
+        self.details_frame.grid(row=0, column=4, columnspan=3, rowspan=3, padx=10, pady=10, sticky="nsew")
         
         self.total_item_label = ttk.Label(self.details_frame, text="TOTAL ITEM COUNT :") # , bg=bg_dark, fg=accent_yellow, font=("Arial", 11, "bold"))
-        self.total_item_label.grid(row=0, column=0, sticky="w", pady=5, padx=10)
+        self.total_item_label.grid(row=1, column=0, sticky="w", pady=5, padx=10)
         self.total_qty_label = ttk.Label(self.details_frame, text="TOTAL QTY COUNT :") #, bg=bg_dark, fg=text_light, font=("Arial", 11, "bold"))
-        self.total_qty_label.grid(row=1, column=0, sticky="w", pady=5, padx=10)
+        self.total_qty_label.grid(row=2, column=0, sticky="w", pady=5, padx=10)
         self.total_cost_label = ttk.Label(self.details_frame, text="TOTAL COST :") #, bg=bg_dark, fg=accent_yellow, font=("Arial", 11, "bold"))
-        self.total_cost_label.grid(row=2, column=0, sticky="w", pady=5, padx=10)
+        self.total_cost_label.grid(row=3, column=0, sticky="w", pady=5, padx=10)
         self.total_sale_label = ttk.Label(self.details_frame, text="TOTAL AFTER SALE :") # , bg=bg_dark, fg=accent_green, font=("Arial", 11, "bold"))
-        self.total_sale_label.grid(row=3, column=0, sticky="w", pady=5, padx=10)
+        self.total_sale_label.grid(row=4, column=0, sticky="w", pady=5, padx=10)
+        self.Show_var.trace("w", lambda *arg: self.update_product_listbox())
 
+
+        self.chart_canvas_Frame = tk.Frame(self.item_List_frame, bg=bg_dark, relief='sunken', bd=2)
+        self.chart_canvas_Frame.grid(row=0, column=7, columnspan=6, rowspan=7, sticky="nsew", padx=5, pady=5)
+        
         self.update_product_listbox()
         self.Item_To_Update()
     #
@@ -123,11 +171,6 @@ class ProductFullInfoForm(ttk.Notebook):
     #
 
     # Display Totals on list box
-    def display_products(self, products, ind):
-        self.product_list.delete(0, tk.END)
-        for product in products[ind]:
-            self.product_list.insert(tk.END, f"{product[0]}  {product[1]}")
-            
     def format_price(self, price):
         suffixes = ['Hundred', 'Thousand', 'Million', 'Billion']
         suffic_index = 0
@@ -140,7 +183,21 @@ class ProductFullInfoForm(ttk.Notebook):
         else:
             formatted_price = "{:,.2f} {}".format(nprice, suffixes[suffic_index])
         return formatted_price
-
+    
+    def fix_date(self):
+        v = GetDateForm(self, self.date_from_Entry.get(), self.date_to_Entry.get())
+        self.start_value = str(v.start_value[0])+"-"+str(v.start_value[1])+"-"+str(v.start_value[2])
+        #datetime.strftime(v.start_value, '%Y-%m-%d %H:%M:%S')
+        self.end_value = str(v.end_value[0])+"-"+str(v.end_value[1])+"-"+str(v.end_value[2])
+        #datetime.strftime(v.end_value, '%Y-%m-%d %H:%M:%S')
+        #print("v.start_value :" + str(self.start_value))
+        #print("v.end_value :" + str(self.end_value))
+        self.date_from_Entry.delete(0, tk.END)
+        self.date_to_Entry.delete(0, tk.END)
+        self.date_from_Entry.insert(0, self.start_value)
+        self.date_to_Entry.insert(0, self.end_value)
+        self.perform_search()
+        
     # Define the function for updating the product listbox
     def update_product_listbox(self):
         # Clear the product listbox
@@ -189,21 +246,110 @@ class ProductFullInfoForm(ttk.Notebook):
                 Tcost += qty*cost
                 TQTY += qty'''
         if len(self.given_value[4]) > 0:
-            self.graph_value, self.graph_value0, tilte = make_list(self.given_value[4])
+            #self.graph_value, , tilte = make_list()
+            self.graph_value0 = []
+            
+            if self.Show_var.get() == ("Count Product By Code"):
+                barcodes = []
+                TQTY, Tcount, outofstock, lowestock = 0, 0, 0, 0
+                for info in self.given_value[4]:
+                    if round(info['QTY'], 1) <= 15: # TODO: make user choose the lowest one
+                        lowestock += 1
+                    if round(info['QTY'], 1) == 0:
+                        outofstock += 1
+                    else:
+                        barcodes.append([info['product']['barcode'], info['QTY']])
+                    TQTY += info['QTY']
+                    Tcount += 1
+                self.graph_value0.append(barcodes)
+                self.total_item_label.config(text="TOTAL ITEM COUNT : " + str(Tcount))
+                self.total_qty_label.config(text="TOTAL QTY COUNT : " + str(TQTY))
+                self.total_sale_label.config(text="TOTAL Low Stock : " + str(lowestock))
+                self.total_cost_label.config(text="Total Out Of Stock : " + str(outofstock))
+
+            if self.Show_var.get() == ("Count Product Stock By Code"):
+                barcodes = []
+                TQTY, Tcount, outofstock, lowestock = 0, 0, 0, 0
+                for info in self.given_value[4]:
+                    if round(info['QTY'], 1) <= 15: # TODO: make user choose the lowest one
+                        lowestock += 1
+                    if round(info['QTY'], 1) == 0:
+                        outofstock += 1
+                    else:
+                        barcodes.append([info['product']['barcode'], info['Sum cost']])
+                    TQTY += info['QTY']
+                    Tcount += 1
+                self.graph_value0.append(barcodes)
+                self.total_item_label.config(text="TOTAL ITEM COUNT : " + str(Tcount))
+                self.total_qty_label.config(text="TOTAL QTY COUNT : " + str(TQTY))
+                self.total_sale_label.config(text="TOTAL Cost Stock : " + str(self.format_price(self.given_value[3])))
+                self.total_cost_label.config(text="Total Price Of Stock : " + str(self.format_price(self.given_value[2])))
+
+            if self.Show_var.get() == ("Product Total Salle By Code") :
+                barcodes = []
+                Tcount, Tsale, lowestock = 0, 0, 0
+                for info in self.given_value[4]:
+                    start_value = self.date_from_Entry.get()
+                    end_value = self.date_to_Entry.get()
+        
+                    df = fetch_as_dict_list("SELECT * FROM doc_table WHERE strftime('%Y-%m-%d', doc_created_date) BETWEEN ? AND ? AND item LIKE ?", (start_value, end_value, '%' + info['product']['code'] + '%',))
+                    count = 0
+                    for doc in df:
+                        items = json.loads(doc['item'])
+                        for item in items:
+                            if isinstance(item, list):
+                                #print(" item ", item)
+                                id_, code, name = item[0], item[1], item[3]
+                                
+                                if str(id_) == str(info['product']['id']):
+                                    Tsale += float(item[7])*float(item[8])
+                                    barcodes.append([info['product']['code'], float(item[7])*float(item[8])])
+                                count += 1
+                    Tcount += count    
+                self.graph_value0.append(barcodes)
+                self.total_item_label.config(text="TOTAL ITEM COUNT : " + str(Tcount))
+                self.total_qty_label.config(text="TOTAL Product Sale : " + str(Tsale))
+                self.total_sale_label.config(text="TOTAL Cost Stock : " + str(self.format_price(self.given_value[3])))
+                self.total_cost_label.config(text="Total Price Of Stock : " + str(self.format_price(self.given_value[2])))
+
+            if self.Show_var.get() == ("Product Total Salle By Date") :
+                barcodes = []
+                Tcount, Tsale, lowestock = 0, 0, 0
+                for info in self.given_value[4]:
+                    start_value = self.date_from_Entry.get()
+                    end_value = self.date_to_Entry.get()
+        
+                    df = fetch_as_dict_list("SELECT * FROM doc_table WHERE strftime('%Y-%m-%d', doc_created_date) BETWEEN ? AND ? AND item LIKE ?", (start_value, end_value, '%' + info['product']['code'] + '%',))
+                    count = 0
+                    for doc in df:
+                        items = json.loads(doc['item'])
+                        for item in items:
+                            if isinstance(item, list):
+                                #print(" item ", item)
+                                id_, code, name = item[0], item[1], item[3]
+                                
+                                if str(id_) == str(info['product']['id']):
+                                    Tsale += float(item[7])*float(item[8])
+                                    barcodes.append([doc['doc_created_date'], float(item[7])*float(item[8])])
+                                count += 1
+                    Tcount += count    
+                self.graph_value0.append(barcodes)
+                self.total_item_label.config(text="TOTAL ITEM COUNT : " + str(Tcount))
+                self.total_qty_label.config(text="TOTAL Product Sale : " + str(Tsale))
+                self.total_sale_label.config(text="TOTAL Cost Stock : " + str(self.format_price(self.given_value[3])))
+                self.total_cost_label.config(text="Total Price Of Stock : " + str(self.format_price(self.given_value[2])))
+
+            
             # clear chart_canvas_Frame
             # self.chart_canvas_Frame : give main fram to display
             # self.graph_value0 : give value to compare
             #  : tall wiche value to use
             #  : give style of chart 1: streag line 2: circle 3: line 
-            draw_cart(self.chart_canvas_Frame, self.graph_value0, 1, 1)
-            draw_cart(self.chart_canvas_Frame, self.graph_value0, 1, 2)
+            # draw_cart(self.chart_canvas_Frame, self.graph_value0, 1, 1)
+            draw_cart(self.chart_canvas_Frame, self.tools_styel, self.graph_value0, 1, "Scatter Plot Chart")
             
-            self.display_products(self.graph_value0, 0)
             
-        self.total_item_label.config(text="TOTAL ITEM COUNT : " + str(self.given_value[0]))
-        self.total_qty_label.config(text="TOTAL QTY COUNT : " + str(self.given_value[1]))
-        self.total_cost_label.config(text="TOTAL COST : " + str(self.given_value[3]) + "  (" +str(self.format_price(self.given_value[3])) + ")" )
-        self.total_sale_label.config(text="TOTAL AFTER SALE : " + str(self.given_value[2]) + "  (" +str(self.format_price(self.given_value[2])) + ")")
+
 
     #
     #

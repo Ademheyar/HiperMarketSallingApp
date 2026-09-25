@@ -62,7 +62,7 @@ class ShowchartForm(tk.Tk):
         # retrieve chart data from the database
         chart_data = fetch_as_dict_list("SELECT * FROM pre_doc_table", ())
         for chart in chart_data:
-            print('chart: ', chart)
+            #print('chart: ', chart)
             chart_info = f"ID: {chart['id']} | Price: {chart['PRICE']} | Barcode: {chart['exitems_doc_barcode']} | Date: {chart['doc_created_date']}"
             self.chart_list.insert("end", chart_info)
 
@@ -95,7 +95,7 @@ class ShowchartForm(tk.Tk):
             self.value = selection[0]
             # do something with the selected chart name, e.g. pass it to another function or update a variable
             
-            print("Selected chart:", str(self.value))
+            #print("Selected chart:", str(self.value))
             self.chart_list_form.destroy()
         else:
             print("No chart selected.")
@@ -116,4 +116,4 @@ class ShowchartForm(tk.Tk):
         # delete all charts from the Listbox
         self.chart_list.delete(0, "end")
         # delete all charts from the database
-        Update_table_database("DELETE FROM pre_doc_table")
+        Update_table_database("DELETE * FROM pre_doc_table")

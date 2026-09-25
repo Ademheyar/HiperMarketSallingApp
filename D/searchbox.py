@@ -1,7 +1,9 @@
+
 import tkinter as tk
-from tkinter import ttk
+from PIL import Image, ImageTk
+from tkinter import ttk, filedialog
+import os, shutil
 import sqlite3
-import os
 import sys
 import threading
 import time
@@ -26,8 +28,6 @@ from D.Security import *
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
 
-import tkinter as tk
-from tkinter import ttk
 
 class search_entry(tk.Entry):
     def __init__(self, master, Shops_info, user, Shops, *args, **kwargs):
@@ -53,7 +53,7 @@ class search_entry(tk.Entry):
                 break
             else:
                 self.homemaster = self.homemaster.master
-                        
+                      
         tk.Entry.__init__(self, master, *args, **kwargs)
         self.entrymsg = "Search or Create Productes, Users, Documes, Action Or Promotions"
         self.var = self["textvariable"] = tk.StringVar()
@@ -125,7 +125,7 @@ class search_entry(tk.Entry):
                 #print("Shop items --> ", found_shop_items)
                 if found_shop_items:
                     for item in found_shop_items:
-                        value = fetch_as_dict_list( 'SELECT * FROM product WHERE id=?', (str(item[0]),))
+                        value = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM product WHERE id=?', (str(item[0]),))
                         if value and not len(value) == 0:
                             self.homemaster.Shops_info['Shop_items'].append([value[0], []])
         
@@ -469,7 +469,7 @@ class search_entry(tk.Entry):
                         self.selected_products.append(selected_item_info)
                         break
                 elif(info[0] == 'ACTIONS'):
-                    if item[1] == item_id:
+                    if item[0] == item_id:
                         selected_item_info = {'values': item, 'type': 'ACTIONS'}
                         self.selected_products.append(selected_item_info)
                         break
@@ -500,7 +500,7 @@ class search_entry(tk.Entry):
             screen_height = self.winfo_screenheight()
             if not self.lb_up:
                 # Main Frame (initially hidden)
-                self.main_frame = ttk.Frame(self.master.master)
+                self.main_frame = tk.Frame(self.master.master, highlightthickness=2, highlightbackground='black')
                 self.Contener_frame = ttk.Frame(self.main_frame)
                 self.Contener_frame.pack(side=tk.LEFT, fill=tk.X)
                 #self.main_frame.pack_forget()  # Hide the main frame initially
@@ -515,12 +515,16 @@ class search_entry(tk.Entry):
                 #self.lb.destroy()
                 # Frame inside Canvas
                 self.lb = ttk.Frame(self.canvas, width=self.canvas.cget('width'))
-                self.canvas.create_window((0, 0), window=self.lb, anchor=tk.NW)
-                self.lb.bind('<Configure>', lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+                self.window_id = self.canvas.create_window((0, 0), window=self.lb, anchor=tk.NW)
 
-
-                # Bind the scrollbar to update the scrollregion
-                self.lb.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+                def resize(event):
+                    
+                    screen_width = self.winfo_screenwidth()
+                    screen_height = self.winfo_screenheight()
+                
+                    self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+                    self.canvas.itemconfig(self.window_id, width=screen_width-(screen_width/3))
+                self.lb.bind('<Configure>', resize)
 
                 self.Manue_fram = ttk.Frame(self.Contener_frame)
                 self.Manue_fram.pack(side=tk.TOP, fill=tk.BOTH)
@@ -603,8 +607,28 @@ class search_entry(tk.Entry):
                     var.set(s)
                     checkbox = ttk.Checkbutton(f, variable=var, command=lambda i=item['id'], v=var, p=f: self.toggle_selected(i, v, p))
                     checkbox.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-                    ttk.Label(f, text=f"Name: {item['name']}", wraplength=150).grid(row=0, column=1, columnspan=2, sticky=tk.W)
-                    ttk.Label(f, text=f"Price: {item['price']}", wraplength=70).grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+                    
+                    self.Product_rate = 0
+                    self.Product_image_frame = tk.Frame(f, bg=self.bg_dark)
+                    self.Product_image_frame.grid(row=0, column=1, rowspan=5, sticky="nsew")
+
+                    self.Product_image_avatarlabel = tk.Label(self.Product_image_frame, bg=self.bg_dark)
+                    self.Product_image_avatarlabel.pack(pady=10)
+                    self.Product_image_avatarlabel.bind("<Button-1>", lambda _: self.change_Brand_image())
+                    color = "Def_Color"
+                    if os.path.exists(MAIN_dir+"\\data\\Products\\"+ str(item['barcode']) + "\\"+ str(color) + "\\ProductImage.jpg"):
+                        img = Image.open(MAIN_dir+"\\data\\Products\\"+ str(item['barcode']) + "\\"+ str(color) + "\\ProductImage.jpg").resize((100, 100))
+                        img = ImageTk.PhotoImage(img)
+                        self.Product_image_avatarlabel.config(image=img)
+                        self.Product_image_avatarlabel.image = img
+                    else:
+                        # place holder
+                        img = Image.open(MAIN_dir+"\\data\\Icon\\no_Product_Image.jpg").resize((100, 100))
+                        img = ImageTk.PhotoImage(img)
+                        self.Product_image_avatarlabel.config(image=img)
+                        self.Product_image_avatarlabel.image = img
+                    ttk.Label(f, text=f"Name: {item['name']}", wraplength=150).grid(row=0, column=2, columnspan=2, sticky=tk.W)
+                    ttk.Label(f, text=f"Price: {item['price']}", wraplength=70).grid(row=1, column=2, padx=5, pady=5, sticky=tk.W)
                     qty_info_list = json.loads(item['more_info'])
                     qty = 0
                     def sub_list(ls, qty):
@@ -625,7 +649,7 @@ class search_entry(tk.Entry):
                                     qty = sub_list(l[1], qty)
                         return qty
                     qty = sub_list(qty_info_list, qty)
-                    ttk.Label(f, text=f"Left: {str(qty)}", wraplength=70).grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
+                    ttk.Label(f, text=f"Left: {str(qty)}", wraplength=70).grid(row=2, column=2, padx=5, pady=5, sticky=tk.W)
                                                 
                 elif(info[0] == 'DOCUMENT'):
                     #print("word: " + str(len(item)))
@@ -662,11 +686,34 @@ class search_entry(tk.Entry):
                     f = tk.Frame(self.lb, width=screen_width-(screen_width/3), bg=self.bg_dark, highlightthickness=2, highlightbackground=self.accent_blue)
                     #f.grid(row=len(self.lb.winfo_children()), column=0, pady=1, sticky=tk.EW)
                     f.pack(fill='x', expand=True, pady=10, padx=10)
+                    
                     var = tk.BooleanVar()
                     var.set(len([item for selecteditem in self.selected_products if item[1] == selecteditem[0]]) > 0)
-                    checkbox = ttk.Checkbutton(f, variable=var, command=lambda i=item[1], v=var, p=f: self.toggle_selected(i, v, p))
+                    checkbox = ttk.Checkbutton(f, variable=var, command=lambda i=item[0], v=var, p=f: self.toggle_selected(i, v, p))
                     checkbox.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-                    ttk.Label(f, text=f"ACTIONS : " + item[1], wraplength=150).grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
+                    
+                    self.Product_rate = 0
+                    self.Product_image_frame = tk.Frame(f, bg=self.bg_dark)
+                    self.Product_image_frame.grid(row=0, column=1, rowspan=5, sticky="nsew")
+
+                    self.Product_image_avatarlabel = tk.Label(self.Product_image_frame, bg=self.bg_dark)
+                    self.Product_image_avatarlabel.pack(pady=10)
+                    self.Product_image_avatarlabel.bind("<Button-1>", lambda _: self.change_Brand_image())
+                    color = "Def_Color"
+                    if os.path.exists(MAIN_dir+"\\data\\Products\\"+ str(item[0]) + "\\"+ str(color) + "\\ActionImage.jpg"):
+                        img = Image.open(MAIN_dir+"\\data\\Products\\"+ str(item[0]) + "\\"+ str(color) + "\\ActionImage.jpg").resize((100, 100))
+                        img = ImageTk.PhotoImage(img)
+                        self.Product_image_avatarlabel.config(image=img)
+                        self.Product_image_avatarlabel.image = img
+                    else:
+                        # place holder
+                        img = Image.open(MAIN_dir+"\\data\\Icon\\no_Action_Image.jpg").resize((100, 100))
+                        img = ImageTk.PhotoImage(img)
+                        self.Product_image_avatarlabel.config(image=img)
+                        self.Product_image_avatarlabel.image = img
+                    ttk.Label(f, text=f"ACTIONS : " + item[1], wraplength=150).grid(row=0, column=3, padx=5, pady=5, sticky=tk.W)
+                    ttk.Label(f, text=f"Created Date : " + item[2], wraplength=150).grid(row=1, column=3, padx=5, pady=5, sticky=tk.W)
+                    ttk.Label(f, text=f"From Date : " + item[3] + " To "+ item[4], wraplength=150).grid(row=2, column=3, padx=5, pady=5, sticky=tk.W)
                     #tk.Button(f, text='Remove', command=lambda i=item['id'], v=None: self.Selectd_item_remove(i, v)).grid(row=1, column=4, padx=5, pady=5, sticky=tk.W)
                                 
                         
@@ -696,15 +743,18 @@ class search_entry(tk.Entry):
             q_lower = str(query).lower()
 
             if self.perm_actions:
-                shop_actions_str = self.homemaster.Shops_info.get('Shop_Actions', '')
+                shop_actions_str = self.homemaster.Shops_info.get('Shop_Actions', [])
+                #print("shop_actions_str ", shop_actions_str)
                 if shop_actions_str:
                     try:
                         Shop_Actions = json.loads(shop_actions_str)
                     except Exception:
                         Shop_Actions = []
                     for Actions in Shop_Actions:
-                        key = Actions[1]
-                        if key not in unique_Actions_results:
+                        key = str(Actions[0]).lower()
+                        title = str(Actions[1]).lower()
+                        #print("Actions ", Actions)
+                        if key not in unique_Actions_results and (q_lower in key or q_lower in title):
                             Actions_results.append(["ACTIONS", key, Actions])
                             unique_Actions_results.append(key)
 
@@ -728,7 +778,7 @@ class search_entry(tk.Entry):
 
             if self.perm_docs:
                 # single DB query for documents
-                rows = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode LIKE ?", (f"%{query}%",))
+                rows = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM doc_table WHERE doc_barcode LIKE ?", (f"%{query}%",))
                 for row in rows:
                     barcode = row['doc_barcode']
                     if barcode not in unique_barcode_results:
@@ -738,7 +788,7 @@ class search_entry(tk.Entry):
             if self.perm_user:
                 # single DB query for documents
                 username = query
-                rows = fetch_as_dict_list("SELECT * FROM Users WHERE User_name LIKE ? OR User_address LIKE ? OR User_id_pp_num LIKE ? OR User_phone_num LIKE ? OR User_email LIKE ? OR User_type LIKE ? OR User_access LIKE ?", 
+                rows = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM Users WHERE User_name LIKE ? OR User_address LIKE ? OR User_id_pp_num LIKE ? OR User_phone_num LIKE ? OR User_email LIKE ? OR User_type LIKE ? OR User_access LIKE ?", 
                     ('%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%'))
                 for row in rows:
                     User_name = row['User_name']
@@ -761,7 +811,7 @@ class search_entry(tk.Entry):
             results.extend(user_results)
             results.extend(barcode_results)
             #print("items_results: " + str(len(items_results)) + " query: " + str(query))
-            #print("barcode_results: " + str(len(barcode_results)) + " query: " + str(query))
+            #print("results: " + str(results) + " query: " + str(query))
             #print("results: " + str(len(results)) + " query: " + str(query))
             self.all_items = results
             return results
@@ -887,7 +937,7 @@ class search_entry(tk.Entry):
         if self.search_type == "":
             self.search_type = "id"
         if (selected_type == "ITEM"):
-            result = fetch_as_dict_list("SELECT * FROM product WHERE "+ self.search_type+ "=?", (selected_id,))
+            result = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM product WHERE "+ self.search_type+ "=?", (selected_id,))
             
             self.search_type = ""
             if result:
@@ -916,7 +966,7 @@ class search_entry(tk.Entry):
                 self.homemaster.qty = 0
                 self.homemaster.update_info()
         if (selected_type == "DOCUMENT"):
-            result = [] #self.fetch_as_dict_list("SELECT * FROM doc_table WHERE "+ self.search_type+ "=?", (selected_id,))
+            result = [] #self.fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM doc_table WHERE "+ self.search_type+ "=?", (selected_id,))
             
             self.search_type = ""
             if result:

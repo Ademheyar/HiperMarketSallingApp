@@ -1,15 +1,36 @@
 import tkinter as tk
 from tkinter import ttk
-import sqlite3, os
+import tkinter as tk
+from tkinter import ttk
+import sqlite3
+import shutil
+import datetime
+import atexit
+
+import json
+import ast
+
+import os, sys
+
+current_dir = os.path.abspath(os.path.dirname(__file__))
+MAIN_dir = os.path.join(current_dir, '..')
+sys.path.append(MAIN_dir)
+
+from D.ApprovedDisplay import ApproveFrame
+from C.API import *
+from C.API.Get import *
+from C.API.Set import *
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
 
 class PaymentForm(tk.Tk):
-    def __init__(self, master):
+    def __init__(self, master, user, shop):
         self.master = master
         self.ex_pid = []
         self.left = 0
+        self.shop = shop
+        self.user_info = user
         
         # Color scheme
         self.bg_dark = "#0d47a1"      # Deep blue
@@ -97,7 +118,7 @@ class PaymentForm(tk.Tk):
         self.item_List_yscrollbar = tk.Scrollbar(self.List_Frame, orient='vertical', command=self.item_List_canvas.yview, bg=self.bg_light)
         self.item_List_yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        self.item_List_xscrollbar = tk.Scrollbar(self.List_Frame_contaner_frame, orient='horizontal', command=self.item_List_canvas.xview, bg=self.bg_light)
+        self.item_List_xscrollbar = tk.Scrollbar(self.List_Frame, orient='horizontal', command=self.item_List_canvas.xview, bg=self.bg_light)
         self.item_List_xscrollbar.pack(side=tk.TOP, fill=tk.X)
         
         self.item_List_canvas.configure(xscrollcommand=self.item_List_xscrollbar.set, yscrollcommand=self.item_List_yscrollbar.set)
@@ -108,10 +129,10 @@ class PaymentForm(tk.Tk):
 
         # Payment list treeview
         self.list_payment = ttk.Treeview(self.item_List_frame, columns=("Peyment Type", "Paid", "Paid Date", "Updated Date", "User", "Paid", "Extantion Bracodes"), height=10)
-        self.list_payment.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.list_payment.heading("#0", text="ID", anchor=tk.W)
+        self.list_payment.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.list_payment.heading("#0", text="Type", anchor=tk.W)
         self.list_payment.column("#0", stretch=tk.NO, width=50)
-        self.list_payment.heading("#1", text="Peyment Type", anchor=tk.W)
+        self.list_payment.heading("#1", text="Peyment", anchor=tk.W)
         self.list_payment.column("#1", stretch=tk.NO, width=150)
         self.list_payment.heading("#2", text="Paid", anchor=tk.W)
         self.list_payment.column("#2", stretch=tk.NO, width=80)
@@ -207,13 +228,18 @@ class PaymentForm(tk.Tk):
                 if not pay_pid[7] in ex_doc_:
                     ex_doc_.append(pay_pid[7])
                     ch = len(self.top_extantion_frame.winfo_children())
-
+                    def pre_view_exdoc(barcode):
+                        doc_ = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))[0]
+                        if doc_:
+                            ApproveFrame(self.master, self.user_info, self.shop[0], [barcode], [], 1)
                     ex_bar_frame = tk.Frame(self.top_extantion_frame, bg="green")
                     ex_bar_frame.grid(row=0, column=ch, sticky="nsew")
                     search_label = tk.Label(ex_bar_frame, text=pay_pid[7], bg="green", fg="white", font=("Arial", 12))
                     search_label.grid(row=0, column=0, sticky="nsew")
+                    veaw_button = tk.Button(ex_bar_frame, text="View", bg="red", fg="white", font=("Arial", 12), command=lambda b=pay_pid[7]: pre_view_exdoc(b))
+                    veaw_button.grid(row=0, column=1, sticky="nsew")
                     update_button = tk.Button(ex_bar_frame, text="X", bg="red", fg="white", font=("Arial", 12), command=lambda: self.remove_ex_items(ex_bar_frame, search_label))
-                    update_button.grid(row=0, column=1, sticky="nsew")
+                    update_button.grid(row=0, column=2, sticky="nsew")
             pid_i += float(p2)
             #print("Amount Pide+ : " +str(pid_i)+"  "+ str(float(p2)))
             self.list_payment.insert("", 'end', text=pay_pid[0], values=(p1, p2,  p3, p4, p5, p6, p7))

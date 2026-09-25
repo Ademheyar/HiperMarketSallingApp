@@ -16,21 +16,21 @@ from C.API.Get import *
 from C.API.API import *
 from C.API.Set import *
 
-def find_user(v):
+def find_user(Linke, v):
     it = None
     if v and v.isdigit():
         
-        it = fetch_as_dict_list("SELECT * FROM users WHERE User_id=?", (v,))
+        it = fetch_as_dict_list(Linke, "SELECT * FROM users WHERE User_id=?", (v,))
     elif  v and not v == 'None':
-        it = fetch_as_dict_list("SELECT * FROM users WHERE User_name=?", (v,))
+        it = fetch_as_dict_list(Linke, "SELECT * FROM users WHERE User_name=?", (v,))
     if it:
         return it[0]
     
-def find_shop(id):
+def find_shop(Linke, id):
     if id and id.isdigit():
-        results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_Id=?", (id,))
+        results = fetch_as_dict_list(Linke, "SELECT * FROM Shops WHERE Shop_Id=?", (id,))
     elif  id and not id == 'None':
-        results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_brand_name=?", (id,))
+        results = fetch_as_dict_list(Linke, "SELECT * FROM Shops WHERE Shop_brand_name=?", (id,))
     if results:
         print("found shop ", results)
         return results[0]
@@ -57,14 +57,14 @@ def add_ltext_(width, value, do=""):
                 ret+=do 
     return [ret]
     
-def get_sparet_2(doc, width, pvv, user, shop):
+def get_sparet_2(Linke, doc, width, pvv, user, shop):
     ret = ""
     for i in range(int(width)):
         ret += "_"
     return [ret + "\n"]
 
-def get_Information(doc, width, pvv, user, shop):
-    v = shop['Shop_location']
+def get_Information(Linke, doc, width, pvv, user, shop):
+    v = shop['Shop_Adress_Information']
     ret = ""
     if v and "+" in v:
         infos = v.split("+")
@@ -82,7 +82,7 @@ def get_Information(doc, width, pvv, user, shop):
         ret += "\n" 
     return [ret + "\n"]
 
-def get_About(doc, width, pvv, user, shop):
+def get_About(Linke, doc, width, pvv, user, shop):
     v = shop['Shop_about']
     ret = ""
     if v and "+" in v:
@@ -93,7 +93,7 @@ def get_About(doc, width, pvv, user, shop):
         ret += add_ltext_(width, v)[0] + "\n"
     return [ret]
 
-def get_Phone_No(doc, width, pvv, user, shop):
+def get_Phone_No(Linke, doc, width, pvv, user, shop):
     v = "" # shop['Shop_phone_num'] TODO : get phone number
     ret = ""
     if v and "+" in v:
@@ -104,47 +104,47 @@ def get_Phone_No(doc, width, pvv, user, shop):
         ret +=  add_ltext_(width, v)[0]
         return [ret]
 
-def get_Receipt_no(doc, width, pvv, user, shop):
+def get_Receipt_no(Linke, doc, width, pvv, user, shop):
     return ["Receipt No : " + str(doc['doc_barcode']) + "\n"]
 
-def get_extnsion_Receipt_no(doc, width, pvv, user, shop):
+def get_extnsion_Receipt_no(Linke, doc, width, pvv, user, shop):
     if not str(doc['extension_barcode']) == 'extension_barcode':
         return ["extnsion Receipt No :  " + str(doc['extension_barcode']) + "\n"]
            
-def get_date(doc, width, pvv, user, shop):
+def get_date(Linke, doc, width, pvv, user, shop):
     return ["Date :  " + str(doc['doc_created_date']) + "\n"]
            
-def get_updated_date(doc, width, pvv, user, shop):
+def get_updated_date(Linke, doc, width, pvv, user, shop):
     if not str(doc['doc_created_date']) == str(doc['doc_updated_date']):
         return ["updated Date :  " + str(doc['doc_updated_date']) + "\n"]
            
-def get_Due_date(doc, width, pvv, user, shop):
+def get_Due_date(Linke, doc, width, pvv, user, shop):
     if not str(doc['doc_created_date']) == str(doc['doc_expire_date']):
         return ["Due Date :  " + str(doc['doc_expire_date']) + "\n"]
 
-def get_user(doc, width, pvv, user, shop):
+def get_user(Linke, doc, width, pvv, user, shop):
     slip =""
     # get user and custemusr infor
-    it = find_user(doc['user_id'])
+    it = find_user(Linke, doc['user_id'])
     if it:
         #print("it c: " + str(it))   
         slip += "User : "+ str(it['User_name']) +"\n"
     return [slip]
 
-def get_seller(doc, width, pvv, user, shop):
+def get_seller(Linke, doc, width, pvv, user, shop):
     slip = ""
     # get Seller info    if len(doc) > 16 and doc['Seller_id'] and doc['Seller_id'] != "":
-    it = find_user(doc['Seller_id'])
+    it = find_user(Linke, doc['Seller_id'])
     if it:
         #print("it c: " + str(it))   
         slip += "Seller : "+ str(it['User_name']) +"\n"
     return [slip]
             
-def get_customer(doc, width, pvv, user, shop):
+def get_customer(Linke, doc, width, pvv, user, shop):
     slip = ""
     # get custemur info
     if doc['customer_id'] != "":
-        it = find_user(doc['customer_id'])
+        it = find_user(Linke, doc['customer_id'])
         if it:
             #print("it c: " + str(it))   
             slip += "Customer : "+ str(it['User_name']) +"\n"\
@@ -153,7 +153,7 @@ def get_customer(doc, width, pvv, user, shop):
 
 shop, color, size, PRICE, QTY, Disc, TAX, payments, taxstr = \
     ["", "", "", 0, 0, 0, 0, "", ""]
-def get_items(doc, width, pvv, user, shop):
+def get_items(Linke, doc, width, pvv, user, shop):
     # get items
     #print("load_slip items : " + str(doc['item']))
     slip = ""
@@ -177,16 +177,14 @@ def get_items(doc, width, pvv, user, shop):
         price = str(iv[8])
         T_price += float(iv[8])+float(iv[9])
         if float(iv[9]) != 0:
-            thereisdic = 1
-            if float(iv[9]) < 0:
-                price = str(float(iv[8])+float(iv[9]))+str(float(iv[9]))
-            else:
+            price = str(float(iv[8])+float(iv[9])+(-float(iv[9])))
+            if not float(iv[9]) < 0:
                 price = str(float(iv[8])+float(iv[9]))+"-"+str(float(iv[9]))
-        # No : Code   : Name      : qty : price  : totale :
+                thereisdic = 1
+        # No : Code   : Name      : qty : price - Disc : totale :
         v.append([str(count), str(iv[1]), str(iv[3]), str(round(float(iv[7]))), price, str(total_price)])
         count += 1
     # No : Code   : Name      : qty : price  : totale :
-    # TODO make equal space
     itemforslip = ""
     #print("v : " + str(v))
     if thereisdic:
@@ -206,7 +204,7 @@ def get_items(doc, width, pvv, user, shop):
     v.append([str('-'*vsl[0]), str("-"*vsl[1]), str("-"*vsl[2]), str("-"*vsl[3]), str("-"*vsl[4]), str('-'*vsl[5])])
     if T_Disc != 0:
         if float(iv[9]) < 0:
-            v.append([str(""), str(""), str("TOTAL "), str(QTY), str(PRICE+T_Disc)+str(T_Disc), str(PRICE)])
+            v.append([str(""), str(""), str("TOTAL "), str(QTY), str(PRICE+T_Disc+(-T_Disc)), str(PRICE)])
         else:
             v.append([str(""), str(""), str("TOTAL "), str(QTY), str(PRICE+T_Disc)+"-"+str(T_Disc), str(PRICE)])
     else:
@@ -263,7 +261,7 @@ def get_items(doc, width, pvv, user, shop):
             won = 0
             
     slip += itemcolumnsforslip +"\n"
-    slip += get_sparet_2(doc, width, pvv, user, shop)[0]
+    slip += get_sparet_2(Linke, doc, width, pvv, user, shop)[0]
     slip += itemforslip + "\n"
     #infos_needed = ["TOTAL QTY", "TOTAL Price", "TOTAL Tax", "TOTAL Discount", "Recived", "Balance"]
     infos_needed = ["TOTAL Price", "TOTAL Tax", "TOTAL Discount", "Recived", "Balance", "LEFT"]
@@ -287,20 +285,26 @@ def get_items(doc, width, pvv, user, shop):
     hafe_width = int(width)//2
     list_payment_copy = json.loads(doc['payments'])
     
-    while(infos_need_on < len(pvv)):
+    while(infos_need_on < len(pvv)) or payment_on < len(list_payment_copy):
         fwon = 0
         fw = 0
         swon = 0
+        
+        # if the value is 0 or Null pass it no need to print
+        #if infos_need_on < len(pvv) and float(pvv[infos_need_on]) == 0:
+            #infos_need_on+=1
+            #continue
+        
         for wid in range(int(width)):
             if done_inserting == 0:
                 intesd = infos_need_on+1
-                while intesd < len(pvv) and (pvv[intesd] == '0' or pvv[intesd] == '0.0'):
+                while intesd < len(pvv) and float(pvv[intesd]) == float('0'):
                     intesd += 1
                 
-                if intesd < len(pvv):
+                if intesd < len(pvv) or payment_on < len(list_payment_copy):
                     totalitemforslip += "_" 
                 continue
-
+            
             if wid < hafe_width:
                 if payment_on < len(list_payment_copy):
                     price = list_payment_copy[payment_on][1]
@@ -317,7 +321,7 @@ def get_items(doc, width, pvv, user, shop):
                         totalitemforslip += " "
                 else:
                     totalitemforslip += " "
-            else:
+            elif infos_need_on < len(pvv):
                 if wid == hafe_width + 1 + (hafe_width/2):
                     totalitemforslip += "|"
                 elif(wid < hafe_width + 1 + (hafe_width//2) and fwon < len(infos_needed[infos_need_on])):
@@ -335,7 +339,7 @@ def get_items(doc, width, pvv, user, shop):
             while (payment_on >= len(list_payment_copy)) and (infos_need_on < len(pvv) and (pvv[infos_need_on] == '0' or pvv[infos_need_on] == '0.0')):
                 infos_need_on += 1
             payment_on += 1
-            if infos_need_on < len(pvv):
+            if infos_need_on < len(pvv) or payment_on < len(list_payment_copy):
                 totalitemforslip += "\n" 
         else:
             totalitemforslip += "\n" 
@@ -344,17 +348,17 @@ def get_items(doc, width, pvv, user, shop):
     slip += totalitemforslip + "\n"
     return [slip, [QTY, PRICE, Disc, TAX, T_price]]
     
-def get_payments(doc, width, pvv, user, shop):
+def get_payments(Linke, doc, width, pvv, user, shop):
     slip = ""
     return [slip]
 
-def get_total(doc, width, pvv, user, shop):
+def get_total(Linke, doc, width, pvv, user, shop):
     slip = ""
     return [slip]
 
 import string
 
-def get_Rules(doc, width, pvv, user, shop):
+def get_Rules(Linke, doc, width, pvv, user, shop):
     v = shop['Shop_rules']
     ret = ""
     if v and "+" in v:
@@ -370,7 +374,7 @@ def get_Rules(doc, width, pvv, user, shop):
         ret += v
     return [ret]
 
-def get_Logo(doc, width, pvv, user, shop):
+def get_Logo(Linke, doc, width, pvv, user, shop):
     if width == "":
         width = 20
     logo = shop['Shop_name'] # 
@@ -381,31 +385,31 @@ def get_Logo(doc, width, pvv, user, shop):
     ret += ("-"*(round(float(width))-1))+"\n"
     return [ret]
 
-def get_sparet(doc, width, pvv, user, shop):
+def get_sparet(Linke, doc, width, pvv, user, shop):
     ret = ""
     for i in range(int(width)):
         ret += "*"
     return [ret + "\n"]
 
-def get_sparet_0(doc, width, pvv, user, shop):
+def get_sparet_0(Linke, doc, width, pvv, user, shop):
     ret = ""
     for i in range(int(width)):
         ret += "#"
     return [ret + "\n"]
 
-def get_sparet_1(doc, width, pvv, user, shop):
+def get_sparet_1(Linke, doc, width, pvv, user, shop):
     ret = ""
     for i in range(int(width)):
         ret += "-"
     return [ret + "\n"]
 
-def get_sparet_3(doc, width, pvv, user, shop):
+def get_sparet_3(Linke, doc, width, pvv, user, shop):
     ret = ""
     for i in range(int(width)):
         ret += "="
     return [ret + "\n"]
 
-def get_sparet_4(doc, width, pvv, user, shop):
+def get_sparet_4(Linke, doc, width, pvv, user, shop):
     ret = ""
     for i in range(int(width)):
         ret += "~"
@@ -416,11 +420,11 @@ slip_order_type=[get_sparet, get_sparet_0, get_sparet_1, get_sparet_2, get_spare
 import json
 import ast
 
-def load_slip(doc, d_id):
+def load_slip(Linke, doc, d_id):
     print("doc : "+str(doc))
-    user = find_user(doc['user_id'])
+    user = find_user(Linke, doc['user_id'])
     print("User : ", user)
-    at_shop = find_shop(doc['At_Shop_Id'])
+    at_shop = find_shop(Linke, doc['At_Shop_Id'])
     print("at_shop", at_shop)
 
     slip = ""
@@ -437,7 +441,7 @@ def load_slip(doc, d_id):
         pvv = []
         for order in orders:
             if order != "":
-                ret = slip_order_type[int(order[0])](doc, width, pvv, user, at_shop)
+                ret = slip_order_type[int(order[0])](Linke, doc, width, pvv, user, at_shop)
                 if ret:
                     if len(ret) == 1:
                         slip += ret[0]
@@ -468,13 +472,13 @@ def load_slip(doc, d_id):
                 "Due Date :  " + str(doc['doc_expire_date']) + "\n"\
                 "------------------------------------------\n" 
         # get user and custemusr infor
-        it = find_user(doc['user_id'])
+        it = find_user(Linke, doc['user_id'])
         if it:
             print("it c: " + str(it))   
             slip += "User : "+ str(it['User_name']) +"\n"
         
         # get Seller info    if len(doc) > 16 and doc['Seller_id'] and doc['Seller_id'] != "":
-        it = find_user(doc['Seller_id'])
+        it = find_user(Linke, doc['Seller_id'])
         if it:
             #print("it c: " + str(it))   
             slip += "Seller : "+ str(it['User_name']) +"\n"
@@ -482,7 +486,7 @@ def load_slip(doc, d_id):
                 
         # get custemur info
         if doc['customer_id'] != "":
-            it = find_user(doc['customer_id'])
+            it = find_user(Linke, doc['customer_id'])
             if it:
                 #print("it c: " + str(it))   
                 slip += "Customer : "+ str(it['User_name']) +"\n"\

@@ -30,11 +30,8 @@ class User_Info_Frame(tk.Frame):
         self.Canceal_callback = Canceal_callback
         self.User_data = User_data
         self.Link = link
-        self.User_Info_Frame = tk.Frame(self, bg="#0d47a1", height=screen_height, width=screen_width)
-        self.User_Info_Frame.pack()
-        
-        self.details_frame = tk.Frame(self.User_Info_Frame, bg="#1565c0", height=screen_height, width=screen_width)
-        self.details_frame.place(relx=0.5, rely=0.5, anchor="center")
+        self.details_frame = tk.Frame(self, bg="#1565c0")
+        self.details_frame.pack(side=tk.TOP, fill=tk.X, expand=True)
 
         # Create the widgets for the user details
         self.f_and_lname_label = tk.Label(self.details_frame, text='First and Last Name :', bg="#1565c0", fg="#ffffff")
@@ -91,7 +88,6 @@ class User_Info_Frame(tk.Frame):
         self.acsess_label = tk.Label(self.details_frame, text='ACSSES :', bg="#1565c0", fg="#ffffff")
         self.acsess_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
 
-        self.Secc = tk.Label(self.details_frame, bg="#1565c0", fg="#ffffff")
         self.add_button = tk.Button(self.details_frame, text='Create', command=self.add_user, bg="#1976d2", fg="#ffffff")
         self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=self.canceal_callback, bg="#1976d2", fg="#ffffff")
 
@@ -245,10 +241,10 @@ class User_Info_Frame(tk.Frame):
         User_access = self.acsess_entry.get()
         User_pimg =  self.pimg_entry.get()
         if User_fname == "" or User_Lname == "" or User_name == "" or User_password0 == "" or User_password1 == "":
-           pass
+            pass
         else:
-           if User_password0 == User_password1:
-              if self.add_button.cget("text") == "Create":        
+            if User_password0 == User_password1:
+                if self.add_button.cget("text") == "Create":        
                   # Insert the new user into the database
                   User_likes = ""
                   User_following_shop = ""
@@ -257,28 +253,29 @@ class User_Info_Frame(tk.Frame):
                   user = Set_User(self.Link, ['User_fname', 'User_Lname', 'User_name', 'User_gender', 'User_country', 'User_phone_num', 'User_email', 'User_address', 'User_home_no', 'User_type', 'User_password', 'User_about', 'User_shop', 'User_work_shop', 'User_likes', 'User_following_shop', 'User_favoraite_items', 'User_rate', 'User_access', 'User_pimg'], [User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_type, User_password0, User_about, User_shop, User_work_shop, User_likes, User_following_shop, User_favoraite_items, User_rate, User_access, User_pimg])
                   if user:
                     if not 'Id' in user or user['Id'] == 0 or user['Id'] == None:
-                        tk.Label(self.master.master.Error_list_frame, text="Online User Created Secccesfully", bg="#1565c0", fg="Green").pack(side=tk.TOP, fill=tk.X, expand=True)
+                        tk.Label(self.master.master.master.Error_list_frame, text="Online User Created Secccesfully", fg="Green").pack(side=tk.TOP, fill=tk.X, expand=True)
                     elif 'Id' in user and user['Id'] != 0 and not user['Id'] == None and (user['User_id'] == 0 or user['User_id'] == None):
-                        tk.Label(self.master.master.Error_list_frame, text="Offline User Created Secccesfully", bg="#1565c0", fg="Green").pack(side=tk.TOP, fill=tk.X, expand=True)
+                        tk.Label(self.master.master.master.Error_list_frame, text="Offline User Created Secccesfully", fg="Green").pack(side=tk.TOP, fill=tk.X, expand=True)
                     else:
-                        tk.Label(self.master.master.Error_list_frame, text="User Created Secccesfully", bg="#1565c0", fg="Green").pack(side=tk.TOP, fill=tk.X, expand=True)
+                        tk.Label(self.master.master.master.Error_list_frame, text="User Created Secccesfully", fg="Green").pack(side=tk.TOP, fill=tk.X, expand=True)
                     self.Canceal_callback()
                     self.destroy()
                   else:
-                    self.Secc.config(text="Failed to Create User", fg="red")
-              else:
-                  item_id = int(self.Found_User_id_var)
-                  print("item_id : " + str(item_id))
-                  # UPDATE the new user into the database
-                  Update_table_database('UPDATE Users SET User_fname=?, User_Lname=?, User_name=?, User_gender=?, User_country=?, User_phone_num=?, User_email=?, User_address=?, User_home_no=?, User_id_pp_num=?, User_type=?, User_password=?, User_about=?, User_shop=?, User_work_shop=?, User_access=?, User_pimg=? WHERE User_id=?', (User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_id_pp_num, User_type, User_password0, User_about, User_shop, User_work_shop, User_access, User_pimg, item_id))
-              
-                  self.Secc.config(text="Updated Secccesfully", fg="Green")
-              # Commit the changes to the database
-              conn.commit()
-              self.clear_user_details_widget()
-           else:
-               self.Secc.config(text="Sorry the password you put dont mauch", fg="red")
-               
-           self.Secc.grid(row=18, column=0, padx=5, pady=5, sticky=tk.W)
+                    tk.Label(self.master.master.master.Error_list_frame, text="Failed to Create User", fg="red").pack(side=tk.TOP, fill=tk.X, expand=True)
+                    return
+                else:
+                      item_id = int(self.Found_User_id_var)
+                      print("item_id : " + str(item_id))
+                      # UPDATE the new user into the database
+                      upd = Update_table_database('UPDATE Users SET User_fname=?, User_Lname=?, User_name=?, User_gender=?, User_country=?, User_phone_num=?, User_email=?, User_address=?, User_home_no=?, User_id_pp_num=?, User_type=?, User_password=?, User_about=?, User_shop=?, User_work_shop=?, User_access=?, User_pimg=? WHERE User_id=?', (User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_id_pp_num, User_type, User_password0, User_about, User_shop, User_work_shop, User_access, User_pimg, item_id))
+                      if upd:
+                          tk.Label(self.master.master.master.Error_list_frame, text="Created User Updated Secccesfully", fg="Green").pack(side=tk.TOP, fill=tk.X, expand=True)
+                      else:
+                          tk.Label(self.master.master.master.Error_list_frame, text="Failed to Create User", fg="red").pack(side=tk.TOP, fill=tk.X, expand=True)
+                          return
+                self.clear_user_details_widget()
+            else:
+                tk.Label(self.master.master.master.Error_list_frame, text="Sorry the password you put dont mauch", fg="red").pack(side=tk.TOP, fill=tk.X, expand=True)
+                   
         
 

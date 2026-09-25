@@ -1,5 +1,19 @@
 import tkinter as tk
 from tkinter import ttk
+import sqlite3
+import shutil
+import datetime
+import os
+import atexit
+import sys
+import random
+import json
+import ast
+
+current_dir = os.path.abspath(os.path.dirname(__file__))
+MAIN_dir = os.path.join(current_dir, '..')
+sys.path.append(MAIN_dir)
+
 from D.Security import Chacke_Security
 from M.Doc import DocForm
 from M.Product import ProductForm
@@ -24,6 +38,16 @@ class ManageForm(ttk.Frame):
         screen_height = self.master.winfo_screenheight()
         self.manuframes = {}
         
+        # Android-style dark blue color scheme
+        self.bg_dark = "#0d47a1"      # Deep blue
+        self.bg_light = "#1565c0"     # Darker blue
+        self.accent_blue = "#1976d2"  # Medium blue
+        self.text_light = "#ffffff"   # White text
+        self.bg_darker = "#0a3d91"    # Even darker blue
+        self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
+        
+
+        
         self.manage_form = ttk.Frame(self, height=screen_height, width=screen_width)
         self.manage_form.pack(side="top", fill="both", expand=True)
 
@@ -39,41 +63,41 @@ class ManageForm(ttk.Frame):
             self.manuframes["DocForm"] = self.doc_form
 
             # create buttons in manage_menus form
-            self.doc_btn = ttk.Button(self.left_pane, text="Doc", command=self.doc_form.show_doc_form)
+            self.doc_btn = tk.Button(self.left_pane, text="Doc", command=self.doc_form.show_doc_form, **self.button_style)
             self.doc_btn.pack(side="top", fill="both", expand=True)
         
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 28, f'User Has No Permission To Access PRODUCT FRAME OR LOGIN AS ADMIN'):                        
             self.Product_form = ProductForm(self.manage_form, self.user, self.Shops, self.on_Shop)
             self.manuframes["ProductFrame"] = self.Product_form
 
-            self.product_btn = ttk.Button(self.left_pane, text="Product", command= lambda : self.show_frame("ProductFrame"))
+            self.product_btn = tk.Button(self.left_pane, text="Product", command= lambda : self.show_frame("ProductFrame"), **self.button_style)
             self.product_btn.pack(side="top", fill="both", expand=True)
         
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 29, f'User Has No Permission To Access USER FRAME OR LOGIN AS ADMIN'):                        
             self.user_Form = UserForm(self.manage_form, user, self.Shops)
             self.manuframes["UserForm"] = self.user_Form
 
-            self.user_btn = ttk.Button(self.left_pane, text="User", command=self.user_Form.show_user_form)
+            self.user_btn = tk.Button(self.left_pane, text="User", command=self.user_Form.show_user_form, **self.button_style)
             self.user_btn.pack(side="top", fill="both", expand=True)
 
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 30, f'User Has No Permission To Access TOOLS FRAME OR LOGIN AS ADMIN'):                        
             self.tool_form = ToolForm(self.manage_form, user, Shops, self.on_Shop)
             self.manuframes["ToolForm"] = self.tool_form
-            self.tools_btn = ttk.Button(self.left_pane, text="Tools", command=self.tool_form.show_tools_form)
+            self.tools_btn = tk.Button(self.left_pane, text="Tools", command=self.tool_form.show_tools_form, **self.button_style)
             self.tools_btn.pack(side="top", fill="both", expand=True)
         
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 31, f'User Has No Permission To Access ACTIONS FRAME OR LOGIN AS ADMIN'):                        
             self.Actions_Form = ActionsForm(self.manage_form, user, Shops, Shops_info)
             self.manuframes["ActionsForm"] = self.Actions_Form
 
-            self.Action_btn = ttk.Button(self.left_pane, text="Promotions &\n Action", command=self.Actions_Form.show_product_form)
+            self.Action_btn = tk.Button(self.left_pane, text="Promotions &\n Action", command=self.Actions_Form.show_product_form, **self.button_style)
             self.Action_btn.pack(side="top", fill="both", expand=True)
     
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 54, f'User Has No Permission To Access SETTING FRAME OR LOGIN AS ADMIN'):                        
             self.setting_form = SettingForm(self.manage_form, user, Shops)
             self.manuframes["SettingForm"] = self.setting_form
             
-            self.setting_btn = ttk.Button(self.left_pane, text="Setting", command=self.setting_form.show_Setting_Form)
+            self.setting_btn = tk.Button(self.left_pane, text="Setting", command=self.setting_form.show_Setting_Form, **self.button_style)
             self.setting_btn.pack(side="top", fill="both", expand=True)
 
     def hide_all_manager(self):

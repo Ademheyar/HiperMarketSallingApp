@@ -29,18 +29,29 @@ class Select_User_Company_State_Frame(tk.Frame):
         self.User_data = User_data
         self.Link = Link
         self.Shops = []
+        self.User_work_shops = []
         
-        # print("self.User_data : ", self.User_data)
+        
+        self.homemaster = self
+        while(True):
+            if hasattr(self.homemaster, 'onDisplayFrame'):
+                break
+            else:
+                self.homemaster = self.homemaster.master
+        #print("self.User_data : ", self.User_data)
 
+        self.MainApplication = self
+        while(True):
+            if hasattr(self.MainApplication, 'MainApplication_root'):
+                break
+            else:
+                self.MainApplication = self.MainApplication.master
+                
         self.found_shops = []
         self.found_Shops_result = []
         
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
-        
-        # create the container frame to hold the other frames
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
         
         # create the first frame and add it to the container
         self.frames = {}
@@ -48,11 +59,15 @@ class Select_User_Company_State_Frame(tk.Frame):
         self.display_frame = None
 
         # create the second frame and add it to the container
-        select_User_Company_State_Frame = tk.Frame(self, bg="#0d47a1", height=screen_height, width=screen_width)
+        select_User_Company_State_Frame = tk.Frame(self, bg="#0d47a1")
         
-        self.details_frame = tk.Frame(select_User_Company_State_Frame, bg="#1565c0", height=screen_height, width=screen_width)
-        self.details_frame.place(relx=0.5, rely=0.5, anchor="center")
+        self.details_frame = tk.Frame(select_User_Company_State_Frame, bg="#1565c0")
+        self.details_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
+
+        self.details_frame.columnconfigure((0, 1, 2, 3, 4), weight=1, minsize=int(self.details_frame.winfo_height() *0.1))
+        #self.details_frame.rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9), weight=1, minsize=int(self.details_frame.winfo_height() *0.1))
+        
         self.frames["Select_User_Company_State_Frame"] = select_User_Company_State_Frame
         
         def callbackhomefunction():
@@ -76,10 +91,10 @@ class Select_User_Company_State_Frame(tk.Frame):
         
         # * New frame next to list_items in the main frame
         self.selecte_work_midel_frame = tk.Frame(self.details_frame, bg="#1565c0")
-        self.selecte_work_midel_frame.grid(row=2, column=0, columnspan=2 , sticky="nsew")
+        self.selecte_work_midel_frame.grid(row=2, column=0, columnspan=4 , sticky="nsew")
         
         self.selecte_work_extrnal_frame = tk.Frame(self.selecte_work_midel_frame, bg="#1565c0")
-        self.selecte_work_extrnal_frame.pack(side="top", fill="x")
+        self.selecte_work_extrnal_frame.pack(side="top", fill="x", expand=True)
 
         self.selecte_work_Frame_contaner_frame = tk.Frame(self.selecte_work_midel_frame, bg="#1565c0")
         self.selecte_work_Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -102,8 +117,16 @@ class Select_User_Company_State_Frame(tk.Frame):
         self.selecte_work_item_List_canvas.configure(xscrollcommand=self.selecte_work_item_List_xscrollbar.set, yscrollcommand=self.selecte_work_item_List_yscrollbar.set)
 
         self.selecte_work_Selected_item_Display_frame = tk.Frame(self.selecte_work_item_List_canvas, bg="#1565c0")
-        self.selecte_work_item_List_canvas.create_window((0, 0), window=self.selecte_work_Selected_item_Display_frame, anchor=tk.NW)
-        self.selecte_work_Selected_item_Display_frame.bind('<Configure>', lambda e: self.selecte_work_item_List_canvas.configure(scrollregion=self.selecte_work_item_List_canvas.bbox("all")))
+        self.window_id = self.selecte_work_item_List_canvas.create_window((0, 0), window=self.selecte_work_Selected_item_Display_frame, anchor=tk.NW)
+
+        def resize(event):
+            screen_width = self.winfo_screenwidth()
+            screen_height = self.winfo_screenheight()
+                
+            self.selecte_work_item_List_canvas.configure(scrollregion=self.selecte_work_item_List_canvas.bbox("all"))
+            self.selecte_work_item_List_canvas.itemconfig(self.window_id, width=screen_width-(screen_width/2))
+        self.selecte_work_Selected_item_Display_frame.bind('<Configure>', resize)
+        
 
         self.search_shops_midel_frame = tk.Frame(self.details_frame, bg="#1565c0")
         
@@ -117,7 +140,7 @@ class Select_User_Company_State_Frame(tk.Frame):
         self.search_shops_List_Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
         self.search_shops_List_Frame = tk.Frame(self.search_shops_List_Frame_contaner_frame, bg="#1565c0")
-        self.search_shops_List_Frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        self.search_shops_List_Frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         
         self.search_shops_item_List_canvas = tk.Canvas(self.search_shops_List_Frame, bg="#0d47a1")
         self.search_shops_item_List_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
@@ -131,9 +154,16 @@ class Select_User_Company_State_Frame(tk.Frame):
         self.search_shops_item_List_canvas.configure(xscrollcommand=self.search_shops_item_List_xscrollbar.set, yscrollcommand=self.search_shops_item_List_yscrollbar.set)
 
         self.search_shops_Selected_item_Display_frame = tk.Frame(self.search_shops_item_List_canvas, bg="#1565c0")
-        self.search_shops_item_List_canvas.create_window((0, 0), window=self.search_shops_Selected_item_Display_frame, anchor=tk.NW)
-        self.search_shops_Selected_item_Display_frame.bind('<Configure>', lambda e: self.search_shops_item_List_canvas.configure(scrollregion=self.search_shops_item_List_canvas.bbox("all")))
+        self.window_id0 = self.search_shops_item_List_canvas.create_window((0, 0), window=self.search_shops_Selected_item_Display_frame, anchor=tk.NW)
 
+        def resize0(event):
+            screen_width = self.winfo_screenwidth()
+            screen_height = self.winfo_screenheight()
+                
+            self.search_shops_item_List_canvas.configure(scrollregion=self.search_shops_item_List_canvas.bbox("all"))
+            self.search_shops_item_List_canvas.itemconfig(self.window_id0, width=screen_width-(screen_width/2))
+        self.search_shops_Selected_item_Display_frame.bind('<Configure>', resize0)
+        
         def show_request():
             self.company_name_label.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W) 
             self.company_name_entry.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
@@ -141,6 +171,7 @@ class Select_User_Company_State_Frame(tk.Frame):
             self.company_brandname_entry.grid(row=1, column=2, padx=5, pady=5, sticky=tk.W) 
             self.Search_button.grid(row=0, column=3, padx=6, pady=5, sticky=tk.W)              
             self.search_shops_midel_frame.grid(row=2, column=2, columnspan=2, sticky="nsew")
+            self.selecte_work_midel_frame.grid(row=2, column=0, columnspan=2 , sticky="nsew")
             self.Send_requestshow_button.grid_remove()
             self.Send_requesthid_button.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
     
@@ -152,6 +183,7 @@ class Select_User_Company_State_Frame(tk.Frame):
             self.company_name_label.grid_remove()               
             self.search_shops_midel_frame.grid_remove()
             self.Send_requestshow_button.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+            self.selecte_work_midel_frame.grid(row=2, column=0, columnspan=4 , sticky="nsew")
             self.Send_requesthid_button.grid_remove()
         
         self.Send_requestshow_button = tk.Button(self.details_frame, text='Request To Shop', command=show_request, bg="#1976d2", fg="#ffffff")
@@ -159,7 +191,6 @@ class Select_User_Company_State_Frame(tk.Frame):
         self.Send_requesthid_button = tk.Button(self.details_frame, text='Done Requesting', command=hide_request, bg="#1976d2", fg="#ffffff")
         
         self.main_name = ""
-        self.Msg_label = tk.Label(self.details_frame, text="Company Not Found!", fg="red", bg="#1565c0")
         self.Found_User_id_var = tk.StringVar()
         
         self.Create_Own_shop_button = tk.Button(self.details_frame, text='Create New Shop', command=lambda:self.show_frame("Company_Info_Frame"), bg="#1976d2", fg="#ffffff")
@@ -168,12 +199,46 @@ class Select_User_Company_State_Frame(tk.Frame):
 
         self.Create_Own_shop_button.grid(row=17, column=0, padx=5, pady=5, sticky=tk.W)
         self.cancle_button.grid(row=17, column=3, padx=5, pady=5, sticky=tk.W)
-        
+
         self.update_user_work_shop()
+        self.selected_indexd = 0
+        self.MainApplication.focus_set()
+        self.MainApplication.bind("<Up>", self.treeview_naigation)
+        self.MainApplication.bind("<Down>", self.treeview_naigation)
+        self.MainApplication.bind("<Return>", self.Selectd)
+
+
+    def Selectd(self, event):
+        self.login(self.selected_indexd)
+            
+    def treeview_naigation(self, event):
+        if not (event.keysym == "Up" or event.keysym == "Down"):
+            self.focus_set()
         
+        if self.selected_indexd == -1:
+            self.selected_indexd = 0
+            
+        if len(self.selecte_work_Selected_item_Display_frame.winfo_children()):
+            if self.selected_indexd > len(self.selecte_work_Selected_item_Display_frame.winfo_children()):
+                self.selected_indexd = 0
+            
+            elif event.keysym == 'Up':
+                self.selecte_work_Selected_item_Display_frame.winfo_children()[self.selected_indexd].configure(bg="SystemButtonFace")
+                self.selected_indexd -= 1
+            elif event.keysym == 'Down':
+                self.selecte_work_Selected_item_Display_frame.winfo_children()[self.selected_indexd].configure(bg="SystemButtonFace")
+                self.selected_indexd += 1
+                
+            if self.selected_indexd <= -1:
+                self.selected_indexd = len(self.selecte_work_Selected_item_Display_frame.winfo_children())-1
+            elif self.selected_indexd >= len(self.selecte_work_Selected_item_Display_frame.winfo_children()):
+                self.selected_indexd = 0
+                
+        self.selecte_work_Selected_item_Display_frame.winfo_children()[self.selected_indexd].configure(bg="blue")
+
     def canceal_callback(self):
         self.Canceal_callback()
-        self.master.Loged_User = None
+        self.master.master.Loged_User = None
         self.destroy()
 
     def show_frame(self, frame_name):
@@ -181,67 +246,69 @@ class Select_User_Company_State_Frame(tk.Frame):
         
         # hide all frames except the one to be shown
         for frame in self.frames.values():
-            frame.grid_remove()
-        self.frames[frame_name].grid()
-          
+            frame.pack_forget()
+        self.frames[frame_name].pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+    def login(self, i):
+        for frame in self.frames.values():
+            try:
+                frame.grid_remove()
+            except:
+                pass
+            if self.Shops and len(self.Shops) > i:
+                Shops_info = {'Selected_Shop': self.Shops[i], 'Shops': self.Shops, 'User': self.User_data, 'User_Shops_List': self.User_work_shops, 'Shop_Link': self.Shops[i]['Shop_link'], 'Shop_items': [], 'Shop_Actions': self.Shops[i]['Shop_Actions'] }
+                if not self.master.master.title == "Security Elevation":
+                    self.master.master.master.user = self.User_data
+                    self.master.master.master.Shops_info = Shops_info
+                    self.master.master.master.Shops = self.Shops
+                    self.master.master.master.on_Shop = i
+                    self.master.master.master.User_Shops_List = self.User_work_shops
+                    #self.homemaster.Link = self.Shops[i]['Shop_link']
+                    self.master.master.destroy()
+                    #print("Login Successfully")
+                    #self.master.master.tklevelwin.destroy()
+                    
     def update_user_work_shop(self):
-        #print("update_user_work_shop ")
-        User_work_shops = []
-        print("self.User_data ", self.User_data)
+        ##print("update_user_work_shop ")
+        self.User_work_shops = []
+        #print("self.User_data ", self.User_data)
         if self.User_data and not self.User_data['User_work_shop'] == None and not self.User_data['User_work_shop'] == 'None':
             try:
-                User_work_shops = json.loads(self.User_data['User_work_shop'])
+                self.User_work_shops = json.loads(self.User_data['User_work_shop'])
             except:
                 try:
-                    User_work_shops = load_list(self.User_data['User_work_shop'])
+                    self.User_work_shops = load_list(self.User_data['User_work_shop'])
                 except:
-                    print("user_work_shop json, load_list can not read it")
+                    #print("user_work_shop json, load_list can not read it")
                     pass  
-        #print("User_work_shops ", User_work_shops)
+        ##print("self.User_work_shops ", self.User_work_shops)
         
         # Get all Worker shops info
         self.Shops = []
 
                 
-        def login(i):
-            for frame in self.frames.values():
-                try:
-                    frame.grid_remove()
-                except:
-                    pass
-                if self.Shops and len(self.Shops) > i:
-                    Shops_info = {'Selected_Shop': self.Shops[i], 'Shops': self.Shops, 'User': self.User_data, 'User_Shops_List': User_work_shops, 'Shop_items': [], 'Shop_Actions': "" }
-                    if not self.master.title == "Security Elevation":
-                        self.master.master.user = self.User_data
-                        self.master.master.Shops_info = Shops_info
-                        self.master.master.Shops = self.Shops
-                        self.master.master.on_Shop = i
-                        self.master.master.User_Shops_List = User_work_shops
-                        self.master.destroy()
-                        print("Login Successfully")
-                        #self.master.tklevelwin.destroy()
-                        
+        
         for items in self.selecte_work_Selected_item_Display_frame.winfo_children():
             items.destroy()
                         
         self.show_frame("Select_User_Company_State_Frame")
-        if len(User_work_shops): 
-            for i, User_work_shop in enumerate(User_work_shops):
+        if len(self.User_work_shops): 
+            for i, User_work_shop in enumerate(self.User_work_shops):
                 new_item_fram = tk.Frame(self.selecte_work_Selected_item_Display_frame, highlightthickness=2, highlightbackground="black", bg="#0d47a1")
-                new_item_fram.grid(row=len(self.selecte_work_Selected_item_Display_frame.winfo_children()), column=0, pady=1, sticky=tk.W)
+                new_item_fram.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
                 new_item_name = tk.Label(new_item_fram, text=str(User_work_shop[1]), font=("Arial", 11), bg="#0d47a1", fg="#ffffff")
-                new_item_name.grid(row=0, column=1, columnspan=6, sticky="nsew")
+                new_item_name.grid(row=0, column=0, columnspan=6, sticky="nsew")
 
                 new_item_brandname = tk.Label(new_item_fram, text=str(User_work_shop[2]), font=("Arial", 11), bg="#0d47a1", fg="#ffffff")
-                new_item_brandname.grid(row=1, column=1, columnspan=6, sticky="nsew")
+                new_item_brandname.grid(row=0, column=6, columnspan=6, sticky="nsew")
                 
                 find_shop_in_sysdb = Get_Shop(self.Link, self.User_data, ['Shop_name', 'Shop_brand_name'], [User_work_shop[1], User_work_shop[2]])
                 if find_shop_in_sysdb:
                     self.Shops.append(find_shop_in_sysdb[0])
                     
             def Get_Shop_Data(index, frame, uws):
-                Link = self.master.master.link_entry.get()
+                Link = self.master.master.master.link_entry.get()
                 shop_result = Get_Shop(Link, self.User_data, ['Shop_name', 'Shop_brand_name'], [uws[1], uws[2]])
                 if shop_result:
                     if shop_result == []:
@@ -264,32 +331,32 @@ class Select_User_Company_State_Frame(tk.Frame):
                     
             if not find_shop_in_sysdb:
                 getshopdb_button = tk.Button(new_item_fram, text="Get Shop Data", font=("Arial", 12), command= lambda index=i, frame=new_item_fram, uws=User_work_shop: Get_Shop_Data(index, frame, uws), bg="#1976d2", fg="#ffffff")
-                getshopdb_button.grid(row=0, column=7, sticky="e")
+                getshopdb_button.grid(row=1, column=0, sticky="e")
             elif User_work_shop[3] and User_work_shop[3][0] == -2:
                 Aggried_button = tk.Button(new_item_fram, text="Aggreed", font=("Arial", 12), command= lambda index=i, frame=new_item_fram: self.remove_item(index, frame), bg="#1976d2", fg="#ffffff")
-                Aggried_button.grid(row=0, column=7, sticky="e")
+                Aggried_button.grid(row=1, column=0, sticky="e")
             elif User_work_shop[3] and User_work_shop[3][0] == -1:
-                Whiting_Cancle_button = tk.Button(new_item_fram, text="Cancel", font=("Arial", 12), command= lambda index=i, frame=new_item_fram: cancle_witting_respond(index, frame), bg="#1976d2", fg="#ffffff")
-                Whiting_Cancle_button.grid(row=0, column=7, sticky="e")
                 Whiting_Label = tk.Label(new_item_fram, text="Waiting For Respond", font=("Arial", 11), bg="#0d47a1", fg="#ffffff")
-                Whiting_Label.grid(row=1, column=7, columnspan=6, sticky="nsew")
+                Whiting_Label.grid(row=1, column=5, columnspan=0, sticky="nsew")
+                Whiting_Cancle_button = tk.Button(new_item_fram, text="Cancel", font=("Arial", 12), command= lambda index=i, frame=new_item_fram: cancle_witting_respond(index, frame), bg="#1976d2", fg="#ffffff")
+                Whiting_Cancle_button.grid(row=1, column=1, sticky="e")
                 
             elif User_work_shop[3] and User_work_shop[3][0] == 0:
                 Enable_button = tk.Button(new_item_fram, text="Enable", font=("Arial", 12), command= lambda index=i, frame=new_item_fram: self.remove_item(index, frame), bg="#1976d2", fg="#ffffff")
-                Enable_button.grid(row=0, column=7, sticky="e")
+                Enable_button.grid(row=1, column=0, sticky="e")
             elif User_work_shop[3] and User_work_shop[3][0] == 1:
                 LogIn_button = tk.Button(new_item_fram, text="Customer", font=("Arial", 12), command= lambda index=i, frame=new_item_fram: self.remove_item(index, frame), bg="#1976d2", fg="#ffffff")
-                LogIn_button.grid(row=0, column=7, sticky="e")
+                LogIn_button.grid(row=1, column=0, sticky="e")
             else:
-                LogIn_button = tk.Button(new_item_fram, text="LogIn", font=("Arial", 12), command= lambda j=i: login(j), bg="#1976d2", fg="#ffffff")
-                LogIn_button.grid(row=0, column=7, sticky="e")
+                LogIn_button = tk.Button(new_item_fram, text="LogIn", font=("Arial", 12), command= lambda j=i: self.login(j), bg="#1976d2", fg="#ffffff")
+                LogIn_button.grid(row=1, column=0, sticky="e")
     
     def update_search_shops(self):        
         for items in self.search_shops_Selected_item_Display_frame.winfo_children():
             items.destroy()
             
         for i, search_result in enumerate(self.found_shops):
-            print("search_result ", search_result)
+            #print("search_result ", search_result)
             
             new_item_fram = tk.Frame(self.search_shops_Selected_item_Display_frame, highlightthickness=2, highlightbackground="black")
             new_item_fram.grid(row=len(self.search_shops_Selected_item_Display_frame.winfo_children()), column=0, pady=1, sticky=tk.W)
@@ -302,9 +369,9 @@ class Select_User_Company_State_Frame(tk.Frame):
                         Shops = self.found_Shops_result[index]
                     else:
                         Shops = self.found_Shops_result
-                    print("company_name : ", Shops['Shop_name'])
-                    print("company_brandname : ", Shops['Shop_brand_name'])
-                    print("Shop_workers : ", Shops['Shop_workers'])
+                    #print("company_name : ", Shops['Shop_name'])
+                    #print("company_brandname : ", Shops['Shop_brand_name'])
+                    #print("Shop_workers : ", Shops['Shop_workers'])
                     
                     Shop_workers = []
                     if Shop_workers == None or Shop_workers == 'None':
@@ -317,14 +384,14 @@ class Select_User_Company_State_Frame(tk.Frame):
                     # e.g [2, 'Abdul Kedir', 'AK Abdul', 'OWNER', 'BELLEMA FASHION', 'ADOT', '10']        
                     # e.g [User Id, 'User Full Name', 'User Name', 'OWNER', 'Shop Name', 'Shop Brand', User permission in shop As (WORKER -2, OWNER -1, CUSTOMER 0, NOT WORKING 1)]
                     if found_worker_inshop == 0:
-                        print("self.User_data : ", self.User_data)
+                        #print("self.User_data : ", self.User_data)
                         Shop_workers.append([self.User_data['User_id'], self.User_data['User_fname'] + " "+ self.User_data['User_Lname'], self.User_data['User_name'], "WORKER", Shops['Shop_name'], Shops['Shop_brand_name'], [-2]])
-                        print("Adding worker to shop workers list ", Shop_workers)
+                        #print("Adding worker to shop workers list ", Shop_workers)
                         # Update the shop workers in the database
                         jsonShop_workers = json.dumps(Shop_workers)
                         Shops = Update_Shop(self.Link, self.User_data, ['Shop_workers'], [jsonShop_workers], ['Shop_Id'], [Shops['Shop_Id']])
                         if Shops:
-                            print("Shop workers Updated Secessfuly", Shops)
+                            #print("Shop workers Updated Secessfuly", Shops)
                             if isinstance(Shops, list):
                                 Shops = Shops[0]
                             else:
@@ -332,34 +399,33 @@ class Select_User_Company_State_Frame(tk.Frame):
                             self.Shops.append(Shops)
 
                     # Now update the User_work_shop field in Users table
-                    User_work_shops = []
+                    self.User_work_shops = []
                     if self.User_data and not self.User_data['User_work_shop'] == None and not self.User_data['User_work_shop'] == 'None':                            
-                        print("self.User_data['User_work_shop'] ", self.User_data['User_work_shop'])
+                        #print("self.User_data['User_work_shop'] ", self.User_data['User_work_shop'])
                         try:
-                            User_work_shops = json.loads(self.User_data['User_work_shop'])
+                            self.User_work_shops = json.loads(self.User_data['User_work_shop'])
                         except:
                             try:
-                                User_work_shops = load_list(self.User_data['User_work_shop'])
+                                self.User_work_shops = load_list(self.User_data['User_work_shop'])
                             except:
-                                print("user_work_shop json, load_list can not read it")
+                                #print("user_work_shop json, load_list can not read it")
                                 pass  
 
                     found_shop_inworkes = 0
-                    for uws, User_work_shop in enumerate(User_work_shops):
+                    for uws, User_work_shop in enumerate(self.User_work_shops):
                         if User_work_shop[0] == Shops['Shop_Id']:
                             found_shop_inworkes = 1
-                            User_work_shops[uws] = [Shops['Shop_Id'], Shops['Shop_name'], Shops['Shop_brand_name'], [-1]]
+                            self.User_work_shops[uws] = [Shops['Shop_Id'], Shops['Shop_name'], Shops['Shop_brand_name'], [-1]]
                     # e.g [id, 'Shop Name', 'Shop Brand', User permission in shop As (WORKER -2, OWNER -1, CUSTOMER 0, NOT WORKING 1)]
 
                     if found_shop_inworkes == 0:
-                        print("Adding shop to user work shops list ", User_work_shops)
-                        User_work_shops.append([Shops['Shop_Id'], Shops['Shop_name'], Shops['Shop_brand_name'], [-1]])
+                        #print("Adding shop to user work shops list ", self.User_work_shops)
+                        self.User_work_shops.append([Shops['Shop_Id'], Shops['Shop_name'], Shops['Shop_brand_name'], [-1]])
                         # Update the Users table in the database
-                        print("Updating user work shops list ", User_work_shops)
-                        User = Update_User(self.Link, self.User_data, ['User_work_shop'], [json.dumps(User_work_shops)], ['User_id'], [self.User_data['User_id']])
-                        print("User : ", User)
-                        self.User_data['User_work_shop'] = json.dumps(User_work_shops)
-                        
+                        #print("Updating user work shops list ", self.User_work_shops)
+                        User = Update_User(self.Link, self.User_data, ['User_work_shop'], [json.dumps(self.User_work_shops)], ['User_id'], [self.User_data['User_id']])
+                        #print("User : ", User)
+                        self.User_data['User_work_shop'] = json.dumps(self.User_work_shops)
                         
                     self.update_user_work_shop()
                     
@@ -383,21 +449,20 @@ class Select_User_Company_State_Frame(tk.Frame):
         if self.found_Shops_result:
             # chake if self.found_Shops_result is list or dict
             if isinstance(self.found_Shops_result, list):
-                print("company_name : " + str(self.found_Shops_result[0]['Shop_name']))
-                print("company_brandname : " + str(self.found_Shops_result[0]['Shop_brand_name']))
-                print("Shop_workers : " + str(self.found_Shops_result[0]['Shop_workers']))
+                #print("company_name : " + str(self.found_Shops_result[0]['Shop_name']))
+                #print("company_brandname : " + str(self.found_Shops_result[0]['Shop_brand_name']))
+                #print("Shop_workers : " + str(self.found_Shops_result[0]['Shop_workers']))
                 self.found_shops.append(self.found_Shops_result[0])
             else:
-                print("company_name : " + str(self.found_Shops_result['Shop_name']))
-                print("company_brandname : " + str(self.found_Shops_result['Shop_brand_name']))
-                print("Shop_workers : " + str(self.found_Shops_result['Shop_workers']))
+                #print("company_name : " + str(self.found_Shops_result['Shop_name']))
+                #print("company_brandname : " + str(self.found_Shops_result['Shop_brand_name']))
+                #print("Shop_workers : " + str(self.found_Shops_result['Shop_workers']))
                 self.found_shops.append(self.found_Shops_result)
-            self.Msg_label.grid(row=1, column=2, padx=5, pady=5, sticky=tk.W)
-            self.Msg_label.config(text="Company Found!", fg="Green")
+            
+            tk.Label(self.master.master.master.Error_list_frame, text="Company Found!", fg="Green").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
 
         else:
-            self.Msg_label.grid(row=1, column=2, padx=5, pady=5, sticky=tk.W)
-            self.Msg_label.config(text="Company Not Found!", fg="Red")
+            tk.Label(self.master.master.master.Error_list_frame, text="Company Not Found!", fg="Red").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
         self.update_search_shops()
                     
     def clear_user_details_widget(self):
@@ -423,15 +488,15 @@ class Select_User_Company_State_Frame(tk.Frame):
         '''
         
     def forget_password_fuc(self, event):
-        print("forget_password_fuc")
+        #print("forget_password_fuc")
         pass
       
     def Create_new_user(self, event):
-        print("Create_new_user")
+        #print("Create_new_user")
         pass
       
     def update_combobox_values(self):
-        #print("ss "+ str([";"] + [name[0] for name in self.node_hierarchy]))
+        ##print("ss "+ str([";"] + [name[0] for name in self.node_hierarchy]))
         pass #self.node_combobox["values"] = [";"] + [name[0] for name in self.node_hierarchy]
 
 
@@ -445,27 +510,28 @@ class Select_User_Company_State_Frame(tk.Frame):
         if users:
            for user in users:
               if "IT" in user[11] or "Admin" in user[11] or "Worker" in user[11]:
-                  #print("User : " + str(user))
-                  #print("User11 : " + str(user[15]))
+                  ##print("User : " + str(user))
+                  ##print("User11 : " + str(user[15]))
                   error_label = tk.Label(self.logging_box, text="Login Secsesfull", font=("Helvetica", 18), bg="#e74c3c", fg="green")
                   error_label.pack(pady=20)
-                  self.master.display_frame = DisplayFrame(self.master, user)
-                  self.master.display_frame.grid(row=0, column=0, sticky="nsew")
-                  self.master.frames["DisplayFrame"] = self.master.display_frame
-                  self.master.frames["DisplayFrame"].user = user
-                  self.master.frames["DisplayFrame"].load()
+                  self.master.master.display_frame = DisplayFrame(self.master, user)
+                  self.master.master.display_frame.grid(row=0, column=0, sticky="nsew")
+                  self.master.master.frames["DisplayFrame"] = self.master.master.display_frame
+                  self.master.master.frames["DisplayFrame"].user = user
+                  self.master.master.frames["DisplayFrame"].load()
+                  self.homemaste.Link = link
         else:
             error_label = tk.Label(self.logging_box, text="Login failed", font=("Helvetica", 18), bg="#e74c3c", fg="#ffffff")
             error_label.pack(pady=20)
     
     def show_first_frame(self):
         # call the function in the main file to show the first frame
-        self.master.show_frame("DisplayFrame")
+        self.master.master.show_frame("DisplayFrame")
     def on_name_entry(self, event):
         Update_table_database('SELECT * FROM Users')
         users = cur.fetchall()
         for user in users:
-            print("on_name_entry\n"+str(user[1]))
+            #print("on_name_entry\n"+str(user[1]))
             if user[1] == self.name_entry.get():
                 self.add_button.config(text="Update")    
                 return
@@ -484,9 +550,9 @@ class Select_User_Company_State_Frame(tk.Frame):
             if doc_:
                 answer = tk.messagebox.askquestion("Question", "Do you what to print "+str(barcode)+" ?")
                 if answer == 'yes':
-                    #print(str(doc_))
+                    ##print(str(doc_))
                     doc_edit_form = load_slip(doc_, id)
-                    #print("don loding slip : \n\n" + str(doc_edit_form))
-                    self.user = self.master.master.master.master.user
+                    ##print("don loding slip : \n\n" + str(doc_edit_form))
+                    self.user = self.master.master.master.master.master.user
                     PrinterForm.print_slip(self, self.user_info, doc_edit_form, 1) # TODO chack in setting if paper cut allowed
 

@@ -1,19 +1,32 @@
-import win32print
 import tkinter as tk
-from tkinter import ttk
-import sqlite3, os
-from tkinter import simpledialog
-
+import sqlite3
+import shutil
+import datetime
+import os
+import atexit
+import sys
 import json
 import ast
 
-from C.API import *
-from C.API.Get import *
-from C.API.Set import *
+import win32print
+from tkinter import ttk
+from tkinter import simpledialog
+
+
+current_dir = os.path.abspath(os.path.dirname(__file__))
+MAIN_dir = os.path.join(current_dir, '..')
+sys.path.append(MAIN_dir)
+
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
 
 printer_name = ""
+
+
+from C.API import *
+from C.API.Get import *
+from C.API.Set import *
+
 def list_available_printers():
     printers = []
     #'''
@@ -48,7 +61,7 @@ class PrinterSelectionDialog(tk.Toplevel):
         self.change_entry = tk.Checkbutton(self, text='REMAMBER MY CHOICE', variable=self.issave)
         self.change_entry.pack(pady=10)
         
-        select_button = tk.Button(self, text="Select", command=self.select_printer)
+        select_button = tk.Button(self, text="Select", command=lambda:self.select_printer())
         select_button.pack(pady=10)
 
     def select_printer(self):
@@ -88,7 +101,7 @@ class PrinterForm(tk.Tk):
         else:
             user_id = 'Id'
             user_idv = user_info['Id']
-        b = fetch_as_dict_list("SELECT * FROM setting WHERE "+user_id+" = ?", (int(user_idv),))
+        b = fetch_as_dict_list(None, "SELECT * FROM setting WHERE "+user_id+" = ?", (int(user_idv),))
         print("user " + str(user_info['User_name']) + "found " +str(b))
         if b and len(b) > 0 and b[0]['printer'] != "" and b[0]['printer'] in printers:
             selected_printer = b[0]['printer'] # getting printer

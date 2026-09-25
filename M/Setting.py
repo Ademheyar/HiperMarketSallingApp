@@ -134,7 +134,7 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
     if doc_updated_date is not None and doc_updated_date is not '':
         query += f" AND doc_updated_date='{doc_updated_date}'"
     
-    print(query+"\n")
+    #print(query+"\n")
     # Execute the SQL query and return the results as a list of tuples
     Update_table_database(query, (*given,))
     results = cur.fetchall()
@@ -153,12 +153,34 @@ class Appelication_SettingForm(tk.Frame):
         self.Shops = shops
         self.slip_order_list = []
         
+        self.bg_dark = "#0d47a1"      # Deep blue
+        self.bg_light = "#1565c0"     # Darker blue
+        self.accent_blue = "#1976d2"  # Medium blue
+        self.text_light = "#ffffff"   # White text
+        self.bg_darker = "#0a3d91"    # Even darker blue
+        self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
+        self.homemaster = self
+        while(True):
+            if hasattr(self.homemaster, 'onDisplayFrame'):
+                break
+            else:
+                self.homemaster = self.homemaster.master
+        #print("self.User_data : ", self.User_data)
+
+        self.MainApplication = self
+        while(True):
+            if hasattr(self.MainApplication, 'MainApplication_root'):
+                break
+            else:
+                self.MainApplication = self.MainApplication.master
+        
+        
         # Create the frame for the product details Product_stting_frame
         self.Product_list_frame = self
         self.Product_list_frame.pack()
 
         # Create the frame for the search bar and buttons
-        self.search_frame = tk.Frame(self.Product_list_frame)
+        self.search_frame = tk.Frame(self.Product_list_frame, bg=self.bg_dark)
         self.search_frame.pack(fill=tk.BOTH, padx=5, pady=5)
         
 
@@ -166,8 +188,34 @@ class Appelication_SettingForm(tk.Frame):
         
         self.Remamber_printer_int = tk.IntVar()
        
-        self.Remamber_printer_entry = tk.Checkbutton(self.search_frame, text='Remamber Printer Choice', variable=self.Remamber_printer_int, command=self.chacke_remaber_printer)
-        self.Remamber_printer_entry.grid(row=8, column=0, sticky=tk.E)
+        self.Remamber_printer_entry = tk.Checkbutton(self.search_frame, text='Remamber Printer Choice', bg=self.bg_dark, onvalue=1, offvalue=0, variable=self.Remamber_printer_int)
+        self.Remamber_printer_entry.grid(row=0, column=0, sticky=tk.E)
+        self.Remamber_printer_int.trace_add('write', self.chacke_remaber_printer)
+
+        self.countcreaditprintout_lable = tk.Label(self.search_frame, text="Allow Creadit Slips To be Printed Times : ", font=("Arial", 12, "bold"), 
+                                          bg=self.bg_light, fg=self.text_light)
+        self.countcreaditprintout_lable.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
+
+        self.countcreaditprintout_Spinbox = ttk.Spinbox(self.search_frame, from_=0, to=10, width=10)
+        self.countcreaditprintout_Spinbox.grid(row=1, column=2, sticky="nsew")
+        self.countcreaditprintout_Spinbox.set('1')
+        
+        self.Auto_Print_Creadit_var = tk.IntVar()
+        #self.Auto_Print_Creadit_var.set(1)
+        self.Auto_Print_Creadit_Checkbutton = tk.Checkbutton(self.search_frame, bg=self.bg_dark, onvalue=1, offvalue=0, text='Auto Print Creadit Slips ', variable=self.Auto_Print_Creadit_var)
+        self.Auto_Print_Creadit_Checkbutton.grid(row=2, column=0)
+        self.Auto_Print_Creadit_var.trace_add('write', self.Auto_Print_Creadit)
+
+        self.Auto_Print_All_var = tk.IntVar()
+        #self.Auto_Print_All_var.set(0)
+        self.Auto_Print_All_Checkbutton = tk.Checkbutton(self.search_frame, bg=self.bg_dark, onvalue=1, offvalue=0, text='Auto Print All Slips', variable=self.Auto_Print_All_var)
+        self.Auto_Print_All_Checkbutton.grid(row=2, column=4)
+        self.Auto_Print_All_var.trace_add('write', self.Auto_Print_All)
+        
+        self.var = tk.IntVar()
+        self.countcreaditprintout_Spinbox.bind('<KeyRelease>', self.update_countcreaditprintout)
+
+
 
 
         self.ask_seller_int = tk.IntVar()
@@ -388,14 +436,31 @@ class Appelication_SettingForm(tk.Frame):
         #self.add_button.grid(row=30, column=0, padx=5, pady=5, sticky=tk.W)
         #self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=self.hide_add_product_forme)
         #self.cancle_button.grid(row=30, column=1, padx=5, pady=5, sticky=tk.W)
-
-    def chacke_remaber_printer(self):
-        print("chacke_remaber_printer")
+        self.update_Application_sitting()
+        
+    def update_Application_sitting(self):
+        b = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM setting WHERE User_id = ?", (self.user['User_id'],))
+        if b and len(b) > 0:
+            if b[0]['Get_printer']:
+                self.Remamber_printer_int.set(b[0]['Get_printer'])
+                
+            if b[0]['Count_Creadit_Printout']:
+                self.countcreaditprintout_Spinbox.set(b[0]['Count_Creadit_Printout'])
+            
+            if b[0]['Auto_Print_Credite']:
+                self.Auto_Print_Creadit_var.set(b[0]['Auto_Print_Credite'])
+            
+            if b[0]['Auto_Print_All']:
+                self.Auto_Print_All_var.set(b[0]['Auto_Print_All'])
+        
+    def chacke_remaber_printer(self, *arg):
+        ##print("chacke_remaber_printer")
         if int(self.Remamber_printer_int.get()):
-            b = fetch_as_dict_list("SELECT * FROM setting WHERE User_id = ?", (self.user['User_id'],))
-            #print("user " + str(self.user[0]) + " found " +str(b))
-            printers = list_available_printers()
-            if b and len(b) > 0 and b[0][3] == "" or not b:
+            b = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM setting WHERE User_id = ?", (self.user['User_id'],))
+            ##print("user " + str(self.user['User_id']) + " found " +str(b))
+           
+            if b and len(b) > 0 and b[0]['printer'] == "" or not b:
+                printers = list_available_printers()
                 dialog = PrinterSelectionDialog(self, printers)
                 self.wait_window(dialog)
                 selected_printer = dialog.selected_printer
@@ -403,16 +468,57 @@ class Appelication_SettingForm(tk.Frame):
                     if dialog.issave.get():
                         if b:
                             Update_table_database('UPDATE setting SET printer=?, Get_printer=? WHERE User_id=?', ("", 1, self.user['User_id']))
-                            # Commit the changes to the database
-                            conn.commit()
                         else:
                             Update_table_database('INSERT INTO setting (User_id, Get_printer, printer) VALUES (?, ?, ?, ?)', (self.user['User_id'], 1, selected_printer))
-                            # Commit the changes to the database
-                            conn.commit()                    
+                
         else:
             Update_table_database('UPDATE setting SET printer=?, Get_printer=? WHERE User_id=?', ("", int(self.ask_seller_int.get()), self.user['User_id']))
-            # Commit the changes to the database
-            conn.commit()
+        self.update_Application_sitting()
+        
+    def update_countcreaditprintout(self, *arg):
+        ##print("update_countcreaditprintout \n")
+        b = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM setting WHERE User_id = ?", (self.user['User_id'],))
+        ##print("user " + str(self.user['User_id']) + " found " +str(b))
+        printers = list_available_printers()
+        if b and len(b) > 0:
+            Update_table_database('UPDATE setting SET Count_Creadit_Printout=? WHERE User_id=?', (self.countcreaditprintout_Spinbox.get() , self.user['User_id']))
+        else:
+            Update_table_database('INSERT INTO setting (User_id, Count_Creadit_Printout) VALUES (?, ?)', (self.user['User_id'], self.countcreaditprintout_Spinbox.get()))
+            ##print("Done update_countcreaditprintout")
+        self.update_Application_sitting()
+        
+    def Auto_Print_Creadit(self, *arg):
+        ##print("Auto_Print_Creadit \n")
+        if self.user['User_id']:
+            b = fetch_as_dict_list(self.homemaster.Link, "SELECT Auto_Print_Credite FROM setting WHERE User_id = ?", (self.user['User_id'],))
+            ##print("user " + str(self.user['User_id']) + " found " +str(b))
+            printers = list_available_printers()
+            if b and len(b) > 0:
+                Update_table_database('UPDATE setting SET Auto_Print_Credite=? WHERE User_id=?', (self.Auto_Print_Creadit_var.get() , self.user['User_id']))
+            else:
+                Update_table_database('INSERT INTO setting (User_id, Auto_Print_Credite) VALUES (?, ?)', (self.user['User_id'], self.Auto_Print_Creadit_var.get()))
+            ##print("Done Auto_Print_Creadit")
+            self.update_Application_sitting()
+            
+    def Auto_Print_All(self, *arg):
+        ##print("Auto_Print_All \n")
+        if self.user['User_id']:
+            b = fetch_as_dict_list(self.homemaster.Link, "SELECT Auto_Print_All FROM setting WHERE User_id = ?", (self.user['User_id'],))
+            ##print("user " + str(self.user['User_id']) + " found " +str(b))
+            if b and len(b) > 0:
+                Update_table_database('UPDATE setting SET Auto_Print_All=? WHERE User_id=?', (self.Auto_Print_All_var.get() , self.user['User_id']))
+            else:
+                Update_table_database('INSERT INTO setting (User_id, Auto_Print_All) VALUES (?, ?)', (self.user['User_id'], self.Auto_Print_All_var.get()))
+            ##print("Done Auto_Print_All")
+            self.update_Application_sitting()
+
+
+
+
+
+
+
+    
 
 class SettingForm(tk.Frame):
     def __init__(self, master, user, shops):
@@ -424,13 +530,20 @@ class SettingForm(tk.Frame):
         self.Shops = shops
         self.slip_order_list = []
 
+        self.bg_dark = "#0d47a1"      # Deep blue
+        self.bg_light = "#1565c0"     # Darker blue
+        self.accent_blue = "#1976d2"  # Medium blue
+        self.text_light = "#ffffff"   # White text
+        self.bg_darker = "#0a3d91"    # Even darker blue
+        self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
+        
 
         self.setting_notebook = ttk.Notebook(self)
         self.setting_notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         
         # Create the frame for the Shop Info
         for shop_ in self.Shops:
-            Shop_setting_frame = tk.Frame(self.setting_notebook)
+            Shop_setting_frame = tk.Frame(self.setting_notebook, bg=self.bg_dark)
             Shop_setting_frame.pack()
             self.setting_notebook.add(Shop_setting_frame, text=shop_['Shop_name'])
             self.Shop_setting_notebook = Shop_SettingForm(Shop_setting_frame, user, shop_)
@@ -498,17 +611,17 @@ class SettingForm(tk.Frame):
             id_ = shop_name[0]
             name_ = shop_name[1]
             # Search for the entered text in the code, name, short_key, and type fields of the user table
-            results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_id LIKE ? AND Shop_name LIKE ?", 
+            results = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM Shops WHERE Shop_id LIKE ? AND Shop_name LIKE ?", 
                         ('%' + str(id_) + '%','%' + str(name_) + '%'))
             
-            print("found shop "+str(len(results)))
+            #print("found shop "+str(len(results)))
         else:
             shop_name = self.user['User_work_shop']
             # Search for the entered text in the code, name, short_key, and type fields of the user table
-            results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_name LIKE ?", 
+            results = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM Shops WHERE Shop_name LIKE ?", 
                         ('%' + str(shop_name) + '%',))
             
-            print("found shop by name "+str(results))
+            #print("found shop by name "+str(results))
             
         if results:
             # Modify the quantity of the item as required
@@ -524,7 +637,7 @@ class SettingForm(tk.Frame):
                 for q in self.USER_SECURITY_list_box.get_children():
                     values = self.USER_SECURITY_list_box.item(q)['values']
                     st += str(values[0])+"+"
-                print("saving  "+str(st))
+                #print("saving  "+str(st))
                 Update_table_database('UPDATE Shops SET Shop_Access_levels=? WHERE Shop_id=?', (st, results[0][0]))
                 # Commit the changes to the database
                 conn.commit()
@@ -532,28 +645,28 @@ class SettingForm(tk.Frame):
                 
         
     def load_shop_info(self):
-        print("load_shop_info user :"+str(self.user['User_work_shop']))
+        #print("load_shop_info user :"+str(self.user['User_work_shop']))
         #results = None
         if ":" in self.user['User_work_shop']:
             shop_name = self.user['User_work_shop'].split(":")
             id_ = shop_name[0]
             name_ = shop_name[1]
             # Search for the entered text in the code, name, short_key, and type fields of the user table
-            results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_id LIKE ? AND Shop_name LIKE ?", 
+            results = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM Shops WHERE Shop_id LIKE ? AND Shop_name LIKE ?", 
                         ('%' + str(id_) + '%','%' + str(name_) + '%'))
             
-            print("found shop "+str(len(results)))
+            #print("found shop "+str(len(results)))
         else:
             shop_name = self.user['User_work_shop']
             # Search for the entered text in the code, name, short_key, and type fields of the user table
-            results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_name LIKE ?", 
+            results = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM Shops WHERE Shop_name LIKE ?", 
                         ('%' + str(shop_name) + '%',))
             
-            print("found shop00 by name "+str(results))
+            #print("found shop00 by name "+str(results))
             
         if results != None and results != []: 
             if "+" in str(results[0][24]):
-                print("str(results[24]) "+str(str(results[0][24])))
+                #print("str(results[24]) "+str(str(results[0][24])))
                 k = 0
                 for order in str(results[0][24]).split("+"):
                     if order != "" and k < len(self.USER_SECURITY_list_box.get_children()):
@@ -598,17 +711,17 @@ class SettingForm(tk.Frame):
             id_ = shop_name[0]
             name_ = shop_name[1]
             # Search for the entered text in the code, name, short_key, and type fields of the user table
-            results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_id LIKE ? AND Shop_name LIKE ?", 
+            results = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM Shops WHERE Shop_id LIKE ? AND Shop_name LIKE ?", 
                         ('%' + str(id_) + '%','%' + str(name_) + '%'))
             
-            print("found shop "+str(len(results)))
+            #print("found shop "+str(len(results)))
         else:
             shop_name = self.user['User_work_shop']
             # Search for the entered text in the code, name, short_key, and type fields of the user table
-            results = fetch_as_dict_list("SELECT * FROM Shops WHERE Shop_name LIKE ?", 
+            results = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM Shops WHERE Shop_name LIKE ?", 
                         ('%' + str(shop_name) + '%',))
             
-            print("found shop "+str(results[0][0]))
+            #print("found shop "+str(results[0][0]))
         if results:
             Update_table_database('UPDATE Shops SET Shop_name=?, Shop_brand_name=?, Shop_link=?, Shop_location=?, Shop_rules=?, Shop_phone_num=? WHERE Shop_id=?',
                         (self.Shop_name_entry.get(), self.Shop_brand_name_entry.get(), self.Shop_link_entry.get(), self.Shop_location_entry.get(), self.Shop_rules_entry.get(), self.Shop_phone_num_entry.get(), results[0][0]))
@@ -616,11 +729,11 @@ class SettingForm(tk.Frame):
             conn.commit()
     
     def load_setting(self):
-        #print("load sitting of : " + str(self.user))
-        sittings = []#fetch_as_dict_list("SELECT * FROM setting WHERE User_id = ?", (self.user['User_id'],))
+        ##print("load sitting of : " + str(self.user))
+        sittings = []#fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM setting WHERE User_id = ?", (self.user['User_id'],))
         
         if sittings:
-            print("sitting2 : " + str(sittings))
+            #print("sitting2 : " + str(sittings))
             for sitting in sittings:
                 if sitting[1] == self.user['User_id']:
                     self.load_type_info(sitting[4])
@@ -629,18 +742,18 @@ class SettingForm(tk.Frame):
                     if len(sitting) > 6 and sitting[6]:
                         self.Remamber_printer_int.set(int(sitting[6]))
                         if "+" in str(sitting[7]):
-                            print("str(sitting[7]) "+str(str(sitting[7])))
+                            #print("str(sitting[7]) "+str(str(sitting[7])))
                             for order in str(sitting[7]).split("+"):
                                 if order != "":
-                                    print("order "+str(order))
-                                    print("str(slip_order_type[int(order)]) "+str(str(slip_order_type[int(order)])))
+                                    #print("order "+str(order))
+                                    #print("str(slip_order_type[int(order)]) "+str(str(slip_order_type[int(order)])))
                                     self.slip_order_list_items.insert(tk.END, str(slip_order_type[int(order)]))
                         self.slip_width_entry.insert(0,str(sitting[8]))
                         self.slip_hight_entry.insert(0,str(sitting[8]))
                         
             
     def chacke_ask_seller(self):
-        print("going to make seller ask or not...")
+        #print("going to make seller ask or not...")
         Update_table_database('UPDATE setting SET Get_seller=? WHERE user_id=?', (int(self.ask_seller_int.get()), self.user['User_id']))
         # Commit the changes to the database
         conn.commit()
@@ -651,7 +764,7 @@ class SettingForm(tk.Frame):
         self.master.master.show_frame("SettingForm")
         
     def load_type_info(self, text):
-        #print("loading type setting : " + str(text))
+        ##print("loading type setting : " + str(text))
         if text and text != "":
             qty_info_list = load_list(text)
             def sub(ls, parent):
@@ -774,8 +887,10 @@ class SettingForm(tk.Frame):
                 p["size"] == v[0]:
                     if p["barcode"] == self.bracode_entry.get() and p["qtyfirst"] == v[1] and \
                         p["qty"] == v[1]:
-                        print("issame!!!" + str(p)) # TODO: show same earror
+                        #print("issame!!!" + str(p)) # TODO: show same earror
                         #    cdate#    update
+
+                        pass
                     else:
                         self.inventory[i]["barcode"] = self.bracode_entry.get()
                         self.inventory[i]["qty"] = v[1]
@@ -924,7 +1039,7 @@ class SettingForm(tk.Frame):
         Update_table_database('SELECT * FROM product')
         item = cur.fetchall()
         for it in item:
-            print("item["+str(it[0])+"]  : " + str(it[12]))
+            #print("item["+str(it[0])+"]  : " + str(it[12]))
             qty_info_list = []
             if "\"{" in str(it[12]):
                 qty_info_list = read_code(it[12], "", str(it[2]), "", "")[4]
@@ -977,7 +1092,7 @@ class SettingForm(tk.Frame):
         self.listbox.delete(*self.listbox.get_children())
         #self.get_columen()
         for index in df:
-            #print("df : " + str(index))
+            ##print("df : " + str(index))
             item = self.listbox.insert('', 'end', text=index[0], values=(index[1], index[2], index[3], index[4], index[5], index[6], index[7], index[8], index[9], index[10], index[11], index[12], index[13], index[14]))
             #  payment
             self.load_payment(index[11])
@@ -985,13 +1100,13 @@ class SettingForm(tk.Frame):
         self.creat_info()
             
     def load_payment(self, p_text):
-        #print("tiems : " + str(p_text))
+        ##print("tiems : " + str(p_text))
         if ")" in str(p_text) or ")," in str(p_text):
             items_lists = (p_text + ",").split("),")
             index = 0
             for p in range(len(items_lists)-1):
                 item = items_lists[p].split(",")
-                #print("item ;" + str(item))
+                ##print("item ;" + str(item))
                 #for each items+
                 pay_id = item[0].replace("(", "")
                 pay_type = item[1]
@@ -1008,7 +1123,7 @@ class SettingForm(tk.Frame):
                         pay[1] += float(pay_pid)
                         break
                 if found == 0:
-                    print("new payment :" + str([pay_type, pay_pid]))
+                    #print("new payment :" + str([pay_type, pay_pid]))
                     self.pyment_used.append([pay_type, float(pay_pid)])
                 index += 1
 
@@ -1017,16 +1132,16 @@ class SettingForm(tk.Frame):
             index = 0
             for p in range(len(items_lists)-1):
                 item = items_lists[p].split(" = ")
-                #print("item :" + str(item))
+                ##print("item :" + str(item))
                 #for each items
                 name = item[0].replace("(:", "")
                 price = item[1]
-                #print("list : " + str([name, price]))
+                ##print("list : " + str([name, price]))
                 
                 index += 1
         else:
             item = str(p_text).split(" = ")
-            #print("item :" + str(item))
+            ##print("item :" + str(item))
             if len(item) > 1:
                 name = item[0].replace("(:", "")
                 price = item[1]
@@ -1080,8 +1195,8 @@ class SettingForm(tk.Frame):
             shop_name, nested_items = s
             color, nested_items2 = nested_items
             size, nested_items3 = nested_items2
-            print("shop name : " + shop_name)
-            print("shop nested_item : " + str(nested_items))
+            #print("shop name : " + shop_name)
+            #print("shop nested_item : " + str(nested_items))
             barcode, qtyfirst, qty, cdate, update = nested_items3
             self.add_info_(shop_name, color, size, barcode, qtyfirst, qty, cdate, update)
     
@@ -1151,19 +1266,19 @@ class SettingForm(tk.Frame):
     
     def update_tree(self):
         self.tree.delete(*self.tree.get_children())
-        print("gount tot add tree ")
+        #print("gount tot add tree ")
         for shop in self.nested_list:
-            print("shop")
+            #print("shop")
             shop_name_node = self.tree.insert("", "end", text=shop[0])
             for code in shop[1]:
-                print("code")
+                #print("code")
                 code_node = self.tree.insert(shop_name_node, "end", text=code[0])
                 for color in code[1]:
                     color_node = self.tree.insert(code_node, "end", text=color[0])
                     for size in color[1]:
                         size_node = self.tree.insert(color_node, "end", text=size[0])
                         for value in size[1]:
-                            print("value : " + str(value))
+                            #print("value : " + str(value))
                             barcode, qtyfirst, qty, patern, imgs, cdate, update = value
                             if barcode and qtyfirst and qty and cdate and update:
                                 self.tree.insert(size_node, "end", text=value[0], values=(barcode, qtyfirst, qty, cdate, update))
@@ -1204,14 +1319,15 @@ class SettingForm(tk.Frame):
         found = 0 
         i = 0
         for a in self.tree.selection():
-            print(str(self.tree.item(a)))
+            #print(str(self.tree.item(a)))
             for p in self.inventory:
                 if p["shop_name"] == self.shop_name_entry.get() and p["color"] == self.color_entry.get() and \
                 p["size"] == self.size_entry.get():
                     if p["barcode"] == self.bracode_entry.get() and p["qtyfirst"] == self.qty_entry.get() and \
                         p["qty"] == self.qty_entry.get():
-                        print("issame!!!" + str(p)) # TODO: show same earror
+                        #print("issame!!!" + str(p)) # TODO: show same earror
                         #    cdate#    update
+                        pass
                     else:
                         self.inventory[i]["barcode"] = self.bracode_entry.get()
                         self.inventory[i]["qty"] = self.qty_entry.get()
@@ -1224,11 +1340,11 @@ class SettingForm(tk.Frame):
         found, self.nested_list = dele_list(self.nested_list, self.shop_name_entry.get() + "|" + self.code_entry.get() + "|" + self.color_entry.get() + "|" + self.size_entry.get() , [self.bracode_entry.get(), self.qty_entry.get(), self.qty_entry.get(), "", self.images_entry.get(), "", ""])
         txt = self.get_inventory_nested_list_text()
         #l = self.get_inventory_nested_list()
-        #print("list : " + str(l))
+        ##print("list : " + str(l))
         #txt = self.chang_to_text(l)
-        #print("list : " + str(txt))
+        ##print("list : " + str(txt))
         #le = self.chang_to_list(txt)
-        #print("le :" + str(le))
+        ##print("le :" + str(le))
         self.more_info_label.delete(0, tk.END)
         self.more_info_label.insert(0, txt)
         
@@ -1264,8 +1380,9 @@ class SettingForm(tk.Frame):
                p["size"] == self.size_entry.get():
                 if p["barcode"] == self.bracode_entry.get() and p["qtyfirst"] == self.qty_entry.get() and \
                     p["qty"] == self.qty_entry.get():
-                    print("issame!!!" + str(p)) # TODO: show same earror
+                    #print("issame!!!" + str(p)) # TODO: show same earror
                     #    cdate#    update
+                    pass
                 else:
                     self.inventory[i]["barcode"] = self.bracode_entry.get()
                     self.inventory[i]["qty"] = self.qty_entry.get()
@@ -1277,7 +1394,7 @@ class SettingForm(tk.Frame):
         #{'shop_name': '1', 'color': '2', 'size': '3', 'barcode': '4', 'qtyfirst': '4', 'qty': '4', 'cdate': '', 'update': ''}
                 #return (p["barcode"], p["qtyfirst"], p["qty"], p["cdate"], p["update"])
         found, self.nested_list = add_new_list(self.nested_list, self.shop_name_entry.get() + "|" + self.code_entry.get() + "|" + self.color_entry.get() + "|" + self.size_entry.get() , [self.bracode_entry.get(), self.qty_entry.get(), self.qty_entry.get(), "", self.images_entry.get(), "", ""])
-        print("self.nested_list : " + str(self.nested_list))
+        #print("self.nested_list : " + str(self.nested_list))
         if found:
             self.add_info_(self.shop_name_entry.get(), self.code_entry.get(), self.color_entry.get(), self.size_entry.get(), self.bracode_entry.get(), self.qty_entry.get(), self.qty_entry.get(), "", self.images_entry.get(), "", "")
             
@@ -1285,11 +1402,11 @@ class SettingForm(tk.Frame):
 
         txt = self.get_inventory_nested_list_text()
         #l = self.get_inventory_nested_list()
-        #print("list : " + str(l))
+        ##print("list : " + str(l))
         #txt = self.chang_to_text(l)
-        #print("list : " + str(txt))
+        ##print("list : " + str(txt))
         #le = self.chang_to_list(txt)
-        #print("le :" + str(le))
+        ##print("le :" + str(le))
         self.more_info_label.delete(0, tk.END)
         self.more_info_label.insert(0, txt)
         
@@ -1315,7 +1432,7 @@ class SettingForm(tk.Frame):
             self.update_product_listbox()
 
     def get_item_by_code(self, item_code):
-        result = fetch_as_dict_list("SELECT * FROM product WHERE code=?", (item_code,))
+        result = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM product WHERE code=?", (item_code,))
         
         return result
     
@@ -1328,7 +1445,7 @@ class SettingForm(tk.Frame):
     
     def search_products(self, search_text):
         # Search for the entered text in the code, name, barcode, and type fields of the product table
-        results = fetch_as_dict_list("SELECT * FROM product WHERE code LIKE ? OR name LIKE ? OR barcode LIKE ? OR type LIKE ?", 
+        results = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM product WHERE code LIKE ? OR name LIKE ? OR barcode LIKE ? OR type LIKE ?", 
                     ('%' + search_text + '%', '%' + search_text + '%', '%' + search_text + '%', '%' + search_text + '%'))
         
         return results
@@ -1386,15 +1503,15 @@ class SettingForm(tk.Frame):
             vv.append([str(product[0]), float(price)])
             # TODO make user choosh in which name, code, id
             if qty > 0:
-                #print("Calculating : " + "qty " + str(qty) + "*" + str(price) + " price = " + str(qty*price) + "  AND QTY * " + str(cost) + " Cost = " + str(qty*cost))
-                #print("equal Tprice : " + str(Tprice) + " Cost :" + str(Tcost))
+                ##print("Calculating : " + "qty " + str(qty) + "*" + str(price) + " price = " + str(qty*price) + "  AND QTY * " + str(cost) + " Cost = " + str(qty*cost))
+                ##print("equal Tprice : " + str(Tprice) + " Cost :" + str(Tcost))
                 Tprice += qty*price
                 Tcost += qty*cost
                 TQTY += qty
         if len(vv) > 0:
             self.graph_value, self.graph_value0, tilte = make_list(vv)
         
-            print("pself.graph_value0 :" + str(self.graph_value0))
+            #print("pself.graph_value0 :" + str(self.graph_value0))
             draw_cart(int(self.style_var.get()), self.chart_canvas, self.next_button, self.prev_button, self.graph_value0, int(self.which_var.get()), 1, 0)
             draw_cart(int(self.style_var.get()), self.chart2_canvas, None, None, self.graph_value0, int(self.which_var.get()), 1, 0)
             self.display_products(self.graph_value0, int(self.which_var.get()))
@@ -1428,7 +1545,7 @@ class SettingForm(tk.Frame):
         products = cur.fetchall()
         for product in products:
             #TODO MAKE IT EASY BY ID
-            #print("on_name_entry\n"+str(product[1]))
+            ##print("on_name_entry\n"+str(product[1]))
             if product[1] == self.name_entry.get():
                 self.add_button.config(text="Update")    
                 return
@@ -1526,12 +1643,12 @@ class SettingForm(tk.Frame):
         default_quantity = int(self.default_quantity_change_var.get())
         active = int(self.active_var.get())
             
-        print(str([name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active]))
+        #print(str([name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active]))
         
         item = ""
         doc_type = ""
         brcod = 0
-        b = fetch_as_dict_list("SELECT * FROM setting WHERE user_name=?", (self.master.master.master.master.user,))
+        b = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM setting WHERE user_name=?", (self.master.master.master.master.user,))
         
         if not len(b)<= 0:
             brcod = b[2] # getting barcode
@@ -1541,17 +1658,17 @@ class SettingForm(tk.Frame):
             doc_type = "Add_Items"
             # Get the ID of the most recently added item
             Update_table_database('INSERT INTO product (name, code, type, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active))
-            new_item_id = fetch_as_dict_list("SELECT last_insert_rowid()")
+            new_item_id = fetch_as_dict_list(self.homemaster.Link, "SELECT last_insert_rowid()")
             
-            print("new_product_id : " + str(new_item_id) + " barcode : " + str(brcod))
+            #print("new_product_id : " + str(new_item_id) + " barcode : " + str(brcod))
             item += f"(:{new_item_id}:,:{name}:,:{code}:,:{typ}:,:{barcode}:,:{at_shop}:,:{quantity}:,:{cost}:,:{tax}:,:{price}:,:{include_tax}:,:{price_change}:,:{more_info}:,:{images}:,:{description}:,:{service}:,:{default_quantity}:,:{active}:)"
-            print("item : " + str(item))
+            #print("item : " + str(item))
         else:
             product_id = int(self.list_box.item(self.list_box.selection())['values'][0])
-            print("product_id : " + str(product_id) + " barcode : " + str(brcod))
+            #print("product_id : " + str(product_id) + " barcode : " + str(brcod))
             doc_type = "Update_Items"
             item += f"(:{product_id}:,:{name}:,:{code}:,:{typ}:,:{barcode}:,:{at_shop}:,:{quantity}:,:{cost}:,:{tax}:,:{price}:,:{include_tax}:,:{price_change}:,:{more_info}:,:{images}:,:{description}:,:{service}:,:{default_quantity}:,:{active}:)"
-            print("item : " + str(item))
+            #print("item : " + str(item))
             # Update the product in the database
             Update_table_database('UPDATE product SET name=?, code=?, type=?, barcode=?, at_shop=?, quantity=?, cost=?, tax=?, price=?, include_tax=?, price_change=?, more_info=?, images=?, description=?, service=?, default_quantity=?, active=? WHERE id=?', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active, product_id))
         # Commit the changes to the database
@@ -1564,10 +1681,12 @@ class SettingForm(tk.Frame):
             # Commit the changes to the database
             conn.commit()
             
-            print("Data inserted successfully into the upload_doc table.")
+            #print("Data inserted successfully into the upload_doc table.")
         except Exception as e:
-            print("Error occurred while inserting data into the upload_doc table:")
-            print(str(e))
+            
+            #print("Error occurred while inserting data into the upload_doc table:")
+            #print(str(e))
+            pass
 
 
         # Commit the changes to the database

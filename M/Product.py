@@ -1,19 +1,21 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
+from PIL import Image, ImageTk
+import os, shutil
 import sqlite3
 import shutil
 import datetime
-import os
 import atexit
 import sys
 import json
 import ast
 
-from D.Security import Chacke_Security
-
 current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(current_dir, '..')
 sys.path.append(MAIN_dir)
+
+from D.Security import Chacke_Security
+
 from D.Getdefsize import ButtonEntryApp
 from C.List import *
 
@@ -41,7 +43,7 @@ from C.API.Set import *
 
 def is_float(value):
     try:
-        print()
+        #print()
         float (value)
         return True
     except ValueError:
@@ -89,7 +91,7 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
     if doc_updated_date is not None and doc_updated_date is not '':
         query += f" AND doc_updated_date='{doc_updated_date}'"
     
-    # print(query+"\n")
+    #print(query+"\n")
     # Execute the SQL query and return the results as a list of tuples
     Update_table_database(query, (*given,))
     results = cur.fetchall()
@@ -106,8 +108,24 @@ class ProductForm(ttk.Frame):
         self.user = self.user_info = user
         self.Shops = Shops
         self.on_Shop = on_Shop
-        self.Product_info_frame = None
+        
         self.vv = []
+
+        self.homemaster = self
+        while(True):
+            if hasattr(self.homemaster, 'onDisplayFrame'):
+                break
+            else:
+                self.homemaster = self.homemaster.master
+        #print("self.User_data : ", self.User_data)
+
+        self.MainApplication = self
+        while(True):
+            if hasattr(self.MainApplication, 'MainApplication_root'):
+                break
+            else:
+                self.MainApplication = self.MainApplication.master
+
         
         # Android-style dark blue color scheme
         self.bg_dark = "#0d47a1"      # Deep blue
@@ -115,22 +133,31 @@ class ProductForm(ttk.Frame):
         self.accent_blue = "#1976d2"  # Medium blue
         self.text_light = "#ffffff"   # White text
         self.bg_darker = "#0a3d91"    # Even darker blue
+        self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
+        
+
+        
         # Create the search bar
         # Create the frame for the search bar and buttons
-        self.search_frame = ttk.Frame(self)
-        self.search_frame.pack(side=tk.TOP, padx=5, pady=5)
+        self.search_frame = tk.Frame(self, bg=self.bg_dark)
+        self.search_frame.pack(side=tk.TOP, fill="x")
         
-        self.shop_name_label = tk.Label(self.search_frame, text='At Shop :')
-        self.shop_name_label.pack(side=tk.LEFT, padx=5, pady=5)
-
         self.Shops_Names = [shop['Shop_name'] for shop in self.Shops]      
         self.shop_name_Combobox = ttk.Combobox(self.search_frame, values=self.Shops_Names)
-        self.shop_name_Combobox.pack(side=tk.LEFT, padx=5, pady=5)
+        self.shop_name_Combobox.pack(side=tk.LEFT)
         self.shop_name_Combobox.current(0)
         self.shop_name_Combobox.bind('<KeyRelease>', self.update_search_results)
         
         self.chackname = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 34, f'User Has No Permission To Access Change PRODUCT Name OR LOGIN AS ADMIN')
         self.chackprice = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 35, f'User Has No Permission To Access Change PRODUCT Price OR LOGIN AS ADMIN')
+        
+        self.add_new_button = tk.Button(self.search_frame, text='Add New product', command=self.Full_Edition_form, **self.button_style)
+        self.add_newmultyproduct_button = tk.Button(self.search_frame, text='Maulty Add Products', command=self.Queck_Edition_form, **self.button_style)
+        self.add_new_button.pack(side=tk.LEFT, padx=5, pady=5)
+        self.add_newmultyproduct_button.pack(side=tk.LEFT, padx=5, pady=5)
+        self.delete_button = tk.Button(self.search_frame, text='Delete', command=self.delete_product, **self.button_style)
+        self.delete_button.pack(side=tk.LEFT, padx=5, pady=5)
+        
         
         # create a StringVar to represent the search box
         self.search_var = tk.StringVar()
@@ -139,90 +166,76 @@ class ProductForm(ttk.Frame):
             self.search_entry.bind('<KeyRelease>', self.update_search_results)
             # bind the update_search_results function to the search box
             self.search_var.trace("w", self.update_search_results)
-        self.search_entry.pack(side=tk.LEFT, padx=5, pady=5, expand=True)
-
+        self.search_entry.pack(side=tk.LEFT, fill="x", expand=True)
         
-        self.add_new_button = tk.Button(self.search_frame, text='Add New product', command=self.Full_Edition_form)
-        self.add_newmultyproduct_button = tk.Button(self.search_frame, text='Maulty Add Products', command=self.Queck_Edition_form)
-        
-        self.add_new_button.pack(side=tk.LEFT, padx=5, pady=5)
-        self.add_newmultyproduct_button.pack(side=tk.LEFT, padx=5, pady=5)
+        self.refresh_button = tk.Button(self.search_frame, text='Refresh', command=self.Load_Shop_items, **self.button_style)
+        self.refresh_button.pack(side=tk.LEFT, padx=5, pady=5)
         
         if not Chacke_Security(self, self.user, self.Shops[self.on_Shop], 33, f'User Has No Permission To Access Add PRODUCT OR LOGIN AS ADMIN'):                        
             self.add_new_button.config(state=tk.DISABLED)
             self.add_newmultyproduct_button.config(state=tk.DISABLED)
 
-        self.delete_button = ttk.Button(self.search_frame, text='Delete', command=self.delete_product)
-        self.delete_button.pack(side=tk.LEFT, padx=5, pady=5)
-        self.refresh_button = ttk.Button(self.search_frame, text='Refresh', command=self.Load_Shop_items)
-        self.refresh_button.pack(side=tk.LEFT, padx=5, pady=5)
-        self.show_info_button = ttk.Button(self.search_frame, text='Show Information', command=self.Show_product_Info)
-        self.show_info_button.pack(side=tk.LEFT, padx=5, pady=5)
-        self.price_tag_button = ttk.Button(self.search_frame, text='Price Tag', command= lambda :PrintPriceTagFrame(self))
+        self.price_tag_button = tk.Button(self.search_frame, text='Price Tag', command= lambda :PrintPriceTagFrame(self))
         self.price_tag_button.pack(side=tk.LEFT, padx=5, pady=5)
         
         
+        
+        
+        # Create the frame for the product details
+        self.Frame_contaner_frame = tk.Frame(self, bg=self.bg_dark)
+        self.Frame_contaner_frame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+
+        
         # Create the list box
-        self.treeFrame_contaner_frame = ttk.Frame(self)
+        self.treeFrame_contaner_frame = tk.Frame(self.Frame_contaner_frame, bg=self.bg_dark)
         self.treeFrame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=False)
         
-        self.treeList_Frame_contaner_frame = ttk.Frame(self.treeFrame_contaner_frame)
+        self.treeList_Frame_contaner_frame = tk.Frame(self.treeFrame_contaner_frame, bg=self.bg_dark)
         self.treeList_Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
-        self.treeList_Frame = ttk.Frame(self.treeList_Frame_contaner_frame)
+        self.treeList_Frame = tk.Frame(self.treeList_Frame_contaner_frame, bg=self.bg_dark)
         self.treeList_Frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         
         self.treeitem_List_canvas = tk.Canvas(self.treeList_Frame, bg=self.bg_dark, highlightthickness=0)
         self.treeitem_List_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
+
         
-        self.treeitem_List_yscrollbar = tk.Scrollbar(self.treeList_Frame, orient='vertical', command=self.treeitem_List_canvas.yview, bg=self.bg_light, activebackground=self.accent_blue)
-        self.treeitem_List_yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        self.treeitem_List_xscrollbar = tk.Scrollbar(self.treeList_Frame_contaner_frame, orient='horizontal', command=self.treeitem_List_canvas.xview, bg=self.bg_light, activebackground=self.accent_blue)
-        self.treeitem_List_xscrollbar.pack(side=tk.TOP, fill=tk.X)
-        
-        self.treeitem_List_canvas.configure(xscrollcommand=self.treeitem_List_xscrollbar.set, yscrollcommand=self.treeitem_List_yscrollbar.set)
+        #self.treeitem_List_canvas.configure(xscrollcommand=self.treeitem_List_xscrollbar.set, yscrollcommand=self.treeitem_List_yscrollbar.set)
         #self.New_item_contener_canvas.bind('<Configure>', lambda e: self.New_item_contener_canvas.configure(scrollregion=self.New_item_contener_canvas.bbox("all")))
 
         self.tree = ttk.Treeview(self.treeitem_List_canvas, columns=
                                  ("Shop Name"))
+        
+        self.treeitem_List_yscrollbar = tk.Scrollbar(self.treeList_Frame, orient='vertical', command=self.tree.yview, bg=self.bg_light, activebackground=self.accent_blue)
+        self.tree.configure(yscrollcommand=self.treeitem_List_yscrollbar.set)
+        self.treeitem_List_yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.treeitem_List_xscrollbar = tk.Scrollbar(self.treeList_Frame_contaner_frame, orient='horizontal', command=self.tree.xview, bg=self.bg_light, activebackground=self.accent_blue)
+        self.tree.configure(xscrollcommand=self.treeitem_List_xscrollbar.set)
+        self.treeitem_List_xscrollbar.pack(side=tk.TOP, fill=tk.X)
+        
         self.treeitem_List_canvas.create_window((0, 0), window=self.tree, anchor=tk.NW)
         self.tree.bind('<Configure>', lambda e: self.treeitem_List_canvas.configure(scrollregion=self.treeitem_List_canvas.bbox("all")))
 
         
         
         self.tree.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.tree.tag_configure('', background=self.accent_blue, foreground=self.text_light)
         self.tree.heading("#0", text="Value", anchor=tk.W)
         self.tree.column("#0")
-        '''
-        self.tree.heading("#1", text="Code", anchor=tk.W)
-        self.tree.column("#1", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#2", text="Color", anchor=tk.W)
-        self.tree.column("#2", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#3", text="Size", anchor=tk.W)
-        self.tree.column("#3", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#4", text="Barcode", anchor=tk.W)
-        self.tree.column("#4", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#5", text="Qtyfirst", anchor=tk.W)
-        self.tree.column("#5", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#6", text="Qty", anchor=tk.W)
-        self.tree.column("#6", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#7", text="cdate", anchor=tk.W)
-        self.tree.column("#7", stretch=tk.NO, minwidth=25, width=125)
-        self.tree.heading("#8", text="update", anchor=tk.W)
-        self.tree.column("#8", stretch=tk.NO, minwidth=25, width=125)'''
 
-        self.tree.bind('<<TreeviewSelect>>', self.update_selected_type)
+        self.productList_Frame_contaner_frame = tk.Frame(self.Frame_contaner_frame, bg=self.bg_dark)
+        self.productList_Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
+        self.main_Notebook = ttk.Notebook(self.productList_Frame_contaner_frame)
+        self.main_Notebook.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
         
-        # Create the frame for the product details
-        self.Frame_contaner_frame = ttk.Frame(self)
-        self.Frame_contaner_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
-        
-        self.List_Frame_contaner_frame = ttk.Frame(self.Frame_contaner_frame)
+        self.List_Frame_contaner_frame = tk.Frame(self.main_Notebook, bg=self.bg_dark)
         self.List_Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.main_Notebook.add(self.List_Frame_contaner_frame, text='Products')
         
-        self.List_Frame = ttk.Frame(self.List_Frame_contaner_frame)
+        
+        self.List_Frame = tk.Frame(self.List_Frame_contaner_frame, bg=self.bg_dark)
         self.List_Frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         
         self.item_List_canvas = tk.Canvas(self.List_Frame, bg=self.bg_dark, highlightthickness=0)
@@ -237,11 +250,17 @@ class ProductForm(ttk.Frame):
         self.item_List_canvas.configure(xscrollcommand=self.item_List_xscrollbar.set, yscrollcommand=self.item_List_yscrollbar.set)
         #self.New_item_contener_canvas.bind('<Configure>', lambda e: self.New_item_contener_canvas.configure(scrollregion=self.New_item_contener_canvas.bbox("all")))
 
-        self.item_List_frame = ttk.Frame(self.item_List_canvas)
+        self.item_List_frame = tk.Frame(self.item_List_canvas, bg=self.bg_dark)
         self.item_List_canvas.create_window((0, 0), window=self.item_List_frame, anchor=tk.NW)
         self.item_List_frame.bind('<Configure>', lambda e: self.item_List_canvas.configure(scrollregion=self.item_List_canvas.bbox("all")))
 
 
+
+        self.Listreport_Frame_contaner_frame = tk.Frame(self.main_Notebook, bg=self.bg_dark)
+        self.Listreport_Frame_contaner_frame.pack(side="top", fill="both", expand=True)
+        self.main_Notebook.add(self.Listreport_Frame_contaner_frame, text='Products Report')
+        self.main_Notebook.bind("<<NotebookTabChanged>>", self.Show_product_Info)
+        
         self.itemtypes = []
         self.selectedtype= []
         self.Load_Shop_items()
@@ -254,6 +273,17 @@ class ProductForm(ttk.Frame):
     #
     #
     #
+    def expand_all_treeveaw(self, tree):
+        stack = list(tree.get_children())
+        while stack:
+            item = stack.pop()
+            # check if it can't or can be opend - has children
+            if tree.get_children(item) and not tree.item(item, 'open'):
+                tree.item(item, open=True)
+
+            # always add children to stack
+            stack.extend(tree.get_children(item))
+            
     def update_selected_type(self, event):
         selected = self.tree.focus()
         if selected:
@@ -268,6 +298,7 @@ class ProductForm(ttk.Frame):
                 path.reverse()
                 self.selectedtype.append(path)
             collect_paths(selected)
+        
         self.Update_shop_item_list("")
         
         
@@ -285,10 +316,11 @@ class ProductForm(ttk.Frame):
                     for item in found_shop_items:
                         #print('item -- > ', item)
                         if item[0] in FOUND:
-                            print("SAME ITEM COUNTERD ", item[0])
+                            #print("SAME ITEM COUNTERD ", item[0])
+                            pass
                         else:
                             FOUND.append(item[0])
-                        value = fetch_as_dict_list( 'SELECT * FROM product WHERE id=?', (str(item[0]),))
+                        value = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM product WHERE id=?', (str(item[0]),))
                         #print("Shop items value --> ", value[0])
                         if value and not len(value) == 0:
                             self.master.master.master.master.Shops_info['Shop_items'].append([value[0], [], "", "", "", "", "", "", "", "", "", "", ""])
@@ -311,43 +343,45 @@ class ProductForm(ttk.Frame):
                                     #print("add ing = ", l[1])
                                     itemtypes.append(json.loads(l[1]))
                                 except:
-                                    print("error while loading item type = ", l[1])
+                                    #print("error while loading item type = ", l[1])
+                                    pass
                         elif len(l) == 2:
                             #print("going deep = ", l[1])
                             sub_list(l[1], itemtypes)
             #print("sanding typrs = ", self.master.master.master.master.Shops_info['Shop_items'][i][1])
             sub_list(self.master.master.master.master.Shops_info['Shop_items'][i][1], self.itemtypes)
         self.update_typetree(self.itemtypes)
+        self.expand_all_treeveaw(self.tree)
         self.Update_shop_item_list("")
         
     def update_typetree(self, itemtypes):
         self.tree.delete(*self.tree.get_children())
         parents = {}
-        All_Products = self.tree.insert("", "end", text="ALL PRODUCTS")
+        All_Products = self.tree.insert("", "end", text="ALL PRODUCTS", tags=('',))
         def add_items(parent_id, items):
             newpid = None
-            print("add_items ", items)
+            #print("add_items ", items)
             if not items or not isinstance(items, list) or not len(items) >= 1:
                 return
             else:
-                # print("items ", list(items))    
+                #print("items ", list(items))    
                 # check if parent alredy exist
                 existing_items = self.tree.get_children(parent_id)
-                # print("existing_items ", list(existing_items))
+                #print("existing_items ", list(existing_items))
                 if existing_items:
                     existing_item_texts = []
                     for iid in existing_items:
                         existing_item_texts.append(self.tree.item(iid)['text'])
                     
-                    # print("existing_item_texts ", existing_item_texts)
+                    #print("existing_item_texts ", existing_item_texts)
                     if items[0] in existing_item_texts:
-                        # print("existing_item_texts.index[items[0] ", existing_item_texts.index(items[0]))
+                        #print("existing_item_texts.index[items[0] ", existing_item_texts.index(items[0]))
                         newpid = list(existing_items)[existing_item_texts.index(items[0])]
                         #newpid = self.tree.insert(parent_id, "end", text=items[0])
                     else:
-                        newpid = self.tree.insert(parent_id, "end", text=items[0])
+                        newpid = self.tree.insert(parent_id, "end", text=items[0], tags=('',))
                 else:
-                    newpid = self.tree.insert(parent_id, "end", text=items[0])
+                    newpid = self.tree.insert(parent_id, "end", text=items[0], tags=('',))
                 add_items(newpid, items[1:])
             
         
@@ -487,12 +521,12 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
             it2 = Update_Producte(None, None, ['price', 'name', 'more_info'], [data[7].get(), name, json.dumps(newinfo_list)], ['id'], [self.master.master.master.master.Shops_info['Shop_items'][index][0]['id']])
             data[8].config(text="Price "+data[7].get())
             if it2 and len(it2):
-                print("changING to = ", self.master.master.master.master.Shops_info['Shop_items'][index])
+                #print("changING to = ", self.master.master.master.master.Shops_info['Shop_items'][index])
                 if isinstance(it2, list):
                     it2 = it2[0]
                 self.master.master.master.master.Shops_info['Shop_items'][index][0] = it2
                 self.master.master.master.master.Shops_info['Shop_items'][index][1] = newinfo_list
-                print("changed to = ", self.master.master.master.master.Shops_info['Shop_items'][index])
+                #print("changed to = ", self.master.master.master.master.Shops_info['Shop_items'][index])
             
         if restocked_qty > 0:
             date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
@@ -500,7 +534,7 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
             doc_code = datetime.datetime.now().strftime('%y:%m') + "-11"
             b = 0
             while True:
-                ex_doc = fetch_as_dict_list("SELECT * FROM upload_doc WHERE doc_barcode=?", (doc_code+str(b),))
+                ex_doc = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM upload_doc WHERE doc_barcode=?", (doc_code+str(b),))
                 if ex_doc:
                     b = random.randint(0, 10000)
                 else:
@@ -544,14 +578,18 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
                         'doc_expire_date': date,
                         'doc_updated_date': date
                     }
-                    print("going to set stock document", doc_data)
+                    #print("going to set stock document", doc_data)
                     newdoc = Set_Document(None, list(doc_data.keys()), list(doc_data.values()))
-                    print("Done setting stock document", newdoc)
+                    #print("Done setting stock document", newdoc)
                     
                 except Exception as e:
-                    print("Error inserting record updated products on doc_table:", e)
+                    #print("Error inserting record updated products on doc_table:", e)
+                    pass
                 
     def searchbytype(self):
+        pass
+    
+    def change_Brand_image(self):
         pass
     
     def Update_shop_item_list(self, search_str):
@@ -563,6 +601,9 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
         TQTY = 0
         Tprice = 0
         Tcost = 0
+        
+        item_info = []
+
         vv = []
         self.vv = []
         counted = 0
@@ -584,6 +625,8 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
             #print("qty_info_list ", qty_info_list)
             items += 1
             qty = 0
+            codes = []
+            colors = []
             def sub_list(ls, qty):
                 comen_qty = 0
                 itemtypes = []
@@ -606,9 +649,11 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
                                         #print("add ing = ", l[1])
                                         itemtypes.append(json.loads(l[1]))
                                     except:
-                                        print("error while loading item type = ", l[1])
+                                        #print("error while loading item type = ", l[1])
+                                        pass
                             except ValueError:
-                                print("error while loading qty = ", l[4])
+                                #print("error while loading qty = ", l[4])
+                                pass
                         elif len(l) == 2:
                             #main_name.append(l[0])
                             #print("going deep = ", l[1])
@@ -618,8 +663,8 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
             qty, itemtypes = sub_list(qty_info_list, qty)
             #print("itemtypes ", itemtypes)
             issametype = 0
-            # print("self.selectedtype ", self.selectedtype)
-            # print("types = ", itemtypes)
+            #print("self.selectedtype ", self.selectedtype)
+            #print("types = ", itemtypes)
             for types in self.selectedtype:
                 if types == []:
                     issametype = 1
@@ -635,7 +680,10 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
             if not issametype and len(self.selectedtype) :
                 continue
              
-            vv.append([str(product['id']), float(price), str(product['name'])])
+            vv.append([str(), float(price), str(product['name'])])
+            
+            item_info.append({"product": product, "QTY": qty, "Sum cost": qty*cost, "Sum price": qty*price})
+            
             # TODO make user choosh in which name, code, id
             #print("qty ", qty)
             if qty > 0:
@@ -654,22 +702,39 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
             #    selected_item_info = ast.literal_eval(selected_item_info)
             item = [""]
             
-            new_item_fram = ttk.Frame(self.item_List_frame) #,  highlightthickness=2, highlightbackground="black")
+            new_item_fram = tk.Frame(self.item_List_frame, bg=self.bg_dark) #,  highlightthickness=2, highlightbackground="black")
             new_item_fram.pack(fill=tk.X, padx=10, pady=10)
 
             # TODO ADD IMAGE 
-            
-            #if not Chacke_Security(self, self.user, self.Shops[self.on_Shop], 31, f'User Has No Permission To Access Change PRODUCT Image OR LOGIN AS ADMIN'):                        
-            #     new_item_Img.config(state=tk.DISABLED)
-        
+            self.Product_rate = 0
+            self.Product_image_frame = tk.Frame(new_item_fram, bg=self.bg_dark)
+            self.Product_image_frame.grid(row=0, column=0, rowspan=3, sticky="nsew")
 
+            self.Product_image_avatarlabel = tk.Label(self.Product_image_frame, bg=self.bg_dark)
+            self.Product_image_avatarlabel.pack(pady=10)
+            self.Product_image_avatarlabel.bind("<Button-1>", lambda _: self.change_Brand_image())
+            color = "Def_Color"
+            if colors:
+                colors = colors[0]
+            if os.path.exists(MAIN_dir+"\\data\\Product\\"+ str(selected_item['barcode']) + "\\ProfileImage.jpg"):
+                img = Image.open(MAIN_dir+"\\data\\Company\\"+ str(selected_item['barcode']) + "\\"+ str(color) + "\\ProductImage.jpg").resize((100, 100))
+                img = ImageTk.PhotoImage(img)
+                self.Product_image_avatarlabel.config(image=img)
+                self.Product_image_avatarlabel.image = img
+            else:
+                # place holder
+                img = Image.open(MAIN_dir+"\\data\\Icon\\no_Product_Image.jpg").resize((100, 100))
+                img = ImageTk.PhotoImage(img)
+                self.Product_image_avatarlabel.config(image=img)
+                self.Product_image_avatarlabel.image = img
+        
             new_item_name_input = ttk.Entry(new_item_fram) #, font=("Arial", 11))
             new_item_name_input.grid(row=0, column=1, columnspan=6, sticky="nsew")
             new_item_name_input.insert(0, str(selected_item['name']))
             if not chackname:                        
                 new_item_name_input.config(state=tk.DISABLED)
         
-            new_item_QTY_fram = ttk.Frame(new_item_fram)
+            new_item_QTY_fram = tk.Frame(new_item_fram, bg=self.bg_dark)
             new_item_QTY_fram.grid(row=1, column=1, rowspan=2, sticky="nsew")
             
             new_item_Price_Label = ttk.Label(new_item_fram, text="Price " + str(selected_item['price']))
@@ -715,9 +780,9 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
             new_barcode_Label = ttk.Label(new_item_fram, text=str(selected_item['barcode']))
             new_barcode_Label.grid(row=1, column=5, sticky="nsew")
             
-            del_button = ttk.Button(new_item_fram, text="Delete", command= lambda index=i, frame=new_item_fram: self.delete_product(index, frame))
+            del_button = tk.Button(new_item_fram, text="Delete", command= lambda index=i, frame=new_item_fram: self.delete_product(index, frame), **self.button_style)
             del_button.grid(row=0, column=8, sticky="nsew")
-            Edit_button = ttk.Button(new_item_fram, text="Full Edit", command= lambda index=i, v=selected_item: self.Product_Edition_form(index, v))
+            Edit_button = tk.Button(new_item_fram, text="Full Edit", command= lambda index=i, v=selected_item: self.Product_Edition_form(index, v), **self.button_style)
             Edit_button.grid(row=1, column=8, sticky="nsew")
             # self.master.bind("<Delete>", lambda _: self.remove_item())
             
@@ -726,7 +791,7 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
             self.Get_next_seletion("", data, selected_item_info)
             #slef.get_total_qty(data, selected_item_info)
             
-            save_button = ttk.Button(new_item_fram, text="Save Change", command= lambda index=i, d=data, v=selected_item_info: self.SAVE_CHANGE(index, d, v))
+            save_button = tk.Button(new_item_fram, text="Save Change", command= lambda index=i, d=data, v=selected_item_info: self.SAVE_CHANGE(index, d, v), **self.button_style)
             save_button.grid(row=2, column=8, sticky="nsew")
 
             new_item_Shop_Combobox.bind("<<ComboboxSelected>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=[], j=i: self.Update_selected_item_info(d, v, p, tp, j))
@@ -745,9 +810,8 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
             new_item_QTY_Spinbox.config(command= lambda  d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=[], j=i: self.Update_selected_item_info(d, v, p, tp, j))
             #new_item_TPrice_Spinbox.bind(command= lambda d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=i: self.Update_selected_item_info(d, v, p, tp, j))
         
-        self.vv = [items, TQTY, Tprice, Tcost, vv]
+        self.vv = [items, TQTY, Tprice, Tcost, item_info]
         self.update_info()
-        self.List_Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         # Define the function for deleting a product
         
     def delete_product(self, index, frame):
@@ -784,17 +848,11 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
     #
     #
     # for Searching Products in database And Displaying tham
-    def Show_product_Info(self):
-        if self.Product_info_frame:
-            self.show_info_button.config(text="Show Information")
-            self.Product_info_frame.destroy()
-            self.Product_info_frame = None
-        else:
-            self.show_info_button.config(text="Hide Information")
-            shop_items = self.vv
-            #[item[0] for item in self.master.master.master.master.Shops_info['Shop_items']]
-            self.Product_info_frame = ProductFullInfoForm(self.Frame_contaner_frame, self.user_info, self.Shops, shop_items, self.master.master.master.master.Shops_info, self.searched_items)
-            self.Product_info_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+    def Show_product_Info(self, *arg):
+        for wedget in self.Listreport_Frame_contaner_frame.winfo_children():
+            wedget.destroy()
+        shop_items = self.vv
+        ProductFullInfoForm(self.Listreport_Frame_contaner_frame, self.user_info, self.Shops, shop_items, self.master.master.master.master.Shops_info, self.searched_items).pack(side=tk.TOP, fill=tk.X, expand=False)   
         
     # for Adding new Product
     # Create the "Add New" button  
@@ -820,7 +878,7 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
             product_id = selected_product['id']
 
             # Delete the product from the database
-            products = fetch_as_dict_list('SELECT * FROM product WHERE id=?', (product_id,))
+            products = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM product WHERE id=?', (product_id,))
 
             #print("name : " + str(products))
             
@@ -874,8 +932,8 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
             notebook_frame.more_info_label.insert(0, more_info)
             notebook_frame.get_inventory_nested_list(more_info, code) # this will save more_info after reading it
             
-            notebook_frame.images_entry.delete(0, tk.END)
-            notebook_frame.images_entry.insert(0, images)
+            #notebook_frame.images_entry.delete(0, tk.END)
+            #notebook_frame.images_entry.insert(0, images)
             notebook_frame.description_entry.delete(0, tk.END)
             notebook_frame.description_entry.insert(0, description)
             notebook_frame.service_change_var.set(int(service))
@@ -927,7 +985,7 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
 
 
     def get_item_by_code(self, item_code):
-        result = fetch_as_dict_list("SELECT * FROM product WHERE code=?", (item_code,))
+        result = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM product WHERE code=?", (item_code,))
         
         
         return result
@@ -957,7 +1015,7 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
 
         self.form_frame.destroy()  # Clear previous form entries
 
-        self.form_frame = ttk.Frame(self.second_frame)
+        self.form_frame = tk.Frame(self.second_frame, bg=self.bg_dark)
         self.form_frame.pack(pady=10)
 
         self.form_entries = []  # Reset the list of form entries
@@ -1003,8 +1061,9 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
                 p["size"] == v[0]:
                     if p["barcode"] == self.bracode_entry.get() and p["qtyfirst"] == v[1] and \
                         p["qty"] == v[1]:
-                        print("issame!!!" + str(p)) # TODO: show same earror
+                        #print("issame!!!" + str(p)) # TODO: show same earror
                         #    cdate#    update
+                        pass
                     else:
                         self.inventory[i]["barcode"] = self.bracode_entry.get()
                         self.inventory[i]["qty"] = v[1]
@@ -1069,19 +1128,19 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
     
     '''def update_tree(self):
         self.tree.delete(*self.tree.get_children())
-        print("gount tot add tree ")
+        #print("gount tot add tree ")
         for shop in self.nested_list:
-            print("shop")
+            #print("shop")
             shop_name_node = self.tree.insert("", "end", text=shop[0])
             for code in shop[1]:
-                print("code")
+                #print("code")
                 code_node = self.tree.insert(shop_name_node, "end", text=code[0])
                 for color in code[1]:
                     color_node = self.tree.insert(code_node, "end", text=color[0])
                     for size in color[1]:
                         size_node = self.tree.insert(color_node, "end", text=size[0])
                         for value in size[1]:
-                            print("value : " + str(value))
+                            #print("value : " + str(value))
                             barcode, qtyfirst, qty, patern, imgs, cdate, update = ["", "", "", "", "", "", ""]
                             cvalue = value
                             if len(cvalue) == 7:
@@ -1119,8 +1178,9 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
                p["size"] == self.size_entry.get():
                 if p["barcode"] == self.bracode_entry.get() and p["qtyfirst"] == self.qty_entry.get() and \
                     p["qty"] == self.qty_entry.get():
-                    print("issame!!!" + str(p)) # TODO: show same earror
+                    #print("issame!!!" + str(p)) # TODO: show same earror
                     #    cdate#    update
+                    pass
                 else:
                     self.inventory[i]["barcode"] = self.bracode_entry.get()
                     self.inventory[i]["qty"] = self.qty_entry.get()

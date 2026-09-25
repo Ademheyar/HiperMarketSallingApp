@@ -32,16 +32,13 @@ class Company_Info_Frame(tk.Frame):
         self.User_data = User_data
         self.Shop_data = Shop_data
 
-        self.User_Info_Frame = tk.Frame(self, bg="gray", height=screen_height, width=screen_width)
-        self.User_Info_Frame.pack()
-        
-        self.details_frame = tk.Frame(self.User_Info_Frame, height=screen_height, width=screen_width)
-        self.details_frame.place(relx=0.5, rely=0.5, anchor="center")
+        self.details_frame = tk.Frame(self, bg="#0d47a1")
+        self.details_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
          # Create the widgets for the user details
-        self.f_and_lname_label = tk.Label(self.details_frame, text='Company Name :')
+        self.f_and_lname_label = tk.Label(self.details_frame, text='Company Name :', bg="#0d47a1", fg="#ffffff")
         self.fname_entry = tk.Entry(self.details_frame)
-        self.name_label = tk.Label(self.details_frame, text='Company Brand Name :')
+        self.name_label = tk.Label(self.details_frame, text='Company Brand Name :', bg="#0d47a1", fg="#ffffff")
         self.name_entry = tk.Entry(self.details_frame)
         
         self.main_name = ""
@@ -49,13 +46,13 @@ class Company_Info_Frame(tk.Frame):
         self.name_entry.bind('<KeyRelease>', self.on_name_entry)
 
         
-        self.password_num0_label = tk.Label(self.details_frame, text='Password :')
+        self.password_num0_label = tk.Label(self.details_frame, text='Password :', bg="#0d47a1", fg="#ffffff")
         self.password_num0_entry = tk.Entry(self.details_frame, show="*")
         
-        self.password_num1_label = tk.Label(self.details_frame, text='Confirm Password :')
+        self.password_num1_label = tk.Label(self.details_frame, text='Confirm Password :', bg="#0d47a1", fg="#ffffff")
         self.password_num1_entry = tk.Entry(self.details_frame, show="*")
                 
-        self.forget_password_label = tk.Label(self.details_frame, text="Company Found Did You Forgot Password?", fg="red", cursor="hand2")
+        self.forget_password_label = tk.Label(self.details_frame, text="Company Found Did You Forgot Password?", fg="red", cursor="hand2", bg="#0d47a1")
         self.forget_password_label.bind("<Button-1>", self.forget_password_fuc)
         self.Found_User_id_var = tk.StringVar()
         
@@ -63,26 +60,26 @@ class Company_Info_Frame(tk.Frame):
         self.show_password_checkbutton = tk.Checkbutton(self.details_frame, text='Show Passwords', variable=self.show_password_var)
         self.show_password_checkbutton.bind("<Button-1>", self.show_password_fuc)
         
-        self.type_label = tk.Label(self.details_frame, text='Type :')
+        self.type_label = tk.Label(self.details_frame, text='Type :', bg="#0d47a1", fg="#ffffff")
         self.type_entry = tk.Entry(self.details_frame)
         
-        self.cuntry_label = tk.Label(self.details_frame, text='Cuntry :')
+        self.cuntry_label = tk.Label(self.details_frame, text='Cuntry :', bg="#0d47a1", fg="#ffffff")
         self.cuntry_entry = tk.Entry(self.details_frame)
-        self.phone_num_label = tk.Label(self.details_frame, text='Phone No :')
+        self.phone_num_label = tk.Label(self.details_frame, text='Phone No :', bg="#0d47a1", fg="#ffffff")
         self.phone_num_entry = tk.Entry(self.details_frame)
-        self.email_label = tk.Label(self.details_frame, text='Email :')
+        self.email_label = tk.Label(self.details_frame, text='Email :', bg="#0d47a1", fg="#ffffff")
         self.email_entry = tk.Entry(self.details_frame)
-        self.addres_label = tk.Label(self.details_frame, text='Adress :')
+        self.addres_label = tk.Label(self.details_frame, text='Adress :', bg="#0d47a1", fg="#ffffff")
         self.addres_entry = tk.Entry(self.details_frame)
-        self.about_label = tk.Label(self.details_frame, text='About :')
+        self.about_label = tk.Label(self.details_frame, text='About :', bg="#0d47a1", fg="#ffffff")
         self.about_entry = tk.Entry(self.details_frame)
         
-        self.pimg_label = tk.Label(self.details_frame, text='Image :')
+        self.pimg_label = tk.Label(self.details_frame, text='Image :', bg="#0d47a1", fg="#ffffff")
         self.pimg_entry = tk.Entry(self.details_frame)
 
-        self.Secc = tk.Label(self.details_frame)
-        self.add_button = tk.Button(self.details_frame, text='Create', command=self.add_user)
-        self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=self.Canceal_callback)
+        
+        self.add_button = tk.Button(self.details_frame, text='Create', command=self.add_user, bg="#0d47a1", fg="#ffffff")
+        self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=self.Canceal_callback, bg="#0d47a1", fg="#ffffff")
 
 
         self.f_and_lname_label.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
@@ -262,17 +259,17 @@ class Company_Info_Frame(tk.Frame):
                             self.User_data['User_work_shop'] = json.dumps(User_work_shops)
                             
                         print("new shop created ", new_id)
-                        self.Secc.config(text="Created Secccesfully", fg="Green")
+                        tk.Label(self.master.Error_list_frame, text="Created Secccesfully", fg="Green").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
                         self.clear_user_details_widget()
                         self.Canceal_callback()
                     else:
-                        self.Secc.config(text="filde no owner", fg="red")
+                        tk.Label(self.master.master.Error_list_frame, text="Could't Find Owenr", fg="red").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
                 else:
                     item_id = int(self.Found_User_id_var)
                     print("item_id : " + str(item_id))
                     # UPDATE the new user into the database
                     Update_table_database('UPDATE Shops SET User_work_shop=?, User_Lname=?, User_name=?, User_gender=?, User_country=?, User_phone_num=?, User_email=?, User_address=?, User_home_no=?, User_id_pp_num=?, User_type=?, User_password=?, User_about=?, User_shop=?, User_work_shop=?, User_access=?, User_pimg=? WHERE Shop_id=?', (User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_id_pp_num, User_type, User_password0, User_about, User_shop, User_work_shop, User_access, User_pimg, item_id))
-                    self.Secc.config(text="UPDATE Secccesfully", fg="Green")
+                    tk.Label(self.master.Error_list_frame, text="UPDATE Secccesfully", fg="Green").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
                     self.clear_user_details_widget()
                   
                 if self.User_data and new_id:
@@ -281,5 +278,4 @@ class Company_Info_Frame(tk.Frame):
                     uws = json.dumps([[new_id, str(User_fname), str(User_name), [10]]])
                     Update_table_database('UPDATE USERS SET User_work_shop=? WHERE User_id=?', (uws, self.User_data['User_id']))
                     print("user work place and owner is added", uws)
-                self.Secc.grid(row=18, column=0, padx=5, pady=5, sticky=tk.W)
 

@@ -29,13 +29,13 @@ db_path = os.path.join(data_dir, 'my_database.db')
 def Update_table_database(query, value):
     Update_table_database_conn = sqlite3.connect(db_path)
     Update_table_database_cur = Update_table_database_conn.cursor()
-    print("Update_table_database query ", query)
-    print("Update_table_database value ", value)    
+    #print("Update_table_database query ", query)
+    #print("Update_table_database value ", value)    
     Update_table_database_cur.execute(query, value)
     # Commit the changes to the database
     Update_table_database_conn.commit()
     Update_table_database_conn.close()
-    print("Update_table_database done")
+    #print("Update_table_database done")
     return True
 
 # USER
@@ -59,7 +59,7 @@ def Set_User(Link, ARG, VALUE, parent=None):
             query = query[:-2]
         query += ") "
         query += "VALUES (" + ("?, " * len(ARG)).rstrip(", ") + ")"
-    print("Set_User query ", query)
+    #print("Set_User query ", query)
     User_data = None
 
     if Link and islinked(Link):
@@ -69,25 +69,26 @@ def Set_User(Link, ARG, VALUE, parent=None):
         if not response_data == [] and response_data:
             if response_data['status'] == 'success':
                 if response_data['Value']:
-                    print("USER DATA UPLODED Secessfully")
+                    #print("USER DATA UPLODED Secessfully")
                     User_data = response_data['Value']
                 else:
-                    print("Faild To Upload USER Data")
+                    #print("Faild To Upload USER Data")
                     return "Faild To Upload USER Data"
             else:
-                print("There is Error FOUND")
+                #print("There is Error FOUND")
                 return "There is Error FOUND"
     else:
-        print("API Error")
+        #print("API Error")
+        pass
 
     if User_data:
         answer = tk.messagebox.askquestion("Question", "User Created Online Secccesfully. for fast performance better to download datas. Do you what to download user data?", parent=parent)
         if answer == 'yes':
             User_data = Set_User(None, ['User_id', 'User_fname', 'User_Lname', 'User_name', 'User_gender', 'User_country', 'User_phone_num', 'User_email', 'User_address', 'User_home_no', 'User_id_pp_num', 'User_password', 'User_type', 'User_about', 'User_shop', 'User_work_shop', 'User_likes', 'User_following_shop', 'User_favoraite_items', 'User_rate', 'User_access', 'User_pimg', 'User_following_shop'], [User_data['User_id'], User_data['User_fname'], User_data['User_Lname'], User_data['User_name'], User_data['User_gender'], User_data['User_country'], User_data['User_phone_num'], User_data['User_email'], User_data['User_address'], User_data['User_home_no'], User_data['User_id_pp_num'], User_data['User_password'], User_data['User_type'], User_data['User_about'], User_data['User_shop'], User_data['User_work_shop'], User_data['User_likes'], User_data['user_following_shop'], User_data['user_favoraite_items'], User_data['user_rate'], User_data['user_access'], User_data['user_pimg'], User_data['user_following_shop']], parent=parent)
     else:
-        print("User data is going to be added")
-        print("user query ", query)
-        print("user value ", value)
+        #print("User data is going to be added")
+        #print("user query ", query)
+        #print("user value ", value)
         # Insert the new user into the database
         SETUSER_conn = sqlite3.connect(db_path)
         SETUSER_cur = SETUSER_conn.cursor()                       
@@ -153,29 +154,30 @@ def Update_User(Link, user, ARG, UserVALUE, find_Arg, find_Value):
     if Link and islinked(Link):
         url = Link
         entry = {'Do': "UPDATE USER", 'User': user, 'QUERYS': query, 'QUERYVALUES' : value,  'FIND_ARG': fquery, 'FIND_VALUE': fvalue}
-        print("Update_User entry ", entry)
+        #print("Update_User entry ", entry)
         response_data = Sand_API(url, entry)
         if response_data and not response_data == []:
             if response_data['status'] == 'success':
                 if response_data['Value']:
-                    print("User Updated Secessfuly", response_data['Value'])
+                    #print("User Updated Secessfuly", response_data['Value'])
                     return response_data['Value']
                 else:
-                    print("Faild To Update User Data")
+                    #print("Faild To Update User Data")
                     User = None
             else:
                 if response_data['Value']:
-                    print("There is Error in Update User Data", response_data['Value'])
+                    #print("There is Error in Update User Data", response_data['Value'])
                     User = response_data['Value']
                 else:
-                    print("There is Error in Update User Data")
+                    #print("There is Error in Update User Data")
                     User = None
     else:
-        print("API Error")
+        #print("API Error")
+        pass
 
-    print("user query ", query)
-    print("user value ", value)
-    print("user find ", 'UPDATE Users SET ' + query + ' WHERE '+fquery, value + fvalue)
+    #print("user query ", query)
+    #print("user value ", value)
+    #print("user find ", 'UPDATE Users SET ' + query + ' WHERE '+fquery, value + fvalue)
     if query != "" and User == None:
         # Update the user into the database
         SETUser_conn = sqlite3.connect(db_path)
@@ -222,7 +224,7 @@ def Set_Shop(Link, ARG, VALUE, parent=None):
             query = query[:-2]
         query += ") "
         query += "VALUES (" + ("?, " * len(ARG)).rstrip(", ") + ")"
-    print("Set_Shop query ", query)
+    #print("Set_Shop query ", query)
     shop_data = None
     if Link and islinked(Link):
         url = Link
@@ -231,25 +233,26 @@ def Set_Shop(Link, ARG, VALUE, parent=None):
         if not response_data == [] and response_data:
             if response_data['status'] == 'success':
                 if response_data['Value']:
-                    print("DOCUMENT DATA SHOP Secessfully")
+                    #print("DOCUMENT DATA SHOP Secessfully")
                     shop_data = response_data['Value']
                 else:
-                    print("Faild To Upload SHOP Data")
+                    #print("Faild To Upload SHOP Data")
                     return "Faild To Upload SHOP Data"
             else:
-                print("There is Error FOUND")
+                #print("There is Error FOUND")
                 return "There is Error FOUND"
     else:
-        print("API Error SHOP")
+        #print("API Error SHOP")
+        pass
 
     if shop_data:
         answer = tk.messagebox.askquestion("Question", "Document Created Online Secccesfully. for fast performance better to download datas. Do you what to download document data?", parent=parent)
         if answer == 'yes':
             shop_data = Set_Shop(None, ['Document_id', 'Document_name', 'Document_brand_name', 'Document_price', 'Document_quantity', 'Document_description', 'Document_category', 'Document_image'], [shop_data['Document_id'], shop_data['Document_name'], shop_data['Document_brand_name'], shop_data['Document_price'], shop_data['Document_quantity'], shop_data['Document_description'], shop_data['Document_category'], shop_data['Document_image']])
     else:
-        print("SHOP data is going to be added")
-        print("SHOP query ", query)
-        print("SHOP value ", value)
+        #print("SHOP data is going to be added")
+        #print("SHOP query ", query)
+        #print("SHOP value ", value)
         # Insert the new Document into the database
         set_shop_conn = sqlite3.connect(db_path)
         set_shop_cur = set_shop_conn.cursor()
@@ -300,7 +303,7 @@ def Add_new_Shop(Shop_id, Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type
         shop_conn.close()
         
 '''item_id = int(self.Found_User_id_var)
-print("item_id : " + str(item_id))
+#print("item_id : " + str(item_id))
 # UPDATE the new user into the database
 #cur.execute('UPDATE Shops SET User_work_shop=?, User_Lname=?, User_name=?, User_gender=?, User_country=?, User_phone_num=?, User_email=?, User_address=?, User_home_no=?, User_id_pp_num=?, User_type=?, User_password=?, User_about=?, User_shop=?, User_work_shop=?, User_access=?, User_pimg=? WHERE Shop_id=?', (User_fname, User_Lname, User_name, User_gender, User_country, User_phone_num, User_email, User_address, User_home_no, User_id_pp_num, User_type, User_password0, User_about, User_shop, User_work_shop, User_access, User_pimg, item_id))
 #self.Secc.config(text="UPDATE Secccesfully", fg="Green")
@@ -311,7 +314,7 @@ if self.User_data and new_id:
 #ITEM = json.dumps(self.Selected_items)
 uws = json.dumps([[new_id, str(User_fname), str(User_name), [10]]])
 cur.execute('UPDATE USERS SET User_work_shop=? WHERE User_id=?', (uws, self.User_data[0]))
-print("user work place and owner is added", uws)
+#print("user work place and owner is added", uws)
 # Commit the changes to the database
 conn.commit()'''
 
@@ -345,13 +348,13 @@ def set_WORKER(Link, ARG, VALUE):
         if not response_data == []:
             if response_data['status'] == 'success':
                 if response_data['Value']:
-                    print("USER FOUND")
+                    #print("USER FOUND")
                     return response_data['Value']
                 else:
-                    print("USER NOT FOUND")
+                    #print("USER NOT FOUND")
                     return []
             else:
-                print("There is Error FOUND")
+                #print("There is Error FOUND")
                 return False
         break
 
@@ -392,29 +395,30 @@ def Update_Shop(Link, user, ARG, ShopsVALUE, find_Arg, find_Value):
     if Link and islinked(Link):
         url = Link
         entry = {'Do': "UPDATE SHOP", 'User': user, 'QUERYS': query, 'QUERYVALUES' : value,  'FIND_ARG': fquery, 'FIND_VALUE': fvalue}
-        print("Update_Shop entry ", entry)
+        #print("Update_Shop entry ", entry)
         response_data = Sand_API(url, entry)
         if response_data and not response_data == []:
             if response_data['status'] == 'success':
                 if response_data['Value']:
-                    print("SHop Updated Secessfuly", response_data['Value'])
+                    #print("SHop Updated Secessfuly", response_data['Value'])
                     return response_data['Value']
                 else:
-                    print("Faild To Update Shop Data")
+                    #print("Faild To Update Shop Data")
                     Shop = None
             else:
                 if response_data['Value']:
-                    print("There is Error in Update Shop Data", response_data['Value'])
+                    #print("There is Error in Update Shop Data", response_data['Value'])
                     Shop = response_data['Value']
                 else:
-                    print("There is Error in Update Shop Data")
+                    #print("There is Error in Update Shop Data")
                     Shop = None
     else:
-        print("API Error")
+        #print("API Error")
+        pass
 
-    print("update shop query ", query)
-    print("update shop fquery ", fquery)
-    print("update shop value ", value+fvalue)
+    #print("update shop query ", query)
+    #print("update shop fquery ", fquery)
+    #print("update shop value ", value+fvalue)
     if query != "" and Shop == None:
         # Update the shop into the database
         
@@ -439,17 +443,17 @@ def Update_Shop(Link, user, ARG, ShopsVALUE, find_Arg, find_Value):
 
 # GET USER WORK SHOPS FROM LOCAL DATABASE Or Online
 def Get_all_User_work_shops_info(Link, user, User_work_shops):
-    print("Link : " + str(Link))
+    #print("Link : " + str(Link))
     Shops = []
     if User_work_shops and user:
         for Shop in User_work_shops:
-            print("Shop : " + str(Shop))
+            #print("Shop : " + str(Shop))
             s = Get_Shop(Link, user, ["Shop_id", "Shop_name", "Shop_brand_name"], [str(Shop[0]), str(Shop[1]), str(Shop[2])])
 
             if s:
                 Shops.append(s[0])
-                print("s : " + str(s))
-                print("Shops : " + str(Shops))  
+                #print("s : " + str(s))
+                #print("Shops : " + str(Shops))  
     return Shops
 
 
@@ -473,12 +477,12 @@ def Set_Setting(user, ARG, VALUE):
             query = query[:-2]
         query += ") "
         query += "VALUES (" + ("?, " * len(ARG)).rstrip(", ") + ")"
-    print("Set_Setting query ", query)
+    #print("Set_Setting query ", query)
     
 
     if query != "":
-        print("Set_Setting query ", query)
-        print("Set_Setting value ", value)
+        #print("Set_Setting query ", query)
+        #print("Set_Setting value ", value)
         # Insert the new user into the database
         
         SET_SETTING_conn = sqlite3.connect(db_path)
@@ -526,7 +530,7 @@ def Set_product(Link, ARG, VALUE, parent=None):
             query = query[:-2]
         query += ") "
         query += "VALUES (" + ("?, " * len(ARG)).rstrip(", ") + ")"
-    print("Set_product query ", query)
+    #print("Set_product query ", query)
     product_data = None
     if Link and islinked(Link):
         url = Link
@@ -535,25 +539,26 @@ def Set_product(Link, ARG, VALUE, parent=None):
         if not response_data == [] and response_data:
             if response_data['status'] == 'success':
                 if response_data['Value']:
-                    print("DOCUMENT DATA PRODUCT Secessfully")
+                    #print("DOCUMENT DATA PRODUCT Secessfully")
                     User_data = response_data['Value']
                 else:
-                    print("Faild To Upload PRODUCT Data")
+                    #print("Faild To Upload PRODUCT Data")
                     return "Faild To Upload PRODUCT Data"
             else:
-                print("There is Error FOUND")
+                #print("There is Error FOUND")
                 return "There is Error FOUND"
     else:
-        print("API Error PRODUCT")
+        #print("API Error PRODUCT")
+        pass
 
     if product_data:
         answer = tk.messagebox.askquestion("Question", "Document Created Online Secccesfully. for fast performance better to download datas. Do you what to download document data?", parent=parent)
         if answer == 'yes':
             product_data = Set_product(None, ['Document_id', 'Document_name', 'Document_brand_name', 'Document_price', 'Document_quantity', 'Document_description', 'Document_category', 'Document_image'], [product_data['Document_id'], product_data['Document_name'], product_data['Document_brand_name'], product_data['Document_price'], product_data['Document_quantity'], product_data['Document_description'], product_data['Document_category'], product_data['Document_image']])
     else:
-        print("PRODUCT data is going to be added")
-        print("PRODUCT query ", query)
-        print("PRODUCT value ", value)
+        #print("PRODUCT data is going to be added")
+        #print("PRODUCT query ", query)
+        #print("PRODUCT value ", value)
         # Insert the new Document into the database
         set_product_conn = sqlite3.connect(db_path)
         set_product_cur = set_product_conn.cursor()
@@ -609,29 +614,30 @@ def Update_Producte(Link, user, ARG, ProducteVALUE, find_Arg, find_Value):
     if Link and islinked(Link):
         url = Link
         entry = {'Do': "UPDATE PRODUCT", 'User': user, 'QUERYS': query, 'QUERYVALUES' : value,  'FIND_ARG': fquery, 'FIND_VALUE': fvalue}
-        print("Update_Producte entry ", entry)
+        #print("Update_Producte entry ", entry)
         response_data = Sand_API(url, entry)
         if response_data and not response_data == []:
             if response_data['status'] == 'success':
                 if response_data['Value']:
-                    print("Product Updated Secessfuly", response_data['Value'])
+                    #print("Product Updated Secessfuly", response_data['Value'])
                     return response_data['Value']
                 else:
-                    print("Faild To Update Product Data")
+                    #print("Faild To Update Product Data")
                     product = None
             else:
                 if response_data['Value']:
-                    print("There is Error in Update Product Data", response_data['Value'])
+                    #print("There is Error in Update Product Data", response_data['Value'])
                     product = response_data['Value']
                 else:
-                    print("There is Error in Update Product Data")
+                    #print("There is Error in Update Product Data")
                     product = None
     else:
-        print("API Error")
+        #print("API Error")
+        pass
 
-    print("product query ", query)
-    print("product fquery ", fquery)
-    print("product value ", value+fvalue)
+    #print("product query ", query)
+    #print("product fquery ", fquery)
+    #print("product value ", value+fvalue)
     if query != "" and product == None:
         update_product_conn = sqlite3.connect(db_path)
         update_product_cur = update_product_conn.cursor()
@@ -676,7 +682,7 @@ def Set_Document(Link, ARG, VALUE, parent=None):
             query = query[:-2]
         query += ") "
         query += "VALUES (" + ("?, " * len(ARG)).rstrip(", ") + ")"
-    print("Set_Document query ", query)
+    #print("Set_Document query ", query)
     Document_data = None
     if Link and islinked(Link):
         url = Link
@@ -685,27 +691,28 @@ def Set_Document(Link, ARG, VALUE, parent=None):
         if not response_data == [] and response_data:
             if response_data['status'] == 'success':
                 if response_data['Value']:
-                    print("DOCUMENT DATA UPLODED Secessfully")
+                    #print("DOCUMENT DATA UPLODED Secessfully")
                     User_data = response_data['Value']
                 else:
-                    print("Faild To Upload DOCUMENT Data")
+                    #print("Faild To Upload DOCUMENT Data")
                     return "Faild To Upload DOCUMENT Data"
             else:
-                print("There is Error FOUND")
+                #print("There is Error FOUND")
                 return "There is Error FOUND"
     else:
-        print("API Error")
+        #print("API Error")
+        pass
 
     if Document_data:
         answer = tk.messagebox.askquestion("Question", "Document Created Online Secccesfully. for fast performance better to download datas. Do you what to download document data?", parent=parent)
         if answer == 'yes':
             Document_data = Set_Document(None, ['Document_id', 'Document_name', 'Document_brand_name', 'Document_price', 'Document_quantity', 'Document_description', 'Document_category', 'Document_image'], [Document_data['Document_id'], Document_data['Document_name'], Document_data['Document_brand_name'], Document_data['Document_price'], Document_data['Document_quantity'], Document_data['Document_description'], Document_data['Document_category'], Document_data['Document_image']], parent=parent)
     else:
-        print("Document data is going to be added")
-        print("Document len value ", len(query))
-        print("Document query ", query)
-        print("Document len value ", len(value))
-        print("Document value ", value)
+        #print("Document data is going to be added")
+        #print("Document len value ", len(query))
+        #print("Document query ", query)
+        #print("Document len value ", len(value))
+        #print("Document value ", value)
         # Insert the new Document into the database
         set_doc_conn = sqlite3.connect(db_path)
         set_doc_cur = set_doc_conn.cursor()
@@ -727,7 +734,7 @@ def Set_Document(Link, ARG, VALUE, parent=None):
         if row:
             columns = [col[0] for col in column]
             Document_data = dict(zip(columns, row))
-        print("new doc = ", Document_data)
+        #print("new doc = ", Document_data)
     return Document_data
 
 
@@ -766,41 +773,42 @@ def Update_Documente(Link, user, ARG, DocumenteVALUE, find_Arg, find_Value):
     if Link and islinked(Link):
         url = Link
         entry = {'Do': "UPDATE DOCUMENT", 'User': user, 'QUERYS': query, 'QUERYVALUES' : value,  'FIND_ARG': fquery, 'FIND_VALUE': fvalue}
-        print("Update_Documente entry ", entry)
+        #print("Update_Documente entry ", entry)
         response_data = Sand_API(url, entry)
         if response_data and not response_data == []:
             if response_data['status'] == 'success':
                 if response_data['Value']:
-                    print("Document Updated Secessfuly", response_data['Value'])
+                    #print("Document Updated Secessfuly", response_data['Value'])
                     return response_data['Value']
                 else:
-                    print("Faild To Update Document Data")
+                    #print("Faild To Update Document Data")
                     Document = None
             else:
                 if response_data['Value']:
-                    print("There is Error in Update Document Data", response_data['Value'])
+                    #print("There is Error in Update Document Data", response_data['Value'])
                     Document = response_data['Value']
                 else:
-                    print("There is Error in Update Document Data")
+                    #print("There is Error in Update Document Data")
                     Document = None
     else:
-        print("API Error")
+        #print("API Error")
+        pass
 
-    print("Document query ", query)
-    print("Document value ", value)
+    #print("Document query ", query)
+    #print("Document value ", value)
     if query != "" and Document == None:
         update_doc_conn = sqlite3.connect(db_path)
         update_doc_cur = update_doc_conn.cursor()
         # Update the Document into the database  
         Tquery = 'UPDATE doc_table SET ' + query + ' WHERE '+fquery
-        print("Document Tquery ", Tquery)
+        #print("Document Tquery ", Tquery)
         TqueryV = value + fvalue
-        print("Document TqueryV ", TqueryV)             
+        #print("Document TqueryV ", TqueryV)             
         update_doc_cur.execute(Tquery, TqueryV)
         #update_doc_cur.execute('UPDATE upload_doc SET ' + query + ' WHERE '+fquery, value + fvalue)
         # Commit the changes to the database
         update_doc_conn.commit()
         update_doc_conn.close()
-        Document = fetch_as_dict_list('SELECT * FROM doc_table WHERE '+fquery, fvalue)
+        Document = fetch_as_dict_list(Link, 'SELECT * FROM doc_table WHERE '+fquery, fvalue)
 
     return Document

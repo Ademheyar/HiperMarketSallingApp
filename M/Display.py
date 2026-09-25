@@ -1,9 +1,10 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
+from PIL import Image, ImageTk
+import os, shutil
 import sqlite3
 import shutil
 import datetime
-import os
 import atexit
 import sys
 import random
@@ -32,7 +33,9 @@ from C.slipe import load_slip
 from D.Doc.Loaddoc import *
 from D.Security import *
 from C.List import *
+from M.Actions import ActionsForm
 
+from D.docediterform import DocEditForm
 
 from C.API.Get import *
 from C.API.API import *
@@ -48,6 +51,28 @@ class DisplayFrame(tk.Frame):
     def __init__(self, master, Shops_info, user, User_Shops_List, Shops):
         tk.Frame.__init__(self, master)
         
+        self.onDisplayFrame = "" # to show this is manin display
+
+
+        self.homemaster = self
+        while(True):
+            if hasattr(self.homemaster, 'onDisplayFrame'):
+                break
+            else:
+                self.homemaster = self.homemaster.master
+        #print("self.User_data : ", self.User_data)
+
+        self.MainApplication = self
+        while(True):
+            if hasattr(self.MainApplication, 'MainApplication_root'):
+                break
+            else:
+                self.MainApplication = self.MainApplication.master
+        
+        self.Shops = Shops
+        # this will hold documant that are searched from doc.py file 
+        self.Todays_docs = []
+        
         self.bg_dark = "#0d47a1"      # Deep blue
         self.bg_light = "#1565c0"     # Darker blue
         self.accent_blue = "#1976d2"  # Medium blue
@@ -55,51 +80,54 @@ class DisplayFrame(tk.Frame):
         self.bg_darker = "#0a3d91"    # Even darker blue
         self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
         
-        
+        self.homemaster = self
         self.configure(bg=self.bg_dark)
         
-        self.onDisplayFrame = ""
         self.user = user
         self.Shops_info = Shops_info
-        self.Shops = Shops
         self.User_Shops_List = User_Shops_List
         self.Selected_Shop = ""
         self.Shop_Payment_Tools = []
-        
         self.Selected_items = []
         self.items = []
         
        #print("Disktop user : " + str(self.user))
-        self.custemr = ""
-        self.chart_index = 0
+        self.custemr = "" # for holding user or costumer name
+        self.app = None # for holding user or costumer name
+        self.chart_index = None
         self.price = 0
         self.pid = 0
+        self.creadit = 0
+        self.tax = 0
+        self.qty = 0
+        self.disc = 0
+        self.total = 0
         self.pid_peyment = []
         self.ex_pid_peyment = []
         self.Loded_payment_buttons = []
         self.ex_items = []
         self.ex_doc = []
-        self.tax = 0
-        self.qty = 0
-        self.disc = 0
-        self.total = 0
 
         self.At_Shop_id = -1
         self.on_Shop = -1         
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
-        print("Display Frame Initialized with screen size: {}x{}".format(screen_width, screen_height))
+        #print("Display Frame Initialized with screen size: {}x{}".format(screen_width, screen_height))
         
         if Shops_info is None or user is None or User_Shops_List is None or Shops is None:
-            print("Critical data missing (Shops_info, user, User_Shops_List, or Shops)")
+            #print("Critical data missing (Shops_info, user, User_Shops_List, or Shops)")
             if not Security_get_user(self):
-                print("No user data found, closing application.")
+                #print("No user data found, closing application.")
                 self.master.destroy()
                 return
             else:
                 self.grid(row=0, column=0, sticky="nsew")
-                print("User data loaded successfully")
+                #print("User data loaded successfully")
 
+        self.Shops_Names = [shop['Shop_name'] for shop in self.Shops]
+        self.Shops_brands = [shop['Shop_brand_name'] for shop in self.Shops]
+
+        
         self.main_Notebook = ttk.Notebook(self)
         self.main_Notebook.pack(side="top", fill="both", expand=True)
                       
@@ -122,18 +150,36 @@ class DisplayFrame(tk.Frame):
         self.top_frame.columnconfigure((5), weight=1)
         self.top_frame.rowconfigure((0), weight=1)
 
-        self.Calculter_button = tk.Button(self.top_frame, text="Calcu\nF1", command=lambda: GetvalueForm(self, '0', ["Calculater"]), **self.button_style)
-        self.Calculter_button.grid(row=0, column=0, sticky="nsew", padx=2, pady=5)
-        self.master.bind("<F1>", lambda _: GetvalueForm(self, '0', ["Calculater"]))
-        
-        self.Add_None_item_button = tk.Button(self.top_frame, text="None\nF2", command=lambda: self.Create_Unowen_item(), **self.button_style)
-        self.Add_None_item_button.grid(row=0, column=1, sticky="nsew", padx=2, pady=5)
-        self.master.bind("<F2>", lambda _: self.Create_Unowen_item())
         
         self.DFsearch_entry = search_entry(self.top_frame, self.Shops_info, self.user, self.Shops, font=("Arial", 12))
         self.DFsearch_entry.grid(row=0, column=2, columnspan=4, sticky="nsew", padx=1, pady=1)
 
 
+        self.Calculter_button = tk.Button(self.top_frame, text="Calcu\nF1", command=lambda: GetvalueForm(self, '0', ["Calculater"]), **self.button_style)
+        self.Calculter_button.grid(row=0, column=0, sticky="nsew", padx=2, pady=5)
+        self.master.bind("<F1>", lambda _: GetvalueForm(self, '0', ["Calculater"]))
+        
+        self.Add_None_item_button = tk.Button(self.top_frame, text="None\nF2", command=lambda: DocEditForm.Create_Unowen_item(self), **self.button_style)
+        self.Add_None_item_button.grid(row=0, column=1, sticky="nsew", padx=2, pady=5)
+        self.master.bind("<F2>", lambda _: DocEditForm.Create_Unowen_item(self))
+        
+        self.activets_button = tk.Button(self.top_frame, text="Activets\nF6", command=self.call_chartForm, **self.button_style)
+        self.activets_button.grid(row=0, column=9, sticky="nsew", padx=1, pady=1)
+        self.master.bind("<F6>", lambda _: self.call_chartForm())
+        
+        self.payment_button = tk.Button(self.top_frame, text="Payment\nF10", command=self.call_splitpayment, **self.button_style)
+        self.payment_button.grid(row=0, column=10, sticky="nsew", padx=1, pady=1)
+        self.master.bind("<F10>", lambda _: self.call_splitpayment())
+        
+        self.endday_button = tk.Button(self.top_frame, text="Cash Drawer\nCtrl+D", command=lambda: self.open_drower(), **self.button_style)
+        self.endday_button.grid(row=0, column=11, sticky="nsew", padx=1, pady=1)
+        
+        self.update_button = tk.Button(self.top_frame, text="Update\nCtrl+U", command=lambda: self.Call_Uploading_Form()) #, **self.button_style)
+        self.update_button.grid(row=0, column=12, sticky="nsew", padx=1, pady=1)
+        
+        self.Endday_button = tk.Button(self.top_frame, text="End Day\nCtrl+E", command=lambda: self.manage_form.doc_form.perform_endday(), **self.button_style)
+        self.Endday_button.grid(row=0, column=13, sticky="nsew", padx=1, pady=1)
+        
         self.midel_frame = tk.Frame(self.main_frame, bg=self.bg_dark)
         self.midel_frame.grid(row=1, column=0, sticky="nsew")
         
@@ -164,95 +210,103 @@ class DisplayFrame(tk.Frame):
                                        yscrollcommand=self.item_List_yscrollbar.set)
 
         self.Selected_item_Display_frame = tk.Frame(self.item_List_canvas, bg=self.bg_dark)
-        self.item_List_canvas.create_window((0, 0), window=self.Selected_item_Display_frame, anchor=tk.NW)
-        self.Selected_item_Display_frame.bind('<Configure>', lambda e: self.item_List_canvas.configure(scrollregion=self.item_List_canvas.bbox("all")))
+        self.window_id = self.item_List_canvas.create_window((0, 0), window=self.Selected_item_Display_frame, anchor=tk.NW)
 
-        self.buttons_frame = tk.Frame(self.main_frame, bg=self.bg_darker)
-        self.buttons_frame.grid(row=1, column=1, rowspan=1, sticky="nsew")
+        def resize(event):
+            screen_width = self.winfo_screenwidth()
+            screen_height = self.winfo_screenheight()
+                
+            self.item_List_canvas.configure(scrollregion=self.item_List_canvas.bbox("all"))
+            self.item_List_canvas.itemconfig(self.window_id, width=screen_width-(screen_width/4))
+        self.Selected_item_Display_frame.bind('<Configure>', resize)
 
-        self.buttons_frame.columnconfigure((0, 1, 2, 3), weight=1, minsize=int(self.buttons_frame.winfo_height() *0.1))
+        self.side_frame = tk.Frame(self.main_frame, bg=self.bg_darker)
+        self.side_frame.grid(row=1, column=1, rowspan=1, sticky="nsew")
+        
+        self.buttons_frame = tk.LabelFrame(self.side_frame, text="Payment Tools", height=150, bg=self.bg_light, padx=5, pady=5)
+        self.buttons_frame.pack(side="top", fill="both", expand=True)
+
+        self.buttons_frame.columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1, minsize=int(self.buttons_frame.winfo_height() *0.1))
         self.buttons_frame.rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9), weight=1, minsize=int(self.buttons_frame.winfo_height() *0.1))
 
-        self.manage_form = ManageForm(self.main_Notebook, self.user, self.Shops, self.Shops_info, self.on_Shop)
 
-        self.voidlist_button = tk.Button(self.top_frame, text="Void\nF3", command=self.void_, **self.button_style)
-        self.voidlist_button.grid(row=0, column=6, sticky="nsew", padx=1, pady=1)
+        self.total_frame = tk.Frame(self.side_frame, height=150, bg=self.bg_light, highlightthickness=2, highlightbackground=self.bg_dark)
+        self.total_frame.pack(side="bottom", fill="both", expand=False)
+
+        self.total_frame.columnconfigure((0, 1, 2, 3), weight=1, minsize=int(self.total_frame.winfo_height() *0.1))
+        self.total_frame.rowconfigure((0, 1, 2, 3, 4, 5, 6), weight=1, minsize=int(self.total_frame.winfo_height() *0.1))
+        
+        self.prevlist_button = tk.Button(self.total_frame, text="<<<\nF4", command=lambda: self.next_prev_chart("prev"), **self.button_style)
+        self.prevlist_button.grid(row=0, column=0, sticky="nsew")
+        #self.prevlist_button.config(state=tk.DISABLED)
+
+        self.barcode_label = tk.Label(self.total_frame, text="Barcode", font=("Arial", 12, "bold"), bg=self.bg_light, fg=self.text_light)
+        self.barcode_label.grid(row=0, column=1, columnspan=5, sticky="nsew", padx=5, pady=5)
+        
+        self.nextlist_button = tk.Button(self.total_frame, text="New\nF7", command=lambda : self.next_prev_chart("Next"), **self.button_style)
+        self.nextlist_button.grid(row=0, column=6, sticky="nsew")
+        #self.nextlist_button.config(state=tk.DISABLED)
+        self.master.bind("<F4>", lambda _: self.next_prev_chart("Prev"))
         self.master.bind("<F3>", lambda _: self.void_())
-        
-        self.prevlist_button = tk.Button(self.top_frame, text="Prev\nF5", command=lambda: self.next_prev_chart("prev"), **self.button_style)
-        self.prevlist_button.grid(row=0, column=7, sticky="nsew", padx=1, pady=1)
-        self.prevlist_button.config(state=tk.DISABLED)
-        self.master.bind("<F5>", lambda _: self.next_prev_chart("prev"))
-        
-        self.activets_button = tk.Button(self.top_frame, text="Activets\nF6", command=self.call_chartForm, **self.button_style)
-        self.activets_button.grid(row=0, column=8, sticky="nsew", padx=1, pady=1)
-        self.master.bind("<F6>", lambda _: self.call_chartForm())
-        
-        self.newlist_button = tk.Button(self.top_frame, text="New\nF7", command=self.new_chart, **self.button_style)
-        self.newlist_button.grid(row=0, column=9, sticky="nsew", padx=1, pady=1)
-        self.master.bind("<F7>", lambda _: self.new_chart())
-        
-        self.payment_button = tk.Button(self.top_frame, text="Payment\nF10", command=self.call_splitpayment, **self.button_style)
-        self.payment_button.grid(row=0, column=10, sticky="nsew", padx=1, pady=1)
-        self.master.bind("<F10>", lambda _: self.call_splitpayment())
-        
-        self.endday_button = tk.Button(self.top_frame, text="Cash Drawer\nCtrl+D", command=lambda: self.open_drower(), **self.button_style)
-        self.endday_button.grid(row=0, column=11, sticky="nsew", padx=1, pady=1)
-        
-        self.update_button = tk.Button(self.top_frame, text="Update\nCtrl+U", command=lambda: self.Call_Uploading_Form()) #, **self.button_style)
-        self.update_button.grid(row=0, column=12, sticky="nsew", padx=1, pady=1)
-        
-        self.Endday_button = tk.Button(self.top_frame, text="End Day\nCtrl+E", command=lambda: self.manage_form.doc_form.perform_endday(), **self.button_style)
-        self.Endday_button.grid(row=0, column=13, sticky="nsew", padx=1, pady=1)
-
-        self.total_frame = tk.Frame(self.main_frame, height=150, bg=self.bg_light)
-        self.total_frame.grid(row=2, column=0, rowspan=2, columnspan=4, sticky="nsew")
-
-        self.total_items_label = tk.Label(self.total_frame, text="Total Items : 0", font=("Arial", 12, "bold"), 
-                                          bg=self.bg_light, fg=self.text_light)
-        self.total_items_label.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
-        
-        self.total_tax_label = tk.Label(self.total_frame, text="Total Tax : 0", font=("Arial", 12, "bold"), 
-                                        bg=self.bg_light, fg=self.text_light)
-        self.total_tax_label.grid(row=1, column=1, sticky="nsew", padx=5, pady=5)
-        
-        self.total_discount_label = tk.Label(self.total_frame, text="Item Discount : 0", font=("Arial", 12, "bold"), 
-                                             bg=self.bg_light, fg=self.text_light)
-        self.total_discount_label.grid(row=1, column=2, sticky="nsew", padx=5, pady=5)
-        
-        self.total_tdiscount_label = tk.Label(self.total_frame, text="Total Discount : 0", font=("Arial", 12, "bold"), 
-                                              bg=self.bg_light, fg=self.text_light)
-        self.total_tdiscount_label.grid(row=1, column=3, sticky="nsew", padx=5, pady=5)
-        
-        self.total_price_label = tk.Label(self.total_frame, text="Price Befor: 0", font=("Arial", 12, "bold"), 
-                                          bg=self.bg_light, fg=self.text_light)
-        self.total_price_label.grid(row=1, column=4, sticky="nsew", padx=5, pady=5)
-        
-        self.total_label = tk.Label(self.total_frame, text="Total After: 0", font=("Arial", 16, "bold"), 
-                                    bg=self.bg_light, fg="#4dd0e1")
-        self.total_label.grid(row=1, column=5, sticky="nsew", padx=5, pady=5)
+        self.master.bind("<F5>", lambda _: self.next_prev_chart("Next"))
+        self.master.bind("<F7>", lambda _: self.new_chart(1))
 
 
-        self.Veaw_Notifications_label = tk.Label(self.total_frame, text="Notifications", font=("Arial", 10, "bold"),
+        tk.Label(self.total_frame, text="Total Items : ", font=("Arial", 12, "bold"), bg=self.bg_light, fg=self.text_light).grid(row=1, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+        self.total_items_label = tk.Label(self.total_frame, text="0", font=("Arial", 12, "bold"), bg=self.bg_light, fg=self.text_light)
+        self.total_items_label.grid(row=1, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
+        
+        tk.Label(self.total_frame, text="Total Tax : ", font=("Arial", 12, "bold"), bg=self.bg_light, fg=self.text_light).grid(row=2, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+        self.total_tax_label = tk.Label(self.total_frame, text="Total Tax : 0", font=("Arial", 12, "bold"), bg=self.bg_light, fg=self.text_light)
+        self.total_tax_label.grid(row=2, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
+        
+        tk.Label(self.total_frame, text="Item Discount : ", font=("Arial", 12, "bold"),  bg=self.bg_light, fg=self.text_light).grid(row=3, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+        self.total_discount_label = tk.Label(self.total_frame, text="0", font=("Arial", 12, "bold"),  bg=self.bg_light, fg=self.text_light)
+        self.total_discount_label.grid(row=3, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
+        
+        tk.Label(self.total_frame, text="Total Discount : ", font=("Arial", 12, "bold"),  bg=self.bg_light, fg=self.text_light).grid(row=4, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+        self.total_tdiscount_label = tk.Label(self.total_frame, text="0", font=("Arial", 12, "bold"),  bg=self.bg_light, fg=self.text_light)
+        self.total_tdiscount_label.grid(row=4, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
+        
+        tk.Label(self.total_frame, text="Price Befor: ", font=("Arial", 12, "bold"),  bg=self.bg_light, fg=self.text_light).grid(row=5, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+        self.total_price_label = tk.Label(self.total_frame, text="0", font=("Arial", 12, "bold"),  bg=self.bg_light, fg=self.text_light)
+        self.total_price_label.grid(row=5, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
+        
+        tk.Label(self.total_frame, text="Total After: ", font=("Arial", 16, "bold"),bg=self.bg_light, fg="#4dd0e1").grid(row=6, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+        self.total_label = tk.Label(self.total_frame, text="0", font=("Arial", 16, "bold"),bg=self.bg_light, fg="#4dd0e1")
+        self.total_label.grid(row=6, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
+
+
+
+
+
+        self.manage_form = ManageForm(self.main_Notebook, self.user, self.Shops, self.Shops_info, self.on_Shop)
+        
+        self.bottum_frame = tk.Frame(self.main_frame, height=150, bg=self.bg_light)
+        self.bottum_frame.grid(row=2, column=0, rowspan=2, columnspan=4, sticky="nsew")
+
+        self.bottum_frame.columnconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8), weight=1, minsize=int(self.bottum_frame.winfo_height() *0.1))
+        self.bottum_frame.rowconfigure((0), weight=1, minsize=int(self.bottum_frame.winfo_height() *0.1))
+        
+        self.Veaw_Notifications_label = tk.Label(self.bottum_frame, text="Notifications", font=("Arial", 10, "bold"),
                                                  fg="#4dd0e1", bg=self.bg_light, cursor="hand2")
         self.Veaw_Notifications_label.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
         self.Veaw_Notifications_label.bind("<Button-1>", lambda _: Veaw_Notifications(self, self.user, self.Shops))
 
-        self.Loged_user_label = tk.Label(self.total_frame, text=str(self.user['User_name']), font=("Arial", 10, "bold"),
+        self.Loged_user_label = tk.Label(self.bottum_frame, text=str(self.user['User_name']), font=("Arial", 10, "bold"),
                                          fg="#4dd0e1", bg=self.bg_light, cursor="hand2")
         self.Loged_user_label.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
         self.Loged_user_label.bind("<Button-1>", lambda _: UserInfoForm(self, self.user))
-        
-        self.Shops_Names = [shop['Shop_name'] for shop in self.Shops]                            
-        self.User_Shopes_Combobox = ttk.Combobox(self.total_frame, values=self.Shops_Names, width=10)
+                              
+        self.User_Shopes_Combobox = ttk.Combobox(self.bottum_frame, values=self.Shops_Names, width=10)
         self.User_Shopes_Combobox.grid(row=0, column=2, sticky="nsew", padx=5, pady=5)
         
 
         self.at_shop_name = ""
         self.Shop_brand_name = self.Shops[0]['Shop_brand_name']
         if(len(self.Shops_Names) == 1):
-            print("Only one shop found, selecting it by default.")
-            print("Shop Name: ", self.Shops)
+            #print("Only one shop found, selecting it by default.")
+            #print("Shop Name: ", self.Shops)
             Shop_brand_name = self.Shops[0]['Shop_brand_name']
             self.At_Shop_id = self.Shops[0]['Shop_Id']
             at_shop_name = self.Shops[0]['Shop_name']
@@ -260,17 +314,17 @@ class DisplayFrame(tk.Frame):
         else:
             pass
         
-        self.At_Shop_label = tk.Label(self.total_frame, text=str(at_shop_name), font=("Arial", 10, "bold"),
+        self.At_Shop_label = tk.Label(self.bottum_frame, text=str(at_shop_name), font=("Arial", 10, "bold"),
                                       fg="#4dd0e1", bg=self.bg_light, cursor="hand2")
         self.At_Shop_label.grid(row=0, column=3, sticky="nsew", padx=5, pady=5)
         self.At_Shop_label.bind("<Button-1>", lambda _: UserInfoForm(self))
 
-        self.Add_custemur_label = tk.Label(self.total_frame, text="+ Custumer", font=("Arial", 10, "bold"),
+        self.Add_custemur_label = tk.Label(self.bottum_frame, text="+ Custumer", font=("Arial", 10, "bold"),
                                            fg="#4dd0e1", bg=self.bg_light, cursor="hand2")
         self.Add_custemur_label.grid(row=0, column=4, sticky="nsew", padx=5, pady=5)
         self.Add_custemur_label.bind("<Button-1>", lambda _: self.Add_Custumer())
 
-        self.date_day_Label = tk.Label(self.total_frame, text="H:M D-M-Y :" , font=("Arial", 9, "bold"), 
+        self.date_day_Label = tk.Label(self.bottum_frame, text="H:M D-M-Y :" , font=("Arial", 9, "bold"), 
                            width=20, bg=self.bg_light, fg=self.text_light)
         
         # Update the label with the current date/time every second
@@ -282,15 +336,15 @@ class DisplayFrame(tk.Frame):
 
         self.date_day_Label.grid(row=0, column=5, sticky="w", padx=2, pady=5)
         
-        self.date_day_Spinbox = ttk.Spinbox(self.total_frame, from_=1, to=31, width=5)
+        self.date_day_Spinbox = ttk.Spinbox(self.bottum_frame, from_=1, to=31, width=5)
         self.date_day_Spinbox.grid(row=0, column=6, sticky="w", padx=2, pady=5)
         self.date_day_Spinbox.set(str(datetime.datetime.now().strftime('%d')))
         
-        self.date_month_Spinbox = ttk.Spinbox(self.total_frame, from_=1, to=13, width=5)
+        self.date_month_Spinbox = ttk.Spinbox(self.bottum_frame, from_=1, to=13, width=5)
         self.date_month_Spinbox.grid(row=0, column=7, sticky="w", padx=2, pady=5)
         self.date_month_Spinbox.set(str(datetime.datetime.now().strftime('%m')))
         
-        self.date_year_Spinbox = ttk.Spinbox(self.total_frame, from_=1990, width=5)
+        self.date_year_Spinbox = ttk.Spinbox(self.bottum_frame, from_=1990, width=5)
         self.date_year_Spinbox.grid(row=0, column=8, sticky="w", padx=2, pady=5)
         self.date_year_Spinbox.set(str(datetime.datetime.now().strftime('%Y')))
     
@@ -319,7 +373,7 @@ class DisplayFrame(tk.Frame):
         self.chacketype = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 17, f'User Not allowed to Change ITEM TYPE')
         self.chaketotaldic = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 18, f'User Not allowed to Change TOTALE Price OR Give TOTAL DISCOUNT')
         
-        self.update_list_items()
+        self.next_prev_chart("Next") # load the prev item will staring if there is 
         self.update_info()
         
         self.master.bind("<Escape>", self.change_focus)
@@ -360,11 +414,9 @@ class DisplayFrame(tk.Frame):
                 if found_shop_items:
                     for item in found_shop_items:
                         #print('item -- > ', item)
-                        if item[0] in FOUND:
-                            print("SAME ITEM COUNTERD ", item[0])
-                        else:
+                        if not item[0] in FOUND:
                             FOUND.append(item[0])
-                        value = fetch_as_dict_list( 'SELECT * FROM product WHERE id=?', (str(item[0]),))
+                        value = fetch_as_dict_list(self.Link, 'SELECT * FROM product WHERE id=?', (str(item[0]),))
                         #print("Shop items value --> ", value[0])
                         if value and not len(value) == 0:
                             self.Shops_info['Shop_items'].append([value[0], [], "", "", "", "", "", "", "", "", "", "", ""])
@@ -387,7 +439,8 @@ class DisplayFrame(tk.Frame):
                                     #print("add ing = ", l[1])
                                     itemtypes.append(json.loads(l[1]))
                                 except:
-                                    print("error while loading item type = ", l[1])
+                                    #print("error while loading item type = ", l[1])
+                                    pass
                         elif len(l) == 2:
                             #print("going deep = ", l[1])
                             sub_list(l[1], itemtypes)
@@ -421,7 +474,7 @@ class DisplayFrame(tk.Frame):
     def Selectd_item_remove(self, event):
         if not self.selected_indexd == -1 and (0 >= self.selected_indexd < len(self.Selected_item_Display_frame.winfo_children())):
             self.remove_item(self.selected_indexd, self.Selected_item_Display_frame.winfo_children()[self.selected_indexd])
-        
+    
     def crtl_d_focus(self, event):
         #print("crtl+D pressed " + str(event))
         if "Control" in str(event) or event.state == 14:
@@ -443,7 +496,6 @@ class DisplayFrame(tk.Frame):
         for widget in self.Loded_payment_buttons:
             widget[2].destroy()
         self.Loded_payment_buttons = []
-        rows = fetch_as_dict_list("SELECT * FROM tools", ())
         
         buttons = []
         j = 0
@@ -464,14 +516,14 @@ class DisplayFrame(tk.Frame):
                     
             payment_tool_type = row[1]
             permission_level = {'CASH':2, 'CARD':3, 'CREADIT':4, 'CASHOUT':5, 'CASHIN':6, 'OTHER':7}
-            perm_level = permission_level.get(payment_tool_type, 6)
+            perm_level = permission_level.get(payment_tool_type, 7)
                     
             if Chacke_Security(self, self.user, self.Shops[self.on_Shop], perm_level, f'User Not allowed to Use {payment_tool_type} Payment Tool'):
-                new_button = tk.Button(self.buttons_frame, text=tool_name+"\nCtrl + "+str(row[3]), command=lambda r=str(row[3]), d=tool_name: self.Q_Payment(r, d), **self.button_style)
-                new_button.bind("<Button-3>", lambda d=str(row[3]): self.Q_Payment(d, d.widget["text"].split("\n")[0]))
-                self.master.bind("<KeyPress-" + str(row[3]) + ">", lambda r=str(row[3]), d=tool_name, k=new_button: self.Q_Payment(r, d) if "Control" in str(r)else print(""))
+                new_button = tk.Button(self.buttons_frame, text=tool_name+"\nCtrl + "+str(row[3]), command=lambda r=str(row[3]), d=tool_name, t=payment_tool_type: self.Q_Payment(r, d, t), **self.button_style)
+                new_button.bind("<Button-3>", lambda d=str(row[3]), t=payment_tool_type: self.Q_Payment(d, d.widget["text"].split("\n")[0], t))
+                self.master.bind("<KeyPress-" + str(row[3]) + ">", lambda r=str(row[3]), d=tool_name, k=new_button, t=payment_tool_type: self.Q_Payment(r, d, t) if "Control" in str(r)else r)
                 if payment_tool_type == "CASH":
-                    self.master.bind("<F12>", lambda r=str(row[3]), d=tool_name, k=new_button: self.Q_Payment(r, d))
+                    self.master.bind("<F12>", lambda r=str(row[3]), d=tool_name, k=new_button, t=payment_tool_type: self.Q_Payment(r, d, t))
                 new_button.grid(row=a, column=b, sticky="nsew", padx=2, pady=5)
                 self.Loded_payment_buttons.append([row[1], row[3], new_button])
                 b += 1
@@ -510,32 +562,16 @@ class DisplayFrame(tk.Frame):
         items = len(self.Selected_items)
         ITEM = json.dumps(self.Selected_items)
         
-        if items > 0 or ex_item != "" or ex_pay != "":
+        if str(self.chart_index).isdigit() and (items > 0 or ex_item != "" or ex_pay != ""):
             # Define the query to check if the ID exists in the table
-            query = f"SELECT id FROM pre_doc_table WHERE id = {self.chart_index}"
-
-            # Execute the query and fetch the results
-            results = fetch_as_dict_list(query, ())
-            # Check if the query returned a result
-            if results and len(results) > 0:
-                #print(str([doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States, ex_item, ex_pay]))
-                # Insert the new product into the database
-                Update_table_database('UPDATE pre_doc_table SET doc_created_date=?, doc_expire_date=?, doc_updated_date=?, AT_SHOP=?, user_id=?, customer_id=?, type=?, ITEM=?, PRICE=?, Disc=?, TAX=?, States=?, exitems_doc_barcode=?, expayment_doc_barcode=? WHERE id=?', (doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States, ex_item, ex_pay, self.chart_index))
-
-                #print(f"Record with ID {self.chart_index} has been UPDATE into the table\n\n1\n\n")                
-                #print(str([doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States, self.chart_index, ex_item, ex_pay]))
-                pass
-            else:
-                #print(f"Record with ID {self.chart_index} does not exist in the table\n\n2\n\n")
-                #print(str([doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States, ex_item, ex_pay]))
-                # Insert the new product into the database
-                Update_table_database('INSERT INTO pre_doc_table (id, doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States, exitems_doc_barcode, expayment_doc_barcode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (self.chart_index, doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States, ex_item, ex_pay))
-
-                #print(str(["doc_barcode", "extension_barcode", "user_id", "customer_id", "type", ITEM, Disc, TAX, "doc_created_date", "doc_expire_date", "doc_updated_date", ex_item, ex_pay]))
-                pass
-            # Commit the changes to the database
-            #conn.commit()
+            results = fetch_as_dict_list(self.Link, "SELECT * FROM pre_doc_table", ())
             
+            if self.chart_index >= 0 and self.chart_index < len(results):
+                idid = int(results[self.chart_index]['id'])
+                Update_table_database('UPDATE pre_doc_table SET doc_created_date=?, doc_expire_date=?, doc_updated_date=?, AT_SHOP=?, user_id=?, customer_id=?, type=?, ITEM=?, PRICE=?, Disc=?, TAX=?, States=?, exitems_doc_barcode=?, expayment_doc_barcode=? WHERE id=?', (doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States, ex_item, ex_pay, idid))
+            else:
+                Update_table_database('INSERT INTO pre_doc_table (doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, PRICE, Disc, TAX, States, exitems_doc_barcode, expayment_doc_barcode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (doc_created_date, doc_expire_date, doc_updated_date, AT_SHOP, user_id, customer_id, type, ITEM, float(PRICE), float(Disc), float(TAX), States, ex_item, ex_pay))
+
     # this will
     def chack_list(self):
         total_discount = 0
@@ -543,30 +579,31 @@ class DisplayFrame(tk.Frame):
         total_qty = 0
         all_total_price = 0
 
-        for a, selected_item in enumerate(self.Selected_items):
-            print("in update item: " + str(selected_item[0]))
-            print("in update item: " + str(selected_item[0]))
-            print("in update item: " + str(selected_item[6]))
-            print("in update item: " + str(selected_item[8]))
+        for b, selected_items in enumerate(self.Selected_items):
+            for a, selected_item in enumerate(selected_items[0]):
+                #print("in update item: " + str(selected_item[0]))
+                #print("in update item: " + str(selected_item[0]))
+                #print("in update item: " + str(selected_item[6]))
+                #print("in update item: " + str(selected_item[8]))
 
-            qty = float(selected_item[7])
-            price = float(selected_item[10])
-            discount = float(selected_item[0]['values']['price']) - float(selected_item[10])
-            tax = float(selected_item[10])
-            total_price = qty * price  # float(selected_item[11])
-            
-            # Calculate the expected total price based on quantity, price, discount, and tax
-            expected_total_price = qty * (price)  # - tax
-            
-            # Update the total price in the item if it doesn't match the expected value
-            if total_price != expected_total_price:
-                self.Selected_items[a][11] = expected_total_price
-            
-            # Update the price variable
-            total_qty += qty
-            total_discount += discount
-            total_tax += tax
-            all_total_price += expected_total_price
+                qty = float(selected_item[7])
+                price = float(selected_item[10])
+                discount = float(selected_item[0]['values']['price']) - float(selected_item[10])
+                tax = float(selected_item[10])
+                total_price = qty * price  # float(selected_item[11])
+                
+                # Calculate the expected total price based on quantity, price, discount, and tax
+                expected_total_price = qty * (price)  # - tax
+                
+                # Update the total price in the item if it doesn't match the expected value
+                if total_price != expected_total_price:
+                    self.Selected_items[b][a][11] = expected_total_price
+                
+                # Update the price variable
+                total_qty += qty
+                total_discount += discount
+                total_tax += tax
+                all_total_price += expected_total_price
         
         return total_qty, total_discount, total_tax, all_total_price
 
@@ -574,12 +611,12 @@ class DisplayFrame(tk.Frame):
     def update_info(self):
         total_qty, total_discount, total_tax, all_total_price = self.chack_list()
         self.total = (all_total_price - self.tax) - self.disc
-        self.total_items_label.config(text="Total Items : " + str(total_qty))
-        self.total_tax_label.config(text="Total Tax : " + str(self.tax))
-        self.total_discount_label.config(text="Item Discount : " + str(total_discount))
-        self.total_tdiscount_label.config(text="Total Discount : " + str(self.disc))
-        self.total_price_label.config(text="Price Befor : " + str(all_total_price))
-        self.total_label.config(text="Price After: " + str((all_total_price - self.tax) - self.disc))
+        self.total_items_label.config(text=str(total_qty))
+        self.total_tax_label.config(text=str(self.tax))
+        self.total_discount_label.config(text=str(total_discount))
+        self.total_tdiscount_label.config(text=str(self.disc))
+        self.total_price_label.config(text=str(all_total_price))
+        self.total_label.config(text=str((all_total_price - self.tax) - self.disc))
         self.update_chart()
         
     
@@ -724,27 +761,35 @@ class DisplayFrame(tk.Frame):
                                                 inputs[5].config(text=s[1][0][5])
                                                 return
                                             
-    def Update_selected_item_info(self, data, selected_item_info, new_item_Price_Spinbox, new_item_TPrice_Spinbox, index):
+    def Update_selected_item_info(self, data, selected_item_info, new_item_Price_Spinbox, new_item_TPrice_Spinbox, index, a):
         self.Get_next_seletion(data, selected_item_info)
+        print("index ", index)
+        print("a ", a)
+        
+        print("self.Selected_items ", self.Selected_items)
+        
+        print("self.Selected_items["+str(index)+ "]/" +str(len(self.Selected_items[index])-1) +" ", self.Selected_items[index])
+        
+        print("self.Selected_items["+str(index)+ "]/" +str(len(self.Selected_items[index])-1) +"]["+str(a)+ "]/" +str(len(self.Selected_items[index][0])-1) +"] ", self.Selected_items[index][a])
         # QTY
         if self.chackeqyu:
-            self.Selected_items[index][7] = data[4].get()
+            self.Selected_items[index][0][a][7] = str(data[4].get())
         
         # price
         if self.chackeprice and self.chakedisc:
-           self.Selected_items[index][10] = new_item_Price_Spinbox.get()
+           self.Selected_items[index][0][a][10] = str(new_item_Price_Spinbox.get())
         else:
-            new_item_Price_Spinbox.set(self.Selected_items[index][10])
+            new_item_Price_Spinbox.set(self.Selected_items[index][0][a][10])
         
         if self.chacketype:
             # shop
-            self.Selected_items[index][12] = data[0].get()
+            self.Selected_items[index][0][a][12] = str(data[0].get())
             #code
-            self.Selected_items[index][2] = data[1].get()
+            self.Selected_items[index][0][a][2] = str(data[1].get())
             # color
-            self.Selected_items[index][5] = data[2].get()
+            self.Selected_items[index][0][a][5] = str(data[2].get())
             # size
-            self.Selected_items[index][6] = data[3].get()
+            self.Selected_items[index][0][a][6] = str(data[3].get())
         
         if self.chaketotaldic:
             new_item_TPrice_Spinbox.set(str(float(data[4].get())*float(new_item_Price_Spinbox.get())))
@@ -757,13 +802,14 @@ class DisplayFrame(tk.Frame):
         self.update_info()
     
     def remove_ex_items(self, ex_bar_frame, search_label):
-        for i, selected_item in enumerate(self.Selected_items):
-            print("selected_item[14] ", selected_item[14])
-            print("search_label.cget(text) ", search_label.cget("text"))
-            if selected_item[14] == search_label.cget("text"):
-                print("removed ")
-                
-                self.Selected_items.remove(selected_item)
+        for i, selected_items in enumerate(self.Selected_items):
+            for i, selected_item in enumerate(self.Selected_items[0]):
+                #print("selected_item[14] ", selected_item[14])
+                #print("search_label.cget(text) ", search_label.cget("text"))
+                if selected_item[14] == search_label.cget("text"):
+                    #print("removed ")
+                    
+                    self.Selected_items.remove(selected_item)
         
         ex_bar_frame.grid_forget()
         self.Update_Selected_item() # it keep loading old
@@ -774,139 +820,212 @@ class DisplayFrame(tk.Frame):
         ex_doc_ = []
         for it in self.extrnal_frame.winfo_children():
             it.grid_forget()
+        if len(self.Selected_items):
+            voidlist_button = tk.Button(self.extrnal_frame, text="Void\nF3", command=self.void_, **self.button_style)
+            voidlist_button.grid(row=0, column=0, sticky="nsew", padx=1, pady=1)
         
         #self.midel_frame
-        for i, selected_item in enumerate(self.Selected_items):
-           #print("selected_item ", selected_item)
-            if not selected_item[14] in ex_doc_:
-                ex_doc_.append(selected_item[14])
-                ch = len(self.extrnal_frame.winfo_children())
-
-                ex_bar_frame = tk.Frame(self.extrnal_frame, bg=self.accent_blue)
-                ex_bar_frame.grid(row=0, column=ch, sticky="nsew", padx=2, pady=2)
-                search_label = tk.Label(ex_bar_frame, text=selected_item[14], bg=self.accent_blue, fg=self.text_light, font=("Arial", 10, "bold"))
-                search_label.grid(row=0, column=0, sticky="nsew", padx=5, pady=3)
-                    
-                update_button = tk.Button(ex_bar_frame, text="✕", command=lambda: self.remove_ex_items(ex_bar_frame, search_label), **self.button_style)
-                update_button.grid(row=0, column=1, sticky="nsew", padx=2, pady=3)
-                
-            selected_item_info = selected_item[0]
-           #print("selected_item_info |", selected_item_info)
-           #print("selected_item ", selected_item)
-            
-            #if isinstance(selected_item_info, str):
-            #    selected_item_info = ast.literal_eval(selected_item_info)
+        for sis, selected_items in enumerate(self.Selected_items):
             item = [""]
-
-            print("droing item list\n")
-            new_item_fram = tk.Frame(self.Selected_item_Display_frame, highlightthickness=2, highlightbackground=self.accent_blue, bg=self.bg_darker)
-            new_item_fram.pack(side="top", fill="x", expand=True)
-            #new_item_fram.grid(row=len(self.Selected_item_Display_frame.winfo_children()), column=3, columnspan=5, pady=1)
-            #
+            colors=[]
+            new_itemgroup_fram = tk.Frame(self.Selected_item_Display_frame, highlightthickness=2, highlightbackground=self.accent_blue, bg=self.bg_darker)
+            new_itemgroup_fram.pack(side="top", fill=tk.X, expand=True)
 
 
-            # TODO ADD IMAGE 
-
-            new_item_name = tk.Label(new_item_fram, text=str(selected_item[4]), font=("Arial", 12, "bold"), bg=self.bg_darker, fg=self.text_light)
-            new_item_name.grid(row=0, column=1, columnspan=6, sticky="nsew")
-
-            new_barcode_Label = tk.Label(new_item_fram, text=str("barcode"), font=("Arial", 8), bg=self.bg_darker, fg=self.text_light)
-            new_barcode_Label.grid(row=1, column=1, columnspan=3, sticky="nsew")
+            new_itemgroup_fram.columnconfigure((0, 1, 2, 3, 4, 5, 6, 7), weight=1, minsize=int(new_itemgroup_fram.winfo_height() *0.1))
+            new_itemgroup_fram.rowconfigure((0, 1, 2, 3), weight=1, minsize=int(new_itemgroup_fram.winfo_height() *0.1))
             
-            new_type_Label = tk.Label(new_item_fram, text=str(selected_item[15]), font=("Arial", 8), bg=self.bg_darker, fg=self.text_light)
-            new_type_Label.grid(row=1, column=3, columnspan=3, sticky="nsew")
-            
-            new_item_QTY_fram = tk.Frame(new_item_fram, bg=self.bg_darker)
-            new_item_QTY_fram.grid(row=2, column=1, rowspan=2, sticky="nsew")
-            
-            new_item_QTY_Label = tk.Label(new_item_QTY_fram, text="QTY Max is " + str(selected_item[8]), font=("Arial", 8), bg=self.bg_darker, fg=self.text_light)
-            new_item_QTY_Label.grid(row=1, column=1, sticky="nsew")
-            new_item_QTY_Spinbox = ttk.Spinbox(new_item_QTY_fram, from_=0, to=100, width=10)
-            new_item_QTY_Spinbox.grid(row=2, column=1, sticky="nsew")
-            new_item_QTY_Spinbox.set(str(selected_item[7]))
-            price_ = ""
-            price_ = str(selected_item_info['values']['price'])
-            disc = ""
-            if float(selected_item_info['values']['price'])-float(selected_item[10]) > 0:
-                disc = " DISCOUNT " + str(float(selected_item_info['values']['price'])-float(selected_item[10]))
-            new_item_Price_Label = tk.Label(new_item_fram, text="Price " + price_ + disc, font=("Arial", 8), bg=self.bg_darker, fg=self.text_light)
-            new_item_Price_Label.grid(row=2, column=2, sticky="nsew")
-            new_item_Price_Spinbox = ttk.Spinbox(new_item_fram, from_=0, to=100, width=10)
-            new_item_Price_Spinbox.grid(row=3, column=2, sticky="nsew")
-            new_item_Price_Spinbox.set(str(selected_item[10]))
+            self.group_rate = 0
+            self.group_image_frame = tk.Frame(new_itemgroup_fram, bg=self.bg_dark)
+            self.group_image_frame.grid(row=0, column=0, rowspan=5, sticky="nsew")
 
-            new_item_Shop_Label = tk.Label(new_item_fram, text="Shop :" , font=("Arial", 8), bg=self.bg_darker, fg=self.text_light)
-            new_item_Shop_Label.grid(row=2, column=3, sticky="nsew")
-            new_item_Shop_Combobox = ttk.Combobox(new_item_fram, values=[], width=10)
-            new_item_Shop_Combobox.grid(row=3, column=3, padx=5, pady=5, sticky=tk.W)
-            new_item_Shop_Combobox.set(str(selected_item[13]))
-            new_item_Code_Label = tk.Label(new_item_fram, text="Code :" , font=("Arial", 8), bg=self.bg_darker, fg=self.text_light)
-            new_item_Code_Label.grid(row=2, column=4, sticky="nsew")
-            new_item_Code_Combobox = ttk.Combobox(new_item_fram, values=[], width=10)
-            new_item_Code_Combobox.grid(row=3, column=4, padx=5, pady=5, sticky=tk.W)
-            new_item_Code_Combobox.set(str(selected_item[2]))
-            new_item_Color_Label = tk.Label(new_item_fram, text="Color " , font=("Arial", 8), bg=self.bg_darker, fg=self.text_light)
-            new_item_Color_Label.grid(row=2, column=5, sticky="nsew")
-            new_item_Color_Combobox = ttk.Combobox(new_item_fram, values=[], width=10)
-            new_item_Color_Combobox.grid(row=3, column=5, padx=5, pady=5, sticky=tk.W)
-            new_item_Color_Combobox.set(str(selected_item[5]))
-            new_item_Size_Label = tk.Label(new_item_fram, text="Size " , font=("Arial", 8), bg=self.bg_darker, fg=self.text_light)
-            new_item_Size_Label.grid(row=2, column=6, sticky="nsew")
-            new_item_Size_Combobox = ttk.Combobox(new_item_fram, values=[], width=10)
-            new_item_Size_Combobox.grid(row=3, column=6, padx=5, pady=5, sticky=tk.W)
-            new_item_Size_Combobox.set(str(selected_item[6]))
-            
-            new_exbarcode_Label = tk.Label(new_item_fram, text=str(selected_item[14]), font=("Arial", 8), bg=self.bg_darker, fg=self.text_light)
-            new_exbarcode_Label.grid(row=1, column=7, sticky="nsew")
-            
-            del_button = tk.Button(new_item_fram, text="✕", command= lambda index=i, frame=new_item_fram: self.remove_item(index, frame), **self.button_style)
-            del_button.grid(row=0, column=7, sticky="nsew", padx=2, pady=2)
-            # self.master.bind("<Delete>", lambda _: self.remove_item())
-            
-            new_item_TPrice_Label = tk.Label(new_item_fram, text="Total Price" , font=("Arial", 10, "bold"), bg=self.bg_darker, fg=self.accent_blue)
-            new_item_TPrice_Label.grid(row=2, column=7, sticky="nsew")
-            new_item_TPrice_Spinbox = ttk.Spinbox(new_item_fram, from_=0, to=100, width=10)
-            new_item_TPrice_Spinbox.grid(row=3, column=7, sticky="nsew")
-            new_item_TPrice_Spinbox.set(str(float(selected_item[7])*float(selected_item[10])))
-            
-            data = [new_item_Shop_Combobox, new_item_Code_Combobox, new_item_Color_Combobox, new_item_Size_Combobox, new_item_QTY_Spinbox, new_barcode_Label, new_item_Price_Label]
+            self.group_image_avatarlabel = tk.Label(self.group_image_frame, bg=self.bg_dark)
+            self.group_image_avatarlabel.pack()
+            self.group_image_avatarlabel.bind("<Button-1>", lambda _: self.change_Brand_image())
+            color = "Def_Color"
+            if colors:
+                colors = colors[0]
+            groupimg = Image.open(MAIN_dir+"\\data\\Icon\\no_Product_Image.jpg").resize((100, 100))
+            #print("selected_items ", selected_items)
 
-            self.Get_next_seletion(data, selected_item_info)
+            imgname = "ActionImage.jpg" if selected_items[1] == 'ACTIONS' else 'ProductImage.jpg'
+            code = ""
+              
+            if os.path.exists(MAIN_dir+"\\data\\Products\\"+ str(selected_items[3]) + "\\"+imgname):
+                groupimg = Image.open(MAIN_dir+"\\data\\Products\\"+ str(selected_items[3]) + "\\"+ str(color) + "\\"+imgname).resize((100, 100))
+            elif imgname == "ActionImage.jpg":
+                groupimg = Image.open(MAIN_dir+"\\data\\Icon\\no_Action_Image.jpg").resize((100, 100))
+                
+            groupimg = ImageTk.PhotoImage(groupimg)
+            self.group_image_avatarlabel.config(image=groupimg)
+            self.group_image_avatarlabel.image = groupimg
             
+            new_group_name = tk.Label(new_itemgroup_fram, text=str(selected_items[2]), font=("Arial", 8, "bold"), bg=self.bg_darker, fg=self.text_light)
+            new_group_name.grid(row=0, column=1, columnspan=2, sticky="nsew")        
 
-            new_item_Shop_Combobox.bind("<<ComboboxSelected>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=i: self.Update_selected_item_info(d, v, p, tp, j))
-            new_item_Code_Combobox.bind("<<ComboboxSelected>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=i: self.Update_selected_item_info(d, v, p, tp, j))
-            new_item_Color_Combobox.bind("<<ComboboxSelected>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=i: self.Update_selected_item_info(d, v, p, tp, j))
-            new_item_Size_Combobox.bind("<<ComboboxSelected>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=i: self.Update_selected_item_info(d, v, p, tp, j))
+            
+            closegroup_button = tk.Button(new_itemgroup_fram, text="✕", command= lambda index=sis, frame=new_itemgroup_fram: self.remove_item(index, frame), **self.button_style)
+            closegroup_button.grid(row=0, column=7, sticky="nsew", padx=2, pady=2)
 
-            new_item_Shop_Combobox.bind("<<ComboboxClicked>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=i: self.Update_selected_item_info(d, v, p, tp, j))
-            new_item_Code_Combobox.bind("<<ComboboxClicked>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=i: self.Update_selected_item_info(d, v, p, tp, j))
-            new_item_Color_Combobox.bind("<<ComboboxClicked>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=i: self.Update_selected_item_info(d, v, p, tp, j))
-            new_item_Size_Combobox.bind("<<ComboboxClicked>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=i: self.Update_selected_item_info(d, v, p, tp, j))
+            new_item_holder_fram = tk.Frame(new_itemgroup_fram, highlightthickness=2, highlightbackground=self.accent_blue, bg=self.bg_darker)
+            new_item_holder_fram.grid(row=1, column=1, columnspan=6, sticky="nsew", padx=2, pady=2)
+            
+            # list all commen items in the group
+            for si, selected_item in enumerate(selected_items[0]):
+                #print("selected_item ", selected_item)
+                selected_item_info = selected_item[0]
+                
+                new_item_fram = tk.Frame(new_item_holder_fram, bg=self.bg_darker)
+                new_item_fram.pack(side="top", fill=tk.X, expand=True)
 
-            new_item_Price_Spinbox.bind("<KeyRelease>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=i: self.Update_selected_item_info(d, v, p, tp, j))
-            new_item_QTY_Spinbox.bind("<KeyRelease>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=i: self.Update_selected_item_info(d, v, p, tp, j))
-            #new_item_TPrice_Spinbox.bind("<<KeyRelease>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=i: self.Update_selected_item_info(d, v, p, tp, j))
+                if imgname == "ActionImage.jpg":
+                    self.Product_rate = 0
+                    product_image_frame = tk.Frame(new_item_fram, bg=self.bg_dark)
+                    product_image_frame.grid(row=0, column=0, rowspan=2, sticky="nsew")
 
-            new_item_Price_Spinbox.config(command= lambda d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=i: self.Update_selected_item_info(d, v, p, tp, j))
-            new_item_QTY_Spinbox.config(command= lambda  d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=i: self.Update_selected_item_info(d, v, p, tp, j))
-            #new_item_TPrice_Spinbox.bind(command= lambda d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=i: self.Update_selected_item_info(d, v, p, tp, j))
+                    product_image_avatarlabel = tk.Label(product_image_frame, bg=self.bg_dark)
+                    product_image_avatarlabel.pack()
+                    product_image_avatarlabel.bind("<Button-1>", lambda _: self.change_Brand_image())
+                    color = "Def_Color"
+                    if colors:
+                        colors = colors[0]
+                    img = Image.open(MAIN_dir+"\\data\\Icon\\no_Product_Image.jpg").resize((70, 70))
+                    if os.path.exists(MAIN_dir+"\\data\\Products\\"+ str(selected_item_info['values']['barcode']) + "\\ProfileImage.jpg"):
+                        img = Image.open(MAIN_dir+"\\data\\Products\\"+ str(selected_item_info['values']['barcode']) + "\\"+ str(color) + "\\ProductImage.jpg").resize((100, 100))
+
+                    img = ImageTk.PhotoImage(img)
+                    product_image_avatarlabel.config(image=img)
+                    product_image_avatarlabel.image = img
+
+                   
+                if not selected_item[14] in ex_doc_:
+                    ex_doc_.append(selected_item[14])
+                    ch = len(self.extrnal_frame.winfo_children())+1
+
+                    ex_bar_frame = tk.Frame(self.extrnal_frame, bg=self.accent_blue)
+                    ex_bar_frame.grid(row=0, column=ch, sticky="nsew", padx=2, pady=2)
+                    search_label = tk.Label(ex_bar_frame, text=selected_item[14], bg=self.accent_blue, fg=self.text_light, font=("Arial", 10, "bold"))
+                    search_label.grid(row=0, column=0, sticky="nsew", padx=5, pady=3)
+                    if not selected_item[14] == "" and str(selected_item[14]) in str(self.Todays_docs):
+                        Undo_button = tk.Button(ex_bar_frame, text="Undo", command=lambda: self.remove_ex_items(ex_bar_frame, search_label), **self.button_style)
+                        Undo_button.grid(row=0, column=1, sticky="nsew", padx=2, pady=3)
+                    update_button = tk.Button(ex_bar_frame, text="✕", command=lambda: self.remove_ex_items(ex_bar_frame, search_label), **self.button_style)
+                    update_button.grid(row=0, column=2, sticky="nsew", padx=2, pady=3)
+            
+                new_item_selecter_fram = tk.Frame(new_item_fram, bg=self.bg_darker)
+                new_item_selecter_fram.columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1, minsize=int(new_item_selecter_fram.winfo_height() *0.1))
+                new_item_selecter_fram.rowconfigure((0, 1), weight=1, minsize=int(new_item_selecter_fram.winfo_height() *0.1))
+                if imgname == "ActionImage.jpg":
+                    new_item_selecter_fram.grid(row=0, column=1, rowspan=2, sticky="nsew")
+                else:
+                    new_item_selecter_fram.grid(row=0, column=0, rowspan=2, sticky="nsew")
+                    
+                new_item_QTY_Label = tk.Label(new_item_selecter_fram, text="QTY Max is " + str(selected_item[8]), font=("Arial", 8), bg=self.bg_darker, fg=self.text_light)
+                new_item_QTY_Label.grid(row=0, column=1, sticky="nsew")
+                
+                new_item_QTY_Spinbox = ttk.Spinbox(new_item_selecter_fram, from_=0, to=100, width=10)
+                new_item_QTY_Spinbox.grid(row=1, column=1, sticky="nsew")
+                new_item_QTY_Spinbox.set(str(selected_item[7]))
+                price_ = ""
+                price_ = str(selected_item_info['values']['price'])
+                disc = ""
+                if float(selected_item_info['values']['price'])-float(selected_item[10]) > 0:
+                    disc = " DISCOUNT " + str(float(selected_item_info['values']['price'])-float(selected_item[10]))
+                new_item_Price_Label = tk.Label(new_item_selecter_fram, text="Price " + price_ + disc, font=("Arial", 8), bg=self.bg_darker, fg=self.text_light)
+                new_item_Price_Label.grid(row=0, column=2, sticky="nsew")
+
+                new_item_Price_Spinbox = ttk.Spinbox(new_item_selecter_fram, from_=0, to=100, width=10)
+                new_item_Price_Spinbox.grid(row=1, column=2, sticky="nsew")
+                new_item_Price_Spinbox.set(str(selected_item[10]))
+                
+                new_item_name = tk.Label(new_item_selecter_fram, text=str(selected_item[4]), font=("Arial", 12, "bold"), bg=self.bg_darker, fg=self.text_light)
+                new_item_name.grid(row=0, column=3, columnspan=3, sticky="nsew")
+
+                new_barcode_Label = tk.Label(new_item_selecter_fram, text=str("barcode"), font=("Arial", 8), bg=self.bg_darker, fg=self.text_light)
+                new_barcode_Label.grid(row=0, column=6, columnspan=2, sticky="nsew")
+                
+                new_type_Label = tk.Label(new_item_selecter_fram, text=str(selected_item[15]), font=("Arial", 8), bg=self.bg_darker, fg=self.text_light)
+                new_type_Label.grid(row=0, column=8, columnspan=2, sticky="nsew")
+                
+                new_exbarcode_Label = tk.Label(new_item_selecter_fram, text=str(selected_item[14]), font=("Arial", 8), bg=self.bg_darker, fg=self.text_light)
+                new_exbarcode_Label.grid(row=0, column=8, sticky="nsew")
+                
+                new_item_Shop_Combobox = ttk.Combobox(new_item_selecter_fram, values=[], width=10)
+                new_item_Shop_Combobox.grid(row=1, column=3, padx=5, pady=5, sticky=tk.W)
+                new_item_Shop_Combobox.set(str(selected_item[13]))
+                
+                new_item_Code_Combobox = ttk.Combobox(new_item_selecter_fram, values=[], width=10)
+                new_item_Code_Combobox.grid(row=1, column=4, padx=5, pady=5, sticky=tk.W)
+                new_item_Code_Combobox.set(str(selected_item[2]))
+                
+                new_item_Color_Combobox = ttk.Combobox(new_item_selecter_fram, values=[], width=10)
+                new_item_Color_Combobox.grid(row=1, column=5, padx=5, pady=5, sticky=tk.W)
+                new_item_Color_Combobox.set(str(selected_item[5]))
+                
+                new_item_Size_Combobox = ttk.Combobox(new_item_selecter_fram, values=[], width=10)
+                new_item_Size_Combobox.grid(row=1, column=6, padx=5, pady=5, sticky=tk.W)
+                new_item_Size_Combobox.set(str(selected_item[6]))
+                
+                new_item_TPrice_Spinbox = ttk.Spinbox(new_item_selecter_fram, from_=0, to=100, width=10)
+                new_item_TPrice_Spinbox.grid(row=1, column=7, sticky="nsew")
+                new_item_TPrice_Spinbox.set(str(float(selected_item[7])*float(selected_item[10])))
+                
+                del_button = tk.Button(new_item_selecter_fram, text="-", command= lambda index=sis, subindex=si, frame=new_item_fram: self.remove_subitem(index, subindex, frame), **self.button_style)
+                del_button.grid(row=1, column=8, sticky="nsew", padx=2, pady=2)
+                def list_subitem(index, subindex):
+                    new_items = []
+                    for e in range(int(self.Selected_items[index][0][subindex][7])- 1 if int(self.Selected_items[index][0][subindex][7]) > 1 else int(self.Selected_items[index][0][subindex][7])):
+                        new_item = [n for n in self.Selected_items[index][0][subindex]]
+                        new_item[7] = 1
+                        self.Selected_items[index][0].append(new_item)
+                    self.Update_Selected_item() 
+                    
+                    
+                list_button = tk.Button(new_item_selecter_fram, command= lambda index=sis, subindex=si: list_subitem(index, subindex), **self.button_style)
+                list_button.grid(row=1, column=9, sticky="nsew", padx=2, pady=2)
+                list_button.config( text="+" if selected_item[7] == 1 or selected_item[7] == '1' else "V")
+                    
+                # self.master.bind("<Delete>", lambda _: self.remove_item())
+                
+                
+                data = [new_item_Shop_Combobox, new_item_Code_Combobox, new_item_Color_Combobox, new_item_Size_Combobox, new_item_QTY_Spinbox, new_barcode_Label, new_item_Price_Label]
+
+                self.Get_next_seletion(data, selected_item_info)
+                
+
+                new_item_Shop_Combobox.bind("<<ComboboxSelected>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=sis, k=si: self.Update_selected_item_info(d, v, p, tp, j, k))
+                new_item_Code_Combobox.bind("<<ComboboxSelected>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=sis, k=si: self.Update_selected_item_info(d, v, p, tp, j, k))
+                new_item_Color_Combobox.bind("<<ComboboxSelected>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=sis, k=si: self.Update_selected_item_info(d, v, p, tp, j, k))
+                new_item_Size_Combobox.bind("<<ComboboxSelected>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=sis, k=si: self.Update_selected_item_info(d, v, p, tp, j, k))
+
+                new_item_Shop_Combobox.bind("<<ComboboxClicked>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=sis, k=si: self.Update_selected_item_info(d, v, p, tp, j, k))
+                new_item_Code_Combobox.bind("<<ComboboxClicked>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=sis, k=si: self.Update_selected_item_info(d, v, p, tp, j, k))
+                new_item_Color_Combobox.bind("<<ComboboxClicked>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=sis, k=si: self.Update_selected_item_info(d, v, p, tp, j, k))
+                new_item_Size_Combobox.bind("<<ComboboxClicked>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=sis, k=si: self.Update_selected_item_info(d, v, p, tp, j, k))
+
+                new_item_Price_Spinbox.bind("<KeyRelease>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=sis, k=si: self.Update_selected_item_info(d, v, p, tp, j, k))
+                new_item_QTY_Spinbox.bind("<KeyRelease>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=sis, k=si: self.Update_selected_item_info(d, v, p, tp, j, k))
+                #new_item_TPrice_Spinbox.bind("<<KeyRelease>>", lambda  _, d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=sis, k=si: self.Update_selected_item_info(d, v, p, tp, j, k))
+
+                new_item_Price_Spinbox.config(command= lambda d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=sis, k=si: self.Update_selected_item_info(d, v, p, tp, j, k))
+                new_item_QTY_Spinbox.config(command= lambda  d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=sis, k=si: self.Update_selected_item_info(d, v, p, tp, j, k))
+                #new_item_TPrice_Spinbox.bind(command= lambda d=data, v=selected_item_info, p=new_item_Price_Spinbox, tp=new_item_TPrice_Spinbox, j=sis, k=si: self.Update_selected_item_info(d, v, p, tp, j, k))
+
         self.update_info()
         
     def update_list_items(self):
         # Define the SQL query to fetch the product information based on doc_created_date
         # Execute the query and fetch the results
-        res = fetch_as_dict_list("SELECT * FROM pre_doc_table", ())
-        if len(res) > 1 and hasattr(self, 'prevlist_button'):
-            self.prevlist_button.config(state=tk.NORMAL)
-            
-        results = fetch_as_dict_list("SELECT * FROM pre_doc_table WHERE id=?", (self.chart_index,))
-        
-       #print("update_list_items" + str(results))
+        results = fetch_as_dict_list(self.Link, "SELECT * FROM pre_doc_table", ())
         
         # Clear the existing items in the list
         # Loop through the results and add each product to the list
-        for result in results:
+        
+        
+        self.barcode_label.config(text=str(self.chart_index))
+        
+        if self.chart_index > -1 and self.chart_index < len(results):
+            result = results[self.chart_index]
             self.pid_peyment = []
             self.ex_pid_peyment = []
             self.items = []
@@ -914,7 +1033,7 @@ class DisplayFrame(tk.Frame):
             self.Selected_items = []
             
             # Extract the item information from the database record
-            self.chart_index = result['id']
+            #self.chart_index = result['id']
             doc_created_date = result['doc_created_date']
             doc_expire_date = result['doc_expire_date']
             doc_updated_date = result['doc_updated_date']
@@ -951,43 +1070,113 @@ class DisplayFrame(tk.Frame):
         if not Chacke_Security(self, self.user, self.Shops[self.on_Shop], 12, f'User Not allowed to Use Multy Order'):
             return
         #print("in prev func with" + towhere +"\n\n")
-        results = fetch_as_dict_list("SELECT id FROM pre_doc_table", ())
-        p = self.chart_index
-        l = -1
-        n = 0
-        i = 0
-        #print("self.chart_index == : " + str(self.chart_index))
-        for r in results:
-            if r['id'] == self.chart_index:
-                if towhere == "next":
-                    a = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 4)
-                    if a:
-                        if not i+1 >= len(results):
-                            l = results[i+1]['id']
-                        else:
-                            l = results[0]['id']
-                    break
-                else:
-                    a = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 5)
-                    if a:
-                        if not i-1 < 0:
-                            l = results[i-1]['id']
-                        elif len(results)-1 < 0:
-                            l = 0
-                        else:
-                            l = results[len(results)-1]['id']
-                    break
-            i += 1
-        if l == -1:
-            if len(results) > 0:
-                l = results[0]['id']
-            else:
-                l = self.chart_index
-        self.chart_index = l
+        results = fetch_as_dict_list(self.Link, "SELECT id FROM pre_doc_table", ())
+
+        if len(results) > 1 and hasattr(self, 'prevlist_button'):
+            self.prevlist_button.config(state=tk.NORMAL)
+            #self.prevlist_button.config(state=tk.DISABLED)
+        
+        if results and self.chart_index == None: 
+            self.chart_index = len(results)-1
+        
+        else:
+            if towhere == "Next":
+                a = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 4)
+                if len(results) == 0 and not ':' in str(self.chart_index):
+                    self.chart_index = 0
+                elif a:
+                    #print("going to next ")
+                    if str(self.chart_index).isdigit() and self.chart_index < 0 or not str(self.chart_index).isdigit() and ':' in str(self.chart_index): # chack if it is document id
+                        #print("going to doc ", len(self.Todays_docs))
+                        
+                        #print("doc")
+                        for index, value in enumerate(self.Todays_docs):
+                            if value['doc_barcode'] == str(self.chart_index):
+                                self.chart_index = len(results)-1 if len(results) > 0 else 0
+                                break
+                                
+                            if value['doc_barcode'] == self.chart_index:
+                                if index+1 >= 0 and index+1 <= len(self.Todays_docs)-1:
+                                    self.chart_index = self.Todays_docs[index+1]['doc_barcode']
+                                else:
+                                    self.chart_index = len(results)-1 if len(results) > 0 else self.Todays_docs[len(self.Todays_docs)-1]['doc_barcode'] if len(self.Todays_docs) > 0  else 0
+                                break
+                        if not str(self.chart_index).isdigit() and ':' in str(self.chart_index):
+                            rows = fetch_as_dict_list(self.Link, "SELECT * FROM doc_table WHERE doc_barcode=?", (self.chart_index,))
+                            if rows:
+                                rows = rows[0]
+                                selected_item_info = {'values': rows, 'type': 'DOCUMENT'}
+                                self.barcode_label.config(text=str(self.chart_index))
+                                self.get_ex_doc_items(selected_item_info)
+                                self.get_ex_doc_payments(selected_item_info)
+                        if str(self.chart_index).isdigit() or len(self.Todays_docs) > 0 and self.chart_index == self.Todays_docs[len(self.Todays_docs)-1]['doc_barcode']:
+                            if  len(results) > 0:
+                                self.nextlist_button.config(state=tk.NORMAL)
+                                self.nextlist_button.config(text=">>>\nF5")
+                            else:
+                                self.nextlist_button.config(state=tk.NORMAL)
+                                self.nextlist_button.config(text="New\nF7")
+                        
                     
-        self.clear_items()
-        #print("index : \n" + str(self.chart_index))
-        self.update_list_items()
+                    elif self.chart_index+1 == len(results):
+                        self.chart_index = len(results)
+                        #print("new chart")
+                        self.nextlist_button.config(text="New\nF7")
+                        self.new_chart(1)
+                        return
+                    elif self.chart_index+1 <= len(results)-1:
+                        #print("cahrt")
+                        self.nextlist_button.config(state=tk.NORMAL)
+                        self.chart_index += 1
+                        if self.chart_index == len(results)-1:
+                            self.nextlist_button.config(text="New\nF7")
+                        else:
+                            self.nextlist_button.config(text=">>>\nF5")
+            else:
+                a = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 5)
+                if a:
+                    #print("going to prev")
+                    if str(self.chart_index).isdigit() and self.chart_index-1 < 0 or not str(self.chart_index).isdigit() and ':' in str(self.chart_index): # chack if it is document id
+                        #print("going to doc ", len(self.Todays_docs))
+                        #print("doc")
+                        self.nextlist_button.config(state=tk.NORMAL)
+                        self.nextlist_button.config(text=">>>\nF5")
+                        if self.chart_index == 0:
+                            self.chart_index =  self.Todays_docs[len(self.Todays_docs)-1]['doc_barcode']
+                        else:
+                            for index, value in enumerate(self.Todays_docs):
+                                if value['doc_barcode'] == self.chart_index:
+                                    if index-1 >= 0 and index-1 <= len(self.Todays_docs)-1:
+                                        self.chart_index = self.Todays_docs[index-1]['doc_barcode']
+                                    else:
+                                        self.chart_index  = len(results)-1 if len(results) > 0 else self.Todays_docs[len(self.Todays_docs)-1]['doc_barcode'] if len(self.Todays_docs) > 0  else 0
+                                        if self.chart_index == len(results)-1:
+                                            self.nextlist_button.config(text="New\nF7")
+                                    break
+                        if not str(self.chart_index).isdigit() and ':' in str(self.chart_index):
+                            rows = fetch_as_dict_list(self.Link, "SELECT * FROM doc_table WHERE doc_barcode=?", (self.chart_index,))
+                            if rows:
+                                rows = rows[0]
+                                selected_item_info = {'values': rows, 'type': 'DOCUMENT'}
+                                self.barcode_label.config(text=str(self.chart_index))
+                                self.get_ex_doc_items(selected_item_info)
+                                self.get_ex_doc_payments(selected_item_info)
+                                
+                    else:
+                        self.nextlist_button.config(state=tk.NORMAL)
+                        self.chart_index -= 1
+                        #print("prev doc ", self.chart_index)
+                        if self.chart_index == len(results)-1:
+                            self.nextlist_button.config(text="New\nF7")
+                        else:
+                            self.nextlist_button.config(text=">>>\nF5")
+        self.barcode_label.config(text=str(self.chart_index))
+        
+        if str(self.chart_index).isdigit():            
+            self.clear_items()
+            #print("index : \n" + str(self.chart_index))
+            self.update_list_items()
+            
         
     # void btn
     def clear_items(self):
@@ -1004,9 +1193,18 @@ class DisplayFrame(tk.Frame):
         self.ex_pid_peyment = []
         self.items = []
         self.ex_items = []
-        self.custemr = ""
+        self.custemr = "" # for holding user or costumer name
+        self.app = None # for holding user or costumer name
         self.Add_custemur_label.config(text="+ Custumer")
         self.disc = 0
+        
+        self.price = 0
+        self.pid = 0
+        self.creadit = 0
+        self.tax = 0
+        self.qty = 0
+        self.disc = 0
+        self.total = 0
         
     def call_chartForm(self):
         v = ShowchartForm(self)
@@ -1016,29 +1214,43 @@ class DisplayFrame(tk.Frame):
            #print("selected chart : "+ str(v.value))
             self.update_list_items()
             
-    def new_chart(self):
+    def new_chart(self, on):
         if len(self.Selected_items) > 0:
             if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 10, f'User Not allowed to Use Multy Order'):
-                index = 0
-                while(True):
-                    res = fetch_as_dict_list(f"SELECT id FROM pre_doc_table WHERE id = {index}", ())
-                    if not res:
-                        break
-                    else:
-                        index += 1
-                self.chart_index = index
+                res = fetch_as_dict_list(f"SELECT id FROM pre_doc_table", ())
+                if on == 1:
+                    self.chart_index = len(res)
+                    #print("new chart")
+                    self.nextlist_button.config(text="New\nF7")
                 self.clear_items()
                 self.update_list_items()
                 
     def remove_item(self, index, selected_frame):
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 13, f'User Not allowed to Delete Items'):
-            answer = tk.messagebox.askquestion("Question", "Do you whant to Delete "+str(self.Selected_items[index])+" items?")
+            items = ""
+            for b, selected_item in enumerate(self.Selected_items[index][0]):
+                #tax = float(selected_item[10])
+                #total_price = qty * price  # float(selected_item[11])
+                items += "QTY " + str(selected_item[7]) + " price " + str(selected_item[10]) +" discount " +  str(float(selected_item[0]['values']['price']) - float(selected_item[10])) + "\n"
+            answer = tk.messagebox.askquestion("Question", str(items) + "\nDo you whant to Delete those items?")
             if answer == 'yes':
                 self.selected_indexd = -1
                 self.Selected_items.remove(self.Selected_items[index])
                 selected_frame.destroy()
                 self.Update_Selected_item()
                 
+    def remove_subitem(self, index, subindex, selected_frame):
+        if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 13, f'User Not allowed to Delete Items'):
+            items = "QTY " + str(self.Selected_items[index][0][subindex][7]) + " price " + str(self.Selected_items[index][0][subindex][10]) +" discount " +  str(float(self.Selected_items[index][0][subindex][0]['values']['price']) - float(self.Selected_items[index][0][subindex][10])) + "\n"
+            answer = tk.messagebox.askquestion("Question", str(items) + "\nDo you whant to Delete items?")
+            if answer == 'yes':
+                self.selected_indexd = -1
+                if len(self.Selected_items[index][0]) == 1:
+                    self.Selected_items.remove(self.Selected_items[index])
+                else:
+                    self.Selected_items[index][0].remove(self.Selected_items[index][0][subindex])
+                selected_frame.destroy()
+                self.Update_Selected_item()            
     
             
     def void_(self):
@@ -1050,31 +1262,20 @@ class DisplayFrame(tk.Frame):
             
     def void_items(self):
         self.clear_items()
-        # delete this list on db
-        Update_table_database("DELETE FROM pre_doc_table WHERE id=?", (self.chart_index,))
-        # self.update_info() will be called in next_prev_chart 
-        self.next_prev_chart("prev")
-        
-    # about add item btn
-    def Create_Unowen_item(self):
-        if not Chacke_Security(self, self.user, self.Shops[self.on_Shop], 8, f'User Not allowed to Create Uknown Item'):
-            return
-        # get item info
-        #id = GetvalueForm(self, '1', "Enter Item ID")
-        #name = GetvalueForm(self, 'Item Name', "Enter Item Name")
-        itempriceandcost = GetvalueForm(self, '0', ["Enter Item Price", "How much cost?"])
-        
-        if itempriceandcost == None or itempriceandcost.value == [] or len(itempriceandcost.value) <= 0:
-            return
-        
-        uitemprice = itempriceandcost.value[0]
-        if len(itempriceandcost.value) == 2:
-            uitemcost = itempriceandcost.value[1]
-        
-        self.add_item({'type': "UnKNOWN", 'values': {'id': 0, 'name': "Unkown Item", 'price': uitemprice, 'cost': uitemcost}, 'extra_data': [], 'item_list': []})
+        results = fetch_as_dict_list(self.Link, "SELECT * FROM pre_doc_table", ())
+        if self.chart_index >= 0 and self.chart_index < len(results):
+            idid = int(results[self.chart_index]['id'])
+            # delete this list on db
+            Update_table_database("DELETE FROM pre_doc_table WHERE id=?", (idid,))
+        if self.chart_index == 0:
+            # self.update_info() will be called in next_prev_chart 
+            self.next_prev_chart("Next")
+        else:
+            self.next_prev_chart("Prev")
+            
     # this will add item to the list
     def add_item(self, item_info):
-        print("item_info = " + str(item_info))
+        #print("item_info = " + str(item_info))
         if (item_info['type'] == "UnKNOWN"):
             items = item_info['values']
             # selected_data = Id, code, color, size, qty, left, barcode, extr
@@ -1092,9 +1293,9 @@ class DisplayFrame(tk.Frame):
                 # if item price and cost are in range of the unknown item price and cost +- 50% we will consider it as similar item
                 if isinstance(item, list):
                     item = item[0]
-                print('item ', item)
-                # print("item price ", item['price'], "item cost ", item['cost'], "uitemprice ", uitemprice, "uitemcost ", uitemcost)
-                # print("item price range ", float(uitemprice) - float(uitemprice)/2, " - ", float(uitemprice) + float(uitemprice)/2 )
+                #print('item ', item)
+                #print("item price ", item['price'], "item cost ", item['cost'], "uitemprice ", uitemprice, "uitemcost ", uitemcost)
+                #print("item price range ", float(uitemprice) - float(uitemprice)/2, " - ", float(uitemprice) + float(uitemprice)/2 )
                 uitemprice = float(items['price'])
                 uitemcost = float(items['cost'])
                 if ((float(item['cost']) > uitemprice/3 and float(item['cost']) <= (float(uitemcost) + float(uitemcost)/2)) and float(item['cost']) < uitemprice or  float(item['cost']) >= uitemprice/3 and(float(item['cost']) <= float(uitemprice))  ) and ((float(item['price']) >= float(uitemprice)) and (float(item['price']) <= float(uitemprice)) ):
@@ -1103,7 +1304,7 @@ class DisplayFrame(tk.Frame):
                     if not item_type == {}:
                         # get types shop name, code, color, size, extra data if item_type has it like [shops [codes [[colors ...[[sizes[extra data[],...],...],...],...],...],...],...]
                         def get_type_info(item_type, path):
-                            print("item_type ", item_type)
+                            #print("item_type ", item_type)
                             if len(item_type) == 2 and isinstance(item_type[0], str) and isinstance(item_type[1], list):
                                 new_path = get_type_info(item_type[1], path + [item_type[0]])
                                 if new_path:
@@ -1114,22 +1315,22 @@ class DisplayFrame(tk.Frame):
                                     return new_path
                             elif len(item_type) > 4:
                                 if float(item_type[4]) > 0:
-                                    print("path ", path)
+                                    #print("path ", path)
                                     path = path + [float(item_type[4])]
                                     return path
                             return None
                         path = get_type_info(item_type, [])
                         if path:
-                            print("path2 ", path)
+                            #print("path2 ", path)
                             shopname = path[0]
                             code = path[1]
                             color = path[2]
                             size = path[3]
                             qtylaft = path[4] if len(path) > 4 else 1
                             item_info = {'type': "ITEM", 'values': item, 'extra_data': [], 'item_list': []}
-                            value = [str(item['id']), item['code'], item['barcode'], 'Unknown Item', color, size, 1, qtylaft, items['price']-self.disc, item['include_tax'], items['price'], shopname, ""]
+                            value = [str(item['id']), item['code'], item['barcode'], items['name'], color, size, 1, qtylaft, items['price']-self.disc, item['include_tax'], items['price'], shopname, ""]
                             #                                                                                                            value[7] Qty left
-                            self.Selected_items.append([item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], "", value[8], value[9], value[10], value[11], value[12], ""])        
+                            self.Selected_items.append([[[item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], "", value[8], value[9], value[10], value[11], value[12], ""]], "ITEM", 'Unknown Item', item['barcode']])        
                             self.Update_Selected_item()
                             return
         
@@ -1152,7 +1353,7 @@ class DisplayFrame(tk.Frame):
                 if not item_type == {}:
                     # get types shop name, code, color, size, extra data if item_type has it like [shops [codes [[colors ...[[sizes[extra data[],...],...],...],...],...],...],...]
                     def get_type_info(item_type, path):
-                        print("item_type ", item_type)
+                        #print("item_type ", item_type)
                         if len(item_type) == 2 and isinstance(item_type[0], str) and isinstance(item_type[1], list):
                             new_path = get_type_info(item_type[1], path + [item_type[0]])
                             if new_path:
@@ -1165,17 +1366,17 @@ class DisplayFrame(tk.Frame):
                             if float(item_type[4]) > 0:
                                 if float(item_type[4])-float(qty) >= 0:
                                     path = path + [qty]
-                                    print("path ", path)
+                                    #print("path ", path)
                                     return path
                                 else:
                                     path = path + [float(item_type[4])]
-                                    print("path ", path)
+                                    #print("path ", path)
                                     return path
                         return None
                     path = get_type_info(item_type, [])
                     if path:
-                        print("path2 ", path)
-                        print("shop_name ", shop_name, "code ", code, "color ", color, "size ", size)
+                        #print("path2 ", path)
+                        #print("shop_name ", shop_name, "code ", code, "color ", color, "size ", size)
                         if not (path[0] == shop_name and path[1] == code and path[2] == color and path[3] == size):
                             ask = tk.messagebox.askquestion("Warning", "Selected Items Size, Color or Code Out of Stockd or will be out of stock, do you want to add it to the shop items list with this info? \n\n Shop Name: " + path[0] + "\n Code: " + path[1] + "\n Color: " + path[2] + "\n Size: " + path[3])
                             if ask == 'yes':
@@ -1187,7 +1388,7 @@ class DisplayFrame(tk.Frame):
                                 qty = path[4]
                                 item_info = {'type': "ITEM", 'values': items, 'extra_data': [], 'item_list': []}
                                 value = [str(items['id']), items['code'], items['barcode'], items['name'], color, size, qty, items['price'], items['price']-self.disc, items['include_tax'], items['price'], shopname, ""]
-                                self.Selected_items.append([item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], "", value[8], value[9], value[10], value[11], value[12], ""])           
+                                self.Selected_items.append([[[item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], "", value[8], value[9], value[10], value[11], value[12], ""]], "ITEM", items['name'], items['barcode']])           
                         else:
                             qty = float(qty)-float(path[4])
                             if data[7] != []:
@@ -1195,10 +1396,10 @@ class DisplayFrame(tk.Frame):
                                     QTY = int(typ[1])
                                     PRICE = int(typ[2])
                                     value = [str(items['id']), code, barcode, items['name'], color, size, float(QTY), PRICE, self.disc, items['include_tax'], float(QTY)*float(PRICE), shop_name, ""]
-                                    self.Selected_items.append([item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], data[5], PRICE, value[9], value[10], value[11], value[12], typ[0]])
+                                    self.Selected_items.append([[[item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], data[5], PRICE, value[9], value[10], value[11], value[12], typ[0]]], "ITEM", items['name'], barcode])
                             else:
                                 value = [str(items['id']), code, barcode, items['name'], color, size, float(path[4]), items['price'], self.disc, items['include_tax'], float(qty)*float(items['price']), shop_name, '']
-                                self.Selected_items.append([item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], data[5], item_info['values']['price'], value[9], value[10], value[11], value[12], ""])                        
+                                self.Selected_items.append([[[item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], data[5], item_info['values']['price'], value[9], value[10], value[11], value[12], ""]], "ITEM", items['name'], barcode])                        
                             
                             if qty <= 0:
                                 continue
@@ -1208,9 +1409,9 @@ class DisplayFrame(tk.Frame):
                     # if item price and cost are in range of the unknown item price and cost +- 50% we will consider it as similar item
                     if isinstance(item, list):
                         item = item[0]
-                    print('item ', item)
-                    # print("item price ", item['price'], "item cost ", item['cost'], "uitemprice ", uitemprice, "uitemcost ", uitemcost)
-                    # print("item price range ", float(uitemprice) - float(uitemprice)/2, " - ", float(uitemprice) + float(uitemprice)/2 )
+                    #print('item ', item)
+                    #print("item price ", item['price'], "item cost ", item['cost'], "uitemprice ", uitemprice, "uitemcost ", uitemcost)
+                    #print("item price range ", float(uitemprice) - float(uitemprice)/2, " - ", float(uitemprice) + float(uitemprice)/2 )
                     uitemprice = float(items['price'])
                     uitemcost = float(items['cost'])
                     if (float(item['price']) == float(uitemprice) and float(item['cost']) >= float(uitemcost) - float(uitemcost)/2 and float(item['cost']) <= float(uitemcost) + float(uitemcost)/2):
@@ -1219,7 +1420,7 @@ class DisplayFrame(tk.Frame):
                         if not item_type == {}:
                             # get types shop name, code, color, size, extra data if item_type has it like [shops [codes [[colors ...[[sizes[extra data[],...],...],...],...],...],...],...]
                             def get_type_info(item_type, path):
-                                print("item_type ", item_type)
+                                #print("item_type ", item_type)
                                 if len(item_type) == 2 and isinstance(item_type[0], str) and isinstance(item_type[1], list):
                                     new_path = get_type_info(item_type[1], path + [item_type[0]])
                                     if new_path:
@@ -1231,7 +1432,7 @@ class DisplayFrame(tk.Frame):
                                 elif len(item_type) > 4:
                                     if float(item_type[4]) > 0 and float(item_type[4]) - float(qty) >= 0:
                                         path = path + [qty]
-                                        print("path ", path)
+                                        #print("path ", path)
                                         return path
                                 return None
                             path = get_type_info(item_type, [])
@@ -1244,7 +1445,7 @@ class DisplayFrame(tk.Frame):
                                     size = path[3]
                                     item_info = {'type': "ITEM", 'values': item, 'extra_data': [], 'item_list': []}
                                     value = [str(item['id']), item['code'], item['barcode'], 'Unknown Item', color, size, path[4], items['price'], items['price']-self.disc, item['include_tax'], items['price'], shopname, ""]
-                                    self.Selected_items.append([item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], "", value[8], value[9], value[10], value[11], value[12], ""])        
+                                    self.Selected_items.append([[[item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], "", value[8], value[9], value[10], value[11], value[12], ""]], "ITEM", items['name'], barcode])        
                                     break
                                 else:
                                     if data[7] != []:
@@ -1252,36 +1453,61 @@ class DisplayFrame(tk.Frame):
                                             QTY = int(typ[1])
                                             PRICE = int(typ[2])
                                             value = [str(items['id']), code, barcode, items['name'], color, size, float(QTY), PRICE, self.disc, items['include_tax'], float(QTY)*float(PRICE), shop_name, ""]
-                                            self.Selected_items.append([item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], data[5], PRICE, value[9], value[10], value[11], value[12], typ[0]])
+                                            self.Selected_items.append([[[item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], data[5], PRICE, value[9], value[10], value[11], value[12], typ[0]]], "ITEM", items['name'], barcode])
                                     else:
                                         value = [str(items['id']), code, barcode, items['name'], color, size, float(path[4]), items['price'], self.disc, items['include_tax'], float(qty)*float(items['price']), shop_name, '']
-                                        self.Selected_items.append([item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], data[5], item_info['values']['price'], value[9], value[10], value[11], value[12], ""])                        
+                                        self.Selected_items.append([[[item_info, str(value[0]), value[1], value[2], value[3], value[4], value[5], value[6], value[7], data[5], item_info['values']['price'], value[9], value[10], value[11], value[12], ""]], "ITEM", items['name'], barcode])                        
                                     break
 
                 self.disc = 0
         if(item_info['type'] == 'ACTIONS'):
-           #print("item_info['values'] " + str(item_info['values']))
-           #print("item_info['values'][6] " + str(item_info['values'][6]))
-           #print("item_info['values'][6][1] " + str(item_info['values'][6][1]))
-            for action in item_info['values'][6][1]:
-                self.Selected_items.append(action)
+            print("chacking for  ", len(item_info['values']))
+            self.Action_code = item_info['values'][0]
+            Action_label  = item_info['values'][1]
+            From_Date = item_info['values'][3]
+            TO_Date = item_info['values'][4]
+            
+            ifSelected_items = item_info['values'][5]
+            # TODO : Do if by profit or totale price
+            '''ifProduct_Make_price = actions[5][2]
+            ifProduct_Make_Total_price = actions[5][3]
+            ifProduct_Make_Discount = actions[5][4]
+            ifProduct_Make_Total_Disc = actions[5][5]'''
+            
+            doSelected_items = item_info['values'][6]
+            
+            '''doProduct_Make_price = actions[6][2]
+            doProduct_Make_Total_price = actions[6][3]'''
+            
+            print("chacking for ifSelected_items ", ifSelected_items)
+            print("chacking for doSelected_items ", doSelected_items)
+            
+            if not ifSelected_items[1] or len(ifSelected_items[1]) == 0 or not ActionsForm.chack_for_Action(self.Selected_items, ifSelected_items[1]) == None:
+                print("Done chalckeing for action ")
+                #print("self.Selected_items0 ", self.Selected_items)
+                self.Selected_items.append([doSelected_items[1], "ACTIONS", item_info['values'][1], item_info['values'][0]])
+                #print("self.Selected_items1 ", self.Selected_items)
+                
+            
+            
+
                 
         if (item_info['type'] == "DOCUMENT"):
             self.Selected_items = []
             items = json.loads(item_info['values']['item'])
             for item in items:
-                it = fetch_as_dict_list("SELECT * FROM product WHERE id=?", (item[0],))[0]
+                it = fetch_as_dict_list(self.Link, "SELECT * FROM product WHERE id=?", (item[0],))[0]
                 if it:
                     doc_item_info = {'values': it, 'type': 'DOCUMENT', 'item_list':[]}
-                    # print("items===========%%%%%%% = " + str(it))
-                    # print("items===========%%%%%%% = " + str(item))
-                    # print("doc_item_info ===========%%%%%%% = " + str(doc_item_info))
+                    #print("items===========%%%%%%% = " + str(it))
+                    #print("items===========%%%%%%% = " + str(item))
+                    #print("doc_item_info ===========%%%%%%% = " + str(doc_item_info))
                     # TODO: last empty one is type find it
                     typ = ""
                     if len(item) > 11:
                         typ = item[11]
                     qtyleft = "??"
-                    self.Selected_items.append([doc_item_info, str(item[0]), item[1], item[2], item[3], item[5], item[6], item[7], item[8], qtyleft, item[8], item[10], 0, item[4], item_info['values']['doc_barcode'], typ]) 
+                    self.Selected_items.append([[[doc_item_info, str(item[0]), item[1], item[2], item[3], item[5], item[6], item[7], item[8], qtyleft, item[8], item[10], 0, item[4], item_info['values']['doc_barcode'], typ]], "ITEM", item[1], item[2]]) 
                 else:
                     pass
         
@@ -1291,29 +1517,40 @@ class DisplayFrame(tk.Frame):
         if not barcode in self.ex_pid_peyment:
             self.ex_pid_peyment.append(barcode)
         if (selected_type == "DOCUMENT"):
+            #print("add_payment self.pid_peyment = " + str(self.pid_peyment))
             for item in items:
                 if len(item) == 6:   
                     item.append(1)
                 if len(item) == 7:
                     item.append(barcode)
-                if len(item) >= 7:
+                if len(item) >= 7 and (item[7] == "" or item[7] == None):
                     item[7] = barcode
-               #print("doc barcode = "+ str(barcode))
-               #print("doc payment = "+ str(item))
+                #print("doc barcode = "+ str(barcode))
+                #print("doc payment = "+ str(item))
+                #print("doc payment[0] = "+ str(item[0]))
+                # this is for old vistion that use the first index ad number not for type
+                # in new version we need the payment type so we useing index 0
+                payment_tool_type = item[0]
+                if item[0].isdigit():
+                    # if it is old v we will get it by searching
+                    rows = fetch_as_dict_list(self.Link, "SELECT * FROM tools", ())
+                    for spt, row in enumerate(self.Shop_Payment_Tools):
+                        if row[0] == item[1]:
+                            payment_tool_type = row[1]
+                item[0] = payment_tool_type
+                if payment_tool_type == "CREADIT":
+                    self.creadit += float(item[2])
                 self.pid_peyment.append(item)
-       #print("add_payment self.pid_peyment = " + str(self.pid_peyment))
-
-    
-
+           
 
     def get_ex_doc_items(self, item_info):
         self.add_item(item_info)
         self.qty = 0
 
     def get_ex_doc_payments(self, item_info):
-       #print("items===========%%%%%%% = " + str(item_info))
+        #print("items===========%%%%%%% = " + str(item_info))
         b = json.loads(item_info['values']['payments'])
-       #print("items===========%%%%%%% = " + str(b))
+        #print("items===========%%%%%%% = " + str(b))
         self.add_payment(b, item_info['values'], "DOCUMENT", item_info['values']['doc_barcode'])
         self.qty = 0
 
@@ -1324,36 +1561,25 @@ class DisplayFrame(tk.Frame):
 
     # Function called when a payment button is clicked to make quike payment
     # it will get value from user if price is same to pid or give it will prosess payment
-    def Q_Payment(self, event, text):
-       #print("alt + " + str(text))
+    def Q_Payment(self, event, text, payment_type):
+        #print("Q_Payment + " + str(text) + " payment_type " + str(payment_type))
         p = 0
         for pid in self.pid_peyment:
             p += float(pid[2])
-        i = GetvalueForm(self, str(self.total-p), ["Make " + str(text) + " Peyment"])
-        if i and i.value[0] and i.value[0] > 0:
-            self.pid_peyment.append([len(self.pid_peyment), str(text), str(i.value[0]), "", "", "", "", ""])
+
+        t = self.total-p
+        if t <= 0 and not self.creadit == 0:
+            #print("self.creadit "+str(self.creadit))
+            t = self.creadit
+        i = GetvalueForm(self, str(t), ["Make " + str(text) + " Peyment"])
+        if i and i.value and len(i.value) and i.value[0] > 0:
+            self.pid_peyment.append([payment_type, str(text), str(i.value[0]), "", "", "", "", ""])
             p += float(i.value[0])
+            if t <= 0 and self.creadit == 0:
+                self.creadit -= float(i.value[0])
         if p > 0 and p >= self.total:
-           #print("call_payment self.pid_peyment = " + str(self.pid_peyment))
-            self.process_payment()
-                     
-    # splitpayment btn
-    def call_splitpayment(self):
-        if len(self.Selected_items) > 0 or len(self.pid_peyment) > 0:
-            PaymentForm(self)
-        else:
-           print("item ", len(self.Selected_items))
-           print("payment ", len(self.pid_peyment))
-    
-    # about payment
-    def process_payment(self):
-        if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 22, f'User Not allowed to Sell'):
-           #print("user "+str(self.user))
-            answer = tk.messagebox.askquestion("Question", "do you whant to continue?")
-            if answer != 'yes':
-                return
-            # GET COPY OF ALL GIVEN INFO
-            list_items_copy = self.Selected_items
+            #print("call_payment self.pid_peyment = " + str(self.pid_peyment))
+            
             todaydate = str(datetime.datetime.now().strftime('%Y')) + "-"+str(datetime.datetime.now().strftime('%m')) + "-"+str(datetime.datetime.now().strftime('%d'))
             givendate = self.date_year_Spinbox.get() + "-"+self.date_month_Spinbox.get() + "-"+self.date_day_Spinbox.get()
 
@@ -1363,462 +1589,35 @@ class DisplayFrame(tk.Frame):
                     self.date_day_Spinbox.set(str(datetime.datetime.now().strftime('%d')))
                     self.date_month_Spinbox.set(str(datetime.datetime.now().strftime('%m')))
                     self.date_year_Spinbox.set(str(datetime.datetime.now().strftime('%Y')))
-            givendate = self.date_year_Spinbox.get() + "-"+self.date_month_Spinbox.get() + "-"+self.date_day_Spinbox.get()
-            today_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
-            date = givendate + " " + datetime.datetime.now().strftime('%H:%M')
-
-            payments_extra = []
-            extra_payment_needs = []
             
-            Seller_id = None
-            payment_item_required = 0
-            payment_open_drower = 0
-            payment_print_slip = 1
-            payment_customer_required = 0
-            payment_enable = 0
-            payment_change_allowed = 0
-            payment_mark_pad = 0
-            
-            item_tobechanged = []
-            
-            
-            brcod = ""
+            slip_doc_code = DocEditForm.process_payment(self,givendate, self.user, self.custemr, self.Shops, self.on_Shop, self.Shops_info, self.Selected_items, self.pid_peyment)
 
-            # doc_code = "1"
-            # Year:Month-docType 1 doccreateplatform 1 doc_numb
-            #TODO make it create randim number so that ont to count
-            # create a mostly-unique doc barcode using timestamp (avoids needing extra imports)
-            doc_code = datetime.datetime.now().strftime('%y:%m') + "-11"
-            # use current microseconds as suffix to reduce collisions
-            suffix = datetime.datetime.now().strftime('%f')
-            while True:
-                candidate = doc_code + suffix
-                # use existing cursor 'cur'
-                ex_doc = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (candidate,))
-                if ex_doc:
-                    ex_doc = ex_doc[0]
-                    # fallback: increment numeric suffix until unique
-                    try:
-                        suffix = str(int(suffix) + 1)
-                    except Exception:
-                        suffix = '1'
-                else:
-                    brcod = candidate
-                    break
-            # ex_item = [each item [barcode, isitem, ispay, ex_item, ex_item_items, payments, ex_payment_count, ex_item_pric, ex_item_T_disc, ex_item_T_tax, ex_pid]
-            ex_docs_info = []
-
-            
-            payments_ = []
-            pay_index = 0
-            itemforslip = ""
-            item = "" # item found
-            new_items = [] # item found
-            count_new_items = 0 # itme counted
-            price = 0 # new items price
-            pid = 0   # for new items pid
-            T_pid = 0 # for all pid 
-            def_pid = 0# for cash with no item pid or credit
-            T_disc = 0  # for total new items dics
-            tax = 0  # tax
-            T_tax = 0  # tax 
-            change = 0
-            
-            doc_found = []
-            #print("brcod :" + str(brcod))
-            #print("count sold items :" + str(len(list_items_copy.get_children())))
-            #print("sold list_items_copy :" + str(list_items_copy))
-            for iv in list_items_copy:
-                print("iv :" + str(iv))
-                print("self.ex_items :" + str(self.ex_items))
-                print("iv[11] :" + str(iv[11]))
-                print("len(iv) :" + str(len(iv)))
-                if len(iv) >= 14:
-                    found_index = next((i for i, d in enumerate(doc_found) if d["Barcode"] == iv[14]), -1)
-                    if found_index:
-                        selected_item_info = {
-                            "Barcode" : iv[14],
-                            'payments_' : [],
-                            'pay_index' : 0,
-                            'itemforslip' : "",
-                            'item' : "",
-                            'new_items' : [],
-                            'count_new_items' : 0,
-                            'price' : 0,
-                            'Cost' : 0,
-                            'Profite' : 0,
-                            'pid' : 0,
-                            'T_pid' : 0,
-                            'def_pid' : 0,
-                            'disc' : 0,
-                            'Tdisc' : 0,
-                            'T_disc' : 0,
-                            'tax' : 0,
-                            'T_tax' : 0,
-                            'change' : ""
-                        }
-                        doc_found.append(selected_item_info)
-                        found_index = len(doc_found) -1 
-
-                    print("found_index :" + str(found_index))
-                    print(str(iv[1]))
-                    print("item id " + str(iv[0]['values']['id']) + " to item")
-                    if iv[0]['values']['id'] == -1:
-                        # TODO : add type here
-                        disc = float(iv[0]['values']['price'])-float(iv[10])
-                        itl = [iv[1], iv[2], iv[3], iv[4], iv[13], iv[5], iv[6], iv[7], iv[10], disc, iv[11], (iv[0]['values']['cost'])]
-                        
-                        doc_found[found_index]['count_new_items'] += float(iv[7])
-                        doc_found[found_index]['price'] += float(iv[7])*float(iv[10])
-                        doc_found[found_index]['Cost'] = (iv[0]['values']['cost'])
-                        doc_found[found_index]['Profite'] += (float(iv[10]) - (iv[0]['values']['cost']))*float(iv[7])
-                        doc_found[found_index]['Tdisc'] += disc
-                        doc_found[found_index]['tax'] += float(iv[10])
-                        doc_found[found_index]['new_items'].append(itl)
-                    
-                        print("adding " + str(iv) + " to item")
-                        print("adding " + str(iv) + " to item")
-                        print("adding " + str(iv[7]) + " to item_tobechanged")
-                    else:
-                        it = fetch_as_dict_list("SELECT * FROM product WHERE id=?", (iv[0]['values']['id'],))
-                        print("item it " + str(it) + " to item")
-                        if it:
-                            it = it[0]
-                            # TODO : add type here
-                            disc = float(iv[0]['values']['price'])-float(iv[10])
-                            itl = [iv[1], iv[2], iv[3], iv[4], iv[13], iv[5], iv[6], iv[7], iv[10], disc, iv[11], (iv[0]['values']['cost'])]
-                            
-                            doc_found[found_index]['count_new_items'] += float(iv[7])
-                            doc_found[found_index]['price'] += float(iv[7])*float(iv[10])
-                            doc_found[found_index]['Cost'] = (iv[0]['values']['cost'])
-                            doc_found[found_index]['Profite'] += (float(iv[10]) - (iv[0]['values']['cost']))*float(iv[7])
-                            doc_found[found_index]['Tdisc'] += disc
-                            doc_found[found_index]['tax'] += float(iv[10])
-                            doc_found[found_index]['new_items'].append(itl)
-                        
-                            print("adding " + str(it) + " to item")
-                            print("adding " + str(iv) + " to item")
-                            print("adding " + str(iv[7]) + " to item_tobechanged")
-                            setted = 0
-                            for i, itbc in enumerate(item_tobechanged):
-                                if itbc[0] == iv[1]:
-                                    item_tobechanged[i][7] = str(float(item_tobechanged[i][7])+float(iv[7]))
-                                    setted = 1
-                            if setted == 0:
-                                item_tobechanged.append([iv[1], it['more_info'], 0, str(iv[13]), str(iv[2]), str(iv[5]),str(iv[6]), str(iv[7])])            
-                        else:
-                            # message there is proplame on item change_item
-                            erroritemsearchanswer = tk.messagebox.askquestion("Question", "There is proplame finding On one of Item Do you whant to continue?")
-                            if erroritemsearchanswer != 'yes':
-                                    return                  
-                    print("\n\n sold items collect :" + str(doc_found[found_index]['new_items'])+"\n\n")
-                    
-            print("\n\n items collect than doc_found :" + str(doc_found)+"\n\n")
-            p = 0
-            while p < len(self.pid_peyment):
-                print("self.pid_peyment:" + str(self.pid_peyment))
-                print("self.ex_pid_peyment:" + str(self.ex_pid_peyment))
-                print("self.pid_peyment[p]:" + str(self.pid_peyment[p]))
-                if len(self.pid_peyment[p]) > 7:  
-                    print("\n\n items collect than self.pid_peyment[p][7] :" + str(self.pid_peyment[p][7])+"\n\n")
-                    found_index = next((i for i, d in enumerate(doc_found) if d["Barcode"] == self.pid_peyment[p][7]), -1)
-                    if found_index:
-                        selected_item_info = {
-                            "Barcode" : self.pid_peyment[p][7],
-                            'payments_' : [],
-                            'pay_index' : 0,
-                            'itemforslip' : "",
-                            'item' : "",
-                            'new_items' : [],
-                            'count_new_items' : 0,
-                            'price' : 0,
-                            'pid' : 0,
-                            'T_pid' : 0,
-                            'def_pid' : 0,
-                            'disc' : 0,
-                            'Tdisc' : 0,
-                            'T_disc' : 0,
-                            'tax' : 0,
-                            'T_tax' : 0,
-                            'Profite' : 0,
-                            'change' : ""
-                        }
-                        doc_found.append(selected_item_info)
-                        found_index = len(doc_found) -1 
-                    doc_found[found_index]['pay_index'] += 1
-                    print("self.pid_peyment[p]:" + str(self.pid_peyment[p]))
-                    rows = 0
-                    for r in self.Shop_Payment_Tools:
-                        if r[0] == self.pid_peyment[p][1]:
-                            rows = r
-                            break
-                    if rows:
-                        print("rows:" + str(rows))
-                        print("price-disc "+str(doc_found[found_index]['price']-doc_found[found_index]['Tdisc']) + ": pid " + str(doc_found[found_index]['pid']) + ":def_pid " + str(def_pid))
-                        c = float(self.pid_peyment[p][2])
-                        print("c:" + str(c))
-                        # "Tool Name", "Tool Method", "Tool ID", "Tool Short cut", "Tool Acsess key", "Tool enabel", "Tool Quick_pay","Tool Markpad", "Tool Customer_required", "Tool Open_drower", "Tool#printslip"
-                        if rows[5] == '1': # chack if enabled
-                            payment_enable += 1
-                        if rows[7] == '1' and payment_mark_pad == 0: # chack if enabled
-                            payment_mark_pad = 1
-                        if rows[8] == '1' and payment_customer_required == 0: # chack if enabled
-                            payment_customer_required = 1
-                        if rows[9] == '1' and payment_open_drower == 0: # chack if enabled
-                            payment_open_drower = 1
-                        if rows[10] == '1' and payment_print_slip == 0: # chack if enabled
-                            payment_print_slip = 1
-                        '''if rows[11] == 1 and payment_change_allowed == 0: # chack if enabled
-                            payment_change_allowed = 1
-                        if rows[11] == 1 and payment_item_required == 0: # chack if enabled
-                            payment_item_required = 1'''
-                        if not rows[6]:
-                            doc_found[found_index]['price'] += c
-                            doc_found[found_index]['def_pid'] += c
-                        
-                        if doc_found[found_index]['price']-doc_found[found_index]['Tdisc'] == doc_found[found_index]['pid']:
-                            if doc_found[found_index]['price']-doc_found[found_index]['Tdisc'] == 0:
-                                doc_found[found_index]['payments_'].append([str(doc_found[found_index]['pay_index']), str(self.pid_peyment[p][1]), str(self.pid_peyment[p][2] if self.pid_peyment[p][2] != "" else date), str(self.pid_peyment[p][3] if self.pid_peyment[p][3] != "" else date), str(self.pid_peyment[p][4]), self.user['User_name'], str(rows[4]), str(self.pid_peyment[p][3]), rows[1]])
-                            else:
-                                payments_extra.append([str(doc_found[found_index]['pay_index']), str(self.pid_peyment[p][1]), str(self.pid_peyment[p][2] if self.pid_peyment[p][2] != "" else date), str(self.pid_peyment[p][3] if self.pid_peyment[p][3] != "" else date), str(self.pid_peyment[p][4]), self.user['User_name'], str(rows[4]), str(self.pid_peyment[p][3]), rows[1]])
-                            #doc_found[found_index]['payments_'].append([str(doc_found[found_index]['pay_index']), str(self.pid_peyment[p][1]), str(c), date, date, self.user['User_name'], str(rows[4]), str(self.pid_peyment[p][3]), rows[1]])
-                        else:
-                            if doc_found[found_index]['pid'] + c > doc_found[found_index]['price']-doc_found[found_index]['Tdisc']:
-                                pr = (doc_found[found_index]['price']-doc_found[found_index]['disc']) # item price
-                                pl = pr-doc_found[found_index]['pid']     # price left to pay
-                                if c > pl:
-                                    e = c - pl
-                                    payments_extra.append([str(doc_found[found_index]['pay_index']), str(self.pid_peyment[p][1]), str(e), str(self.pid_peyment[p][3] if self.pid_peyment[p][3] != "" else date), str(self.pid_peyment[p][4]), self.user['User_name'], str(rows[4]), str(self.pid_peyment[p][3]), rows[1]])
-                                    #doc_found[found_index]['payments_'].append([str(doc_found[found_index]['pay_index']), str(self.pid_peyment[p][1]), str(c), date, date, self.user['User_name'], str(rows[4]), str(self.pid_peyment[p][3]), rows[1]])
-                                    c = pl # taking only what pied
-                                else:
-                                    c = pl
-                            if rows[6]:
-                               #print("pid+c ")
-                                doc_found[found_index]['T_pid'] += float(self.pid_peyment[p][2])
-                                doc_found[found_index]['pid'] += c
-                            doc_found[found_index]['payments_'].append([str(doc_found[found_index]['pay_index']), str(self.pid_peyment[p][1]), str(c), str(self.pid_peyment[p][3] if self.pid_peyment[p][3] != "" else date), str(self.pid_peyment[p][4]), self.user['User_name'], str(rows[4]), str(self.pid_peyment[p][3]), rows[1]])
-                self.pid_peyment.remove(self.pid_peyment[p])
-                print("\n\n payments_ pid collect :" + str(doc_found[found_index]['payments_'])+"\n\n")
-                print("\n\n payments_extra pid collect :" + str(payments_extra)+"\n\n")
-                
-            print("\n\n payments collect than doc_found :" + str(doc_found)+"\n\n")
-            
-            print("self.user :" + str(self.user))
-            if self.user['User_id']:
-                user_id = 'User_id'
-                user_idv = self.user['User_id']
-            else:
-                user_id = 'Id'
-                user_idv = self.user['Id']
-            f_user_s = fetch_as_dict_list("SELECT * FROM setting WHERE "+user_id+"=?", (int(user_idv),))
-            print("f_user_s "+str(f_user_s))
-            Seller_id = None
-
-            for px, extra_payment in enumerate(payments_extra):
-                print("--extra_payment = " + str(extra_payment))
-                c = float(extra_payment[2])
-                l = 0 # doc found 
-                while c > 0 and l == 0:
-                    for i, d in enumerate(doc_found):
-                        print("--Barcode = " + str(d['Barcode']))
-                        print("--item = " + str(d['new_items']))
-                        print("--payments_ : " + str(d['payments_']))
-                        if d['price']-d['Tdisc'] != d['pid']:
-                            if d['pid'] + c > d['price']-d['Tdisc']:
-                                pr = (d['price']-d['disc']) # item price
-                                pl = pr-d['pid']     # price left to pay
-                                if c > pl:
-                                    e = c - pl
-                                    # payments_extra.append([str(d['pay_index']), str(self.pid_peyment[p][1]), str(e), date, date, self.user['User_name'], str(rows[10]), str(self.pid_peyment[p][3])])
-                                    payments_extra[px][2] = str(e)
-                                    c = pl # taking only what pied
-                                else:
-                                    c = pl
-                            doc_found[i]['pay_index'] += 1
-                            doc_found[i]['pid'] += c
-                            doc_found[i]['payments_'].append([str(doc_found[i]['pay_index']), str(extra_payment[1]), str(c), extra_payment[3], date, extra_payment[5], extra_payment[6], extra_payment[7]])
-                            l += 1
-                        print("--payments_ : " + str(d['payments_']))
-                    if c > 0:
-                        doc_found[0]['pay_index'] += 1
-                        if extra_payment[7] == "":
-                            doc_found[0]['payments_'].append([str(doc_found[0]['pay_index']), "Change", str(-c), extra_payment[3], date, extra_payment[5], extra_payment[6], extra_payment[7]])
-                        else:
-                            doc_found[0]['payments_'].append([str(doc_found[0]['pay_index']), "", str(-c), extra_payment[3], date, extra_payment[5], extra_payment[6], extra_payment[7]])
-                        c = 0
-            newitems = []
-            for i, d in enumerate(doc_found):
-                if d['Barcode'] == '':
-                    newitems = d['new_items']
-                    
-            for i, d in enumerate(doc_found):
-                print("--Barcode = " + str(d['Barcode']))
-                if d['Barcode'] != '':
-                    fdoc = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (d['Barcode'],))
-                    print("fdoc " + str(fdoc) + " to item")
-                    if fdoc:
-                        fdoc = fdoc[0]
-                        items = json.loads(fdoc['item'])
-                        for item in items:
-                            print('item ', item)
-                            it = fetch_as_dict_list("SELECT * FROM product WHERE id=?", (item[0],))
-                            itemqty = item[7]
-                            if it:
-                                it = it[0]
-                                for olditem in d['new_items']:
-                                    if olditem[0] == item[0]:
-                                        if olditem[7] < item[7]:
-                                            itemqty -= olditem[7]
-                                            if itemqty <= 0:
-                                                break;
-                                                
-                                '''for exitem in newitems :
-                                    if exitem[0] == item[0]:                                            
-                                        if exitem[7] < item[7]:
-                                            itemqty -= exitem[7]
-                                            if itemqty <= 0:
-                                                break;'''
-                                print('itemqty ', itemqty)
-                                if float(itemqty) > 0:
-                                    item_tobechanged.append([item[0], it['more_info'], 1, str(item[4]), str(item[1]), str(item[5]),str(item[6]), str(itemqty)])
-                                    print("--removeing all old qty = " + str([item[1], it['more_info'], 0, str(item[4]), str(item[1]), str(item[5]),str(item[6]), str(item[7])]))
-            if f_user_s and f_user_s[0] and f_user_s[0]['Get_seller']:
-                    print("opning worker dialog")
-                    app = WorkerManagementApp(self, str(brcod), float(count_new_items))
-                    if app.user_details:
-                        print("app.user_details['User_id'] "+str(app.user_details['User_id']))
-                        Seller_id = app.user_details['User_id']
-                    else:
-                        return
-            print("--item_tobechanged : " + str(item_tobechanged))
-            
-            costumer_name = ""
-            phone_num = ""
-            cm_id = None
-            old_cm_id = None
-                            
-            slip_doc_code = []
-            '''while True:
-                continue'''
-            print("item_tobechanged  : " + str(item_tobechanged))
-            for change_item in item_tobechanged:
-                print("item : " + str(change_item[1]), change_item[2], str(change_item[3]), str(change_item[4]),str(change_item[5]), str(change_item[6]))
-                print("item info befor : " + str(change_item[1]))
-                qty_info_list = []
-                print("change_item[1]  : " + str(change_item[1]))
-                if change_item[1]:
-                    qty_info_list = json.loads(change_item[1])
-                print("qty_info_list[1]  : " + str(qty_info_list))
-                it_info = change_qty(qty_info_list, change_item[2], str(change_item[3]), str(change_item[4]), str(change_item[5]),str(change_item[6]), str(change_item[7]))
-
-                if not it_info:
-                        # message there is proplame on item change_item
-                        erroriteminfoanswer = tk.messagebox.askquestion("Question", "There is Proplame On one Item Do you whant to continue?")
-                        if erroriteminfoanswer != 'yes':
-                                return
-                                
-                print("item info befor  : " + str(it_info))
-                #while True:
-                #    continue
-                Update_Producte(None, self.user, ['more_info'], [json.dumps(it_info)], ['id'], [change_item[0]])
-                #Update_table_database('UPDATE product SET more_info=? WHERE id=?', (json.dumps(it_info), change_item[0]))
-
-                
-                it2 = fetch_as_dict_list('SELECT * FROM product WHERE id=?', (str(change_item[0]),))
-                if it2 and not len(it2) == 0:
-                    for i3, it3 in enumerate(self.Shops_info['Shop_items']):
-                        if it3[0]['id'] == it2[0]['id']:
-                            self.Shops_info['Shop_items'][i3][0] = it2[0]
-                            break
-                print("item info updated : " + str(it2[0]['more_info']))                
-            if payment_customer_required:
-                if self.custemr == "" or not self.app:
-                    self.Add_Custumer()
-                cm_id = self.custemr
-                costumer_name = self.app.user_details['User_name']
-                phone_num = self.app.user_details['User_phone_num']
-                print(self.app.user_details)
-
-                
-            for i, d in enumerate(doc_found):
-                print("--item = " + str(d['item']))
-                print("--payments_ : " + str(d['payments_']))
-                if d['payments_'] == [] and payments_extra != []:
-                    d['payments_'] = payments_extra
-                    payments_extra = []
-                    
-                if d['payments_'] != [] or float(d['count_new_items']) != 0:
-                        if d["Barcode"] != "":
-                                print("d[Barcode] = " + str(d["Barcode"]))
-                                # Get_Document(None, self.user, ['doc_barcode'], [d["Barcode"]])
-                                rows = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (d["Barcode"],))
-                                # fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (d["Barcode"],)).fetchall()
-                                if rows and rows[0]['customer_id']: # if doc found
-                                    old_cm_id = rows[0]['customer_id']
-                                    print("cmd old id = " + str(rows[0]) + " new id " + str(cm_id))
-                                if cm_id and old_cm_id != str(cm_id):
-                                    #[each item [barcode, isitem, ispay, ex_item, ex_item_items, payments, ex_payment_count, ex_item_pric, ex_item_T_disc, ex_item_T_tax, ex_pid]
-                                    Update_Documente(None, self.user, ['customer_id'], [cm_id], ['doc_barcode'], [d["Barcode"]])
-
-                                    # Update_table_database('UPDATE doc_table SET customer_id=? WHERE doc_barcode=?', (cm_id, d["Barcode"]))
-                                    # Commit the changes to the database
-                                    # conn.commit()
-                                if Seller_id != None:
-                                    #[each item [barcode, isitem, ispay, ex_item, ex_item_items, payments, ex_payment_count, ex_item_pric, ex_item_T_disc, ex_item_T_tax, ex_pid]
-                                    Update_Documente(None, self.user, ['Seller_id'], [Seller_id], ['doc_barcode'], [d["Barcode"]])
-                                    # Update_table_database('UPDATE doc_table SET Seller_id=? WHERE doc_barcode=?', (Seller_id, d["Barcode"]))
-                                    # Commit the changes to the database
-                                    # conn.commit()
-                                    
-                                if d['payments_']:
-                                    #todo if needed add pid in doc e_doc_info[10]
-                                    Update_Documente(None, self.user, ['pid', 'payments', 'doc_updated_date'], [str(d['pid']), json.dumps(d['payments_']), today_date], ['doc_barcode'], [d["Barcode"]])
-                                    # Update_table_database('UPDATE doc_table SET pid=?, payments=?, doc_updated_date=? WHERE doc_barcode=?', (str(d['pid']), json.dumps(d['payments_']), today_date, d["Barcode"]))
-                                    # Commit the changes to the database
-                                    #conn.commit()
-
-                                #[each item [barcode, isitem, ispay, ex_item, ex_item_items, payments, ex_payment_count, ex_item_pric, ex_item_T_disc, ex_item_T_tax, ex_pid]
-                                Update_Documente(None, self.user, ['item', 'qty', 'price', 'Profite', 'discount', 'tax', 'doc_updated_date'], [json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], today_date], ['doc_barcode'], [d["Barcode"]])
-                                # Update_table_database('UPDATE doc_table SET item=?, qty=?, price=?, Profite=?, discount=?, tax=?, doc_updated_date=? WHERE doc_barcode=?', (json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], today_date, d["Barcode"]))
-                                # Commit the changes to the database
-                                # conn.commit()
-                                
-                                slip_doc_code.append(d["Barcode"])
-                        elif d["Barcode"] == "":
-                                print("custemer : " + str(costumer_name) + "isneded : " + str(payment_customer_required))
-                                # TODO: chacke if self.At_Shop_Id is selected if not make user selecte one
-                                Set_Document(None, ["doc_barcode", "extension_barcode", "At_Shop_Id", "user_id", "customer_id", "Seller_id", "type", "item", "qty", "price", "discount", "tax", "payments", "pid", "doc_created_date", "doc_expire_date", "doc_updated_date"], [str(brcod), "extension_barcode", self.Shop_brand_name, self.user['User_name'], costumer_name, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date])
-                                #Update_table_database('INSERT INTO upload_doc (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", self.Shop_brand_name, self.user['User_name'], costumer_name, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date))
-                                #Update_table_database('INSERT INTO doc_table (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, Profite, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", self.Shop_brand_name, self.user['User_name'], costumer_name, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date))
-                                # Commit the changes to the database
-                                #conn.commit()
-                                slip_doc_code.append(brcod)
-                                
             # call void         
             self.void_items()
             self.manage_form.doc_form.load_documents(slip_doc_code)
             
-            if payment_open_drower == 1:
-               PrinterForm.open_drower(self, self.user)
-             #TODO: MAKE IT SEND SELECTEd SHOP
-            ApproveFrame(self, self.user, self.Shops[0], slip_doc_code, payments_extra, payment_print_slip)
 
 
-
-
-                
-
+    # splitpayment btn
+    def call_splitpayment(self):
+        if len(self.Selected_items) > 0 or len(self.pid_peyment) > 0:
+            PaymentForm(self, self.user, self.Shops)
+        else:
+            #print("item ", len(self.Selected_items))
+            #print("payment ", len(self.pid_peyment))
+            pass
+    
+    
 
     def Add_Custumer(self):
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 21, f'User Not allowed to Search for Custumers'):
             self.app = UserManagementApp(self, "", self.user, self.Shops, self.on_Shop)
             if self.app.user_details:
-                print("selected user == ", self.app.user_details)
+                #print("selected user == ", self.app.user_details)
                 self.custemr = self.app.user_details['User_id']
                 self.Add_custemur_label.config(text=self.app.user_details['User_name'])
             else:
-                print("user not selected")
+                #print("user not selected")
                 self.Add_custemur_label.config(text="+ Custumer")
         
 
@@ -1876,7 +1675,8 @@ class DisplayFrame(tk.Frame):
             shutil.copy2(database_file, backup_file)
            #print("Backup created successfully:", backup_file)
         except IOError as e:
-           print("Error creating backup:", str(e))
+            #print("Error creating backup:", str(e))
+            pass
         finally:
             # Close the database connection
             conn.close()

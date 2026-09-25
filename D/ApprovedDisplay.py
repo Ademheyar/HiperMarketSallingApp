@@ -6,15 +6,9 @@ import sys
 current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(current_dir, '..')
 sys.path.append(MAIN_dir)
-from D.Peymentsplit import PaymentForm
-from D.GetVALUE import GetvalueForm
-from D.Showchartlists import ShowchartForm
-from M.Product import ProductForm
+
 from D.iteminfo import *
 from C.slipe import load_slip
-from D.endday import EnddayForm
-from D.Upload_ import UploadingForm
-from D.user_info import UserInfoForm
 from D.printer import PrinterForm
 
 from C.API.Get import *
@@ -43,15 +37,24 @@ class ApproveFrame(tk.Frame):
         self.bg_darker = "#0a3d91"    # Even darker blue
         self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
         
-        
+        self.homemaster = self
+        self.main_frame = None
+        p = 0
+        while(True):
+            p += 1
+            #print("chacking parent p = " + str(p))
+            if hasattr(self.homemaster, 'Shops_info') and hasattr(self.homemaster, 'onDisplayFrame'):
+                break
+            else:
+                self.homemaster = self.homemaster.master
         
         slip = ""
         for barcode in slips:
-            doc_ = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))
+            doc_ = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))
             if doc_:
                 doc_ = doc_[0]
                 print(str(doc_))
-                slip = load_slip(doc_, 0) #TODO GET ID
+                slip = load_slip(self.homemaster.Link, doc_, 0) #TODO GET ID
                 self.slips.append([barcode, slip])
                 print(str(slip))
                 
@@ -155,6 +158,7 @@ class ApproveFrame(tk.Frame):
         self.continue_button.grid(row=6, column=4, sticky="nsew")
         #self.update_items()
         self.get_next_slip()
+        self.print_item(1) # try to print the slip if it is auto
         self.getvalue_form.bind("<Return>", self.print_item)
         self.getvalue_form.bind("<Escape>", self.exit)
 
@@ -200,10 +204,24 @@ class ApproveFrame(tk.Frame):
             self.on_barid.config(text=str(i))
             self.set_slip_lines(str(self.slips[i][1]))
             
-    def print_item(self, a):
-        #print("printing : " + str(self.print_slip) + "splip : " + str(self.on_barid.cget('text')))
+    def print_item(self, autop):
+        printc = 1
+        b = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM setting WHERE User_id = ?", (self.user['User_id'],))
+        if b and len(b) > 0:
+            
+            if b[0]['Auto_Print_Credite']:
+                printc = b[0]['Count_Creadit_Printout'] if b[0]['Count_Creadit_Printout'] else 1
+            if autop == 1:
+                if b[0]['Auto_Print_All']:
+                    pass
+                else:
+                    return
+        else:
+            return # TODO: Create New User
+                
+        print("printing : " + str(self.print_slip) + "splip : " + str(self.on_barid.cget('text')))
         answer = None
-        if self.count_printed > 0:
+        if self.count_printed > printc-1:
             answer = tk.messagebox.askquestion("Question", "Slip orady printed " + str(self.count_printed+1)+ " times do you whant to print more?")
         if self.print_slip == 1 and (answer == None or answer == 'yes'):
             self.count_printed += 1
@@ -211,7 +229,9 @@ class ApproveFrame(tk.Frame):
             for items in self.resipt_fram.winfo_children():
                 on_slip += items.cget('text') + "\n"
             if on_slip != "":
-                PrinterForm.print_slip(self, self.user, self.shops, on_slip, 1) # TODO chack in setting if paper cut allowed
+                while printc > 0:
+                    PrinterForm.print_slip(self, self.user, self.shops, on_slip, 1) # TODO chack in setting if paper cut allowed
+                    printc-=1
     
     def undo_item(self, doc_barcode):
         print("Undo Items bar4code %s", doc_barcode)

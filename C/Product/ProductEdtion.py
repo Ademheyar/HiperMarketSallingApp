@@ -1,9 +1,10 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
+from PIL import Image, ImageTk
+import os, shutil
 import sqlite3
 import shutil
 import datetime
-import os
 import atexit
 import sys
 import json
@@ -42,7 +43,7 @@ from C.Product.selecttype import *
 
 def is_float(value):
     try:
-        print()
+        #print()
         float (value)
         return True
     except ValueError:
@@ -51,7 +52,30 @@ def is_float(value):
 class ProductFullEditionForm(ttk.Notebook):
     def __init__(self, master, user, Shops):
         ttk.Notebook.__init__(self, master)
+        
+        self.bg_dark = "#0d47a1"      # Deep blue
+        self.bg_light = "#1565c0"     # Darker blue
+        self.accent_blue = "#1976d2"  # Medium blue
+        self.text_light = "#ffffff"   # White text
+        self.bg_darker = "#0a3d91"    # Even darker blue
+        self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
+        
+
         self.master = master
+        self.MainApplication = self
+        while(True):
+            if hasattr(self.MainApplication, 'MainApplication_root'):
+                break
+            else:
+                self.MainApplication = self.MainApplication.master
+                
+        self.homemaster = self
+        while(True):
+            if hasattr(self.homemaster, 'onDisplayFrame'):
+                break
+            else:
+                self.homemaster = self.homemaster.master
+        
         self.user_info = user
         self.Shops = Shops
         self.Shops_Names = [shop['Shop_name'] for shop in self.Shops]
@@ -60,14 +84,14 @@ class ProductFullEditionForm(ttk.Notebook):
         self.product_id = -1
         self.restocked_qty = 0
         # Create the frame for the product details
-        self.details_frame = tk.Frame(self.notebook_frame)
+        self.details_frame = tk.Frame(self.notebook_frame, bg=self.bg_dark)
         self.details_frame.pack()
         
         self.notebook_frame.add(self.details_frame, text="Main info")
 
 
         # Create the widgets for the product details
-        self.name_label = tk.Label(self.details_frame, text='Name:')
+        self.name_label = tk.Label(self.details_frame, text='Name:', bg=self.bg_dark, fg=self.text_light)
         self.name_label.grid(row=0, column=0, padx=5, pady=5, sticky=tk.E)
         self.name_entry = tk.Entry(self.details_frame)
         self.name_list = tk.Listbox(self.name_entry.master.master, width=30)
@@ -75,28 +99,28 @@ class ProductFullEditionForm(ttk.Notebook):
         self.name_entry.bind('<KeyRelease>', self.on_name_entry)
         self.name_entry.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
         
-        self.cost_label = tk.Label(self.details_frame, text='Cost:')
+        self.cost_label = tk.Label(self.details_frame, text='Cost:', bg=self.bg_dark, fg=self.text_light)
         self.cost_label.grid(row=3, column=0, padx=5, pady=5, sticky=tk.E)
         self.cost_entry = tk.Entry(self.details_frame)
         self.cost_entry.grid(row=3, column=1, padx=5, pady=5, sticky=tk.W)
         self.cost_entry.insert(0, "0")
-        self.mark_label = tk.Label(self.details_frame, text='mark:')
+        self.mark_label = tk.Label(self.details_frame, text='mark:', bg=self.bg_dark, fg=self.text_light)
         self.mark_label.grid(row=4, column=0, padx=5, pady=5, sticky=tk.E)
         self.mark_entry = tk.Entry(self.details_frame)
         self.mark_entry.grid(row=4, column=1, padx=5, pady=5, sticky=tk.W)
         self.mark_entry.insert(0, "0")
-        self.price_label = tk.Label(self.details_frame, text='Price:')
+        self.price_label = tk.Label(self.details_frame, text='Price:', bg=self.bg_dark, fg=self.text_light)
         self.price_label.grid(row=5, column=0, padx=5, pady=5, sticky=tk.E)
         self.price_entry = tk.Entry(self.details_frame)
         self.price_entry.grid(row=5, column=1, padx=5, pady=5, sticky=tk.W)
         self.price_entry.insert(0, "0")
-        self.tax_label = tk.Label(self.details_frame, text='Tax:')
+        self.tax_label = tk.Label(self.details_frame, text='Tax:', bg=self.bg_dark, fg=self.text_light)
         self.tax_label.grid(row=6, column=11, padx=5, pady=5, sticky=tk.E)
         self.tax_entry = tk.Entry(self.details_frame)
         self.tax_entry.grid(row=6, column=1, padx=5, pady=5, sticky=tk.W)
         self.tax_entry.insert(0, "0")
         
-        self.description_label = tk.Label(self.details_frame, text='Description:')
+        self.description_label = tk.Label(self.details_frame, text='Description:', bg=self.bg_dark, fg=self.text_light)
         self.description_label.grid(row=7, column=0, padx=5, pady=5, sticky=tk.E)
         self.description_entry = tk.Entry(self.details_frame)
         self.description_entry.grid(row=7, column=1, padx=5, pady=5, sticky=tk.W)
@@ -117,40 +141,25 @@ class ProductFullEditionForm(ttk.Notebook):
         self.price_change_entry.grid(row=12, column=0, padx=5, pady=5, sticky=tk.W)
         
         # Create the frame for the product details
-        self.Product_listinfo_frame = tk.Frame(self.notebook_frame)
+        self.Product_listinfo_frame = tk.Frame(self.notebook_frame, bg=self.bg_dark)
         self.Product_listinfo_frame.pack_forget()
         self.notebook_frame.add(self.Product_listinfo_frame, text="Stock")
-        
-        self.List_Frame = tk.Frame(self.Product_listinfo_frame)
-        self.List_Frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-        
-        self.item_List_canvas = tk.Canvas(self.List_Frame)
-        self.item_List_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
-        
-        self.item_List_yscrollbar = tk.Scrollbar(self.List_Frame, orient='vertical', command=self.item_List_canvas.yview)
-        self.item_List_yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
-        self.item_List_xscrollbar = tk.Scrollbar(self.Product_listinfo_frame, orient='horizontal', command=self.item_List_canvas.xview)
-        self.item_List_xscrollbar.pack(side=tk.TOP, fill=tk.X)
-        
-        self.item_List_canvas.configure(xscrollcommand=self.item_List_xscrollbar.set, yscrollcommand=self.item_List_yscrollbar.set)
-        #self.New_item_contener_canvas.bind('<Configure>', lambda e: self.New_item_contener_canvas.configure(scrollregion=self.New_item_contener_canvas.bbox("all")))
 
-        self.tab3_frame = tk.Frame(self.item_List_canvas)
-        self.item_List_canvas.create_window((0, 0), window=self.tab3_frame, anchor=tk.NW)
-        self.tab3_frame.bind('<Configure>', lambda e: self.item_List_canvas.configure(scrollregion=self.item_List_canvas.bbox("all")))
 
+        self.treeList_Frame = tk.Frame(self.Product_listinfo_frame, bg=self.bg_dark)
+        self.treeList_Frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        
         # Create the list box
-        self.more_info_label = tk.Entry(self.tab3_frame)
-        self.more_info_label.grid(row=0, column=0, columnspan=4, sticky=tk.W)
+        self.more_info_label = tk.Entry(self.treeList_Frame)
+        self.more_info_label.pack(side=tk.TOP, fill=tk.X)
 
         self.inventory = []
         
         
-        self.tree = ttk.Treeview(self.tab3_frame, columns=
+        self.tree = ttk.Treeview(self.treeList_Frame, columns=
                                  ("Shop Name", "Code", "Color", "Size", "Barcode",
                                   "Qtyfirst", "Qty", "cdate", "update"))
-        self.tree.grid(row=2, column=0, sticky=tk.E, columnspan=4)
+        self.tree.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         self.tree.heading("#0", text="Shop Name", anchor=tk.W)
         self.tree.column("#0", stretch=tk.NO, minwidth=25, width=125)
         self.tree.heading("#1", text="Code", anchor=tk.W)
@@ -171,39 +180,59 @@ class ProductFullEditionForm(ttk.Notebook):
         self.tree.column("#8", stretch=tk.NO, minwidth=25, width=125)
 
         self.tree.bind('<<TreeviewSelect>>', self.new_stock_on_path_select)
+        self.item_List_yscrollbar = tk.Scrollbar(self.tree, orient='vertical', command=self.tree.yview)
+        self.item_List_yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
+        self.item_List_xscrollbar = tk.Scrollbar(self.Product_listinfo_frame, orient='horizontal', command=self.tree.xview)
+        self.item_List_xscrollbar.pack(side=tk.TOP, fill=tk.X)
+        
+        self.tree.configure(xscrollcommand=self.item_List_xscrollbar.set, yscrollcommand=self.item_List_yscrollbar.set)
+        
+        self.List_Frame = tk.Frame(self.Product_listinfo_frame, bg=self.bg_dark)
+        self.List_Frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        
+        self.item_List_canvas = tk.Canvas(self.List_Frame, bg=self.bg_dark)
+        self.item_List_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
+        
+        self._canvas_List_xscrollbar = tk.Scrollbar(self.Product_listinfo_frame, orient='horizontal', command=self.item_List_canvas.xview)
+        self._canvas_List_xscrollbar.pack(side=tk.TOP, fill=tk.X)
+        
+        self.tab3_frame = tk.Frame(self.item_List_canvas, bg=self.bg_dark)
+        self.item_List_canvas.configure(xscrollcommand=self._canvas_List_xscrollbar.set)
+        self.item_List_canvas.create_window((0, 0), window=self.tab3_frame, anchor=tk.NW)
+        self.tab3_frame.bind('<Configure>', lambda e: self.item_List_canvas.configure(scrollregion=self.item_List_canvas.bbox("all")))
+
+
+        #self.New_item_contener_canvas.bind('<Configure>', lambda e: self.New_item_contener_canvas.configure(scrollregion=self.New_item_contener_canvas.bbox("all")))
+
         def cear_selection():
             self.selected_path = []
             self.show_selected_path_label.config(text=str(self.selected_path))
-            
-        self.Clear_info_button = tk.Button(self.tab3_frame, text='Clear Selected', command=cear_selection)
-        self.Clear_info_button.grid(row=7, column=0, sticky=tk.W)
         
-        self.remove_info_button = tk.Button(self.tab3_frame, text='Remove', command=self.remove_info)
-        self.remove_info_button.grid(row=7, column=1, sticky=tk.W)
+        self.Clear_info_button = tk.Button(self.tab3_frame, text='Clear Selected', command=cear_selection, **self.button_style)
+        self.Clear_info_button.grid(row=0, column=0, sticky=tk.W)
+        
+        self.remove_info_button = tk.Button(self.tab3_frame, text='Remove', command=self.remove_info, **self.button_style)
+        self.remove_info_button.grid(row=0, column=1, sticky=tk.W)
         
         self.show_selected_path_label = tk.Label(self.tab3_frame, text=str(self.selected_path))
-        self.show_selected_path_label.grid(row=8, column=0, columnspan=3, sticky=tk.W)
+        self.show_selected_path_label.grid(row=0, column=2, columnspan=3, sticky=tk.W)
         
-        self.code_label = tk.Label(self.tab3_frame, text='Code:')
-        self.code_label.grid(row=9, column=0, sticky=tk.W)
-        self.code_entry = tk.Entry(self.tab3_frame)
-        self.code_entry.grid(row=9, column=1, sticky=tk.W)
+        colors=[]
+        self.Product_rate = 0
+        self.Product_image_frame = tk.Frame(self.tab3_frame, bg=self.bg_dark)
+        self.Product_image_frame.grid(row=1, column=0, rowspan=3, columnspan=3, sticky="nsew")
 
-        
-        self.color_label = tk.Label(self.tab3_frame, text='Color :')
-        self.color_label.grid(row=10, column=0, sticky=tk.W)
-        self.color_entry = tk.Entry(self.tab3_frame)
-        self.color_entry.grid(row=10, column=1, sticky=tk.W)
-        
+        self.Product_image_avatarlabel = tk.Label(self.Product_image_frame, bg=self.bg_dark)
+        self.Product_image_avatarlabel.pack(pady=10)
+        self.Product_image_avatarlabel.bind("<Button-1>", lambda _: self.change_Product_image())
+
         # for getting size
+        self.get_size_frame = tk.Frame(self.tab3_frame, bg=self.bg_dark)
+        self.get_size_frame.grid(row=1, column=4, rowspan=3, columnspan=4, sticky=tk.W)
         
-        self.get_size_frame = tk.Frame(self.tab3_frame)
-        self.get_size_frame.grid(row=11, column=0, columnspan=3, sticky=tk.W)
-        
-        self.first_frame = tk.Frame(self.get_size_frame)
+        self.first_frame = tk.Frame(self.get_size_frame, bg=self.bg_dark)
         self.first_frame.grid(row=0, column=0, sticky=tk.W)
-
 
         self.sizeing_type = tk.StringVar()  # Variable to store the selected sizing type
         self.sizeing_type.set("Select Sizing Type")
@@ -215,71 +244,80 @@ class ProductFullEditionForm(ttk.Notebook):
         sizing_menu = tk.OptionMenu(self.first_frame, self.sizing_var, *sizing_options)
         sizing_menu.pack()
 
-        self.create_form_button = tk.Button(self.first_frame, text="Create Form", command=self.create_sizes_form)
+        self.create_form_button = tk.Button(self.first_frame, text="Create Form", command=self.create_sizes_form, **self.button_style)
         self.create_form_button.pack(side=tk.BOTTOM)
 
-        self.second_frame = tk.Frame(self.get_size_frame)
+        self.second_frame = tk.Frame(self.get_size_frame, bg=self.bg_dark)
         self.second_frame.grid(row=0, column=1, sticky=tk.W)
         
-        self.form_frame = tk.Frame(self.second_frame)  # Frame to hold the form entries
+        self.form_frame = tk.Frame(self.second_frame, bg=self.bg_dark)  # Frame to hold the form entries
         self.form_frame.pack(pady=10)
 
         self.form_entries = []  # List to store the form entries
         
+        self.code_label = tk.Label(self.tab3_frame, text='Barcode Or Code:', bg=self.bg_dark, fg=self.text_light)
+        self.code_label.grid(row=4, column=0, sticky=tk.W)
+        self.code_entry = tk.Entry(self.tab3_frame)
+        self.code_entry.grid(row=4, column=1, sticky=tk.W)
+        self.color_label = tk.Label(self.tab3_frame, text='Color :', bg=self.bg_dark, fg=self.text_light)
+        self.color_label.grid(row=4, column=2, sticky=tk.W)
+        self.color_entry = tk.Entry(self.tab3_frame)
+        self.color_entry.grid(row=4, column=3, sticky=tk.W)
 
-
-    
-        self.size_label = tk.Label(self.tab3_frame, text='Size :')
-        self.size_label.grid(row=12, column=0, sticky=tk.W)
-        self.size_entry = tk.Entry(self.tab3_frame)
-        self.size_entry.grid(row=12, column=1, sticky=tk.W)
-
-        self.qty_label = tk.Label(self.tab3_frame, text='Quantity:')
-        self.qty_label.grid(row=13, column=0, sticky=tk.W)
-        self.qty_entry = tk.Entry(self.tab3_frame)
-        self.qty_entry.grid(row=13, column=1, sticky=tk.W)
-        self.bracode_label = tk.Label(self.tab3_frame, text='Barcode : ')
-        self.bracode_label.grid(row=14, column=0, sticky=tk.W)
-        self.bracode_entry = tk.Entry(self.tab3_frame)
-        self.bracode_entry.grid(row=14, column=1, sticky=tk.W)
-        
-        self.type_label = tk.Label(self.tab3_frame, text='Type:')
-        self.type_label.grid(row=15, column=0, padx=5, pady=5, sticky=tk.E)
-        type_frame = tk.Frame(self.tab3_frame)
-        type_frame.grid(row=15, column=1, padx=5, pady=5, sticky=tk.W)
+        self.type_label = tk.Label(self.tab3_frame, text='Type:', bg=self.bg_dark, fg=self.text_light)
+        self.type_label.grid(row=4, column=4, padx=5, pady=5, sticky=tk.E)
+        type_frame = tk.Frame(self.tab3_frame, bg=self.bg_dark)
+        type_frame.grid(row=4, column=5, padx=5, pady=5, sticky=tk.W)
         # get nodes by stting
         self.type_entry = NodeSelectorApp(type_frame, self.user_info)
         self.type_entry.load("")
         
-        self.single_price_label = tk.Label(self.tab3_frame, text='Single Price:')
-        self.single_price_label.grid(row=16, column=0, sticky=tk.W)
+        self.size_label = tk.Label(self.tab3_frame, text='Size :', bg=self.bg_dark, fg=self.text_light)
+        self.size_label.grid(row=5, column=0, sticky=tk.W)
+        self.size_entry = tk.Entry(self.tab3_frame)
+        self.size_entry.grid(row=5, column=1, sticky=tk.W)
+        self.qty_label = tk.Label(self.tab3_frame, text='Quantity:', bg=self.bg_dark, fg=self.text_light)
+        self.qty_label.grid(row=5, column=2, sticky=tk.W)
+        self.qty_entry = tk.Entry(self.tab3_frame)
+        self.qty_entry.grid(row=5, column=3, sticky=tk.W)
+
+        
+        self.bracode_label = tk.Label(self.tab3_frame, text=' ?? : ', bg=self.bg_dark, fg=self.text_light)
+        self.bracode_label.grid(row=6, column=0, sticky=tk.W)
+        self.bracode_entry = tk.Entry(self.tab3_frame)
+        self.bracode_entry.grid(row=6, column=1, sticky=tk.W)
+        self.single_price_label = tk.Label(self.tab3_frame, text='Single Price:', bg=self.bg_dark, fg=self.text_light)
+        self.single_price_label.grid(row=6, column=2, sticky=tk.W)
         self.single_price_entry = tk.Entry(self.tab3_frame)
-        self.single_price_entry.grid(row=16, column=1, sticky=tk.W)
+        self.single_price_entry.grid(row=6, column=3, sticky=tk.W)
         
-        self.images_label = tk.Label(self.tab3_frame, text='Images:')
-        self.images_label.grid(row=17, column=0, sticky=tk.W)
+        '''self.images_label = tk.Label(self.tab3_frame, text='Images:', bg=self.bg_dark, fg=self.text_light)
+        self.images_label.grid(row=17, column=2, sticky=tk.W)
         self.images_entry = tk.Entry(self.tab3_frame)
-        self.images_entry.grid(row=17, column=1, sticky=tk.W)
+        self.images_entry.grid(row=17, column=3, sticky=tk.W)'''
         
-        self.add_info_button = tk.Button(self.tab3_frame, text='Add', command=lambda : self.add_info(0))
-        self.add_info_button.grid(row=22, column=0, sticky=tk.W)
         
-        self.change_info_button = tk.Button(self.tab3_frame, text='Change', command=lambda : self.add_info(1))
-        self.change_info_button.grid(row=22, column=1, sticky=tk.W)
+        
+        self.add_info_button = tk.Button(self.tab3_frame, text='Add', command=lambda : self.add_info(0), **self.button_style)
+        self.add_info_button.grid(row=10, column=0, sticky=tk.W)
+        
+        self.change_info_button = tk.Button(self.tab3_frame, text='Change', command=lambda : self.add_info(1), **self.button_style)
+        self.change_info_button.grid(row=10, column=1, sticky=tk.W)
         
       
-        self.add_button = tk.Button(self.details_frame, text='Add', command=self.add_product)
+        self.add_button = tk.Button(self.details_frame, text='Add', command=self.add_product, **self.button_style)
         self.add_button.grid(row=30, column=0, padx=5, pady=5, sticky=tk.W)
-        self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=lambda:self.destroy())
+        self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=lambda:self.destroy(), **self.button_style)
         self.cancle_button.grid(row=30, column=1, padx=5, pady=5, sticky=tk.W)
 
+        self.load_Product_image()
 
         # Create the frame for the user details
-        self.doc_details_frame = tk.Frame(self.notebook_frame)
+        self.doc_details_frame = tk.Frame(self.notebook_frame, bg=self.bg_dark)
         self.doc_details_frame.pack_forget()
         self.notebook_frame.add(self.doc_details_frame, text="Doc info")
 
-        self.l_frame = tk.Frame(self.doc_details_frame)
+        self.l_frame = tk.Frame(self.doc_details_frame, bg=self.bg_dark)
         self.l_frame.grid(row=0, column=0)
 
 
@@ -345,7 +383,7 @@ class ProductFullEditionForm(ttk.Notebook):
         self.date_to_Entry.insert(0, self.start_value)
         self.date_to_Entry.pack()#grid(row=3, column=4)
         
-        self.GetDate_button = tk.Button(self.l_frame, text="GetDate", font=("Arial", 12), command=self.fix_date)
+        self.GetDate_button = tk.Button(self.l_frame, text="GetDate", command=self.fix_date, **self.button_style)
         self.GetDate_button.pack()#grid(row=3, column=5, sticky="nsew")
         
 
@@ -353,7 +391,7 @@ class ProductFullEditionForm(ttk.Notebook):
         self.refresh_doc_button.pack()#pack(side=tk.LEFT, padx=5, pady=5)
 
         # Create the search button
-        self.print_button = tk.Button(self.l_frame, text="Print", command=self.perform_doc_print)
+        self.print_button = tk.Button(self.l_frame, text="Print", command=self.perform_doc_print, **self.button_style)
         self.print_button.pack()#.grid(row=2, column=0)
         self.total_doc_qty_label = tk.Label(self.l_frame, text="TOTAL QTY COUNT :")
         self.total_doc_qty_label.pack()#grid(row=1, column=0)
@@ -388,7 +426,7 @@ class ProductFullEditionForm(ttk.Notebook):
             item_text = self.user_docinfo_listbox.item(item, "values")  # Get the text values of the item
             id = self.user_docinfo_listbox.item(item, "text")
             barcode = item_text[0]
-            doc_ = fetch_as_dict_list("SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))
+            doc_ = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM doc_table WHERE doc_barcode=?", (barcode,))
             if doc_:
                 doc_= doc_[0]
                 answer = tk.messagebox.askquestion("Question", "Do you what to print "+str(barcode)+" ?")
@@ -406,11 +444,11 @@ class ProductFullEditionForm(ttk.Notebook):
         end_value = self.date_to_Entry.get()
         
         
-        df = fetch_as_dict_list("SELECT * FROM doc_table WHERE item LIKE ? AND strftime('%Y-%m-%d', doc_created_date) BETWEEN ? AND ?", ('%' + item_code + '%', start_value, end_value,))
-        print("doc search"+str(item_code)+"from"+str(start_value)+"to"+str(end_value)+" found "+str(len(df)))
+        df = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM doc_table WHERE item LIKE ? AND strftime('%Y-%m-%d', doc_created_date) BETWEEN ? AND ?", ('%' + item_code + '%', start_value, end_value,))
+        #print("doc search"+str(item_code)+"from"+str(start_value)+"to"+str(end_value)+" found "+str(len(df)))
         self.user_docinfo_listbox.delete(*self.user_docinfo_listbox.get_children())
 
-        '''results = fetch_as_dict_list("SELECT * FROM COUNT_SELL WHERE strftime('%Y-%m-%d', DATE) BETWEEN ? AND ?", (f'{self.date_from_Entry.get()}', f'{self.date_to_Entry.get()}',))
+        '''results = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM COUNT_SELL WHERE strftime('%Y-%m-%d', DATE) BETWEEN ? AND ?", (f'{self.date_from_Entry.get()}', f'{self.date_to_Entry.get()}',))
         
         l = []
         
@@ -435,7 +473,8 @@ class ProductFullEditionForm(ttk.Notebook):
                 self.user_docinfo_listbox.insert('', 'end', text=index['id'], values=(index['doc_barcode'], index['extension_barcode'], index['user_id'], index['customer_id'], index['type'], index['item'], index['qty'], index['price'], index['discount'], index['tax'], index['payments'], index['doc_created_date'], index['doc_expire_date'], index['doc_updated_date']))
                 TQTY += 1
             except Exception as e:
-                print("Error inserting item: " + str(e))
+                #print("Error inserting item: " + str(e))
+                pass
         self.total_doc_qty_label.config(text="TOTAL QTY COUNT : " + str(TQTY))
         
     #
@@ -445,6 +484,33 @@ class ProductFullEditionForm(ttk.Notebook):
     #
     #
     #
+    def load_Product_image(self):
+        if os.path.exists(MAIN_dir+"\\data\\Products\\"+ str(self.code_entry.get()) + "\\"+ str(self.color_entry.get()) + "\\ProductImage.jpg"):
+            img = Image.open(MAIN_dir+"\\data\\Products\\"+ str(self.code_entry.get()) + "\\"+ str(self.color_entry.get()) + "\\ProductImage.jpg").resize((100, 100))
+            img = ImageTk.PhotoImage(img)
+            self.Product_image_avatarlabel.config(image=img)
+            self.Product_image_avatarlabel.image = img
+        else:
+            # place holder
+            img = Image.open(MAIN_dir+"\\data\\Icon\\no_Product_Image.jpg").resize((100, 100))
+            img = ImageTk.PhotoImage(img)
+            self.Product_image_avatarlabel.config(image=img)
+            self.Product_image_avatarlabel.image = img
+            
+    def change_Product_image(self):
+        if self.code_entry.get() != "":
+            file_source = filedialog.askopenfilename(filetypes=[("Image Files", "*.png *.jpg *.jpeg")])
+            dest_folder = MAIN_dir+"\\data\\Products\\"+ str(self.code_entry.get()) + "\\"+ str(self.color_entry.get()) + "\\"
+            imag_file_name  = "ActionImage.jpg"
+            # make sur folder is there
+            os.makedirs(dest_folder, exist_ok=True)
+            # join name and folder path
+            dest_full_path = os.path.join(dest_folder, imag_file_name)
+            # copy it to dest folder
+            shutil.copy2(file_source, dest_full_path)
+            self.load_Product_image()
+            # TODO : MAKE SUIRE IT IS UPLODED TO WEBSITE 
+    
     def create_sizes_form(self):
         selected_type = self.sizing_var.get()
         if selected_type == "Select Sizing Type":
@@ -452,7 +518,7 @@ class ProductFullEditionForm(ttk.Notebook):
 
         self.form_frame.destroy()  # Clear previous form entries
 
-        self.form_frame = tk.Frame(self.second_frame)
+        self.form_frame = tk.Frame(self.second_frame, bg=self.bg_dark)
         self.form_frame.pack(pady=10)
 
         self.form_entries = []  # Reset the list of form entries
@@ -474,7 +540,7 @@ class ProductFullEditionForm(ttk.Notebook):
         for size in sizes:
             sizes_text.insert(tk.END, size + ", ")
 
-        done_button = tk.Button(self.form_frame, text="Done", command=lambda: self.generate_list(selected_type, sizes_text.get("1.0", tk.END)))
+        done_button = tk.Button(self.form_frame, text="Done", command=lambda: self.generate_list(selected_type, sizes_text.get("1.0", tk.END)), **self.button_style)
         done_button.pack()
 
     def generate_list(self, sizing_type, sizes):
@@ -496,12 +562,13 @@ class ProductFullEditionForm(ttk.Notebook):
             for p in self.inventory:
                 if p["shop_name"] == self.master.master.shop_name_Combobox.get() and p["color"] == self.color_entry.get() and \
                 p["size"] == v[0]:
-                    if p["barcode"] == self.bracode_entry.get() and p["qtyfirst"] == v[1] and \
+                    if p["barcode"] == self.code_entry.get() and p["qtyfirst"] == v[1] and \
                         p["qty"] == v[1]:
-                        print("issame!!!" + str(p)) # TODO: show same earror
+                        #print("issame!!!" + str(p)) # TODO: show same earror
                         #    cdate#    update
+                        pass
                     else:
-                        self.inventory[i]["barcode"] = self.bracode_entry.get()
+                        self.inventory[i]["barcode"] = self.code_entry.get()
                         self.inventory[i]["qty"] = v[1]
                     found = 1
                 else:
@@ -511,20 +578,21 @@ class ProductFullEditionForm(ttk.Notebook):
             if self.type_entry.get_value and len(self.type_entry.get_value) > 0:
                 for type_ in self.type_entry.get_value:
                     new_type = json.dumps(type_)
-                    found, self.nested_list = Add_new_on_nested(self.nested_list, [self.master.master.shop_name_Combobox.get(), self.code_entry.get(), self.color_entry.get(), v[0]], [self.bracode_entry.get(), new_type, self.single_price_entry.get(), v[1], v[1], "", self.images_entry.get(), "", ""])
+                    #found, self.nested_list =
+                    Add_new_on_nested(self.nested_list, [self.master.master.shop_name_Combobox.get(), self.code_entry.get(), self.color_entry.get(), v[0]], [self.code_entry.get(), new_type, self.single_price_entry.get(), v[1], v[1], "", "", "", ""])
             else:
                 pass # sand messeg
-            print("self.nested_list : " + str(self.nested_list))
+            #print("self.nested_list : " + str(self.nested_list))
             if found:
-                self.add_info_(self.master.master.shop_name_Combobox.get(), self.code_entry.get(), self.color_entry.get(), v[0], self.bracode_entry.get(), v[1], v[1], "", "")
+                self.add_info_(self.master.master.shop_name_Combobox.get(), self.code_entry.get(), self.color_entry.get(), v[0], self.code_entry.get(), v[1], v[1], "", "")
         txt = json.dumps(self.nested_list)
         self.more_info_label.delete(0, tk.END)
         self.more_info_label.insert(0, txt)
 
     def perform_search_Item_size_chack(self):
-        item = fetch_as_dict_list('SELECT * FROM product')
+        item = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM product')
         for it in item:
-            print("item["+str(it['id'])+"]  : " + str(it['more_info']))
+            #print("item["+str(it['id'])+"]  : " + str(it['more_info']))
             qty_info_list = []
             if "\"{" in str(it['more_info']):
                 qty_info_list = read_code(it['more_info'], "", str(it['code']), "", "")[4]
@@ -545,26 +613,26 @@ class ProductFullEditionForm(ttk.Notebook):
             sub_list(qty_info_list)
 
     def get_inventory_nested_list(self, text, code):
-        print("get_inventory_nested_list text = "+str(text))
+        #print("get_inventory_nested_list text = "+str(text))
         if text:
             self.nested_list = json.loads(text) 
         self.update_tree()
 
     def update_tree(self):
         self.tree.delete(*self.tree.get_children())
-        print("gount tot add tree ")
+        #print("gount tot add tree ")
         for shop in self.nested_list:
-            print("shop")
+            #print("shop")
             shop_name_node = self.tree.insert("", "end", text=shop[0])
             for code in shop[1]:
-                print("code")
+                #print("code")
                 code_node = self.tree.insert(shop_name_node, "end", text=code[0])
                 for color in code[1]:
                     color_node = self.tree.insert(code_node, "end", text=color[0])
                     for size in color[1]:
                         size_node = self.tree.insert(color_node, "end", text=size[0])
                         for value in size[1]:
-                            print("value : " + str(value))
+                            #print("value : " + str(value))
                             barcode, type_, price, qtyfirst, qty, patern, imgs, cdate, update = ["", "", "", "", "", "", "", "", ""]
                             cvalue = value
                             
@@ -593,9 +661,9 @@ class ProductFullEditionForm(ttk.Notebook):
                     new_type = json.dumps(type_)
                     if self.selected_path == []:
                         self.selected_path = [self.master.master.shop_name_Combobox.get(), self.code_entry.get(), self.color_entry.get(), self.size_entry.get()]
-                    found, self.nested_list = dele_list(self.nested_list, self.selected_path, [self.bracode_entry.get(), new_type, self.single_price_entry.get(), self.qty_entry.get(), self.qty_entry.get(), "", self.images_entry.get(), "", ""])
+                    found, self.nested_list = dele_list(self.nested_list, self.selected_path, [self.code_entry.get(), new_type, self.single_price_entry.get(), self.qty_entry.get(), self.qty_entry.get(), "", "", "", ""])
             else:
-                found, self.nested_list = dele_list(self.nested_list, self.selected_path, [self.bracode_entry.get(), "", self.single_price_entry.get(), self.qty_entry.get(), self.qty_entry.get(), "", self.images_entry.get(), "", ""])
+                found, self.nested_list = dele_list(self.nested_list, self.selected_path, [self.code_entry.get(), "", self.single_price_entry.get(), self.qty_entry.get(), self.qty_entry.get(), "", "", "", ""])
         self.more_info_label.delete(0, tk.END)
         self.more_info_label.insert(0, str(self.nested_list))
         self.update_tree()
@@ -613,12 +681,13 @@ class ProductFullEditionForm(ttk.Notebook):
                 newqty = int(self.qty_entry.get())-int(p["qty"])
                 self.restocked_qty  += newqty
                 
-                if p["barcode"] == self.bracode_entry.get() and p["qtyfirst"] == self.qty_entry.get() and \
+                if p["barcode"] == self.code_entry.get() and p["qtyfirst"] == self.qty_entry.get() and \
                     p["qty"] == self.qty_entry.get():
-                    print("issame!!!" + str(p)) # TODO: show same earror
+                    #print("issame!!!" + str(p)) # TODO: show same earror
                     #    cdate#    update
+                    pass
                 else:
-                    self.inventory[i]["barcode"] = self.bracode_entry.get()
+                    self.inventory[i]["barcode"] = self.code_entry.get()
                     self.inventory[i]["qty"] = self.qty_entry.get()
                     
                 found = 1
@@ -635,16 +704,16 @@ class ProductFullEditionForm(ttk.Notebook):
                 if self.selected_path == []:
                     self.selected_path = [self.master.master.shop_name_Combobox.get(), self.code_entry.get(), self.color_entry.get(), self.size_entry.get()]
                 clist, left_path, fpath = get_last_same_path_list(self.selected_path, self.nested_list)
-                found, self.nested_list = add_new_list(self.nested_list, self.selected_path, [self.bracode_entry.get(), new_type, self.single_price_entry.get(), self.qty_entry.get(), self.qty_entry.get(), "", self.images_entry.get(), "", ""], 1)
+                found, self.nested_list = add_new_list(self.nested_list, self.selected_path, [self.code_entry.get(), new_type, self.single_price_entry.get(), self.qty_entry.get(), self.qty_entry.get(), "","", "", ""], 1)
                 if left_path and len(left_path) > 8:
                     newqty = int(self.qty_entry.get())-int(left_path[8])
                     self.restocked_qty  += newqty
         else:
             pass # sand messeg
         
-        print("self.nested_list : " + str(self.nested_list))
+        #print("self.nested_list : " + str(self.nested_list))
         if found:
-            self.add_info_(self.master.master.shop_name_Combobox.get(), self.code_entry.get(), self.color_entry.get(), self.size_entry.get(), self.bracode_entry.get(), self.qty_entry.get(), self.qty_entry.get(), "", self.images_entry.get(), "", "")
+            self.add_info_(self.master.master.shop_name_Combobox.get(), self.code_entry.get(), self.color_entry.get(), self.size_entry.get(), self.code_entry.get(), self.qty_entry.get(), self.qty_entry.get(), "", "", "", "")
             
             
 
@@ -667,37 +736,37 @@ class ProductFullEditionForm(ttk.Notebook):
             parent_item = self.tree.parent(parent_item)
             
         found_values.reverse()
-        print("found_vv value : " + str(found_vv))
+        #print("found_vv value : " + str(found_vv))
         if found_vv:
             found_values = found_values+list(found_vv)
-        print("found value : " + str(found_values))
+        #print("found value : " + str(found_values))
         if found_values:
             self.selected_path = found_values
             self.show_selected_path_label.config(text=str(self.selected_path))
-            '''self.master.master.shop_name_Combobox.current(0)
+            self.master.master.shop_name_Combobox.current(0)
             self.code_entry.delete(0, tk.END)
             self.color_entry.delete(0, tk.END)
-            self.size_entry.delete(0, tk.END)
-            self.bracode_entry.delete(0, tk.END)
-            self.qty_entry.delete(0, tk.END)
-            self.images_entry.delete(0, tk.END)
+            #self.size_entry.delete(0, tk.END)
+            #self.code_entry.delete(0, tk.END)
+            #self.qty_entry.delete(0, tk.END)
+            #self.images_entry.delete(0, tk.END)
             for i, value in enumerate(found_values):
-                if i == 0:
-                    self.master.master.shop_name_Combobox.current(self.Shops_Names.index(value))
+                #if i == 0:
+                #    self.master.master.shop_name_Combobox.current(self.Shops_Names.index(value))
                 if i == 1:
                     self.code_entry.insert(0, value)
                 if i == 2:
                     self.color_entry.insert(0, value)
-                if i == 3:
-                    self.size_entry.insert(0, value)
-                if i == 7:
-                    self.qty_entry.insert(0, value)
-                if i == 9:
-                    self.bracode_entry.insert(0, value)
-                if i == 10:
-                    self.images_entry.insert(0, value)'''
-        print("selected self.nested_list = "+str(self.nested_list))
-
+                #if i == 3:
+                #    self.size_entry.insert(0, value)
+                #if i == 7:
+                 #   self.qty_entry.insert(0, value)
+                #if i == 9:
+                #    self.code_entry.insert(0, value)
+                #if i == 10:
+                #    self.images_entry.insert(0, value)
+        #print("selected self.nested_list = "+str(self.nested_list))
+        self.load_Product_image()
 
 
 
@@ -745,7 +814,7 @@ class ProductFullEditionForm(ttk.Notebook):
         self.color_entry.delete(0, tk.END)
         self.size_entry.delete(0, tk.END)
         self.qty_entry.delete(0, tk.END)
-        self.bracode_entry.delete(0, tk.END)
+        self.code_entry.delete(0, tk.END)
 
         
         self.cost_entry.delete(0, tk.END)
@@ -754,7 +823,7 @@ class ProductFullEditionForm(ttk.Notebook):
         self.include_tax_var.set(0)
         self.price_change_var.set(0)
         self.more_info_label.delete(0, tk.END)
-        self.images_entry.delete(0, tk.END)
+        #self.images_entry.delete(0, tk.END)
         self.description_entry.delete(0, tk.END)
         self.service_change_var.set(0)
         self.default_quantity_change_var.set(0)
@@ -788,17 +857,17 @@ class ProductFullEditionForm(ttk.Notebook):
                 p = p.master
                 
         for s, shop in enumerate(self.Shops):
-            print("Loop s ", s)
-            print("Loop Shop ", shop['Shop_name'])
-            print("Selected s ", v.current())
-            print("Selected Shop ", v.get())
+            #print("Loop s ", s)
+            #print("Loop Shop ", shop['Shop_name'])
+            #print("Selected s ", v.current())
+            #print("Selected Shop ", v.get())
             if (shop['Shop_name'] == "" or (s == v.current() and v.get() == shop['Shop_name'])):
                 at_shop = shop['Shop_Id']
-                print(" Found ", at_shop)
+                #print(" Found ", at_shop)
                 if shop['Shop_items']:
-                    print("Shop items = ", shop['Shop_items'])
+                    #print("Shop items = ", shop['Shop_items'])
                     found_shop_items = json.loads(shop['Shop_items'])
-                    print("Shop items --> ", found_shop_items)
+                    #print("Shop items --> ", found_shop_items)
                     
         name = self.name_entry.get()
         code = self.code_entry.get()
@@ -813,7 +882,7 @@ class ProductFullEditionForm(ttk.Notebook):
         price = float(self.price_entry.get())
         include_tax = int(self.include_tax_var.get())
         price_change = int(self.price_change_var.get())
-        images = self.images_entry.get()
+        images = "" #self.images_entry.get()
         description = self.description_entry.get()
         service = self.service_change_var.get()
         default_quantity = int(self.default_quantity_change_var.get())
@@ -833,7 +902,7 @@ class ProductFullEditionForm(ttk.Notebook):
         doc_code = datetime.datetime.now().strftime('%y:%m') + "-11"
         b = 0
         while True:
-            ex_doc = fetch_as_dict_list("SELECT * FROM upload_doc WHERE doc_barcode=?", (doc_code+str(b),))
+            ex_doc = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM upload_doc WHERE doc_barcode=?", (doc_code+str(b),))
             if ex_doc:
                 b = random.randint(0, 10000)
             else:
@@ -843,31 +912,31 @@ class ProductFullEditionForm(ttk.Notebook):
         if self.add_button.cget("text") == "New" or self.add_button.cget("text") == "Add":   
             
             more_info = json.dumps(self.nested_list) 
-            print(str([name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active]))
+            #print(str([name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active]))
 
             # Insert the new product into the database
             doc_type = "Add_Items"
             # Get the ID of the most recently added item
             Update_table_database('INSERT INTO product (name, code, type, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active))
-            new_item_id = fetch_as_dict_list("SELECT last_insert_rowid()")
+            new_item_id = fetch_as_dict_list(self.homemaster.Link, "SELECT last_insert_rowid()")
             
-            print("new_product_id : " + str(new_item_id) + " barcode : " + str(brcod))
+            #print("new_product_id : " + str(new_item_id) + " barcode : " + str(brcod))
             item += f"(:{new_item_id}:,:{name}:,:{code}:,:{typ}:,:{barcode}:,:{at_shop}:,:{quantity}:,:{cost}:,:{tax}:,:{price}:,:{include_tax}:,:{price_change}:,:{more_info}:,:{images}:,:{description}:,:{service}:,:{default_quantity}:,:{active}:)"
-            print("item : " + str(item))
+            #print("item : " + str(item))
             # Commit the changes to the database
             found_shop_items.append([new_item_id, 1, date, date, date])
             ITEM = json.dumps(found_shop_items)
-            print("ITEM : " + str(ITEM))
-            print("at_shop : " + str(at_shop))
+            #print("ITEM : " + str(ITEM))
+            #print("at_shop : " + str(at_shop))
             Update_Shop(None, None, 'Shop_items', [ITEM], ['Shop_id'], [at_shop])
             for s, shop in enumerate(self.Shops):
-                print("Loop s ", s)
-                print("Loop Shop ", shop['Shop_name'])
-                print("Selected s ", self.master.master.shop_name_Combobox.current())
-                print("Selected Shop ", self.master.master.shop_name_Combobox.get())
+                #print("Loop s ", s)
+                #print("Loop Shop ", shop['Shop_name'])
+                #print("Selected s ", self.master.master.shop_name_Combobox.current())
+                #print("Selected Shop ", self.master.master.shop_name_Combobox.get())
                 if (shop['Shop_name'] == "" or (s == self.master.master.shop_name_Combobox.current() and self.master.master.shop_name_Combobox.get() == shop['Shop_name'])):
                     at_shop = shop['Shop_Id']
-                    print(" Found ", at_shop)
+                    #print(" Found ", at_shop)
                     shop['Shop_items'] = ITEM
             # Insert a single doc_table record representing this batch (store payments)
             try:
@@ -893,21 +962,22 @@ class ProductFullEditionForm(ttk.Notebook):
                     'doc_updated_date': date
                 }
                 Set_Document(None, list(doc_data.keys()), list(doc_data.values()))
-                print("Done setting stock document")
+                #print("Done setting stock document")
             except Exception as e:
-                print("Error inserting record new products on doc_table:", e)
+                #print("Error inserting record new products on doc_table:", e)
+                pass
             
 
 
         elif self.product_id != -1:
             
             more_info = json.dumps(self.nested_list)
-            print(str([name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active]))
+            #print(str([name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active]))
 
-            print("product_id : " + str(self.product_id) + " barcode : " + str(brcod))
+            #print("product_id : " + str(self.product_id) + " barcode : " + str(brcod))
             doc_type = "Update_Items"
             item += f"(:{self.product_id}:,:{name}:,:{code}:,:{typ}:,:{barcode}:,:{at_shop}:,:{quantity}:,:{cost}:,:{tax}:,:{price}:,:{include_tax}:,:{price_change}:,:{more_info}:,:{images}:,:{description}:,:{service}:,:{default_quantity}:,:{active}:)"
-            print("item : " + str(item))
+            #print("item : " + str(item))
             # Update the product in the database
             Update_Producte(None, None, ['name', 'code', 'type', 'barcode', 'at_shop', 'quantity', 'cost', 'tax', 'price', 'include_tax', 'price_change', 'more_info', 'images', 'description', 'service', 'default_quantity', 'active'], [name, code, typ, barcode, at_shop, quantity, cost, tax, price, include_tax, price_change, more_info, images, description, service, default_quantity, active], ['id'], [self.product_id])
 
@@ -942,9 +1012,10 @@ class ProductFullEditionForm(ttk.Notebook):
                             'doc_updated_date': date
                         }
                         newdoc = Set_Document(None, list(doc_data.keys()), list(doc_data.values()))
-                        print("Done setting stock document", newdoc)
+                        #print("Done setting stock document", newdoc)
                     except Exception as e:
-                        print("Error inserting record updated products on doc_table:", e)
+                        #print("Error inserting record updated products on doc_table:", e)
+                        pass
             
 
         # Clear the product details widgets
@@ -958,17 +1029,40 @@ class ProductFullEditionForm(ttk.Notebook):
 class ProductQueckEditionForm(ttk.Notebook):
     def __init__(self, master, user, Shops):
         ttk.Notebook.__init__(self, master)
+        
+        self.bg_dark = "#0d47a1"      # Deep blue
+        self.bg_light = "#1565c0"     # Darker blue
+        self.accent_blue = "#1976d2"  # Medium blue
+        self.text_light = "#ffffff"   # White text
+        self.bg_darker = "#0a3d91"    # Even darker blue
+        self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
+        
+        
+
+        self.MainApplication = self
+        while(True):
+            if hasattr(self.MainApplication, 'MainApplication_root'):
+                break
+            else:
+                self.MainApplication = self.MainApplication.master
+                
+        self.homemaster = self
+        while(True):
+            if hasattr(self.homemaster, 'onDisplayFrame'):
+                break
+            else:
+                self.homemaster = self.homemaster.master
         self.master = master
         self.user_info = user
         self.Shops = Shops
         self.New_Item_Contener = []
         self.notebook_frame = self
-        self.details_frame = tk.Frame(self)
+        self.details_frame = tk.Frame(self, bg=self.bg_dark)
         self.details_frame.pack(fill=tk.BOTH, expand=1)
 
         self.notebook_frame.add(self.details_frame, text="Add / Edit Multiple Items")
 
-        self.List_Frame = tk.Frame(self.details_frame)
+        self.List_Frame = tk.Frame(self.details_frame, bg=self.bg_dark)
         self.List_Frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         
         self.New_item_contener_canvas = tk.Canvas(self.List_Frame)
@@ -983,31 +1077,31 @@ class ProductQueckEditionForm(ttk.Notebook):
         self.New_item_contener_canvas.configure(xscrollcommand=self.New_item_contener_xscrollbar.set, yscrollcommand=self.New_item_contener_scrollbar.set)
         #self.New_item_contener_canvas.bind('<Configure>', lambda e: self.New_item_contener_canvas.configure(scrollregion=self.New_item_contener_canvas.bbox("all")))
 
-        self.New_item_conteners_frame = tk.Frame(self.New_item_contener_canvas)
+        self.New_item_conteners_frame = tk.Frame(self.New_item_contener_canvas, bg=self.bg_dark)
         self.New_item_contener_canvas.create_window((0, 0), window=self.New_item_conteners_frame, anchor=tk.NW)
         self.New_item_conteners_frame.bind('<Configure>', lambda e: self.New_item_contener_canvas.configure(scrollregion=self.New_item_contener_canvas.bbox("all")))
 
         
         # Create a header frame to keep packing consistent (pack header_frame into details_frame,
         # then use grid inside header_frame for neat alignment)
-        header_frame = tk.Frame(self.details_frame)
+        header_frame = tk.Frame(self.details_frame, bg=self.bg_dark)
         header_frame.pack(fill=tk.X, padx=5, pady=5)
 
         # Left: summary/status labels (use a status subframe and grid inside it)
-        status_frame = tk.Frame(header_frame)
+        status_frame = tk.Frame(header_frame, bg=self.bg_dark)
         status_frame.grid(row=0, column=0, sticky="w", padx=(0, 10))
 
-        self.Count_label = tk.Label(status_frame, text='Count : 0')
+        self.Count_label = tk.Label(status_frame, text='Count : 0', bg=self.bg_dark, fg=self.text_light)
         self.Count_label.grid(row=0, column=0, sticky="w", padx=4)
-        self.QTY_label = tk.Label(status_frame, text='QTY : 0')
+        self.QTY_label = tk.Label(status_frame, text='QTY : 0', bg=self.bg_dark, fg=self.text_light)
         self.QTY_label.grid(row=0, column=1, sticky="w", padx=4)
-        self.Cost_label = tk.Label(status_frame, text='Cost : 0')
+        self.Cost_label = tk.Label(status_frame, text='Cost : 0', bg=self.bg_dark, fg=self.text_light)
         self.Cost_label.grid(row=0, column=2, sticky="w", padx=4)
-        self.After_label = tk.Label(status_frame, text='After : 0')
+        self.After_label = tk.Label(status_frame, text='After : 0', bg=self.bg_dark, fg=self.text_light)
         self.After_label.grid(row=0, column=3, sticky="w", padx=4)
 
         # Right: payment widgets (use a labeled frame and grid inside it)
-        self.payment_frame = tk.LabelFrame(header_frame, text="Payments", padx=5, pady=5)
+        self.payment_frame = tk.LabelFrame(header_frame, text="Payments", bg=self.bg_dark, padx=5, pady=5)
         self.payment_frame.grid(row=0, column=1, sticky="e", padx=5)
 
         # Use StringVar so we can trace changes and validate
@@ -1017,7 +1111,7 @@ class ProductQueckEditionForm(ttk.Notebook):
 
         self.credit_label = tk.Label(self.payment_frame, text="Credit amount:")
         self.credit_label.grid(row=0, column=0, sticky="w", padx=5, pady=2)
-        self.credit_entry = tk.Entry(self.payment_frame, textvariable=self.credit_var, state='normal')
+        self.credit_entry = tk.Entry(self.payment_frame, textvariable=self.credit_var, state='normal', bg=self.bg_dark, fg=self.text_light)
         self.credit_entry.grid(row=0, column=1, sticky="we", padx=5, pady=2)
 
         self.cash_label = tk.Label(self.payment_frame, text="Cash amount:")
@@ -1134,22 +1228,22 @@ class ProductQueckEditionForm(ttk.Notebook):
         validate_payments()
 
         # Add button (kept in details_frame)
-        self.add_button = tk.Button(self.details_frame, text='Add', command=self.Add_New_Item)
+        self.add_button = tk.Button(self.details_frame, text='Add', command=self.Add_New_Item, **self.button_style)
         self.add_button.pack(side=tk.LEFT, padx=5, pady=5)
-        self.Process_button = tk.Button(self.details_frame, text='Process', command=self.add_product)
+        self.Process_button = tk.Button(self.details_frame, text='Process', command=self.add_product, **self.button_style)
         self.Process_button.pack(side=tk.RIGHT)
         def cancle():
             if hasattr(self.master.master, 'List_Frame_contaner_frame'):
                 self.master.master.List_Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
             self.destroy()
-        self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=cancle)
+        self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=cancle, **self.button_style)
         self.cancle_button.pack(side=tk.RIGHT)
         
         self.Add_New_Item()
 
     def Add_New_Item(self):
-        
-        New_item_contener_frame = tk.Frame(self.New_item_conteners_frame, highlightthickness=2, highlightbackground="black")
+        colors=[]
+        New_item_contener_frame = tk.Frame(self.New_item_conteners_frame, highlightthickness=2, highlightbackground="black", bg=self.bg_dark)
         New_item_contener_frame.pack(fill=tk.X, pady=10)
         
         def cancle_new_item(contener, i):
@@ -1185,41 +1279,42 @@ class ProductQueckEditionForm(ttk.Notebook):
             else:
                 name_list.place_forget()
             self.update_multy_infor()
-                
-        cancle_button = tk.Button(New_item_contener_frame, text='Cancle', command=lambda con=New_item_contener_frame, on=len(self.New_Item_Contener):cancle_new_item(con, on))
-        clear_button = tk.Button(New_item_contener_frame, text='Clear', command=lambda on=len(self.New_Item_Contener): Clear_new_item(on))
-        Copy_button = tk.Button(New_item_contener_frame, text='Copy', command=self.Add_New_Item)
+            
+            
+        cancle_button = tk.Button(New_item_contener_frame, text='Cancle', command=lambda con=New_item_contener_frame, on=len(self.New_Item_Contener):cancle_new_item(con, on), **self.button_style)
+        clear_button = tk.Button(New_item_contener_frame, text='Clear', command=lambda on=len(self.New_Item_Contener): Clear_new_item(on), **self.button_style)
+        Copy_button = tk.Button(New_item_contener_frame, text='Copy', command=self.Add_New_Item, **self.button_style)
         
         # Create the widgets for the product details
-        name_label = tk.Label(New_item_contener_frame, text='Name:')
+        name_label = tk.Label(New_item_contener_frame, text='Name:', bg=self.bg_dark, fg=self.text_light)
         name_entry = tk.Entry(New_item_contener_frame)
         main_name = ""
         name_list = tk.Listbox(name_entry.master.master)
         name_entry.bind('<KeyRelease>', lambda e, n=name_list, i=name_entry: on_name_entry(i, n))
 
-        type_label = tk.Label(New_item_contener_frame, text='Type:')
-        type_frame = tk.Frame(New_item_contener_frame)
+        type_label = tk.Label(New_item_contener_frame, text='Type:', bg=self.bg_dark, fg=self.text_light)
+        type_frame = tk.Frame(New_item_contener_frame, bg=self.bg_dark)
         # get nodes by stting
         type_entry = NodeSelectorApp(type_frame, self.user_info)
         type_entry.load("")
         
-        code_label = tk.Label(New_item_contener_frame, text='CODE:')
+        code_label = tk.Label(New_item_contener_frame, text='CODE:', bg=self.bg_dark, fg=self.text_light)
         code_entry = tk.Entry(New_item_contener_frame)
-        cost_label = tk.Label(New_item_contener_frame, text='Cost:')
+        cost_label = tk.Label(New_item_contener_frame, text='Cost:', bg=self.bg_dark, fg=self.text_light)
         cost_entry = tk.Entry(New_item_contener_frame)
         cost_entry.insert(0, "0")
         cost_entry.bind('<KeyRelease>', lambda e: self.update_multy_infor())
-        qty_label = tk.Label(New_item_contener_frame, text='Quantity:')
+        qty_label = tk.Label(New_item_contener_frame, text='Quantity:', bg=self.bg_dark, fg=self.text_light)
         qty_entry = tk.Entry(New_item_contener_frame)
         qty_entry.insert(0, "0")
         qty_entry.bind('<KeyRelease>', lambda e: self.update_multy_infor())
-        price_label = tk.Label(New_item_contener_frame, text='Price:')
+        price_label = tk.Label(New_item_contener_frame, text='Price:', bg=self.bg_dark, fg=self.text_light)
         price_entry = tk.Entry(New_item_contener_frame)
         price_entry.insert(0, "0")
         price_entry.bind('<KeyRelease>', lambda e: self.update_multy_infor())
-        Total_label = tk.Label(New_item_contener_frame, text='Total cost: 0 \n Total Price: 0\n Total Profit: 0', justify=tk.LEFT)
+        Total_label = tk.Label(New_item_contener_frame, text='Total cost: 0 Total Price: 0 Total Profit: 0', justify=tk.LEFT, bg=self.bg_dark, fg=self.text_light)
         
-        description_label = tk.Label(New_item_contener_frame, text='Description:')
+        description_label = tk.Label(New_item_contener_frame, text='Description:', bg=self.bg_dark, fg=self.text_light)
         description_entry = tk.Entry(New_item_contener_frame)
         default_quantity_change_var = tk.IntVar()
         default_quantity_change_checkbutton = tk.Checkbutton(New_item_contener_frame, text='Default Quantity', variable=default_quantity_change_var)
@@ -1228,28 +1323,59 @@ class ProductQueckEditionForm(ttk.Notebook):
         price_change_var = tk.IntVar()
         price_change_checkbutton = tk.Checkbutton(New_item_contener_frame, text='Price Change', variable=price_change_var)
 
-        cancle_button.grid(row=0, column=0)
-        clear_button.grid(row=1, column=0)
-        Copy_button.grid(row=2, column=0)
+
+        self.Product_rate = 0
+        self.Product_image_frame = tk.Frame(New_item_contener_frame, bg=self.bg_dark)
+        self.Product_image_frame.grid(row=0, column=0, rowspan=4, sticky="nsew")
+
+        self.Product_image_avatarlabel = tk.Label(self.Product_image_frame, bg=self.bg_dark)
+        self.Product_image_avatarlabel.pack(pady=10)
+        self.Product_image_avatarlabel.bind("<Button-1>", lambda _: self.change_Product_image())
+        color = "Def_Color"
+        if os.path.exists(MAIN_dir+"\\data\\Products\\"+ str(code_entry.get()) + "\\"+ str(color) + "\\ProductImage.jpg"):
+            img = Image.open(MAIN_dir+"\\data\\Products\\"+ str(code_entry.get()) + "\\"+ str(color) + "\\ProductImage.jpg").resize((100, 100))
+            img = ImageTk.PhotoImage(img)
+            self.Product_image_avatarlabel.config(image=img)
+            self.Product_image_avatarlabel.image = img
+        else:
+            # place holder
+            img = Image.open(MAIN_dir+"\\data\\Icon\\no_Product_Image.jpg").resize((100, 100))
+            img = ImageTk.PhotoImage(img)
+            self.Product_image_avatarlabel.config(image=img)
+            self.Product_image_avatarlabel.image = img
+
         
         name_label.grid(row=0, column=1)
-        name_entry.grid(row=1, column=1)
-        type_label.grid(row=2, column=1)
-        type_frame.grid(row=3, column=1)
-        code_label.grid(row=0, column=2)
-        code_entry.grid(row=1, column=2)
-        qty_label.grid(row=2, column=2)
-        qty_entry.grid(row=3, column=2)
-        cost_label.grid(row=0, column=3)
-        cost_entry.grid(row=1, column=3)
-        price_label.grid(row=2, column=3)
-        price_entry.grid(row=3, column=3)
-        description_label.grid(row=0, column=4)
-        description_entry.grid(row=1, column=4)
-        Total_label.grid(row=2, column=4, rowspan=2)
-        default_quantity_change_checkbutton.grid(row=2, column=7)
-        price_change_checkbutton.grid(row=3, column=7)
-        active_checkbutton.grid(row=0, column=7)
+        qty_label.grid(row=1, column=1)
+        
+        name_entry.grid(row=0, column=2)
+        qty_entry.grid(row=1, column=2)
+        
+        code_label.grid(row=0, column=3)
+        cost_label.grid(row=1, column=3)
+        
+        code_entry.grid(row=0, column=4)
+        cost_entry.grid(row=1, column=4)
+        
+        description_label.grid(row=0, column=5)
+        price_label.grid(row=1, column=5)
+        
+        description_entry.grid(row=0, column=6)
+        price_entry.grid(row=1, column=6)
+        
+        
+        default_quantity_change_checkbutton.grid(row=2, column=1)
+        price_change_checkbutton.grid(row=2, column=2)
+        active_checkbutton.grid(row=2, column=3)
+        
+        type_label.grid(row=2, column=5)
+        type_frame.grid(row=2, column=6, rowspan=3, columnspan=6)
+        
+        
+        cancle_button.grid(row=4, column=0)
+        clear_button.grid(row=4, column=1)
+        Copy_button.grid(row=4, column=2)
+        Total_label.grid(row=4, column=3, columnspan=2)
         
         self.New_Item_Contener.append([New_item_contener_frame, name_entry, code_entry, qty_entry, type_entry, cost_entry, price_entry, Total_label, description_entry, default_quantity_change_var, price_change_var, active_var])
         self.update_multy_infor()
@@ -1268,7 +1394,7 @@ class ProductQueckEditionForm(ttk.Notebook):
                         cost += icost
                     if new_item[5].get() != '':
                         price += iprice
-                    new_item[7].config(text='Sum cost: '+str(icost)+' \n Sum Price: '+str(iprice)+'\n Sum Profit: '+str(iprice-icost))
+                    new_item[7].config(text='Sum cost: '+str(icost)+' Sum Price: '+str(iprice)+' Sum Profit: '+str(iprice-icost))
                 except Exception:
                     pass
         self.Count_label.config(text='Count : '+str(len(self.New_Item_Contener)))
@@ -1279,7 +1405,7 @@ class ProductQueckEditionForm(ttk.Notebook):
         self.After_label.config(text='Total Profit : '+str(price-cost))
         
     def on_name_entry(self, event):
-        products = fetch_as_dict_list('SELECT * FROM product')
+        products = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM product')
         for product in products:
             #TODO MAKE IT EASY BY ID
             #print("on_name_entry\n"+str(product[1]))
@@ -1315,7 +1441,7 @@ class ProductQueckEditionForm(ttk.Notebook):
         suffix = datetime.datetime.now().strftime('%f')
         while True:
             candidate = base_doc_code + suffix
-            ex_doc = fetch_as_dict_list("SELECT 1 FROM doc_table WHERE doc_barcode=?", (candidate,))
+            ex_doc = fetch_as_dict_list(self.homemaster.Link, "SELECT 1 FROM doc_table WHERE doc_barcode=?", (candidate,))
             if ex_doc:
                 ex_doc = ex_doc[0]
                 try:
@@ -1416,13 +1542,13 @@ class ProductQueckEditionForm(ttk.Notebook):
             try:
                 newidedproduct = Set_product(None, ['name', 'code', 'type', 'barcode', 'at_shop', 'quantity', 'cost', 'tax', 'price', 'include_tax', 'price_change', 'more_info', 'images', 'description', 'service', 'default_quantity', 'active'],[name, code, json.dumps(typ), barcode, online_shop_id, quantity_f, cost, 0.0, price, include_tax, price_change, more_info, images, description, service, default_quantity, active])
                 new_item_id = newidedproduct['id']
-                print("newidedproduct : " + str(newidedproduct) + " barcode : " + str(brcod))
+                #print("newidedproduct : " + str(newidedproduct) + " barcode : " + str(brcod))
                 created_ids.append(newidedproduct['id'])
                 # update shop items
                 found_shop_items.append([new_item_id, 1, date_now, date_now, date_now])
                 ITEM = json.dumps(found_shop_items)
-                print("ITEM : " + str(ITEM))
-                print("online_shop_id : " + str(online_shop_id))
+                #print("ITEM : " + str(ITEM))
+                #print("online_shop_id : " + str(online_shop_id))
                 if not online_shop_id == None:
                     Update_Shop(None, self.user_info, ['Shop_items'], [ITEM], ['Shop_Id'], [online_shop_id])
                 elif not offline_shop_id == None:
@@ -1434,7 +1560,8 @@ class ProductQueckEditionForm(ttk.Notebook):
                 self.Shops[selected]['Shop_items'] = ITEM
         
             except Exception as e:
-                print("Error inserting product:", e)
+                #print("Error inserting product:", e)
+                pass
 
         # If no items created, skip doc insert
         if not doc_items:
@@ -1487,12 +1614,12 @@ class ProductQueckEditionForm(ttk.Notebook):
 
         # Insert a single doc_table record representing this batch (store payments)
         try:
-            print(['doc_barcode', 'extension_barcode', 'At_Shop_Id', 'user_id', 'customer_id', 'Seller_id', 'type', 'item', 'qty', 'price', 'Profite', 'discount', 'tax', 'payments', 'pid', 'doc_created_date', 'doc_expire_date', 'doc_updated_date'], [brcod, "extension_barcode", online_shop_id, user_id, customer_id, "", "Stocked_Items", json.dumps(doc_items), count_new_items, total_price, total_profit, 0, 0, payments_json, "", date_now, date_now, date_now])
+            #print(['doc_barcode', 'extension_barcode', 'At_Shop_Id', 'user_id', 'customer_id', 'Seller_id', 'type', 'item', 'qty', 'price', 'Profite', 'discount', 'tax', 'payments', 'pid', 'doc_created_date', 'doc_expire_date', 'doc_updated_date'], [brcod, "extension_barcode", online_shop_id, user_id, customer_id, "", "Stocked_Items", json.dumps(doc_items), count_new_items, total_price, total_profit, 0, 0, payments_json, "", date_now, date_now, date_now])
             Set_Document(None, ['doc_barcode', 'extension_barcode', 'At_Shop_Id', 'user_id', 'customer_id', 'Seller_id', 'type', 'item', 'qty', 'price', 'Profite', 'discount', 'tax', 'payments', 'pid', 'doc_created_date', 'doc_expire_date', 'doc_updated_date'], [brcod, "extension_barcode", online_shop_id, user_id, customer_id, "", "Stocked_Items", json.dumps(doc_items), count_new_items, total_price, total_profit, 0, 0, payments_json, "", date_now, date_now, date_now])
-            print("Done setting stock document")
+            #print("Done setting stock document")
         except Exception as e:
-            print("Error inserting recurde new products on doc_table:", e)
-            
+            #print("Error inserting recurde new products on doc_table:", e)
+            pass   
 
         # Clear the product details widgets
         #self.clear_product_details_widget()
@@ -1507,7 +1634,7 @@ class ProductQueckEditionForm(ttk.Notebook):
 
         # this is for search box it makes it search
         if hasattr(p, 'DFsearch_entry'):
-            print("p ", p)
+            #print("p ", p)
             p.DFsearch_entry.var.set(name)
             p.DFsearch_entry.changed()
             p.DFsearch_entry.focus_set()

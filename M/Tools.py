@@ -1,25 +1,56 @@
 import tkinter as tk
-from tkinter import ttk
+from PIL import Image, ImageTk
+from tkinter import ttk, filedialog
+import os, shutil
 import sqlite3
-
+import shutil
+import datetime
+import atexit
+import sys
 import json
-# Connect to the database or create it if it does not exist
+import ast
 
-import os
+current_dir = os.path.abspath(os.path.dirname(__file__))
+MAIN_dir = os.path.join(os.path.join(current_dir, '..'), '..')
+sys.path.append(MAIN_dir)
 
-from D.Security import Chacke_Security
-data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
+data_dir = os.path.abspath(os.path.join(MAIN_dir, 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
 
 from C.List import *
-
+from D.Security import Chacke_Security
 from C.API.Get import *
 from C.API.Set import *
 from C.API.API import *
 
 class ToolForm(tk.Frame):
     def __init__(self, master, User, Shops, on_Shop):
-        tk.Frame.__init__(self, master)
+        
+        self.bg_dark = "#0d47a1"      # Deep blue
+        self.bg_light = "#1565c0"     # Darker blue
+        self.accent_blue = "#1976d2"  # Medium blue
+        self.text_light = "#ffffff"   # White text
+        self.bg_darker = "#0a3d91"    # Even darker blue
+        self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
+        
+        tk.Frame.__init__(self, master, bg=self.bg_dark)
+        
+        self.homemaster = self
+        while(True):
+            if hasattr(self.homemaster, 'onDisplayFrame'):
+                break
+            else:
+                self.homemaster = self.homemaster.master
+        #print("self.User_data : ", self.User_data)
+
+        self.MainApplication = self
+        while(True):
+            if hasattr(self.MainApplication, 'MainApplication_root'):
+                break
+            else:
+                self.MainApplication = self.MainApplication.master
+        
+        
         self.Selected_Shop = ""
         self.user = self.User = User
         self.Shops = Shops
@@ -28,7 +59,7 @@ class ToolForm(tk.Frame):
         
         # Create the search bar
         # Create the frame for the search bar and buttons
-        self.search_frame = tk.Frame(self)
+        self.search_frame = tk.Frame(self, bg=self.bg_dark)
         self.search_frame.pack(side=tk.TOP, padx=5, pady=5)
 
         # create a StringVar to represent the search box
@@ -42,32 +73,48 @@ class ToolForm(tk.Frame):
             # bind the update_search_results function to the search box
             self.search_var.trace("w", self.update_search_results)
 
+        # Create the frame for the product details
+       
+        
+        self.List_Frame = tk.Frame(self, bg=self.bg_dark)
+        self.List_Frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        
         # Create the list box
-        self.list_box = ttk.Treeview(self)
+        self.list_box = ttk.Treeview(self.List_Frame)
         self.list_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.list_box.bind('<<TreeviewSelect>>', self.on_select)
+        
+        self.item_List_yscrollbar = tk.Scrollbar(self.list_box, orient='vertical', command=self.list_box.yview, bg=self.bg_light, activebackground=self.accent_blue)
+        self.item_List_yscrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.item_List_xscrollbar = tk.Scrollbar(self.list_box, orient='horizontal', command=self.list_box.xview, bg=self.bg_light, activebackground=self.accent_blue)
+        self.item_List_xscrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+        
+        self.list_box.configure(xscrollcommand=self.item_List_xscrollbar.set, yscrollcommand=self.item_List_yscrollbar.set)
+
 
         # Create the frame for the product details
-        self.details_frame = tk.Frame(self.list_box)
+        self.details_frame = tk.Frame(self.list_box, bg=self.bg_dark)
         self.details_frame.pack_forget()
         self.selected_shop_id = ""
         self.selected_shop_name = ""
         self.selected_id = ""
         self.main_name = ""
         # Create the widgets for the product details
-        self.name_label = tk.Label(self.details_frame, text='Tool Name :')
+        self.name_label = tk.Label(self.details_frame, text='Tool Name :', bg=self.bg_dark, fg=self.text_light)
         self.name_entry = tk.Entry(self.details_frame)
         self.name_entry.bind('<KeyRelease>', lambda: self.on_name_entry)
-        self.type_label = tk.Label(self.details_frame, text='Tool Method :')
+        self.type_label = tk.Label(self.details_frame, text='Tool Method :', bg=self.bg_dark, fg=self.text_light)
         self.type_entry = ttk.Combobox(self.details_frame,
                            values=('CASH', 'CARD', 'CREADIT', 'CASHOUT', 'CASHIN', 'OTHER'),
                            state='readonly')
         # self.type_entry.set('')   no default selected; remove this line if you want a default
-        self.code_label = tk.Label(self.details_frame, text='Tool ID :')
+        self.code_label = tk.Label(self.details_frame, text='Tool ID :', bg=self.bg_dark, fg=self.text_light)
         self.code_entry = tk.Entry(self.details_frame)
-        self.short_key_label = tk.Label(self.details_frame, text='Tool Short cut :')
+        self.short_key_label = tk.Label(self.details_frame, text='Tool Short cut :', bg=self.bg_dark, fg=self.text_light)
         self.short_key_entry = tk.Entry(self.details_frame)
-        self.acsess_label = tk.Label(self.details_frame, text='Tool Acsess key :')
+        self.acsess_label = tk.Label(self.details_frame, text='Tool Acsess key :', bg=self.bg_dark, fg=self.text_light)
         self.acsess_entry = tk.Entry(self.details_frame)
         self.enable_label = tk.IntVar()
         self.enable_entry = tk.Checkbutton(self.details_frame, text='Tool enabel :', variable=self.enable_label)
@@ -84,16 +131,16 @@ class ToolForm(tk.Frame):
         self.change_allowed_label = tk.IntVar()
         self.change_allowed_entry = tk.Checkbutton(self.details_frame, text='Change Allowed:', variable=self.change_allowed_label)
         self.add_button = tk.Button(self.details_frame, text='Add', command=self.add_tool)
-        self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=self.hide_add_forme)
+        self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=self.hide_add_forme, **self.button_style)
         
-        self.add_new_button = tk.Button(self.search_frame, text='Add New', command=self.show_add_forme)
+        self.add_new_button = tk.Button(self.search_frame, text='Add New', command=self.show_add_forme, **self.button_style)
         self.add_new_button.pack(side=tk.LEFT, padx=5, pady=5)
 
-        self.change_button = tk.Button(self.search_frame, text='Change', command=self.show_change_forme)
+        self.change_button = tk.Button(self.search_frame, text='Change', command=self.show_change_forme, **self.button_style)
         self.change_button.pack(side=tk.LEFT, padx=5, pady=5)
         self.change_button.config(state=tk.DISABLED)
 
-        self.delete_button = tk.Button(self.search_frame, text='Delete', command=self.delete_tool)
+        self.delete_button = tk.Button(self.search_frame, text='Delete', command=self.delete_tool, **self.button_style)
         self.delete_button.pack(side=tk.LEFT, padx=5, pady=5)
         self.delete_button.config(state=tk.DISABLED)
         if not Chacke_Security(self, self.user, self.Shops[self.on_Shop], 38, f'User Has No Permission To Add New Tools OR LOGIN AS ADMIN'):                        
@@ -196,7 +243,7 @@ class ToolForm(tk.Frame):
             self.markaspad_label.set(int(markaspad))
             self.add_button.config(text="Update")
             # Commit the changes to the database
-            conn.commit()
+            #conn.commit()
             self.details_frame.pack(side=tk.RIGHT, fill=tk.Y, expand=False)
     
     def search_tools(self, search_text):        
@@ -208,7 +255,7 @@ class ToolForm(tk.Frame):
         return results
 
     def Add_tool_listbox(self, results):
-        print("update_search :"+str(results))
+        #print("update_search :"+str(results))
         self.list_box['columns'] = ("Shop ID", "Shop Name", "Tool Name", "Tool Method", "Tool ID", "Tool Short cut", "Tool Acsess key", "Tool enabel", "Tool Quick_pay","Tool Markpad", "Tool Customer_required", "Tool Open_drower", "Tool Printslip")
         self.list_box.heading("#0", text="Shop ID")
         self.list_box.heading("#1", text="Shop Name")
@@ -258,10 +305,10 @@ class ToolForm(tk.Frame):
             elif shop['Id']:
                 shopid = 'Id'
                 shopidv = str(shop['Id'])
-            Shop = fetch_as_dict_list( "SELECT * FROM Shops WHERE " + shopid + "=? AND Shop_name=? AND Shop_brand_name=?", 
+            Shop = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM Shops WHERE " + shopid + "=? AND Shop_name=? AND Shop_brand_name=?", 
                                 (shopidv, str(shop['Shop_name']), str(shop['Shop_brand_name'])))
             if Shop and Shop[0] and Shop[0]['Shop_Payment_Tools'] and Shop[0]['Shop_Payment_Tools'] != "":
-                print("Shop[0]['Shop_Payment_Tools'] ", Shop[0]['Shop_Payment_Tools'])
+                #print("Shop[0]['Shop_Payment_Tools'] ", Shop[0]['Shop_Payment_Tools'])
                 Shop_Payment_Tools = load_list(Shop[0]['Shop_Payment_Tools'])
                 
                 # Add the products to the product listbox
@@ -324,7 +371,7 @@ class ToolForm(tk.Frame):
                     self.master.master.master.master.Shop_Payment_Tools = Shop_Payment_Tools
                 else:
 
-                    Shop0 = fetch_as_dict_list( "SELECT * FROM Shops WHERE " + shopid + "=? AND Shop_name=?", 
+                    Shop0 = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM Shops WHERE " + shopid + "=? AND Shop_name=?", 
                                         (shopidv, str(self.selected_shop_name)))
                     if Shop0 and Shop0[0] and Shop0[0]['Shop_Payment_Tools'] and Shop0[0]['Shop_Payment_Tools'] != "":
                         
@@ -334,7 +381,7 @@ class ToolForm(tk.Frame):
                             # "Tool Name", "Tool Method", "Tool ID", "Tool Short cut", "Tool Acsess key", "Tool enabel", "Tool Quick_pay","Tool Markpad", "Tool Customer_required", "Tool Open_drower", "Tool Printslip"
                             Shop_Payment_Tools[int(self.selected_id)] = [name, typ, code, short_key, acsess, enable, quick_pay , markaspad, customer_required, open_drower, print_slip, change_allowed]
 
-                        print("Shop_Payment_Tools ", Shop_Payment_Tools)
+                        #print("Shop_Payment_Tools ", Shop_Payment_Tools)
                         Update_Shop(None, None, ['Shop_Payment_Tools'], [json.dumps(Shop_Payment_Tools)], [shopid, 'Shop_name', 'Shop_brand_name'], 
                                     [shopidv, str(shop['Shop_name']), str(shop['Shop_brand_name'])])
                         self.master.master.master.master.Shop_Payment_Tools = Shop_Payment_Tools
@@ -413,7 +460,7 @@ class ToolForm(tk.Frame):
 
 
     def on_name_entry(self, event):
-        products = fetch_as_dict_list('SELECT * FROM tools', ())
+        products = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM tools', ())
         for product in products:
             if product['name'] == self.name_entry.get():
                 self.add_button.config(text="Update")    
@@ -429,7 +476,7 @@ class ToolForm(tk.Frame):
      
 
     def on_select(self, event):
-        print("onselect")
+        #print("onselect")
         if len(event.widget.selection()) > 0:
             self.change_button.config(state=tk.NORMAL)
             self.delete_button.config(state=tk.NORMAL)

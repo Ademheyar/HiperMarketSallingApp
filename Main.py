@@ -19,6 +19,44 @@ conn = sqlite3.connect(db_path)
 #cur.execute("ALTER TABLE setting CHANGE COLUMN user_name User_id INT")
 # Create a table to store the document records
 
+
+COUNTRIES_WITH_CITIES = {
+    "South Africa": ["Johannesburg", "Cape Town", "Durban", "Pretoria", "Port Elizabeth", "Bloemfontein", "East London", "Polokwane"],
+    "United States": ["New York", "Los Angeles", "Chicago", "Houston", "Miami", "San Francisco", "Dallas", "Boston", "Seattle", "Atlanta"],
+    "United Kingdom": ["London", "Manchester", "Birmingham", "Liverpool", "Leeds", "Glasgow", "Bristol", "Edinburgh"],
+    "Canada": ["Toronto", "Vancouver", "Montreal", "Calgary", "Ottawa", "Edmonton", "Winnipeg"],
+    "Australia": ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide", "Gold Coast", "Canberra"],
+    "Germany": ["Berlin", "Munich", "Hamburg", "Frankfurt", "Cologne", "Stuttgart", "Düsseldorf"],
+    "France": ["Paris", "Lyon", "Marseille", "Toulouse", "Nice", "Lille", "Bordeaux"],
+    "United Arab Emirates": ["Dubai", "Abu Dhabi", "Sharjah", "Ajman", "Al Ain", "Ras Al Khaimah", "Fujairah"],
+    "Saudi Arabia": ["Riyadh", "Jeddah", "Mecca", "Medina", "Dammam", "Khobar", "Tabuk"],
+    "Turkey": ["Istanbul", "Ankara", "Izmir", "Antalya", "Bursa", "Konya", "Gaziantep"],
+    "India": ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Pune", "Ahmedabad"],
+    "Pakistan": ["Karachi", "Lahore", "Islamabad", "Faisalabad", "Multan", "Peshawar", "Quetta"],
+    "Nigeria": ["Lagos", "Abuja", "Kano", "Ibadan", "Port Harcourt", "Benin City", "Kaduna"],
+    "Kenya": ["Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret", "Thika"],
+    "Egypt": ["Cairo", "Alexandria", "Giza", "Sharm El Sheikh", "Luxor", "Aswan"],
+    "Ethiopia": ["Addis Ababa", "Dire Dawa", "Bahir Dar", "Gondar", "Hawassa"],
+    "Morocco": ["Casablanca", "Marrakech", "Rabat", "Fes", "Tangier"],
+    "Brazil": ["Sao Paulo", "Rio de Janeiro", "Brasilia", "Salvador", "Fortaleza", "Belo Horizonte"],
+    "Argentina": ["Buenos Aires", "Cordoba", "Rosario", "Mendoza"],
+    "Japan": ["Tokyo", "Osaka", "Kyoto", "Yokohama", "Nagoya", "Hiroshima", "Sapporo"],
+    "China": ["Beijing", "Shanghai", "Guangzhou", "Shenzhen", "Chengdu", "Hangzhou", "Wuhan"],
+    "South Korea": ["Seoul", "Busan", "Incheon", "Daegu", "Daejeon"],
+    "Italy": ["Rome", "Milan", "Naples", "Turin", "Florence", "Venice", "Bologna"],
+    "Spain": ["Madrid", "Barcelona", "Valencia", "Seville", "Zaragoza", "Malaga"],
+    "Netherlands": ["Amsterdam", "Rotterdam", "The Hague", "Utrecht", "Eindhoven"],
+    "Sweden": ["Stockholm", "Gothenburg", "Malmo", "Uppsala", "Vasteras"],
+    "Norway": ["Oslo", "Bergen", "Trondheim", "Stavanger"],
+    "Qatar": ["Doha", "Al Rayyan", "Al Wakrah", "Umm Salal", "Al Khor"],
+    "Kuwait": ["Kuwait City", "Al Ahmadi", "Hawally", "Farwaniya"],
+    "Malaysia": ["Kuala Lumpur", "George Town", "Johor Bahru", "Ipoh", "Kuching"],
+    "Indonesia": ["Jakarta", "Surabaya", "Bandung", "Medan", "Bali"],
+    "Singapore": ["Singapore"],
+    "New Zealand": ["Auckland", "Wellington", "Christchurch", "Hamilton"],
+    "Mexico": ["Mexico City", "Guadalajara", "Monterrey", "Cancun"],
+}
+
 cur = conn.cursor()
 
 
@@ -31,7 +69,10 @@ cur.execute('''CREATE TABLE IF NOT EXISTS setting
                 Get_seller INT,
                 Get_printer INT,
                 Slip_orders TEXT,
-                Slip_width INT
+                Slip_width INT,
+                Count_Creadit_Printout INT,
+                Auto_Print_Credite INT,
+                Auto_Print_All INT
                 )''')
 
 
@@ -194,8 +235,8 @@ cur.execute('''CREATE TABLE IF NOT EXISTS product
 # `Company_Started_Date`, `Shop_likes`, `Shop_rules`, `Shop_link`, `Shop_Settings`,
 # `Shop_profile_img`, `Shop_banner_imgs`, `Shop_payment_info`, `Shop_isenabled`,
 #  `Shop_Slip_Settings`, `Shop_Expenses`, `Shop_Actions`
-#cur.execute('ALTER TABLE Shops RENAME COLUMN Shop_id TO Shop_Id')
-#cur.execute('ALTER TABLE Shops ADD COLUMN Id INTEGER')
+#cur.execute('ALTER TABLE Shops RENAME COLUMN Shop_SocLinks TO Shop_Items_type')
+#cur.execute('ALTER TABLE Shops ADD COLUMN Shop_SocLinks TEXT')
 cur.execute('''CREATE TABLE IF NOT EXISTS Shops
              (Id INTEGER PRIMARY KEY AUTOINCREMENT,
               Shop_Id INTEGER,
@@ -203,34 +244,40 @@ cur.execute('''CREATE TABLE IF NOT EXISTS Shops
               Shop_brand_name TEXT,
               Shop_oweners_id TEXT,
               Shop_type TEXT,
-              Shop_location TEXT,
               Shop_email TEXT,
-              Shop_contact TEXT,
+              Shop_link TEXT,
               Shop_password TEXT,
-              Shop_Page TEXT,
+              Shop_about TEXT,
+              Shop_country TEXT,
+              Shop_contact TEXT,
+              Shop_isenabled TEXT,
+
+              Shop_SocLinks TEXT,
+              Shop_rules TEXT,
+              Shop_location TEXT,
+              
+              Shop_profile_img TEXT,
+              Shop_banner_imgs TEXT,
+              
+              Company_Started_Date TEXT,
               Shop_rate TEXT,
+              
+              Shop_Page TEXT,
+              
               Shop_items TEXT,
               Shop_followers TEXT,
               Shop_workers TEXT,
               Shop_Payment_Tools TEXT,
-              Shop_about TEXT,
               Shop_Security_Levels TEXT,
-              Company_Started_Date TEXT,
               Shop_likes TEXT,
-              Shop_rules TEXT,
-              Shop_link TEXT,
               Shop_Settings TEXT,
-              Shop_profile_img TEXT,
-              Shop_banner_imgs TEXT,
               Shop_payment_info TEXT,
-              Shop_isenabled TEXT,
               Shop_Slip_Settings TEXT,
               Shop_Expenses TEXT,
               Shop_Actions TEXT,
 
               
               Shop_Items_type TEXT,
-              Shop_country TEXT,
               Shop_payment_r TEXT,
               Shop_Access_levels TEXT)''')
 
@@ -327,13 +374,16 @@ class MainApplication(tk.Tk):
         self.geometry(f"{screen_width}x{screen_height}+0+0")
         self.overrideredirect(True)  # Remove title bar and borders
         self.title("Hiper Market")
-        
+        self.MainApplication_root = ""
+        self.COUNTRIES_WITH_CITIES = COUNTRIES_WITH_CITIES
         # Android-style dark blue color scheme
+        
         self.bg_dark = "#0d47a1"      # Deep blue
         self.bg_light = "#1565c0"     # Darker blue
         self.accent_blue = "#1976d2"  # Medium blue
         self.text_light = "#ffffff"   # White text
-        
+        self.bg_darker = "#0a3d91"    # Even darker blue
+
         # Modern battery/energy-inspired color scheme
         bg_dark = "#0d47a1"      # Dark navy 1a1a2e
         bg_medium = "#16213e"    # Medium navy
@@ -354,6 +404,8 @@ class MainApplication(tk.Tk):
         style.configure('TButton', forground=self.bg_light)
         style.configure('TButton', background=self.text_light)
         style.configure('TLabel', background=bg_dark, foreground=text_light)
+        style.configure('Treeview', fieldbackground=self.accent_blue, foreground=self.bg_light, background=self.text_light)
+        style.map('Treeview', background=[('selected', self.bg_light)], foreground=[('selected', 'white')])
         
         # Configure main window styling
         self.configure(bg=self.bg_dark)
@@ -375,20 +427,6 @@ class MainApplication(tk.Tk):
         self.frames["Select_User_Company_State_Frame"] = None
         
         #self.show_frame("DisplayFrame")
-
-    '''def login(self, i, Shops, User_data, User_work_shops):
-            # hide all frames except the one to be shown
-            Shops_info = {'Selected_Shop': Shops[i], 'Shops': Shops, 'User': User_data, 'User_Shops_List': User_work_shops, 'Shop_items': [], 'Shop_Actions': ""}
-            #print("User11 : " + str(user[15]))
-            self.display_frame = DisplayFrame(self, Shops_info, User_data, User_work_shops, Shops)
-            self.display_frame.grid(row=0, column=0, sticky="nsew")
-            self.frames["DisplayFrame"] = self.display_frame
-            self.frames["DisplayFrame"].user = User_data
-            self.frames["DisplayFrame"].Shops_info = Shops_info
-            self.frames["DisplayFrame"].Shops = Shops
-            self.frames["DisplayFrame"].User_Shops_List = User_work_shops
-            #self.master.frames["DisplayFrame"].load()
-            #self.master.show_frame("DisplayFrame")'''
             
     def self_focus(self):
         #print("focus main window")
