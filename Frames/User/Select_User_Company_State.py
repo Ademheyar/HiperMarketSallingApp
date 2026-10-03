@@ -31,6 +31,14 @@ class Select_User_Company_State_Frame(tk.Frame):
         self.Shops = []
         self.User_work_shops = []
         
+        self.MainApplication = self
+        while(True):
+            if hasattr(self.MainApplication, 'MainApplication_root'):
+                print("Select_User_Company_State_Frame Found MainApplication ", self.MainApplication)
+                break
+            else:
+                self.MainApplication = self.MainApplication.master
+                
         
         self.homemaster = self
         while(True):
@@ -40,13 +48,6 @@ class Select_User_Company_State_Frame(tk.Frame):
                 self.homemaster = self.homemaster.master
         #print("self.User_data : ", self.User_data)
 
-        self.MainApplication = self
-        while(True):
-            if hasattr(self.MainApplication, 'MainApplication_root'):
-                break
-            else:
-                self.MainApplication = self.MainApplication.master
-                
         self.found_shops = []
         self.found_Shops_result = []
         
@@ -202,6 +203,17 @@ class Select_User_Company_State_Frame(tk.Frame):
 
         self.update_user_work_shop()
         self.selected_indexd = 0
+
+        self.MainApplicatio = self
+        while(True):
+            self.MainApplicatio.bind("<Up>", self.treeview_naigation)
+            self.MainApplicatio.bind("<Down>", self.treeview_naigation)
+            self.MainApplicatio.bind("<Return>", self.Selectd)
+            if hasattr(self.MainApplicatio, 'MainApplication_root'):
+                break
+            else:
+                self.MainApplicatio = self.MainApplicatio.master
+                
         self.MainApplication.focus_set()
         self.MainApplication.bind("<Up>", self.treeview_naigation)
         self.MainApplication.bind("<Down>", self.treeview_naigation)
@@ -212,6 +224,7 @@ class Select_User_Company_State_Frame(tk.Frame):
         self.login(self.selected_indexd)
             
     def treeview_naigation(self, event):
+        print("treeview_naigation up and downd")
         if not (event.keysym == "Up" or event.keysym == "Down"):
             self.focus_set()
         

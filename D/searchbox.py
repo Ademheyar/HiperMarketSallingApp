@@ -34,6 +34,7 @@ class search_entry(tk.Entry):
         self.master = master
         self.user = user
         self.Shops = Shops
+        self.list_numberofitems = 10
         self.Shops_Names = [shop['Shop_name'] for shop in self.Shops]
         
         # Professional blue color scheme
@@ -555,7 +556,7 @@ class search_entry(tk.Entry):
                 if not self.perm_actions:
                     words = [word for word in words if word[0] != 'ACTIONS']
             
-                self.load_more_items(words[:5])
+                self.load_more_items(words[:self.list_numberofitems])
             else:
                 w = self.grid_size()[0]
                 h = self.grid_size()[1]
@@ -776,7 +777,7 @@ class search_entry(tk.Entry):
                         items_results.append(["ITEM", item_id, selected_item])
                         unique_item_results.append(item_id)
 
-            if self.perm_docs:
+            if self.perm_docs and len(items_results) + len(Actions_results) < self.list_numberofitems:
                 # single DB query for documents
                 rows = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM doc_table WHERE doc_barcode LIKE ?", (f"%{query}%",))
                 for row in rows:
@@ -785,7 +786,7 @@ class search_entry(tk.Entry):
                         barcode_results.append(["DOCUMENT", barcode, row])
                         unique_barcode_results.append(barcode)
                         
-            if self.perm_user:
+            if self.perm_user and len(barcode_results) + len(items_results) + len(Actions_results) < self.list_numberofitems:
                 # single DB query for documents
                 username = query
                 rows = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM Users WHERE User_name LIKE ? OR User_address LIKE ? OR User_id_pp_num LIKE ? OR User_phone_num LIKE ? OR User_email LIKE ? OR User_type LIKE ? OR User_access LIKE ?", 

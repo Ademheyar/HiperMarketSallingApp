@@ -20,7 +20,14 @@ class ShowchartForm(tk.Tk):
         self.text_light = "#ffffff"   # White text
         self.bg_darker = "#0a3d91"    # Even darker blue
         self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
-        
+
+        self.homemaster = self.master
+        while(True):
+            if hasattr(self.homemaster, 'Shops_info') and hasattr(self.homemaster, 'onDisplayFrame'):
+                break
+            else:
+                self.homemaster = self.homemaster.master
+                
         # create a Toplevel window for the chart list form
         self.chart_list_form = tk.Toplevel(self.master)
         self.chart_list_form.title("Chart List Form ~ " + str(self.master.chart_index))
@@ -60,7 +67,7 @@ class ShowchartForm(tk.Tk):
         scrollbar.config(command=self.chart_list.yview)
 
         # retrieve chart data from the database
-        chart_data = fetch_as_dict_list("SELECT * FROM pre_doc_table", ())
+        chart_data = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM pre_doc_table", ())
         for chart in chart_data:
             #print('chart: ', chart)
             chart_info = f"ID: {chart['id']} | Price: {chart['PRICE']} | Barcode: {chart['exitems_doc_barcode']} | Date: {chart['doc_created_date']}"
@@ -108,7 +115,7 @@ class ShowchartForm(tk.Tk):
             # delete the selected chart from the Listbox
             self.chart_list.delete(selection[0])
             # delete the selected chart from the database
-            Update_table_database("DELETE FROM pre_doc_table WHERE id = ?", (chart_name,))
+            Update_table_database(self.homemaster.Link, "DELETE FROM pre_doc_table WHERE id = ?", (chart_name,))
         else:
             print("No chart selected.")
 
@@ -116,4 +123,4 @@ class ShowchartForm(tk.Tk):
         # delete all charts from the Listbox
         self.chart_list.delete(0, "end")
         # delete all charts from the database
-        Update_table_database("DELETE * FROM pre_doc_table")
+        Update_table_database(self.homemaster.Link, "DELETE * FROM pre_doc_table")

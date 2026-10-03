@@ -28,8 +28,8 @@ db_path = os.path.join(data_dir, 'my_database.db')
 # values : tuple = the values to be used in the query
 def fetch_as_dict_list(Link, query, values):
     result = None
-    print("fetch_as_dict_list Link ", Link)
     if Link and len(Link) > 5 and islinked(Link):
+        print("fetch_as_dict_list Link ", Link)
         entry = {'Do': "Get", 'QUERYS': query, 'QUERYVALUES': values }
         response_data = Sand_API(Link, entry)
         if response_data and not response_data == []:

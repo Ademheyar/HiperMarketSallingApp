@@ -155,39 +155,42 @@ class ProductForm(ttk.Frame):
         self.add_newmultyproduct_button = tk.Button(self.search_frame, text='Maulty Add Products', command=self.Queck_Edition_form, **self.button_style)
         self.add_new_button.pack(side=tk.LEFT, padx=5, pady=5)
         self.add_newmultyproduct_button.pack(side=tk.LEFT, padx=5, pady=5)
-        self.delete_button = tk.Button(self.search_frame, text='Delete', command=self.delete_product, **self.button_style)
-        self.delete_button.pack(side=tk.LEFT, padx=5, pady=5)
         
+        self.price_tag_button = tk.Button(self.search_frame, text='Price Tag', command= lambda :PrintPriceTagFrame(self))
+        self.price_tag_button.pack(side=tk.LEFT, padx=5, pady=5)
+        
+         # Create the frame for the product details
+        self.search_Frame = tk.Frame(self.search_frame, bg=self.bg_dark)
+        self.search_Frame.pack(side=tk.LEFT, fill="x", expand=True)
+        self.search_Frame.columnconfigure((0, 1, 2, 3, 4), weight=0)
         
         # create a StringVar to represent the search box
         self.search_var = tk.StringVar()
-        self.search_entry = tk.Entry(self.search_frame, textvariable=self.search_var)
+        self.search_entry = tk.Entry(self.search_Frame, textvariable=self.search_var)
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 9, f'User Has No Permission To Access SEARCH PRODUCT OR LOGIN AS ADMIN'):                        
             self.search_entry.bind('<KeyRelease>', self.update_search_results)
             # bind the update_search_results function to the search box
             self.search_var.trace("w", self.update_search_results)
-        self.search_entry.pack(side=tk.LEFT, fill="x", expand=True)
+        self.search_entry.grid(row=0, column=0, columnspan=5, padx=5, pady=5, sticky=tk.W)
         
-        self.refresh_button = tk.Button(self.search_frame, text='Refresh', command=self.Load_Shop_items, **self.button_style)
-        self.refresh_button.pack(side=tk.LEFT, padx=5, pady=5)
+        self.refresh_button = tk.Button(self.search_Frame, text='Refresh', command=self.Load_Shop_items, **self.button_style)
+        self.refresh_button.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
         
         if not Chacke_Security(self, self.user, self.Shops[self.on_Shop], 33, f'User Has No Permission To Access Add PRODUCT OR LOGIN AS ADMIN'):                        
             self.add_new_button.config(state=tk.DISABLED)
             self.add_newmultyproduct_button.config(state=tk.DISABLED)
 
-        self.price_tag_button = tk.Button(self.search_frame, text='Price Tag', command= lambda :PrintPriceTagFrame(self))
-        self.price_tag_button.pack(side=tk.LEFT, padx=5, pady=5)
-        
-        
-        
         
         # Create the frame for the product details
         self.Frame_contaner_frame = tk.Frame(self, bg=self.bg_dark)
         self.Frame_contaner_frame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+        
+        self.Frame_product_contaner_frame = tk.Frame(self.Frame_contaner_frame, bg=self.bg_dark)
+        self.Frame_product_contaner_frame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
 
         
         # Create the list box
-        self.treeFrame_contaner_frame = tk.Frame(self.Frame_contaner_frame, bg=self.bg_dark)
+        self.treeFrame_contaner_frame = tk.Frame(self.Frame_product_contaner_frame, bg=self.bg_dark)
         self.treeFrame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=False)
         
         self.treeList_Frame_contaner_frame = tk.Frame(self.treeFrame_contaner_frame, bg=self.bg_dark)
@@ -197,14 +200,13 @@ class ProductForm(ttk.Frame):
         self.treeList_Frame.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
         
         self.treeitem_List_canvas = tk.Canvas(self.treeList_Frame, bg=self.bg_dark, highlightthickness=0)
-        self.treeitem_List_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
+        self.treeitem_List_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         
         #self.treeitem_List_canvas.configure(xscrollcommand=self.treeitem_List_xscrollbar.set, yscrollcommand=self.treeitem_List_yscrollbar.set)
         #self.New_item_contener_canvas.bind('<Configure>', lambda e: self.New_item_contener_canvas.configure(scrollregion=self.New_item_contener_canvas.bbox("all")))
 
-        self.tree = ttk.Treeview(self.treeitem_List_canvas, columns=
-                                 ("Shop Name"))
+        self.tree = ttk.Treeview(self.treeitem_List_canvas, columns=("Shop Name"))
         
         self.treeitem_List_yscrollbar = tk.Scrollbar(self.treeList_Frame, orient='vertical', command=self.tree.yview, bg=self.bg_light, activebackground=self.accent_blue)
         self.tree.configure(yscrollcommand=self.treeitem_List_yscrollbar.set)
@@ -224,7 +226,7 @@ class ProductForm(ttk.Frame):
         self.tree.heading("#0", text="Value", anchor=tk.W)
         self.tree.column("#0")
 
-        self.productList_Frame_contaner_frame = tk.Frame(self.Frame_contaner_frame, bg=self.bg_dark)
+        self.productList_Frame_contaner_frame = tk.Frame(self.Frame_product_contaner_frame, bg=self.bg_dark)
         self.productList_Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
         self.main_Notebook = ttk.Notebook(self.productList_Frame_contaner_frame)
@@ -857,19 +859,19 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
     # for Adding new Product
     # Create the "Add New" button  
     def Queck_Edition_form(self):
-        self.List_Frame_contaner_frame.pack_forget()
+        self.Frame_product_contaner_frame.pack_forget()
         notebook_frame = ProductQueckEditionForm(self.Frame_contaner_frame, self.user_info, self.Shops)
         notebook_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
     
     def Full_Edition_form(self):
-        self.List_Frame_contaner_frame.pack_forget()
+        self.Frame_product_contaner_frame.pack_forget()
         notebook_frame = ProductFullEditionForm(self.Frame_contaner_frame, self.user_info, self.Shops)
         notebook_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
         notebook_frame.clear_product_details_widget()
 
     # Create the "Change" button
     def Product_Edition_form(self, index, selected_product):
-        self.List_Frame_contaner_frame.pack_forget()
+        self.Frame_product_contaner_frame.pack_forget()
         notebook_frame = ProductFullEditionForm(self.Frame_contaner_frame, self.user_info, self.Shops)
         notebook_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
         notebook_frame.clear_product_details_widget()

@@ -268,16 +268,7 @@ class SecurityForm(tk.Toplevel):
                             self.user_map[user_name] = user_id
                             self.user_names.append(user_name)
                             self.user_linkes.append(User_url)
-                            self.MainApplication.link_entry['values'] = self.user_linkes                            
-                            if User_url in sec or not User_url in fal and islinked(User_url):
-                                lb = tk.Label(self.master.Error_list_frame, text=str(user_name) + " Url " + "Connection Secsesfull", fg="green")
-                                lb.pack(side=tk.BOTTOM, fill=tk.X, expand=True)
-                                self.selected_linke.set(User_url)
-                                sec.append(User_url)
-                            else:
-                                fal.append(User_url)
-                                lb = tk.Label(self.master.Error_list_frame, text=str(user_name) + " Url " + "Connection Filed", fg="red")
-                                lb.pack(side=tk.BOTTOM, fill=tk.X, expand=True)
+                            self.MainApplication.link_entry['values'] = self.user_linkes   
 
     # instance-bound helper to update the logged-user list/file when a user logs in.
     # Use: self.update_logged_user("Alice", 5) or self.update_logged_user("Alice")
@@ -647,9 +638,19 @@ class SecurityForm(tk.Toplevel):
         # when an existing user button is pressed, go to credential page and prefill username (readonly)
         self.forgetuserbtn.grid(row=0, column=3, sticky="e", padx=12, pady=8)
         for n, nam in enumerate(self.user_names):
-            if nam == name and len(self.user_linkes) > n:
+            if nam == name and len(self.user_linkes) > n:    
                 url = self.user_linkes[n]
-                self.selected_linke.set(url)
+                if url != "":
+                    lb = tk.Label(self.master.Error_list_frame, text=str(nam) + " Url " + "Empty Url. Not Given!", fg="red")
+                    lb.pack(side=tk.BOTTOM, fill=tk.X, expand=True)
+                elif islinked(url):
+                    lb = tk.Label(self.master.Error_list_frame, text=str(nam) + " Url " + "Connection Secsesfull", fg="green")
+                    lb.pack(side=tk.BOTTOM, fill=tk.X, expand=True)
+                    self.selected_linke.set(User_url)
+                else:
+                    lb = tk.Label(self.master.Error_list_frame, text=str(nam) + " Url " + "Connection Filed", fg="red")
+                    lb.pack(side=tk.BOTTOM, fill=tk.X, expand=True)
+                    
         self.selected_user_var.set(name)
         self.button_BACK_close['text'] = "Back"
         self.entered_username_entry.configure(state='normal')

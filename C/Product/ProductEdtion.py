@@ -307,7 +307,11 @@ class ProductFullEditionForm(ttk.Notebook):
       
         self.add_button = tk.Button(self.details_frame, text='Add', command=self.add_product, **self.button_style)
         self.add_button.grid(row=30, column=0, padx=5, pady=5, sticky=tk.W)
-        self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=lambda:self.destroy(), **self.button_style)
+        def framedestroy():
+            if hasattr(self.master.master, 'Frame_product_contaner_frame'):
+                self.master.master.Frame_product_contaner_frame.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+            self.destroy()
+        self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=lambda:framedestroy(), **self.button_style)
         self.cancle_button.grid(row=30, column=1, padx=5, pady=5, sticky=tk.W)
 
         self.load_Product_image()
@@ -1232,9 +1236,10 @@ class ProductQueckEditionForm(ttk.Notebook):
         self.add_button.pack(side=tk.LEFT, padx=5, pady=5)
         self.Process_button = tk.Button(self.details_frame, text='Process', command=self.add_product, **self.button_style)
         self.Process_button.pack(side=tk.RIGHT)
+    
         def cancle():
-            if hasattr(self.master.master, 'List_Frame_contaner_frame'):
-                self.master.master.List_Frame_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            if hasattr(self.master.master, 'Frame_product_contaner_frame'):
+                self.master.master.Frame_product_contaner_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
             self.destroy()
         self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=cancle, **self.button_style)
         self.cancle_button.pack(side=tk.RIGHT)
