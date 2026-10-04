@@ -175,6 +175,15 @@ class ProductForm(ttk.Frame):
         
         self.refresh_button = tk.Button(self.search_Frame, text='Refresh', command=self.Load_Shop_items, **self.button_style)
         self.refresh_button.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+
+        self.isprice1_var = tk.StringVar()
+        self.iscost_var = tk.StringVar()
+        
+        self.isprice_button = tk.Button(self.search_Frame, text='is Price :', command=lambda :self.set_is_("Price"), **self.button_style)
+        self.isprice_button.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
+        
+        self.iscost_button = tk.Button(self.search_Frame, text='is Cost :', command=lambda :self.set_is_("Cost"), **self.button_style)
+        self.iscost_button.grid(row=1, column=2, padx=5, pady=5, sticky=tk.W)
         
         if not Chacke_Security(self, self.user, self.Shops[self.on_Shop], 33, f'User Has No Permission To Access Add PRODUCT OR LOGIN AS ADMIN'):                        
             self.add_new_button.config(state=tk.DISABLED)
@@ -275,6 +284,17 @@ class ProductForm(ttk.Frame):
     #
     #
     #
+    
+    def set_is_(self, iswhat):
+        if iswhat == "Price":
+            self.isprice1_var.set(self.search_entry.get())
+        if iswhat == "Cost":
+            self.iscost_var.set(self.search_entry.get())
+            
+        self.isprice_button.config(text='is Price :'+str(self.isprice1_var.get()))
+        self.iscost_button.config(text='is Cost :'+str(self.iscost_var.get()))
+        self.Update_shop_item_list("")
+    
     def expand_all_treeveaw(self, tree):
         stack = list(tree.get_children())
         while stack:
@@ -305,7 +325,7 @@ class ProductForm(ttk.Frame):
         
         
     def Load_Shop_items(self):
-        self.master.master.master.master.Shops_info['Shop_items'] = []
+        self.homemaster.Shops_info['Shop_items'] = []
         for s, shop in enumerate(self.Shops):
             #print("Loop Shop ", shop['Shop_name'])
             #print("Selected Shop ", self.shop_name_Combobox.get())
@@ -325,16 +345,16 @@ class ProductForm(ttk.Frame):
                         value = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM product WHERE id=?', (str(item[0]),))
                         #print("Shop items value --> ", value[0])
                         if value and not len(value) == 0:
-                            self.master.master.master.master.Shops_info['Shop_items'].append([value[0], [], "", "", "", "", "", "", "", "", "", "", ""])
+                            self.homemaster.Shops_info['Shop_items'].append([value[0], [], "", "", "", "", "", "", "", "", "", "", ""])
                             
-                            #print('items = ', self.master.master.master.master.Shops_info['Shop_items'])
-                            #print("self.master.master.master.master.Shops_in['Shop_items'] = ", len(self.master.master.master.master.Shops_info['Shop_items']))
+                            #print('items = ', self.homemaster.Shops_info['Shop_items'])
+                            #print("self.homemaster.Shops_in['Shop_items'] = ", len(self.homemaster.Shops_info['Shop_items']))
                     #while True:
                         #continue
         
-        for i, item in enumerate(self.master.master.master.master.Shops_info['Shop_items']):
+        for i, item in enumerate(self.homemaster.Shops_info['Shop_items']):
             product = selected_item = item[0]
-            self.master.master.master.master.Shops_info['Shop_items'][i][1] = json.loads(product['more_info'])
+            self.homemaster.Shops_info['Shop_items'][i][1] = json.loads(product['more_info'])
             itemstypes = []
             def sub_list(ls, itemtypes):
                 if(isinstance(ls, list)):
@@ -350,11 +370,11 @@ class ProductForm(ttk.Frame):
                         elif len(l) == 2:
                             #print("going deep = ", l[1])
                             sub_list(l[1], itemtypes)
-            #print("sanding typrs = ", self.master.master.master.master.Shops_info['Shop_items'][i][1])
-            sub_list(self.master.master.master.master.Shops_info['Shop_items'][i][1], self.itemtypes)
+            #print("sanding typrs = ", self.homemaster.Shops_info['Shop_items'][i][1])
+            sub_list(self.homemaster.Shops_info['Shop_items'][i][1], self.itemtypes)
         self.update_typetree(self.itemtypes)
         self.expand_all_treeveaw(self.tree)
-        self.Update_shop_item_list("")
+        self.update_search_results()
         
     def update_typetree(self, itemtypes):
         self.tree.delete(*self.tree.get_children())
@@ -501,34 +521,34 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
     def Update_selected_item_info(self, data, selected_item_info, new_item_Price_Spinbox, new_item_TPrice_Spinbox, index):
         self.Get_next_seletion("", data, selected_item_info)
         # QTY
-        self.master.master.master.master.Shops_info['Shop_items'][index][7] = data[4].get()
+        self.homemaster.Shops_info['Shop_items'][index][7] = data[4].get()
         # price
-        self.master.master.master.master.Shops_info['Shop_items'][index][8] = new_item_Price_Spinbox.get()
+        self.homemaster.Shops_info['Shop_items'][index][8] = new_item_Price_Spinbox.get()
         # shop
-        self.master.master.master.master.Shops_info['Shop_items'][index][12] = data[0].get()
+        self.homemaster.Shops_info['Shop_items'][index][12] = data[0].get()
         #code
-        self.master.master.master.master.Shops_info['Shop_items'][index][2] = data[1].get()
+        self.homemaster.Shops_info['Shop_items'][index][2] = data[1].get()
         # color
-        self.master.master.master.master.Shops_info['Shop_items'][index][5] = data[2].get()
+        self.homemaster.Shops_info['Shop_items'][index][5] = data[2].get()
         # size
-        self.master.master.master.master.Shops_info['Shop_items'][index][6] = data[3].get()
+        self.homemaster.Shops_info['Shop_items'][index][6] = data[3].get()
         self.update_info()
         
     
     def SAVE_CHANGE(self, index, data, selected_item_info):
-        #print("going to make change to = ", self.master.master.master.master.Shops_info['Shop_items'][index])
+        #print("going to make change to = ", self.homemaster.Shops_info['Shop_items'][index])
         newinfo_list, restocked_qty = self.Get_next_seletion("Save", data, selected_item_info)
         if newinfo_list and not newinfo_list == 0:
             name = data[9].get()
-            it2 = Update_Producte(None, None, ['price', 'name', 'more_info'], [data[7].get(), name, json.dumps(newinfo_list)], ['id'], [self.master.master.master.master.Shops_info['Shop_items'][index][0]['id']])
+            it2 = Update_Producte(None, None, ['price', 'name', 'more_info'], [data[7].get(), name, json.dumps(newinfo_list)], ['id'], [self.homemaster.Shops_info['Shop_items'][index][0]['id']])
             data[8].config(text="Price "+data[7].get())
             if it2 and len(it2):
-                #print("changING to = ", self.master.master.master.master.Shops_info['Shop_items'][index])
+                #print("changING to = ", self.homemaster.Shops_info['Shop_items'][index])
                 if isinstance(it2, list):
                     it2 = it2[0]
-                self.master.master.master.master.Shops_info['Shop_items'][index][0] = it2
-                self.master.master.master.master.Shops_info['Shop_items'][index][1] = newinfo_list
-                #print("changed to = ", self.master.master.master.master.Shops_info['Shop_items'][index])
+                self.homemaster.Shops_info['Shop_items'][index][0] = it2
+                self.homemaster.Shops_info['Shop_items'][index][1] = newinfo_list
+                #print("changed to = ", self.homemaster.Shops_info['Shop_items'][index])
             
         if restocked_qty > 0:
             date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
@@ -543,22 +563,22 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
                     brcod = doc_code+str(b)
                     break
             
-            cost = float(self.master.master.master.master.Shops_info['Shop_items'][index][0]['cost'])
+            cost = float(self.homemaster.Shops_info['Shop_items'][index][0]['cost'])
             asked = tk.messagebox.askquestion("Question", "QTY : " + str(restocked_qty) + "\nCost : " + str(restocked_qty * cost) + "\nThis product has been updated or restocked. Do you want to update the stock?")
             if asked == 'yes':
                 # Insert a single doc_table record representing this batch (store updated stock)
                 Shop = None
-                for shop in self.master.master.master.master.Shops:
+                for shop in self.homemaster.Shops:
                     if shop['Shop_Id'] == self.shop_name_Combobox.get():
                         Shop = shop
                         break
                 if not Shop:
-                    Shop = self.master.master.master.master.Shops[0]  # Fallback to the first shop if none matches
+                    Shop = self.homemaster.Shops[0]  # Fallback to the first shop if none matches
                 
                 try:
                     Tcost = restocked_qty * cost 
                     payments_ = [['0', str('CREDITSTOCK'), str(Tcost), date, date, self.user_info.get('User_name', ""), 1, '', 'CREDITSTOCK']]
-                    product_id = self.master.master.master.master.Shops_info['Shop_items'][index][0]['id']
+                    product_id = self.homemaster.Shops_info['Shop_items'][index][0]['id']
                     doc_items = [{"product_id": product_id, "name": name, "cost": cost, "qty": restocked_qty, "price": data[7].get()}]
                     doc_data = {
                         'doc_barcode': brcod,
@@ -614,16 +634,21 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
         itemstypes = []
         self.searched_items = []
         
-        for i, item in enumerate(self.master.master.master.master.Shops_info['Shop_items']):
+        for i, item in enumerate(self.homemaster.Shops_info['Shop_items']):
             product = selected_item = item[0]
-            if not search_str == "" and not (search_str.lower() in (selected_item['name']).lower()):
+            if not search_str == "" and not search_str.lower() in (selected_item['name']).lower():
                 continue
+            if not self.isprice1_var.get() == "" and not float(self.isprice1_var.get()) == float(selected_item['price']):
+                continue
+            if not self.iscost_var.get() == "" and not float(self.iscost_var.get())== float(selected_item['cost']):
+                continue
+            
             
             chacksize = 0
             cost = float(product['cost'])
             price = float(product['price'])
             #print("selected_item ", selected_item)
-            qty_info_list = selected_item_info = self.master.master.master.master.Shops_info['Shop_items'][i][1]
+            qty_info_list = selected_item_info = self.homemaster.Shops_info['Shop_items'][i][1]
             #print("qty_info_list ", qty_info_list)
             items += 1
             qty = 0
@@ -821,7 +846,7 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
         product_id = selected_item = [index][0]['id']
         answer = tk.messagebox.askquestion("Question", "Do you what to delete "+str(product_id)+" ?")
         if answer == 'yes':
-            itemshop = [[shop, i] for i, shop in enumerate(self.Shops) if str(shop['Shop_Id']) == str(self.master.master.master.master.Shops_info['Shop_items'][index][0]['at_shop'])]
+            itemshop = [[shop, i] for i, shop in enumerate(self.Shops) if str(shop['Shop_Id']) == str(self.homemaster.Shops_info['Shop_items'][index][0]['at_shop'])]
             if itemshop:
                 at_shop = itemshop[0][0]['Shop_Id']
                 found_shop_items = json.loads(itemshop[0][0]['Shop_items'])
@@ -854,7 +879,7 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
         for wedget in self.Listreport_Frame_contaner_frame.winfo_children():
             wedget.destroy()
         shop_items = self.vv
-        ProductFullInfoForm(self.Listreport_Frame_contaner_frame, self.user_info, self.Shops, shop_items, self.master.master.master.master.Shops_info, self.searched_items).pack(side=tk.TOP, fill=tk.X, expand=False)   
+        ProductFullInfoForm(self.Listreport_Frame_contaner_frame, self.user_info, self.Shops, shop_items, self.homemaster.Shops_info, self.searched_items).pack(side=tk.TOP, fill=tk.BOTH, expand=True)  
         
     # for Adding new Product
     # Create the "Add New" button  

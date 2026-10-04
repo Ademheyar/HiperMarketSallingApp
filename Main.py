@@ -421,7 +421,7 @@ class MainApplication(tk.Tk):
         # create the display frame with Android styling
         self.display_frame = DisplayFrame(self, None, None, None, None)
         # self.display_frame.configure(bg=self.bg_dark)
-        # self.display_frame.grid(row=0, column=0, sticky="nsew")
+        self.display_frame.grid(row=0, column=0, sticky="nsew")
         self.frames["DisplayFrame"] = self.display_frame
 
         self.frames["Select_User_Company_State_Frame"] = None

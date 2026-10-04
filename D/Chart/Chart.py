@@ -294,7 +294,7 @@ def draw_cart(parent, tools_styel, main_values, deff_which, deff_style):
                 y = (int(canvas.cget('height')) - y_offset/2) - (i*y_gap)
 
                 if q < len(result):
-                    scaled_value = result[q] * (int(canvas.cget('height'))-y_offset) /max_value
+                    scaled_value = result[q] * (int(canvas.cget('height'))-y_offset) / max_value if not max_value == 0 else 1
                     txt_angle = 90
                     if int(canvas.cget('height'))-y_offset == scaled_value or (int(canvas.cget('height'))+((y/10)+len(str(result[q]))))-y_offset >= scaled_value:
                         txt_angle = 0
@@ -324,7 +324,7 @@ def draw_cart(parent, tools_styel, main_values, deff_which, deff_style):
                 
             for i, val in enumerate(_values):
                 x = x_offset + i *(bar_width+5)
-                scaled_value = values[i] * (int(canvas.cget('height'))-y_offset) /max_value
+                scaled_value = values[i] * (int(canvas.cget('height'))-y_offset) / max_value if not max_value == 0 else 1
                 y = int(canvas.cget('height')) - scaled_value -  (y_offset/2 )
 
                 point.append((x,y-y_gap))
@@ -357,7 +357,7 @@ def draw_cart(parent, tools_styel, main_values, deff_which, deff_style):
                 
             for i, val in enumerate(_values):
                 x = x_offset + i *(bar_width+5)
-                scaled_value = values[i] * (int(canvas.cget('height'))-y_offset) /max_value
+                scaled_value = values[i] * (int(canvas.cget('height'))-y_offset) / max_value if not max_value == 0 else 1
                 y = int(canvas.cget('height')) - scaled_value -  (y_offset/2 )
 
                 
@@ -393,7 +393,7 @@ def draw_cart(parent, tools_styel, main_values, deff_which, deff_style):
             gap = 40
             start_angle = 0
             for i, value in enumerate(_values):
-                scaled_value = values[i] * (int(canvas.cget('height'))-y_offset) /max_value
+                scaled_value = (values[i] * (int(canvas.cget('height'))-y_offset)) / max_value if not max_value == 0 else 1
                 angle = (values[i] / max_value) * 360 
                 x=int(canvas.cget('height'))/2
                 y = int(canvas.cget('height'))/2
@@ -459,14 +459,14 @@ def draw_cart(parent, tools_styel, main_values, deff_which, deff_style):
                 x0 = x_offset + (i)
                 y0 = int(canvas.cget('height')) - 20
 
-                scaled_value = value[1] * (int(canvas.cget('height'))-40) /max_value
+                scaled_value = value[1] * (int(canvas.cget('height'))-40) / max_value if not max_value == 0 else 1
                 x1 = x_offset + (i + 1) * + (i)
                 y1 = int(canvas.cget('height')) - scaled_value - 20
 
                 j =i
                 if i+1 < len(values):
                     j = i+1
-                scaled_value2 = _values[j][v_index0] * (int(canvas.cget('height'))-40) /max_value
+                scaled_value2 = _values[j][v_index0] * (int(canvas.cget('height'))-40) / max_value if not max_value == 0 else 1
                 x2 = x_offset + gap + (j + 1) * j
                 y2 = int(canvas.cget('height')) - scaled_value2 - 20
                 txt_angle = 90

@@ -47,6 +47,101 @@ data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data')
 db_path = os.path.join(data_dir, 'my_database.db')
 
 
+import tkinter as tk
+
+class BottomTabs(tk.Frame):
+    def __init__(self, parent, **kwargs):
+        tk.Frame.__init__(self, parent, **kwargs)
+        self._tabs = [] # {'frame': frame, 'text': text, 'btn': btn}
+        self._current = None
+        self._on_change = None
+
+        self.content_area = tk.Frame(self)
+        self.content_area.pack(side='top', fill='both', expand=True)
+
+        self.bar = tk.Frame(self, bg='#ddd')
+        self.bar.pack(side='bottom', fill='x')
+
+    def add(self, frame, text="Tab"):
+        frame.pack_forget()
+        frame.place_forget()
+        
+        def select_this():
+            self.select(frame)
+
+        btn = tk.Button(self.bar, text=text, relief='flat', padx=15, pady=4, command=select_this)
+        btn.pack(side='left', padx=2, pady=2)
+
+        self._tabs.append({'frame': frame, 'text': text, 'btn': btn})
+
+        if self._current is None:
+            self.select(frame)
+
+    def select(self, frame_or_id):
+        # if called with no args, return current like ttk does
+        if frame_or_id is None:
+            return self._current
+
+        # find tab
+        target = None
+        frame_id = -1
+        for t in self._tabs:
+            frame_id += 1
+            if t['frame'] == frame_or_id or str(t['frame']) == str(frame_or_id):
+                target = t
+                break
+        
+        if not target:
+            return
+
+        # hide all
+        for t in self._tabs:
+            t['frame'].pack_forget()
+            t['btn'].config(bg='SystemButtonFace', relief='flat')
+
+        # show selected
+        target['frame'].pack(fill='both', expand=True)
+        target['btn'].config(bg='white', relief='raised')
+        self._current = target['frame']
+
+        # fire event like ttk.Notebook
+        if self._on_change:
+            self._on_change(target['text'], frame_id, target['frame'])
+        print(f"Selected: {target['text']}")
+
+    def hide(self, frame):
+        for t in self._tabs:
+            if t['frame'] == frame or t['text'] == frame:
+                t['frame'].pack_forget()
+                t['btn'].pack_forget()
+                if self._current == t['frame']:
+                    self._current = None
+                print(f"Hidden: {t['text']}")
+                return
+
+    def tabs(self):
+        return [t['frame'] for t in self._tabs]
+    
+    def tab(self, frame, option="text"):
+        for t in self._tabs:
+            if t['frame'] == frame:
+                return t['text']
+        return ""
+    
+    def tab_id(self, frame, option="text"):
+        crro_id = 0
+        i = -1
+        for t in self._tabs:
+            i +=1
+            if t['frame'] == frame:
+                return i
+            if t['frame'] == self._current:
+                crro_id = i
+        return crro_id
+
+    def on_tab_changed(self, callback):
+        self._on_change = callback
+
 class DisplayFrame(tk.Frame):
     def __init__(self, master, Shops_info, user, User_Shops_List, Shops):
         tk.Frame.__init__(self, master)
@@ -110,31 +205,39 @@ class DisplayFrame(tk.Frame):
 
         self.At_Shop_id = -1
         self.on_Shop = -1         
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
         #print("Display Frame Initialized with screen size: {}x{}".format(screen_width, screen_height))
         
-        if Shops_info is None or user is None or User_Shops_List is None or Shops is None:
-            #print("Critical data missing (Shops_info, user, User_Shops_List, or Shops)")
-            if not Security_get_user(self):
-                #print("No user data found, closing application.")
-                self.master.destroy()
-                return
-            else:
-                self.grid(row=0, column=0, sticky="nsew")
-                #print("User data loaded successfully")
-
-        self.Shops_Names = [shop['Shop_name'] for shop in self.Shops]
-        self.Shops_brands = [shop['Shop_brand_name'] for shop in self.Shops]
+        self.main_Notebook = BottomTabs(self)
+        self.main_Notebook.pack(side="top", fill="both", expand=True)
+        #self.main_Notebook.bind("<<NotebookTabChanged>>", self.on_tab_selected)
+        self.main_Notebook.on_tab_changed(self.on_tab_selected)
+        print("self.main_Notebook ", self.main_Notebook )
+        
+        self.Home_frame = tk.Frame(self.main_Notebook.content_area, bg=self.bg_dark)
+        self.main_Notebook.add(self.Home_frame, text='Home') # TODO: HOME
+        self.Home_frame.columnconfigure((0, 1), weight=1)
+        self.Home_frame.columnconfigure(1, weight=0)
+        self.Home_frame.rowconfigure(0, weight=0)
+        self.Home_frame.rowconfigure(1, weight=2)
+        self.Home_frame.rowconfigure(2, weight=0)
 
         
-        self.main_Notebook = ttk.Notebook(self)
-        self.main_Notebook.pack(side="top", fill="both", expand=True)
-                      
-        self.main_frame = tk.Frame(self.main_Notebook, bg=self.bg_dark)
-        self.main_frame.grid()
+        if Shops_info is None or user is None or User_Shops_List is None or Shops is None:
+            self.login_frame = tk.Frame(self.main_Notebook.content_area, bg=self.bg_dark)
+            self.main_Notebook.add(self.login_frame, text='Login') # TODO: HOME
+        else:
+            self.loged()
+            
+    def loged(self):
+
+        
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        self.Shops_Names = [shop['Shop_name'] for shop in self.Shops]
+        self.Shops_brands = [shop['Shop_brand_name'] for shop in self.Shops]
+        
+        self.main_frame = tk.Frame(self.main_Notebook.content_area, bg=self.bg_dark)
         self.main_Notebook.add(self.main_frame, text='Sell')
-        self.main_Notebook.bind("<<NotebookTabChanged>>", self.on_tab_selected)
 
                       
         
@@ -280,7 +383,7 @@ class DisplayFrame(tk.Frame):
 
 
 
-        self.manage_form = ManageForm(self.main_Notebook, self.user, self.Shops, self.Shops_info, self.on_Shop)
+        self.manage_form = ManageForm(self.main_Notebook.content_area, self.user, self.Shops, self.Shops_info, self.on_Shop)
         
         self.bottum_frame = tk.Frame(self.main_frame, height=150, bg=self.bg_light)
         self.bottum_frame.grid(row=2, column=0, rowspan=2, columnspan=4, sticky="nsew")
@@ -390,7 +493,7 @@ class DisplayFrame(tk.Frame):
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 1, 'LISTING PAYMENT TOOLS NEEDED ACCESS PERMISSION OR LOGIN AS ADMIN'):
             self.Load_payment_buttons()
         
-        self.appleication_frame = tk.Frame(self.main_Notebook, bg=self.bg_dark)
+        self.appleication_frame = tk.Frame(self.main_Notebook.content_area, bg=self.bg_dark)
         self.appleication_frame.grid()
         self.main_Notebook.add(self.appleication_frame, text='Appelication Settings')
         self.appleication_form = Appelication_SettingForm(self.appleication_frame, self.user, self.Shops)
@@ -1637,9 +1740,22 @@ class DisplayFrame(tk.Frame):
     def load(self):
         self.load_setting()
 
-    def on_tab_selected(self, event):
-        selected_tab = self.main_Notebook.index(self.main_Notebook.select())
-        if selected_tab == 1:
+    def on_tab_selected(self, tab_text, selected_tab, selected_frame):
+        print("on_tab_selected self ", self)
+        if tab_text == "Login":
+            #print("Critical data missing (Shops_info, user, User_Shops_List, or Shops)")
+            if not Security_get_user(self):
+                #print("No user data found, closing application.")
+                #self.master.destroy()
+                return
+            else:
+                #self.grid(row=0, column=0, sticky="nsew")
+                self.main_Notebook.tab_id(selected_frame)
+                selected_frame.pack_forget()
+                self.loged()
+                #print("User data loaded successfully")
+        
+        if tab_text == "Manager":
             a = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 12)
             if not a:
                 self.main_Notebook.select(0)

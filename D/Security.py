@@ -36,7 +36,7 @@ class SecurityForm(tk.Toplevel):
                 self.MainApplication = self.MainApplication.master
         
         self.homemaster = self
-        while(True):
+        while(self.homemaster.master):
             if hasattr(self.homemaster, 'onDisplayFrame'):
                 break
             else:
@@ -203,8 +203,8 @@ class SecurityForm(tk.Toplevel):
 
         # modal
         self.attributes('-topmost', True)
-        self.Security_form.transient(self.master)
-        self.Security_form.grab_set()
+        #self.Security_form.transient(self.master)
+        #self.Security_form.grab_set()
         self.Security_form.focus_set()
         self.master.wait_window(self.Security_form)
         

@@ -119,6 +119,8 @@ class ProductFullInfoForm(ttk.Notebook):
         self.item_List_canvas.configure(xscrollcommand=self.item_List_xscrollbar.set, yscrollcommand=self.item_List_yscrollbar.set)
 
         self.item_List_frame = ttk.Frame(self.item_List_canvas)#, bg=bg_dark)
+        self.item_List_frame.columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)
+        
         self.item_List_canvas.create_window((0, 0), window=self.item_List_frame, anchor=tk.NW)
         self.item_List_frame.bind('<Configure>', lambda e: self.item_List_canvas.configure(scrollregion=self.item_List_canvas.bbox("all")))
         self.start_value = datetime.datetime.now().strftime('%Y-%m-%d')
@@ -158,7 +160,7 @@ class ProductFullInfoForm(ttk.Notebook):
 
 
         self.chart_canvas_Frame = tk.Frame(self.item_List_frame, bg=bg_dark, relief='sunken', bd=2)
-        self.chart_canvas_Frame.grid(row=0, column=7, columnspan=6, rowspan=7, sticky="nsew", padx=5, pady=5)
+        self.chart_canvas_Frame.grid(row=5, column=0, columnspan=6, rowspan=7, sticky="nsew", padx=5, pady=5)
         
         self.update_product_listbox()
         self.Item_To_Update()
