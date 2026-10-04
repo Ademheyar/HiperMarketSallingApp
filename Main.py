@@ -376,6 +376,7 @@ class MainApplication(tk.Tk):
         self.title("Hiper Market")
         self.MainApplication_root = ""
         self.COUNTRIES_WITH_CITIES = COUNTRIES_WITH_CITIES
+        self.Link = ""
         # Android-style dark blue color scheme
         
         self.bg_dark = "#0d47a1"      # Deep blue

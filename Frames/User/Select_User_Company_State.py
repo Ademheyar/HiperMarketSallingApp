@@ -204,20 +204,11 @@ class Select_User_Company_State_Frame(tk.Frame):
         self.update_user_work_shop()
         self.selected_indexd = 0
 
-        self.MainApplicatio = self
-        while(True):
-            self.MainApplicatio.bind("<Up>", self.treeview_naigation)
-            self.MainApplicatio.bind("<Down>", self.treeview_naigation)
-            self.MainApplicatio.bind("<Return>", self.Selectd)
-            if hasattr(self.MainApplicatio, 'MainApplication_root'):
-                break
-            else:
-                self.MainApplicatio = self.MainApplicatio.master
-                
-        self.MainApplication.focus_set()
-        self.MainApplication.bind("<Up>", self.treeview_naigation)
-        self.MainApplication.bind("<Down>", self.treeview_naigation)
-        self.MainApplication.bind("<Return>", self.Selectd)
+        self.navigation_window = self.winfo_toplevel()
+        self.navigation_window.bind("<Up>", self.treeview_naigation)
+        self.navigation_window.bind("<Down>", self.treeview_naigation)
+        self.navigation_window.bind("<Return>", self.Selectd)
+        self.navigation_window.focus_set()
 
 
     def Selectd(self, event):
@@ -228,26 +219,23 @@ class Select_User_Company_State_Frame(tk.Frame):
         if not (event.keysym == "Up" or event.keysym == "Down"):
             self.focus_set()
         
-        if self.selected_indexd == -1:
+        try:
+            shop_rows = self.selecte_work_Selected_item_Display_frame.winfo_children()
+        except tk.TclError:
+            return "break"
+        if not shop_rows:
+            return "break"
+
+        if self.selected_indexd < 0 or self.selected_indexd >= len(shop_rows):
             self.selected_indexd = 0
-            
-        if len(self.selecte_work_Selected_item_Display_frame.winfo_children()):
-            if self.selected_indexd > len(self.selecte_work_Selected_item_Display_frame.winfo_children()):
-                self.selected_indexd = 0
-            
-            elif event.keysym == 'Up':
-                self.selecte_work_Selected_item_Display_frame.winfo_children()[self.selected_indexd].configure(bg="SystemButtonFace")
-                self.selected_indexd -= 1
-            elif event.keysym == 'Down':
-                self.selecte_work_Selected_item_Display_frame.winfo_children()[self.selected_indexd].configure(bg="SystemButtonFace")
-                self.selected_indexd += 1
-                
-            if self.selected_indexd <= -1:
-                self.selected_indexd = len(self.selecte_work_Selected_item_Display_frame.winfo_children())-1
-            elif self.selected_indexd >= len(self.selecte_work_Selected_item_Display_frame.winfo_children()):
-                self.selected_indexd = 0
-                
-        self.selecte_work_Selected_item_Display_frame.winfo_children()[self.selected_indexd].configure(bg="blue")
+        elif event.keysym == 'Up':
+            shop_rows[self.selected_indexd].configure(bg="SystemButtonFace")
+            self.selected_indexd = (self.selected_indexd - 1) % len(shop_rows)
+        elif event.keysym == 'Down':
+            shop_rows[self.selected_indexd].configure(bg="SystemButtonFace")
+            self.selected_indexd = (self.selected_indexd + 1) % len(shop_rows)
+
+        shop_rows[self.selected_indexd].configure(bg="blue")
 
     def canceal_callback(self):
         self.Canceal_callback()

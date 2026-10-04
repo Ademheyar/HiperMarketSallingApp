@@ -276,7 +276,7 @@ class ToolForm(tk.Frame):
             shop_id = product[0] if product[0] else ""
 
             self.list_box.insert('', 'end', text=shop_id, values=(product[1], product[2], product[3], product[4], product[5], product[6], product[7], product[8], product[9], product[10], product[11], product[12], product[13], product[14]))
-        self.master.master.master.master.create_payment_buttons()
+        self.homemaster.create_payment_buttons()
 
     # create a function to update the search results whenever the search box changes
     def update_search_results(self, *args):
@@ -368,7 +368,7 @@ class ToolForm(tk.Frame):
                     Shop_Payment_Tools.append([name, typ, code, short_key, acsess, enable, quick_pay , markaspad, customer_required, open_drower, print_slip, change_allowed])
                     Update_Shop(None, None, ['Shop_Payment_Tools'], [json.dumps(Shop_Payment_Tools)], [shopid, 'Shop_name', 'Shop_brand_name'], 
                                     [shopidv, str(shop['Shop_name']), str(shop['Shop_brand_name'])])
-                    self.master.master.master.master.Shop_Payment_Tools = Shop_Payment_Tools
+                    self.homemaster.Shop_Payment_Tools = Shop_Payment_Tools
                 else:
 
                     Shop0 = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM Shops WHERE " + shopid + "=? AND Shop_name=?", 
@@ -384,9 +384,9 @@ class ToolForm(tk.Frame):
                         #print("Shop_Payment_Tools ", Shop_Payment_Tools)
                         Update_Shop(None, None, ['Shop_Payment_Tools'], [json.dumps(Shop_Payment_Tools)], [shopid, 'Shop_name', 'Shop_brand_name'], 
                                     [shopidv, str(shop['Shop_name']), str(shop['Shop_brand_name'])])
-                        self.master.master.master.master.Shop_Payment_Tools = Shop_Payment_Tools
+                        self.homemaster.Shop_Payment_Tools = Shop_Payment_Tools
                                 
-        self.master.master.master.master.create_payment_buttons()
+        self.homemaster.create_payment_buttons()
         # Update the product listbox
         self.update_tool_listbox()
         
@@ -436,7 +436,7 @@ class ToolForm(tk.Frame):
 
                             Update_Shop(None, None, ['Shop_Payment_Tools'], [json.dumps(Shop_Payment_Tools)], [shopid, 'Shop_name', 'Shop_brand_name'], 
                                         [shopidv, str(shop['Shop_name']), str(shop['Shop_brand_name'])])
-                            self.master.master.master.master.Shop_Payment_Tools = Shop_Payment_Tools
+                            self.homemaster.Shop_Payment_Tools = Shop_Payment_Tools
                     except Exception:
                         # ignore errors and continue
                         pass
@@ -444,7 +444,7 @@ class ToolForm(tk.Frame):
             # Clear the product details widgets
             self.clear_tool_details_widget()
 
-            self.master.master.master.master.create_payment_buttons()
+            self.homemaster.create_payment_buttons()
             # Update the product listbox
             self.update_tool_listbox()
 

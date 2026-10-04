@@ -204,7 +204,7 @@ class ProductFullInfoForm(ttk.Notebook):
     def update_product_listbox(self):
         # Clear the product listbox
         # Get the products from the database
-        print("self.given_value ", self.given_value)
+        # print("self.given_value ", self.given_value)
         '''items = 0
         TQTY = 0
         Tprice = 0
@@ -544,17 +544,17 @@ class ProductFullInfoForm(ttk.Notebook):
             pass
         
     def perform_search_Item_size_chack(self):
-        print("self.given_value ", self.given_value)
+        # print("self.given_value ", self.given_value)
         item = cur.fetchall()
         for it in self.given_value:
-            print("info : "+str(it['more_info']))
+            # print("info : "+str(it['more_info']))
             qty_info_list = json.loads(it['more_info'])
-            print("qty_info_list : "+str(qty_info_list))
+            # print("qty_info_list : "+str(qty_info_list))
             def sub_list(ls):
                 comen_qty = 0
                 for l in ls:
                     if len(l) > 4:
-                        print("l[4] : "+str(l[4]))
+                        # print("l[4] : "+str(l[4]))
                         if isinstance(float(l[4]), float) or isinstance(int(l[4]), int):
                             if float(l[4]) < 0:
                                 self.Item_To_Update_tab_listbox.insert("", 'end', text="Size", values=(it[1], it[2], it[3], it[4], it[5], it[6], it[7], it[8], it[9], it[10], it[11], it[12], it[13], it[14]))
