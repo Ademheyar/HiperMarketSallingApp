@@ -43,6 +43,9 @@ from C.API.API import *
 from C.API.Set import *
 
 from C.Manager import ManageForm
+from M.Home import HomeFeedMixin
+from M.Preferences import format_currency, resolve_shop_currency
+from M.UserProfile import UserProfilePanel
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
@@ -64,7 +67,7 @@ class BottomTabs(tk.Frame):
         self.bar.pack(side='bottom', fill='x')
         self.bar.rowconfigure(0, weight=1)
 
-    def add(self, frame, text="Tab"):
+    def add(self, frame, text="Tab", hidden=False):
         frame.pack_forget()
         frame.place_forget()
         
@@ -86,12 +89,15 @@ class BottomTabs(tk.Frame):
             cursor='hand2',
             command=select_this,
         )
-        self.bar.columnconfigure(len(self._tabs), weight=1)
-        btn.grid(row=0, column=len(self._tabs), sticky='nsew', padx=4, pady=2)
+        visible_count = sum(1 for item in self._tabs if not item.get('hidden'))
+        self.bar.columnconfigure(visible_count, weight=1)
+        btn.grid(row=0, column=visible_count, sticky='nsew', padx=4, pady=2)
 
-        self._tabs.append({'frame': frame, 'text': text, 'btn': btn})
+        self._tabs.append({'frame': frame, 'text': text, 'btn': btn, 'hidden': hidden})
+        if hidden:
+            btn.grid_remove()
 
-        if self._current is None:
+        if self._current is None and not hidden:
             self.select(frame)
 
     def select(self, frame_or_id):
@@ -130,11 +136,39 @@ class BottomTabs(tk.Frame):
         for t in self._tabs:
             if t['frame'] == frame or t['text'] == frame:
                 t['frame'].pack_forget()
-                t['btn'].pack_forget()
+                t['hidden'] = True
+                t['btn'].grid_remove()
                 if self._current == t['frame']:
                     self._current = None
+                self._relayout()
                 print(f"Hidden: {t['text']}")
                 return
+
+    def reveal(self, frame):
+        for t in self._tabs:
+            if t['frame'] == frame or t['text'] == frame:
+                t['hidden'] = False
+                self._relayout()
+                self.select(t['frame'])
+                return
+
+    def _relayout(self):
+        column = 0
+        for item in self._tabs:
+            if item.get('hidden'):
+                continue
+            self.bar.columnconfigure(column, weight=1)
+            item['btn'].grid_configure(column=column)
+            column += 1
+
+    def move_tab(self, frame, position):
+        tab = next((item for item in self._tabs if item['frame'] == frame), None)
+        if tab is None:
+            return
+        self._tabs.remove(tab)
+        position = max(0, min(position, len(self._tabs)))
+        self._tabs.insert(position, tab)
+        self._relayout()
 
     def tabs(self):
         return [t['frame'] for t in self._tabs]
@@ -165,14 +199,12 @@ class BottomTabs(tk.Frame):
         if move_to_end:
             self._tabs.remove(tab)
             self._tabs.append(tab)
-            for index, item in enumerate(self._tabs):
-                self.bar.columnconfigure(index, weight=1)
-                item['btn'].grid_configure(column=index)
+            self._relayout()
 
     def on_tab_changed(self, callback):
         self._on_change = callback
 
-class DisplayFrame(tk.Frame):
+class DisplayFrame(HomeFeedMixin, tk.Frame):
     @property
     def Link(self):
         return getattr(self.MainApplication, 'Link', '')
@@ -251,35 +283,22 @@ class DisplayFrame(tk.Frame):
         self.main_Notebook.on_tab_changed(self.on_tab_selected)
         print("self.main_Notebook ", self.main_Notebook )
         
-        self.Home_frame = tk.Frame(self.main_Notebook.content_area, bg=self.bg_dark)
-        self.main_Notebook.add(self.Home_frame, text='Home') # TODO: HOME
-        self.Home_frame.columnconfigure((0, 1), weight=1)
-        self.Home_frame.columnconfigure(1, weight=0)
-        self.Home_frame.rowconfigure(0, weight=0)
-        self.Home_frame.rowconfigure(1, weight=2)
-        self.Home_frame.rowconfigure(2, weight=0)
-
-        self.home_feed_products = []
-        self.home_feed_all_products = []
-        self.home_comments = {}
-        self.home_feed_canvas = None
-        self.home_feed_scroll = None
-        self.home_feed_offset = 0
-        self.home_feed_batch_size = 10
-        self.home_feed_has_more = True
-        self.home_feed_loading = False
-        self.home_search_var = tk.StringVar(value='')
-        self.home_link_var = tk.StringVar(value=self.Link)
-        self.home_grid_columns = 1
+        self.initialize_home_feed(self.main_Notebook.content_area)
         self.profile_pending = False
+        self.guest_cart = []
+        self.home_cart_button = None
 
+        self.can_manage = False
         self.login_frame = tk.Frame(self.main_Notebook.content_area, bg=self.bg_dark)
-        self.main_Notebook.add(self.login_frame, text='Login')
+        self.main_Notebook.add(self.login_frame, text='User Profile')
 
         if Shops_info is None or user is None or User_Shops_List is None or Shops is None:
             pass
         else:
             self.loged()
+
+        if not hasattr(self, 'appleication_frame'):
+            self.configure_application_settings()
 
         self.load_home_feed()
             
@@ -292,7 +311,8 @@ class DisplayFrame(tk.Frame):
         self.Shops_brands = [shop['Shop_brand_name'] for shop in self.Shops]
         
         self.main_frame = tk.Frame(self.main_Notebook.content_area, bg=self.bg_dark)
-        self.main_Notebook.add(self.main_frame, text='Sell')
+        self.main_Notebook.add(self.main_frame, text='POS Terminal')
+        self.main_Notebook.move_tab(self.main_frame, 1)
 
                       
         
@@ -506,9 +526,10 @@ class DisplayFrame(tk.Frame):
         self.date_year_Spinbox.grid(row=0, column=8, sticky="w", padx=2, pady=5)
         self.date_year_Spinbox.set(str(datetime.datetime.now().strftime('%Y')))
     
-        if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 26, f'User Has No Permission To Access MANAGE FRAME OR LOGIN AS ADMIN'):    
-            self.manage_form.pack(side="top", fill="both", expand=True)
-            self.main_Notebook.add(self.manage_form, text='MANAGE')
+        self.can_manage = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 26, f'User Has No Permission To Access MANAGE FRAME OR LOGIN AS ADMIN')
+        if self.can_manage:
+            self.manage_form.pack_forget()
+            self.main_Notebook.add(self.manage_form, text='MANAGE', hidden=True)
         
         self.max_backups = 4     # Maximum number of backup files to keep
         atexit.register(self.backup_database)
@@ -548,88 +569,53 @@ class DisplayFrame(tk.Frame):
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 1, 'LISTING PAYMENT TOOLS NEEDED ACCESS PERMISSION OR LOGIN AS ADMIN'):
             self.Load_payment_buttons()
         
-        self.appleication_frame = tk.Frame(self.main_Notebook.content_area, bg=self.bg_dark)
-        self.main_Notebook.add(self.appleication_frame, text='Appelication Settings')
-        self.appleication_form = Appelication_SettingForm(self.appleication_frame, self.user, self.Shops)
-        self.appleication_form.pack(side="top", fill="both", expand=True)
+        self.configure_application_settings()
 
         self.load()
         self._configure_account_tab()
-
-    def _configure_account_tab(self):
-        for child in self.login_frame.winfo_children():
-            child.destroy()
-
-        self.login_frame.configure(bg='#eaf2ff')
-        panel = tk.Frame(self.login_frame, bg='#eaf2ff')
-        panel.pack(fill='both', expand=True)
-
-        card = tk.Frame(
-            panel, bg='white', padx=34, pady=28,
-            highlightthickness=1, highlightbackground='#cbd5e1',
-        )
-        card.place(relx=0.5, rely=0.5, anchor='center')
-
-        tk.Label(card, text='✓', font=('Segoe UI', 34, 'bold'), bg='white', fg='#059669').pack(pady=(0, 4))
-        tk.Label(card, text='Successfully logged in', font=('Segoe UI', 20, 'bold'), bg='white', fg='#102a43').pack()
-        tk.Label(
-            card, text='Your account is ready.', font=('Segoe UI', 10),
-            bg='white', fg='#526477',
-        ).pack(pady=(4, 20))
-
-        shop = None
-        if self.Shops:
-            shop_index = self.on_Shop if 0 <= self.on_Shop < len(self.Shops) else 0
-            shop = self.Shops[shop_index]
-        info = [
-            ('User', (self.user or {}).get('User_name', '')),
-            ('Name', ' '.join(part for part in [
-                (self.user or {}).get('User_fname', ''),
-                (self.user or {}).get('User_Lname', ''),
-            ] if part)),
-            ('Email', (self.user or {}).get('User_email', '')),
-            ('Shop', (shop or {}).get('Shop_name', '')),
-            ('Brand', (shop or {}).get('Shop_brand_name', '')),
-        ]
-        for label_text, value in info:
-            if value:
-                row = tk.Frame(card, bg='white')
-                row.pack(fill='x', pady=3)
-                tk.Label(row, text=label_text, width=10, anchor='w', font=('Segoe UI', 10, 'bold'), bg='white', fg='#526477').pack(side='left')
-                tk.Label(row, text=str(value), anchor='w', font=('Segoe UI', 10), bg='white', fg='#102a43').pack(side='left', padx=(8, 0))
-
-        self.profile_action_button = tk.Button(
-            card, font=('Segoe UI', 10, 'bold'), relief='flat', bd=0,
-            padx=20, pady=10, cursor='hand2',
-        )
-        self.profile_action_button.pack(fill='x', pady=(22, 0))
         self.main_Notebook.rename_tab(
-            self.login_frame,
-            (self.user or {}).get('User_name') or 'Account',
+            self.appleication_frame,
+            'Settings',
             move_to_end=True,
         )
-        self._show_account_panel()
+
+    def configure_application_settings(self):
+        if not hasattr(self, 'appleication_frame'):
+            self.appleication_frame = tk.Frame(self.main_Notebook.content_area, bg=self.bg_dark)
+            self.main_Notebook.add(self.appleication_frame, text='Settings')
+        else:
+            for child in self.appleication_frame.winfo_children():
+                child.destroy()
+        self.appleication_form = Appelication_SettingForm(
+            self.appleication_frame,
+            self.user,
+            self.Shops or [],
+        )
+        self.appleication_form.pack(side='top', fill='both', expand=True)
+
+    def _configure_account_tab(self):
+        """Render the signed-in user's profile panel on the profile tab."""
+        for child in self.login_frame.winfo_children():
+            child.destroy()
+        self.login_frame.configure(bg='#0b1726')
+        self.profile_panel = UserProfilePanel(self.login_frame, self)
+        self.profile_panel.pack(fill='both', expand=True)
+        self.main_Notebook.rename_tab(self.login_frame, 'User Profile')
 
     def _show_account_panel(self):
-        if not hasattr(self, 'profile_action_button'):
-            return
-        if self.profile_pending:
-            self.profile_action_button.configure(
-                text='Go To Sell Panel', bg='#1976d2', fg='white',
-                activebackground='#1565c0', activeforeground='white',
-                command=self._go_to_sell_panel,
-            )
+        if not hasattr(self, 'profile_panel') or not self.profile_panel.winfo_exists():
+            self._configure_account_tab()
         else:
-            self.profile_action_button.configure(
-                text='Sign Out', bg='#b42318', fg='white',
-                activebackground='#912018', activeforeground='white',
-                command=self.sign_out,
-            )
+            self.profile_panel.refresh()
 
-    def _go_to_sell_panel(self):
-        self.profile_pending = False
-        self._show_account_panel()
+    def go_to_pos(self):
+        """Open the POS (sell) terminal tab."""
         self.main_Notebook.select(self.main_frame)
+
+    def go_to_manager(self):
+        """Open the manager page; the MANAGE tab itself is hidden."""
+        if getattr(self, 'can_manage', False) and hasattr(self, 'manage_form'):
+            self.main_Notebook.select(self.manage_form)
 
     def sign_out(self):
         application = self.master
@@ -850,6 +836,16 @@ class DisplayFrame(tk.Frame):
         return total_qty, total_discount, total_tax, all_total_price
 
    
+    def get_active_currency(self):
+        shops = getattr(self, 'Shops', None) or []
+        if not shops:
+            return None
+        index = getattr(self, 'on_Shop', 0)
+        if not isinstance(index, int) or not 0 <= index < len(shops):
+            index = 0
+        shop = shops[index]
+        return resolve_shop_currency(shop.get('Shop_country'), shop.get('Shop_currency'))
+
     def update_info(self):
         total_qty, total_discount, total_tax, all_total_price = self.chack_list()
         self.total = (all_total_price - self.tax) - self.disc
@@ -857,8 +853,9 @@ class DisplayFrame(tk.Frame):
         self.total_tax_label.config(text=str(self.tax))
         self.total_discount_label.config(text=str(total_discount))
         self.total_tdiscount_label.config(text=str(self.disc))
-        self.total_price_label.config(text=str(all_total_price))
-        self.total_label.config(text=str((all_total_price - self.tax) - self.disc))
+        currency = self.get_active_currency()
+        self.total_price_label.config(text=format_currency(all_total_price, currency))
+        self.total_label.config(text=format_currency((all_total_price - self.tax) - self.disc, currency))
         self.update_chart()
         
     
@@ -1875,434 +1872,6 @@ class DisplayFrame(tk.Frame):
             pass
         
 
-    @staticmethod
-    def normalize_home_product(product):
-        if not isinstance(product, dict):
-            return {}
-
-        name = str(product.get('name') or product.get('Name') or 'Untitled Product')
-        code = str(product.get('code') or product.get('Code') or product.get('barcode') or product.get('id') or '0')
-        shop = str(product.get('at_shop') or product.get('shop') or product.get('Shop_name') or product.get('Shop_name') or 'Main Store')
-        price = product.get('price', 0)
-        try:
-            price = float(price)
-        except (TypeError, ValueError):
-            price = 0.0
-
-        comments = product.get('comments') or []
-        if isinstance(comments, str):
-            try:
-                comments = json.loads(comments)
-            except Exception:
-                comments = []
-        if not isinstance(comments, list):
-            comments = []
-
-        likes_seed = sum(ord(ch) for ch in name + code)
-        likes = int((likes_seed % 210) + 18)
-        comments_count = len(comments)
-        if comments_count == 0:
-            comments_count = int((likes_seed % 12) + 3)
-
-        return {
-            'id': int(product.get('id') or product.get('Id') or 0),
-            'name': name,
-            'shop': shop,
-            'code': code,
-            'description': str(product.get('description') or product.get('description_text') or product.get('detail') or 'New arrival in stock.'),
-            'price': price,
-            'image': DisplayFrame.find_product_image_path(product),
-            'likes': likes,
-            'comments': comments,
-            'comment_count': comments_count,
-            'liked': False,
-            'saved': False,
-        }
-
-    @staticmethod
-    def find_product_image_path(product):
-        candidates = []
-        product_id = product.get('id') or product.get('Id')
-        for key in ['code', 'Code', 'barcode', 'barcode_num', 'id', 'Id']:
-            value = product.get(key)
-            if value not in (None, '', 0):
-                candidates.append(str(value))
-
-        base_dirs = [
-            os.path.join(MAIN_dir, 'data', 'Products'),
-            os.path.join(MAIN_dir, 'data', 'Company'),
-            os.path.join(MAIN_dir, 'data', 'Icon'),
-        ]
-
-        for base_dir in base_dirs:
-            if not os.path.exists(base_dir):
-                continue
-            for candidate in candidates:
-                for root, _, files in os.walk(base_dir):
-                    if 'ProductImage.jpg' in files and candidate in root:
-                        return os.path.join(root, 'ProductImage.jpg')
-                    if 'ProductImage.png' in files and candidate in root:
-                        return os.path.join(root, 'ProductImage.png')
-                    if 'ProductImage.jpg' in files and str(product_id) in root:
-                        return os.path.join(root, 'ProductImage.jpg')
-
-        for base_dir in base_dirs:
-            for root, _, files in os.walk(base_dir):
-                if 'ProductImage.jpg' in files:
-                    return os.path.join(root, 'ProductImage.jpg')
-                if 'ProductImage.png' in files:
-                    return os.path.join(root, 'ProductImage.png')
-
-        return os.path.join(MAIN_dir, 'data', 'Icon', 'no_Product_Image.jpg')
-
-    def _get_home_columns_for_width(self):
-        width = max(320, self.Home_frame.winfo_width() if self.Home_frame.winfo_width() > 1 else self.winfo_screenwidth())
-        if width < 540:
-            return 1
-        if width < 900:
-            return 2
-        if width < 1280:
-            return 3
-        return 4
-
-    def _refresh_home_search(self):
-        self.load_home_feed()
-
-    def _get_home_link_options(self):
-        links = []
-        try:
-            with open(os.path.join(data_dir, 'loged.txt'), 'r', encoding='utf-8') as logged_file:
-                for line in logged_file:
-                    parts = line.strip().split('|')
-                    if len(parts) == 3 and parts[2] and parts[2] not in links:
-                        links.append(parts[2])
-        except OSError:
-            pass
-
-        current_link = str(self.MainApplication.Link or '').strip()
-        if current_link and current_link not in links:
-            links.insert(0, current_link)
-        return links
-
-    def _apply_home_link(self, event=None):
-        link = self.home_link_var.get().strip()
-        self.MainApplication.Link = link
-        self.home_link_var.set(link)
-        self.load_home_feed()
-
-    def load_home_feed(self):
-        self.home_feed_offset = 0
-        self.home_feed_has_more = True
-        self.home_feed_loading = False
-        self.home_feed_products = []
-        self.home_feed_all_products = []
-        self.home_comments = {}
-
-        for widget in self.Home_frame.winfo_children():
-            widget.destroy()
-
-        self.Home_frame.configure(bg='#f3f4f6')
-        top_bar = tk.Frame(self.Home_frame, bg='#f3f4f6')
-        top_bar.pack(fill='x', padx=12, pady=(10, 6))
-        tk.Label(top_bar, text='Connection Link', bg='#f3f4f6', fg='#111827', font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 6))
-        link_row = tk.Frame(top_bar, bg='#f3f4f6')
-        link_row.pack(fill='x', pady=(0, 10))
-        self.home_link_selector = ttk.Combobox(
-            link_row,
-            textvariable=self.home_link_var,
-            values=self._get_home_link_options(),
-            font=('Arial', 10),
-        )
-        self.home_link_selector.pack(side='left', fill='x', expand=True, ipady=4)
-        self.home_link_selector.bind('<<ComboboxSelected>>', self._apply_home_link)
-        self.home_link_selector.bind('<Return>', self._apply_home_link)
-        tk.Button(
-            link_row, text='Apply', command=self._apply_home_link,
-            bg='#1976d2', fg='white', activebackground='#1565c0',
-            activeforeground='white', relief='flat', bd=0,
-            padx=14, pady=7, cursor='hand2',
-        ).pack(side='left', padx=(8, 0))
-        tk.Label(top_bar, text='Search Products', bg='#f3f4f6', fg='#111827', font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 6))
-        search_entry = tk.Entry(top_bar, textvariable=self.home_search_var, font=('Arial', 11), bg='white', fg='#111827')
-        search_entry.pack(fill='x', ipady=6)
-        search_entry.bind('<KeyRelease>', lambda event: self._refresh_home_search())
-
-        feed_wrapper = tk.Frame(self.Home_frame, bg='#f3f4f6')
-        feed_wrapper.pack(fill='both', expand=True)
-        self.home_feed_canvas = tk.Canvas(feed_wrapper, bg='#f3f4f6', highlightthickness=0)
-        self.home_feed_canvas.pack(side='left', fill='both', expand=True)
-        self.home_feed_scroll = tk.Scrollbar(feed_wrapper, orient='vertical', command=self.home_feed_canvas.yview)
-        self.home_feed_scroll.pack(side='right', fill='y')
-        self.home_feed_inner = tk.Frame(self.home_feed_canvas, bg='#f3f4f6')
-        self.home_feed_window = self.home_feed_canvas.create_window(
-            (0, 0), window=self.home_feed_inner, anchor='nw',
-            width=max(320, self.Home_frame.winfo_width() - 20),
-        )
-        self.home_feed_canvas.configure(yscrollcommand=self._on_home_feed_scroll)
-        self.home_grid_columns = self._get_home_columns_for_width()
-
-        def resize_feed(event=None):
-            self.home_feed_canvas.itemconfigure(self.home_feed_window, width=max(320, event.width))
-            columns = self._get_home_columns_for_width()
-            if columns != self.home_grid_columns:
-                self.home_grid_columns = columns
-                for child in self.home_feed_inner.winfo_children():
-                    child.destroy()
-                for column in range(columns):
-                    self.home_feed_inner.columnconfigure(column, weight=1)
-                for idx, product in enumerate(self.home_feed_products):
-                    self._render_home_product_card(
-                        self.home_feed_inner, product,
-                        row=idx // columns, col=idx % columns,
-                    )
-            self.home_feed_canvas.configure(scrollregion=self.home_feed_canvas.bbox('all'))
-
-        self.home_feed_canvas.bind('<Configure>', resize_feed)
-        self.home_feed_inner.bind(
-            '<Configure>',
-            lambda event: self.home_feed_canvas.configure(scrollregion=self.home_feed_canvas.bbox('all')),
-        )
-        self._load_next_home_batch()
-
-    def _on_home_feed_scroll(self, first, last):
-        self.home_feed_scroll.set(first, last)
-        if float(last) >= 0.98 and self.home_feed_has_more and not self.home_feed_loading:
-            self.after_idle(self._load_next_home_batch)
-
-    def _load_next_home_batch(self):
-        if self.home_feed_loading or not self.home_feed_has_more:
-            return
-
-        self.home_feed_loading = True
-        query = (self.home_search_var.get() or '').strip()
-        sql = 'SELECT * FROM product'
-        values = []
-        if query:
-            pattern = f'%{query}%'
-            sql += ' WHERE name LIKE ? OR code LIKE ? OR barcode LIKE ? OR at_shop LIKE ? OR description LIKE ?'
-            values.extend([pattern] * 5)
-        sql += ' ORDER BY id DESC LIMIT ? OFFSET ?'
-        values.extend([self.home_feed_batch_size, self.home_feed_offset])
-
-        try:
-            results = fetch_as_dict_list(getattr(self, 'Link', None), sql, tuple(values)) or []
-        except Exception:
-            results = []
-
-        self.home_feed_offset += len(results)
-        self.home_feed_has_more = len(results) == self.home_feed_batch_size
-        if not results and not self.home_feed_products and not query:
-            shop_name = self.Shops[0]['Shop_brand_name'] if self.Shops else 'Main Store'
-            results = [{
-                'id': 1,
-                'name': 'Classic Essentials',
-                'code': 'CE-01',
-                'barcode': '1001',
-                'at_shop': shop_name,
-                'price': 129.99,
-                'description': 'A ready-to-wear favorite with a premium finish.',
-                'comments': [],
-            }]
-            self.home_feed_has_more = False
-
-        first_new_index = len(self.home_feed_products)
-        for product in results:
-            normalized = self.normalize_home_product(product)
-            if normalized:
-                self.home_feed_products.append(normalized)
-                self.home_feed_all_products.append(normalized)
-                self.home_comments[str(normalized['id'])] = list(normalized.get('comments') or [])
-
-        for idx in range(first_new_index, len(self.home_feed_products)):
-            product = self.home_feed_products[idx]
-            self._render_home_product_card(
-                self.home_feed_inner, product,
-                row=idx // self.home_grid_columns,
-                col=idx % self.home_grid_columns,
-            )
-
-        self.home_feed_inner.update_idletasks()
-        self.home_feed_canvas.configure(scrollregion=self.home_feed_canvas.bbox('all'))
-        self.home_feed_loading = False
-
-    def _render_home_product_card(self, parent, product, row=0, col=0):
-        card = tk.Frame(parent, bg='white', bd=1, relief='solid', highlightbackground='#e5e7eb', padx=12, pady=10)
-        card.grid(row=row, column=col, sticky='nsew', padx=10, pady=10)
-        parent.grid_columnconfigure(col, weight=1)
-
-        header = tk.Frame(card, bg='white')
-        header.pack(fill='x')
-
-        avatar = tk.Label(header, text='◉', font=('Arial', 18, 'bold'), fg='#0f172a', bg='white')
-        avatar.pack(side='left')
-
-        shop_label = tk.Label(header, text=product['shop'], font=('Arial', 12, 'bold'), fg='#111827', bg='white')
-        shop_label.pack(side='left', padx=(8, 0))
-
-        follow_btn = tk.Button(header, text='Follow', font=('Arial', 9, 'bold'), bg='#f3f4f6', fg='#111827', bd=0, relief='flat', padx=8)
-        follow_btn.pack(side='right')
-
-        image_path = product['image']
-        if os.path.exists(image_path):
-            try:
-                img = Image.open(image_path).convert('RGBA')
-                img = img.resize((520, 520), Image.Resampling.LANCZOS)
-                photo = ImageTk.PhotoImage(img)
-                image_label = tk.Label(card, image=photo, bg='white')
-                image_label.image = photo
-                image_label.pack(fill='x', pady=(12, 8))
-            except Exception:
-                image_label = tk.Label(card, text='Product Image', bg='#e5e7eb', height=18, font=('Arial', 12, 'bold'))
-                image_label.pack(fill='x', pady=(12, 8))
-        else:
-            image_label = tk.Label(card, text='Product Image', bg='#e5e7eb', height=18, font=('Arial', 12, 'bold'))
-            image_label.pack(fill='x', pady=(12, 8))
-
-        meta = tk.Frame(card, bg='white')
-        meta.pack(fill='x', pady=(0, 8))
-
-        title = tk.Label(meta, text=product['name'], font=('Arial', 14, 'bold'), fg='#111827', bg='white')
-        title.pack(anchor='w')
-
-        desc = tk.Label(meta, text=product['description'], font=('Arial', 10), fg='#374151', bg='white', justify='left', wraplength=500)
-        desc.pack(anchor='w', pady=(4, 0))
-
-        price_label = tk.Label(meta, text=f'Price: ${product["price"]:.2f}', font=('Arial', 12, 'bold'), fg='#0f766e', bg='white')
-        price_label.pack(anchor='w', pady=(6, 0))
-
-        action_row = tk.Frame(card, bg='white')
-        action_row.pack(fill='x', pady=(8, 10))
-
-        like_btn = tk.Button(action_row, text=f'❤ {product["likes"]}', bg='#f3f4f6', fg='#111827', font=('Arial', 10, 'bold'), relief='flat', bd=0, padx=10, command=lambda p=product: self.toggle_home_like(p))
-        like_btn.pack(side='left', padx=(0, 8))
-
-        comment_btn = tk.Button(action_row, text=f'💬 {product["comment_count"]}', bg='#f3f4f6', fg='#111827', font=('Arial', 10, 'bold'), relief='flat', bd=0, padx=10, command=lambda p=product: self.toggle_home_comments(p))
-        comment_btn.pack(side='left', padx=(0, 8))
-
-        share_btn = tk.Button(action_row, text='↗ Share', bg='#f3f4f6', fg='#111827', font=('Arial', 10, 'bold'), relief='flat', bd=0, padx=10, command=lambda p=product: self.share_home_product(p))
-        share_btn.pack(side='left', padx=(0, 8))
-
-        save_btn = tk.Button(action_row, text='Save', bg='#f3f4f6', fg='#111827', font=('Arial', 10, 'bold'), relief='flat', bd=0, padx=10, command=lambda p=product: self.toggle_home_saved(p))
-        save_btn.pack(side='left', padx=(0, 8))
-
-        cart_btn = tk.Button(action_row, text='Add to chart', bg='#2563eb', fg='white', font=('Arial', 10, 'bold'), relief='flat', bd=0, padx=12, command=lambda p=product: self.add_home_product_to_cart(p))
-        cart_btn.pack(side='right')
-
-        comment_frame = tk.Frame(card, bg='#f9fafb', bd=1, relief='solid', highlightbackground='#e5e7eb')
-        comment_frame.pack(fill='x', pady=(4, 0))
-        comment_frame.pack_forget()
-
-        comment_label = tk.Label(comment_frame, text='Comments', bg='#f9fafb', fg='#111827', font=('Arial', 10, 'bold'), anchor='w')
-        comment_label.pack(anchor='w', padx=8, pady=(8, 4))
-
-        comments_box = tk.Frame(comment_frame, bg='#f9fafb')
-        comments_box.pack(fill='x', padx=8, pady=(0, 8))
-
-        comments = self.home_comments.get(str(product['id']), [])
-        for index, comment in enumerate(comments[:4]):
-            comment_row = tk.Frame(comments_box, bg='#ffffff', pady=6, padx=8, bd=1, relief='solid', highlightbackground='#e5e7eb')
-            comment_row.pack(fill='x', pady=3)
-            user_name = tk.Label(comment_row, text=comment.get('user', 'Guest') + ':', bg='white', fg='#111827', font=('Arial', 9, 'bold'), justify='left')
-            user_name.pack(anchor='w')
-            msg = tk.Label(comment_row, text=comment.get('text', ''), bg='white', fg='#374151', font=('Arial', 9), justify='left', wraplength=480)
-            msg.pack(anchor='w', pady=(2, 0))
-
-            reply_entry = tk.Entry(comment_row, font=('Arial', 9), width=32)
-            reply_entry.pack(fill='x', pady=(6, 0))
-            reply_btn = tk.Button(comment_row, text='Reply', bg='#e5e7eb', fg='#111827', relief='flat', bd=0, padx=8, command=lambda p=product, i=index, entry=reply_entry: self.add_home_reply(p, i, entry.get()))
-            reply_btn.pack(anchor='e', pady=(4, 0))
-
-            if comment.get('replies'):
-                for reply in comment['replies']:
-                    reply_row = tk.Frame(comment_row, bg='#f3f4f6', pady=4, padx=6)
-                    reply_row.pack(fill='x', pady=(4, 0))
-                    tk.Label(reply_row, text=f"{reply.get('user', 'Guest')}: {reply.get('text', '')}", bg='#f3f4f6', fg='#4b5563', font=('Arial', 8), justify='left', wraplength=440).pack(anchor='w')
-
-        comment_input = tk.Entry(comment_frame, width=60, font=('Arial', 10))
-        comment_input.pack(fill='x', padx=8, pady=(0, 8))
-
-        post_button = tk.Button(comment_frame, text='Post Comment', bg='#2563eb', fg='white', relief='flat', bd=0, padx=12, command=lambda p=product, entry=comment_input: self.add_home_comment(p, entry.get()))
-        post_button.pack(anchor='e', padx=8, pady=(0, 10))
-
-        comment_btn.configure(command=lambda p=product, panel=comment_frame: self.toggle_home_comments(p, panel))
-        product['_comment_panel'] = comment_frame
-        product['_comment_input'] = comment_input
-
-    def toggle_home_like(self, product):
-        product['liked'] = not product.get('liked', False)
-        if product['liked']:
-            product['likes'] += 1
-        else:
-            product['likes'] = max(0, product['likes'] - 1)
-        self.load_home_feed()
-
-    def toggle_home_saved(self, product):
-        product['saved'] = not product.get('saved', False)
-        status = 'saved' if product['saved'] else 'removed from saved'
-        tkmessagebox.showinfo('Saved', f"{product['name']} {status}.")
-
-    def share_home_product(self, product):
-        tkmessagebox.showinfo('Share', f"Share link for {product['name']} has been generated.")
-
-    def toggle_home_comments(self, product, panel=None):
-        panel = panel or product.get('_comment_panel')
-        if panel is None:
-            return
-        if panel.winfo_ismapped():
-            panel.pack_forget()
-        else:
-            panel.pack(fill='x', pady=(4, 0))
-
-    def add_home_comment(self, product, text):
-        if not text or not text.strip():
-            return
-        comment_key = str(product['id'])
-        if comment_key not in self.home_comments:
-            self.home_comments[comment_key] = []
-        self.home_comments[comment_key].append({'user': self.user['User_name'] if hasattr(self, 'user') and self.user else 'Guest', 'text': text.strip(), 'replies': []})
-        product['comments'] = list(self.home_comments[comment_key])
-        product['comment_count'] = len(self.home_comments[comment_key])
-        self.load_home_feed()
-
-    def add_home_reply(self, product, comment_index, text):
-        if not text or not text.strip():
-            return
-        comment_key = str(product['id'])
-        if comment_key not in self.home_comments:
-            self.home_comments[comment_key] = []
-        if 0 <= comment_index < len(self.home_comments[comment_key]):
-            self.home_comments[comment_key][comment_index].setdefault('replies', []).append({
-                'user': self.user['User_name'] if hasattr(self, 'user') and self.user else 'Guest',
-                'text': text.strip(),
-            })
-            product['comments'] = list(self.home_comments[comment_key])
-            product['comment_count'] = len(self.home_comments[comment_key])
-            self.load_home_feed()
-
-    def add_home_product_to_cart(self, product):
-        cart_product = {
-            'id': product['id'],
-            'name': product['name'],
-            'code': product.get('code', product.get('barcode', str(product['id']))),
-            'barcode': product.get('barcode', str(product['id'])),
-            'at_shop': product.get('shop', 'Main Store'),
-            'quantity': 1,
-            'cost': product['price'] * 0.7,
-            'tax': 0,
-            'price': product['price'],
-            'include_tax': 0,
-            'price_change': 0,
-            'more_info': '[]',
-            'images': '[]',
-            'description': product['description'],
-            'service': '',
-            'default_quantity': 1,
-            'active': 1,
-        }
-        self.add_item({'type': 'ITEM', 'values': cart_product, 'extra_data': [], 'item_list': []})
-        tkmessagebox.showinfo('Add to Chart', f"{product['name']} added to the chart.")
-
-    # display buttons profermans
     def load(self):
         self.load_setting()
 
@@ -2373,5 +1942,3 @@ class DisplayFrame(tk.Frame):
     def Call_Uploading_Form(self):
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 25, f'User Not allowed to Upload Documents'):
             UploadingForm(self, self.user, self.Shops)
-
-    

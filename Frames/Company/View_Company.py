@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 import sqlite3
 
 import json
@@ -21,6 +22,7 @@ db_path = os.path.join(data_dir, 'my_database.db')
 from C.API.Set import *
 from C.API.Get import *
 from C.API.API import *
+from M.Preferences import resolve_shop_currency
 
 class Company_Info_Frame(tk.Frame):
     def __init__(self, parent, Canceal_callback, User_data, Shop_data):
@@ -76,6 +78,8 @@ class Company_Info_Frame(tk.Frame):
         
         self.pimg_label = tk.Label(self.details_frame, text='Image :', bg="#0d47a1", fg="#ffffff")
         self.pimg_entry = tk.Entry(self.details_frame)
+        self.currency_label = tk.Label(self.details_frame, text='Currency (optional):', bg="#0d47a1", fg="#ffffff")
+        self.currency_entry = ttk.Combobox(self.details_frame, values=('ZAR', 'USD', 'EUR', 'GBP', 'CAD', 'AUD', 'NZD', 'INR', 'KES', 'NGN', 'GHS', 'AED', 'SAR', 'JPY', 'CNY', 'BRL', 'MXN'), state='normal')
 
         
         self.add_button = tk.Button(self.details_frame, text='Create', command=self.add_user, bg="#0d47a1", fg="#ffffff")
@@ -107,6 +111,8 @@ class Company_Info_Frame(tk.Frame):
         self.about_entry.grid(row=5, column=3, padx=5, pady=5, sticky=tk.W)
         self.pimg_label.grid(row=6, column=2, padx=5, pady=5, sticky=tk.W)
         self.pimg_entry.grid(row=6, column=3, padx=5, pady=5, sticky=tk.W)
+        self.currency_label.grid(row=7, column=2, padx=5, pady=5, sticky=tk.W)
+        self.currency_entry.grid(row=7, column=3, padx=5, pady=5, sticky=tk.W)
 
         if self.Shop_data:
            self.add_button.config(text="Update")
@@ -155,6 +161,7 @@ class Company_Info_Frame(tk.Frame):
         self.password_num1_entry.delete(0, "end")
         self.about_entry.delete(0, "end")
         self.pimg_entry.delete(0, "end")
+        self.currency_entry.set('')
 
     # Define the function for adding a new user
     def add_user(self):
@@ -162,6 +169,19 @@ class Company_Info_Frame(tk.Frame):
         User_fname = self.fname_entry.get()
         User_name = self.name_entry.get()
         User_country = self.cuntry_entry.get()
+        currency_input = self.currency_entry.get()
+        try:
+            Shop_currency = resolve_shop_currency(User_country, currency_input)
+        except ValueError as error:
+            messagebox.showerror('Invalid currency', str(error), parent=self)
+            return
+        if not Shop_currency:
+            messagebox.showerror(
+                'Currency required',
+                'Choose a currency because this country has no automatic currency mapping.',
+                parent=self,
+            )
+            return
         User_phone_num = self.phone_num_entry.get()
         User_email = self.email_entry.get()
         User_address = self.addres_entry.get()
@@ -193,7 +213,7 @@ class Company_Info_Frame(tk.Frame):
                         User_rate = ""
 
                         user_info = User_phone_num + User_country + User_address
-                        newShops = Set_Shop(None, ['Shop_name', 'Shop_brand_name', 'Shop_type', 'Shop_email', 'Shop_location', 'Shop_password', 'Shop_about', 'Shop_profile_img', 'Shop_oweners_id'], [User_fname, User_name, User_type, User_email, user_info, User_password0, User_about, User_pimg, owner_id])
+                        newShops = Set_Shop(None, ['Shop_name', 'Shop_brand_name', 'Shop_type', 'Shop_email', 'Shop_location', 'Shop_password', 'Shop_about', 'Shop_profile_img', 'Shop_oweners_id', 'Shop_country', 'Shop_currency'], [User_fname, User_name, User_type, User_email, user_info, User_password0, User_about, User_pimg, owner_id, User_country, Shop_currency])
                         print("newshop : ", newShops)
                         new_id = newShops['Shop_Id'] if newShops else None
                         print("company_name : ", newShops['Shop_name'])

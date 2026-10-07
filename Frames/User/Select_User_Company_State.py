@@ -530,7 +530,7 @@ class Select_User_Company_State_Frame(tk.Frame):
         self.master.master.show_frame("DisplayFrame")
     def on_name_entry(self, event):
         Update_table_database('SELECT * FROM Users')
-        users = cur.fetchall()
+        users = [] #cur.fetchall()
         for user in users:
             #print("on_name_entry\n"+str(user[1]))
             if user[1] == self.name_entry.get():

@@ -16,6 +16,7 @@ import requests
 
 from C.API.API import Sand_API
 from C.API.Get import fetch_as_dict_list, islinked
+from M.Preferences import resolve_shop_currency
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(os.path.join(current_dir, '..'), '..')
@@ -278,13 +279,14 @@ def Set_Shop(Link, ARG, VALUE, parent=None):
     return shop_data
 
 # this function will add new Shop to system data base all data must be given
-def Add_new_Shop(Shop_id, Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions):
+def Add_new_Shop(Shop_id, Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions, Shop_country='', Shop_currency=''):
     Shop_id = "" # TODO MAKE SHOP ID SAME
     Shop_Security_Levels = "" # TODO USE THIS INFOS FOR ONLINE AND OFFLINE
     Shop_rules = ""
     Shop_Slip_Settings = ""
     Shop_Expenses = ""
     Shop_Actions = ""
+    Shop_currency = resolve_shop_currency(Shop_country, Shop_currency) or ''
     
     #make Shop id same
     if Shop_name == "" or Shop_brand_name == "":
@@ -294,9 +296,9 @@ def Add_new_Shop(Shop_id, Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type
         shop_conn = sqlite3.connect(db_path)
         shop_cur = shop_conn.cursor()                       
         if Shop_id == "" or Shop_id == None:
-            shop_cur.execute('INSERT INTO Shops(Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions))
+            shop_cur.execute('INSERT INTO Shops(Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions, Shop_country, Shop_currency) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions, Shop_country, Shop_currency))
         else:
-            shop_cur.execute('INSERT INTO Shops(Shop_id, Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (Shop_id, Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions))
+            shop_cur.execute('INSERT INTO Shops(Shop_id, Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions, Shop_country, Shop_currency) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (Shop_id, Shop_name, Shop_brand_name, Shop_oweners_id, Shop_type, Shop_location, Shop_email, Shop_contact, Shop_password, Shop_Page, Shop_rate, Shop_items, Shop_followers, Shop_workers, Shop_Payment_Tools, Shop_about, Shop_Security_Levels, Company_Started_Date, Shop_likes, Shop_rules, Shop_link, Shop_Settings, Shop_profile_img, Shop_banner_imgs, Shop_payment_info, Shop_isenabled, Shop_Slip_Settings, Shop_Expenses, Shop_Actions, Shop_country, Shop_currency))
         
         # Commit the changes to the database
         shop_conn.commit()
@@ -320,7 +322,7 @@ conn.commit()'''
 
 # this will add Shop data to system database Shop data mast be given dict list key : value
 def Add_Shop_data_From_list(Shop_data):    
-    Add_new_Shop(Shop_data['Shop_Id'], Shop_data['Shop_name'], Shop_data['Shop_brand_name'], Shop_data['Shop_oweners_id'], Shop_data['shop_type'], Shop_data['Shop_location'], Shop_data['shop_email'], Shop_data['Shop_contact'], Shop_data['Shop_password'], Shop_data['Shop_Page'], Shop_data['Shop_rate'], Shop_data['Shop_items'], Shop_data['Shop_followers'], Shop_data['Shop_workers'], Shop_data['Shop_Payment_Tools'], Shop_data['Shop_about'], "Shop_data['Shop_Security_Levels']", Shop_data['Company_Started_Date'], Shop_data['Shop_likes'], "Shop_data['Shop_rules']", Shop_data['Shop_linke'], Shop_data['Shop_settings'], Shop_data['Shop_profile_img'], Shop_data['Shop_banner_imgs'], Shop_data['Shop_payment_info'], Shop_data['Shop_isenabled'], "Shop_data['Shop_Slip_Settings']", "Shop_data['Shop_Expenses']", "Shop_data['Shop_Actions']")
+    Add_new_Shop(Shop_data['Shop_Id'], Shop_data['Shop_name'], Shop_data['Shop_brand_name'], Shop_data['Shop_oweners_id'], Shop_data['shop_type'], Shop_data['Shop_location'], Shop_data['shop_email'], Shop_data['Shop_contact'], Shop_data['Shop_password'], Shop_data['Shop_Page'], Shop_data['Shop_rate'], Shop_data['Shop_items'], Shop_data['Shop_followers'], Shop_data['Shop_workers'], Shop_data['Shop_Payment_Tools'], Shop_data['Shop_about'], "Shop_data['Shop_Security_Levels']", Shop_data['Company_Started_Date'], Shop_data['Shop_likes'], "Shop_data['Shop_rules']", Shop_data['Shop_linke'], Shop_data['Shop_settings'], Shop_data['Shop_profile_img'], Shop_data['Shop_banner_imgs'], Shop_data['Shop_payment_info'], Shop_data['Shop_isenabled'], "Shop_data['Shop_Slip_Settings']", "Shop_data['Shop_Expenses']", "Shop_data['Shop_Actions']", Shop_data.get('Shop_country') or Shop_data.get('shop_country') or '', Shop_data.get('Shop_currency') or Shop_data.get('shop_currency') or '')
     
     
  

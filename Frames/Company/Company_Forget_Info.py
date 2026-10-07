@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 import sqlite3
 
 # Connect to the database or create it if it does not exist
@@ -16,6 +17,7 @@ from C.slipe import load_slip
 
 from C.API.Get import *
 from C.API.API import *
+from M.Preferences import SUPPORTED_CURRENCIES, resolve_shop_currency
 from C.API.Set import *
 
 data_dir = os.path.join(MAIN_dir, 'data')
@@ -66,6 +68,8 @@ class Company_Forget_Info_Frame(tk.Frame):
         
         self.cuntry_label = tk.Label(self.details_frame, text='Cuntry :')
         self.cuntry_entry = tk.Entry(self.details_frame)
+        self.currency_label = tk.Label(self.details_frame, text='Currency (optional):')
+        self.currency_entry = ttk.Combobox(self.details_frame, values=SUPPORTED_CURRENCIES, state='normal')
         self.phone_num_label = tk.Label(self.details_frame, text='Phone No :')
         self.phone_num_entry = tk.Entry(self.details_frame)
         self.email_label = tk.Label(self.details_frame, text='Email :')
@@ -97,6 +101,8 @@ class Company_Forget_Info_Frame(tk.Frame):
         self.type_entry.grid(row=4, column=1, padx=5, pady=5, sticky=tk.W)
         self.cuntry_label.grid(row=5, column=0, padx=5, pady=5, sticky=tk.W)
         self.cuntry_entry.grid(row=5, column=1, padx=5, pady=5, sticky=tk.W)
+        self.currency_label.grid(row=7, column=2, padx=5, pady=5, sticky=tk.W)
+        self.currency_entry.grid(row=7, column=3, padx=5, pady=5, sticky=tk.W)
         self.phone_num_label.grid(row=6, column=0, padx=5, pady=5, sticky=tk.W)
         self.phone_num_entry.grid(row=6, column=1, padx=5, pady=5, sticky=tk.W)
         self.email_label.grid(row=7, column=0, padx=5, pady=5, sticky=tk.W)
@@ -162,6 +168,18 @@ class Company_Forget_Info_Frame(tk.Frame):
         User_fname = self.fname_entry.get()
         User_name = self.name_entry.get()
         User_country = self.cuntry_entry.get()
+        try:
+            Shop_currency = resolve_shop_currency(User_country, self.currency_entry.get())
+        except ValueError as error:
+            messagebox.showerror('Invalid currency', str(error), parent=self)
+            return
+        if not Shop_currency:
+            messagebox.showerror(
+                'Currency required',
+                'Choose a currency because this country has no automatic currency mapping.',
+                parent=self,
+            )
+            return
         User_phone_num = self.phone_num_entry.get()
         User_email = self.email_entry.get()
         User_address = self.addres_entry.get()
@@ -210,7 +228,7 @@ class Company_Forget_Info_Frame(tk.Frame):
                       Shop_isenabled TEXT,
                       Shop_Access_levels TEXT'''
                   
-                      Update_table_database('INSERT INTO Shops(Shop_name, Shop_brand_name, Shop_type, Shop_email, Shop_phone_num, Shop_country, Shop_location, Shop_password, Shop_about, Shop_profile_img, Shop_oweners_id) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (User_fname, User_name, User_type, User_email, User_phone_num, User_country, User_address, User_password0, User_about, User_pimg, owner_id))
+                      Update_table_database('INSERT INTO Shops(Shop_name, Shop_brand_name, Shop_type, Shop_email, Shop_phone_num, Shop_country, Shop_currency, Shop_location, Shop_password, Shop_about, Shop_profile_img, Shop_oweners_id) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (User_fname, User_name, User_type, User_email, User_phone_num, User_country, Shop_currency, User_address, User_password0, User_about, User_pimg, owner_id))
                       print("new shop created ")
                   else:
                       print("filde no owner")

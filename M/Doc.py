@@ -1391,7 +1391,7 @@ class DocForm(tk.Frame):
                 payment_method = item[8]
             else:
                 Shop_Payment_Tools = []
-                for Shop in self.master.master.master.master.Shops:
+                for Shop in self.homemaster.Shops:
                     if Shop and Shop['Shop_Payment_Tools'] and Shop['Shop_Payment_Tools'] != "":
                         Shop_Payment_Toolscp = json.loads(Shop['Shop_Payment_Tools'])
                         for Shop_Payment_Tool in Shop_Payment_Toolscp:

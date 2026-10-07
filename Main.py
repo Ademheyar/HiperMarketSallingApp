@@ -7,6 +7,7 @@ import atexit
 import sys
 import json
 import ast
+from M.Preferences import ensure_preference_columns
 
 
 # Create a connection to the SQLite database
@@ -59,8 +60,7 @@ COUNTRIES_WITH_CITIES = {
 
 cur = conn.cursor()
 
-
-cur.execute('''CREATE TABLE IF NOT EXISTS setting 
+cur.execute('''CREATE TABLE IF NOT EXISTS setting
                 (id INTEGER PRIMARY KEY,
                 User_id INT,
                 barcode_count INT,
@@ -249,9 +249,6 @@ cur.execute('''CREATE TABLE IF NOT EXISTS Shops
               Shop_password TEXT,
               Shop_about TEXT,
               Shop_country TEXT,
-              Shop_contact TEXT,
-              Shop_isenabled TEXT,
-
               Shop_SocLinks TEXT,
               Shop_rules TEXT,
               Shop_location TEXT,
@@ -280,6 +277,7 @@ cur.execute('''CREATE TABLE IF NOT EXISTS Shops
               Shop_Items_type TEXT,
               Shop_payment_r TEXT,
               Shop_Access_levels TEXT)''')
+ensure_preference_columns(conn)
 
 #cur.execute("ALTER TABLE Id ADD COLUMN Shop_Settings TEXT AFTER Shop_link")
 

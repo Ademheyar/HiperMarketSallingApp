@@ -9,6 +9,7 @@ import atexit
 
 import json
 import ast
+from M.Preferences import format_currency, resolve_shop_currency
 
 import os, sys
 
@@ -31,6 +32,14 @@ class PaymentForm(tk.Tk):
         self.left = 0
         self.shop = shop
         self.user_info = user
+
+        shop_index = getattr(master, 'on_Shop', 0)
+        shop_index = shop_index if isinstance(shop_index, int) and 0 <= shop_index < len(shop or []) else 0
+        selected_shop = (shop or [])[shop_index] if shop else {}
+        self.currency = resolve_shop_currency(
+            selected_shop.get('Shop_country'),
+            selected_shop.get('Shop_currency'),
+        )
         
         # Color scheme
         self.bg_dark = "#0d47a1"      # Deep blue
@@ -250,18 +259,18 @@ class PaymentForm(tk.Tk):
         #print("Amount total : " + str(total))
         
         self.total_items_label.config(text="Total Items : " + str(total_qty))
-        self.Price_label.config(text="Total Price : " + str(all_total_price))
-        self.After_Price_label.config(text="Price After discount :" + str(total))
-        self.Amount_pide_form_label.config(text="Total Pide Amount : " + str(self.master.pid))
+        self.Price_label.config(text="Total Price : " + format_currency(all_total_price, self.currency))
+        self.After_Price_label.config(text="Price After discount :" + format_currency(total, self.currency))
+        self.Amount_pide_form_label.config(text="Total Pide Amount : " + format_currency(self.master.pid, self.currency))
         self.get_amount_entry.delete(0, tk.END)
         
         self.left = total - self.master.pid
         if self.left <= 0:
-            self.Amount_Left_form_label.config(text="Change : " + str(total - self.master.pid))
+            self.Amount_Left_form_label.config(text="Change : " + format_currency(total - self.master.pid, self.currency))
             self.get_amount_entry.insert(0, "0")
             self.continue_btn.config(state=tk.NORMAL)
         else:
-            self.Amount_Left_form_label.config(text="Left : " + str(total - self.master.pid))
+            self.Amount_Left_form_label.config(text="Left : " + format_currency(total - self.master.pid, self.currency))
             self.get_amount_entry.insert(0, str(total - self.master.pid))
             self.continue_btn.config(state=tk.DISABLED)
             

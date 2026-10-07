@@ -30,6 +30,7 @@ from D.Chart.Chart import *
 
 from C.Settings.Shop_Setting import Shop_SettingForm
 from C.Product.selecttype import *
+from M.Preferences import THEME_LABELS, THEME_NAMES, THEME_PALETTES, apply_app_theme
 
 
 slip_order_type=["*", "#", "-", "_", "=", "~", "Location", "Linkes", "Phone_No", "Receipt_no", "Extnsion_Receipt_no", "Date", "Updated_date", "Due_date", "User", "Seller", "Customer", "Item", "Payments", "Total", "Rules"]
@@ -182,6 +183,30 @@ class Appelication_SettingForm(tk.Frame):
         # Create the frame for the search bar and buttons
         self.search_frame = tk.Frame(self.Product_list_frame, bg=self.bg_dark)
         self.search_frame.pack(fill=tk.BOTH, padx=5, pady=5)
+
+        self.interface_settings_frame = ttk.LabelFrame(self.Product_list_frame, text='Application & Printer Settings')
+        self.interface_settings_frame.pack(fill='x', padx=5, pady=(0, 8))
+        tk.Label(
+            self.interface_settings_frame,
+            text='Select App Theme (Visual Preview):',
+        ).grid(row=0, column=0, columnspan=4, padx=5, pady=5, sticky='w')
+        self.theme_var = tk.StringVar(value='Blue')
+        self.theme_cards_frame = tk.Frame(self.interface_settings_frame)
+        self.theme_cards_frame.grid(row=1, column=0, columnspan=4, padx=5, pady=4, sticky='ew')
+        self.theme_cards_frame.grid_columnconfigure(0, weight=1)
+
+        tk.Label(self.interface_settings_frame, text='Language:').grid(row=2, column=0, padx=5, pady=8, sticky='w')
+        self.language_var = tk.StringVar(value='English')
+        self.language_selector = ttk.Combobox(
+            self.interface_settings_frame, textvariable=self.language_var,
+            values=('English', 'Afrikaans', 'isiZulu'), state='readonly', width=14,
+        )
+        self.language_selector.grid(row=2, column=1, padx=5, pady=8, sticky='w')
+        self.language_selector.bind('<<ComboboxSelected>>', self.save_display_preferences)
+
+        if not self.user:
+            self.update_Application_sitting()
+            return
         
 
 
@@ -439,7 +464,18 @@ class Appelication_SettingForm(tk.Frame):
         self.update_Application_sitting()
         
     def update_Application_sitting(self):
-        b = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM setting WHERE User_id = ?", (self.user['User_id'],))
+        user_id = (self.user or {}).get('User_id') or (self.user or {}).get('Id')
+        if user_id is None:
+            b = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM setting WHERE User_id IS NULL', ())
+        else:
+            b = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM setting WHERE User_id = ?', (user_id,))
+        settings = b[0] if b else {}
+        self.theme_var.set(settings.get('Theme') or 'Blue')
+        self.language_var.set(settings.get('Language') or 'English')
+        apply_app_theme(self.MainApplication, self.theme_var.get())
+        self.render_theme_cards()
+        if not self.user:
+            return
         if b and len(b) > 0:
             if b[0]['Get_printer']:
                 self.Remamber_printer_int.set(b[0]['Get_printer'])
@@ -452,6 +488,106 @@ class Appelication_SettingForm(tk.Frame):
             
             if b[0]['Auto_Print_All']:
                 self.Auto_Print_All_var.set(b[0]['Auto_Print_All'])
+
+    def save_display_preferences(self, event=None):
+        user_id = (self.user or {}).get('User_id') or (self.user or {}).get('Id')
+        if user_id is None:
+            settings = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM setting WHERE User_id IS NULL', ())
+        else:
+            settings = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM setting WHERE User_id=?', (user_id,))
+        if settings:
+            if user_id is None:
+                Update_table_database(
+                    'UPDATE setting SET Theme=?, Language=? WHERE User_id IS NULL',
+                    (self.theme_var.get(), self.language_var.get()),
+                )
+            else:
+                Update_table_database(
+                    'UPDATE setting SET Theme=?, Language=? WHERE User_id=?',
+                    (self.theme_var.get(), self.language_var.get(), user_id),
+                )
+        else:
+            if user_id is None:
+                Update_table_database(
+                    'INSERT INTO setting (Theme, Language) VALUES (?, ?)',
+                    (self.theme_var.get(), self.language_var.get()),
+                )
+            else:
+                Update_table_database(
+                    'INSERT INTO setting (User_id, Theme, Language) VALUES (?, ?, ?)',
+                    (user_id, self.theme_var.get(), self.language_var.get()),
+                )
+        apply_app_theme(self.MainApplication, self.theme_var.get())
+
+    def render_theme_cards(self):
+        for child in self.theme_cards_frame.winfo_children():
+            child.destroy()
+
+        for row, theme_name in enumerate(THEME_NAMES):
+            palette = THEME_PALETTES[theme_name]
+            title, description = THEME_LABELS[theme_name]
+            selected = self.theme_var.get() == theme_name
+            border = palette['accent'] if selected else palette['surface']
+            card = tk.Frame(
+                self.theme_cards_frame,
+                bg=palette['surface'],
+                highlightthickness=2 if selected else 1,
+                highlightbackground=border,
+                padx=12,
+                pady=9,
+                cursor='hand2',
+            )
+            card._preserve_app_theme_preview = True
+            card.grid(row=row, column=0, sticky='ew', pady=4)
+            card.grid_columnconfigure(0, weight=1)
+
+            heading = tk.Frame(card, bg=palette['surface'])
+            heading.grid(row=0, column=0, sticky='ew')
+            heading.grid_columnconfigure(0, weight=1)
+            tk.Label(
+                heading, text=title, bg=palette['surface'], fg=palette['text'],
+                font=('Arial', 12, 'bold'), anchor='w',
+            ).grid(row=0, column=0, sticky='w')
+            tk.Label(
+                heading, text='✓' if selected else '', bg=palette['accent'],
+                fg=palette['text'], font=('Arial', 12, 'bold'), width=2,
+            ).grid(row=0, column=1, padx=(8, 0))
+
+            tk.Label(
+                card, text=description, bg=palette['surface'], fg=palette['text'],
+                font=('Arial', 10), anchor='w', justify='left', wraplength=640,
+            ).grid(row=1, column=0, sticky='ew', pady=(4, 8))
+
+            swatches = tk.Frame(card, bg=palette['surface'])
+            swatches.grid(row=2, column=0, sticky='w')
+            for label, color in (
+                ('BG', palette['background']),
+                ('Card', palette['panel']),
+                ('Button', palette['accent']),
+                ('Selected', palette['selected']),
+                ('Text', palette['text']),
+            ):
+                swatch = tk.Frame(swatches, bg=color, width=14, height=14)
+                swatch.pack(side='left', padx=(0, 3))
+                swatch.pack_propagate(False)
+                tk.Label(
+                    swatches, text=label, bg=palette['surface'], fg=palette['text'],
+                    font=('Arial', 9),
+                ).pack(side='left', padx=(0, 10))
+
+            def select_theme(_event=None, value=theme_name):
+                if self.theme_var.get() == value:
+                    return
+                self.theme_var.set(value)
+                self.save_display_preferences()
+                self.render_theme_cards()
+
+            def bind_card(widget):
+                widget.bind('<Button-1>', select_theme)
+                for child in widget.winfo_children():
+                    bind_card(child)
+
+            bind_card(card)
         
     def chacke_remaber_printer(self, *arg):
         ##print("chacke_remaber_printer")

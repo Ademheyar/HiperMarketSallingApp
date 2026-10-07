@@ -28,6 +28,7 @@ from D.Getdate import GetDateForm
 from D.Chart.Chart import *
 
 from C.Product.selecttype import *
+from M.Preferences import SUPPORTED_CURRENCIES, resolve_shop_currency
 
 from C.Settings.Shop_Expenses import *
 from C.Settings.Shop_Workers import *
@@ -1174,6 +1175,10 @@ class Shop_SettingForm(ttk.Notebook):
         self.Shop_country_label.grid(row=14, column=7, columnspan=5, sticky=tk.W)
         self.Shop_country_entry = tk.Entry(self.Shop_listinfo_frame)
         self.Shop_country_entry.grid(row=15, column=8, columnspan=5, sticky="nsew")
+        self.Shop_currency_label = tk.Label(self.Shop_listinfo_frame, text='Shop Currency (optional):', bg=self.bg_dark, fg=self.text_light)
+        self.Shop_currency_label.grid(row=20, column=7, columnspan=5, sticky=tk.W)
+        self.Shop_currency_entry = ttk.Combobox(self.Shop_listinfo_frame, values=SUPPORTED_CURRENCIES, state='normal')
+        self.Shop_currency_entry.grid(row=21, column=8, columnspan=5, sticky='nsew')
         
         self.Shop_password_label = tk.Label(self.Shop_listinfo_frame, text='Shop Password:', bg=self.bg_dark, fg=self.text_light)
         self.Shop_password_label.grid(row=14, column=0, columnspan=5, sticky=tk.W)
@@ -1822,6 +1827,8 @@ class Shop_SettingForm(ttk.Notebook):
             self.Shop_about_entry.insert(0, str(shop_['Shop_about']))
             self.Shop_country_entry.delete(0, tk.END)
             self.Shop_country_entry.insert(0, str(shop_['Shop_country']))
+            self.Shop_currency_entry.delete(0, tk.END)
+            self.Shop_currency_entry.insert(0, str(shop_.get('Shop_currency') or ''))
             self.Shop_password_entry.delete(0, tk.END)
             self.Shop_password_entry.insert(0, str(shop_['Shop_password']))
             self.Shop_link_entry.delete(0, tk.END)
@@ -1879,8 +1886,19 @@ class Shop_SettingForm(ttk.Notebook):
             #'Shop_email'
             self.Shop_about_entry.get()
             #'Shop_about'
-            self.Shop_country_entry.get()
-            #'Shop_country'
+            shop_country = self.Shop_country_entry.get().strip()
+            try:
+                shop_currency = resolve_shop_currency(shop_country, self.Shop_currency_entry.get())
+            except ValueError as error:
+                tk.messagebox.showerror('Invalid currency', str(error), parent=self)
+                return
+            if not shop_currency:
+                tk.messagebox.showerror(
+                    'Currency required',
+                    'Choose a currency because this country has no automatic currency mapping.',
+                    parent=self,
+                )
+                return
             self.Shop_password_entry.get()
             #'Shop_password'
             self.Shop_link_entry.get()
@@ -1901,7 +1919,7 @@ class Shop_SettingForm(ttk.Notebook):
             #'Shop_Adress_Information'
             
             shop_info =  "Phone Number="+str(self.Shop_phone_nums)+"+Location="+str(self.Shop_locations)             
-            s = Update_Shop(None, None, ['Shop_name', 'Shop_brand_name', 'Shop_oweners_id', 'Shop_email', 'Shop_about', 'Shop_country', 'Shop_password', 'Shop_link', 'Shop_contact', 'Shop_isenabled', 'Shop_type', 'Shop_rate', 'Shop_SocLinks', 'Shop_rules', 'Shop_Adress_Information'], [self.Shop_name_entry.get(), self.Shop_brand_name_entry.get(), self.user_id_var.get(), self.Shop_email_entry.get(), self.Shop_about_entry.get(), self.Shop_country_entry.get(), self.Shop_password_entry.get(), self.Shop_link_entry.get(), self.Shop_Contact_entry.get(), self.Shop_isenabled_var.get(), self.Shop_types_var.get(), self.Shop_rate, self.Shop_slinks, self.Shop_rules, shop_info], [idq], [idv])
+            s = Update_Shop(None, None, ['Shop_name', 'Shop_brand_name', 'Shop_oweners_id', 'Shop_email', 'Shop_about', 'Shop_country', 'Shop_currency', 'Shop_password', 'Shop_link', 'Shop_contact', 'Shop_isenabled', 'Shop_type', 'Shop_rate', 'Shop_SocLinks', 'Shop_rules', 'Shop_Adress_Information'], [self.Shop_name_entry.get(), self.Shop_brand_name_entry.get(), self.user_id_var.get(), self.Shop_email_entry.get(), self.Shop_about_entry.get(), shop_country, shop_currency, self.Shop_password_entry.get(), self.Shop_link_entry.get(), self.Shop_Contact_entry.get(), self.Shop_isenabled_var.get(), self.Shop_types_var.get(), self.Shop_rate, self.Shop_slinks, self.Shop_rules, shop_info], [idq], [idv])
             
             #  = fetch_as_dict_list("SELECT * FROM Shops WHERE " + idq + "=?", (str(idv),))
             if s:
