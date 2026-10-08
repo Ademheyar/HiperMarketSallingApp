@@ -30,7 +30,14 @@ from D.Chart.Chart import *
 
 from C.Settings.Shop_Setting import Shop_SettingForm
 from C.Product.selecttype import *
-from M.Preferences import THEME_LABELS, THEME_NAMES, THEME_PALETTES, apply_app_theme
+from M.Preferences import (
+    THEME_LABELS,
+    THEME_NAMES,
+    THEME_PALETTES,
+    apply_app_theme,
+    load_saved_theme,
+    save_app_preferences,
+)
 
 
 slip_order_type=["*", "#", "-", "_", "=", "~", "Location", "Linkes", "Phone_No", "Receipt_no", "Extnsion_Receipt_no", "Date", "Updated_date", "Due_date", "User", "Seller", "Customer", "Item", "Payments", "Total", "Rules"]
@@ -470,7 +477,8 @@ class Appelication_SettingForm(tk.Frame):
         else:
             b = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM setting WHERE User_id = ?', (user_id,))
         settings = b[0] if b else {}
-        self.theme_var.set(settings.get('Theme') or 'Blue')
+        with sqlite3.connect(db_path) as connection:
+            self.theme_var.set(load_saved_theme(connection, user_id))
         self.language_var.set(settings.get('Language') or 'English')
         apply_app_theme(self.MainApplication, self.theme_var.get())
         self.render_theme_cards()
@@ -491,32 +499,13 @@ class Appelication_SettingForm(tk.Frame):
 
     def save_display_preferences(self, event=None):
         user_id = (self.user or {}).get('User_id') or (self.user or {}).get('Id')
-        if user_id is None:
-            settings = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM setting WHERE User_id IS NULL', ())
-        else:
-            settings = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM setting WHERE User_id=?', (user_id,))
-        if settings:
-            if user_id is None:
-                Update_table_database(
-                    'UPDATE setting SET Theme=?, Language=? WHERE User_id IS NULL',
-                    (self.theme_var.get(), self.language_var.get()),
-                )
-            else:
-                Update_table_database(
-                    'UPDATE setting SET Theme=?, Language=? WHERE User_id=?',
-                    (self.theme_var.get(), self.language_var.get(), user_id),
-                )
-        else:
-            if user_id is None:
-                Update_table_database(
-                    'INSERT INTO setting (Theme, Language) VALUES (?, ?)',
-                    (self.theme_var.get(), self.language_var.get()),
-                )
-            else:
-                Update_table_database(
-                    'INSERT INTO setting (User_id, Theme, Language) VALUES (?, ?, ?)',
-                    (user_id, self.theme_var.get(), self.language_var.get()),
-                )
+        with sqlite3.connect(db_path) as connection:
+            save_app_preferences(
+                connection,
+                self.theme_var.get(),
+                self.language_var.get(),
+                user_id,
+            )
         apply_app_theme(self.MainApplication, self.theme_var.get())
 
     def render_theme_cards(self):

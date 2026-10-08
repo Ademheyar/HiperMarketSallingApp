@@ -14,6 +14,7 @@ if ROOT not in sys.path:
 import tkinter as tk
 
 from M.ProfileData import build_summary, count_items
+from M.Preferences import THEME_PALETTES, apply_app_theme
 from M.UserProfile import UserProfilePanel
 
 
@@ -81,6 +82,7 @@ def test_panel_constructs_and_switches():
         print('SKIP: no display available for Tk')
         return
     root.withdraw()
+    apply_app_theme(root, 'Green')
     app = StubApp()
     panel = UserProfilePanel(root, app)
     panel.pack()
@@ -88,6 +90,10 @@ def test_panel_constructs_and_switches():
     assert 'Messages' in panel.sections
     assert 'Notif' in panel.sections
     assert 'History' in panel.sections
+    assert panel.section_navigation.winfo_manager() == 'grid'
+    assert panel.section_navigation.grid_info()['row'] == 2
+    assert panel.section_navigation.cget('bg') == THEME_PALETTES['Green']['background']
+    assert panel.section_tabs['Messages']['label'].cget('fg') == THEME_PALETTES['Green']['accent']
     panel._select_section('Notif')
     assert panel.active_section == 'Notif'
     panel._select_section('History')

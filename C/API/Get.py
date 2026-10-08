@@ -13,7 +13,6 @@ import json
 import requests
 
 
-from D.Security import *
 from C.API.API import *
 
 current_dir = os.path.abspath(os.path.dirname(__file__))

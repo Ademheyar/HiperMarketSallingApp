@@ -6,6 +6,7 @@ import sqlite3
 
 import os
 import os, sys
+from M.UITheme import PROFILE_THEME
 current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(os.path.join(current_dir, '..'), '..')
 sys.path.append(MAIN_dir)
@@ -24,72 +25,97 @@ from C.API.Set import *
 
 class User_Info_Frame(tk.Frame):
     def __init__(self, parent, Canceal_callback, User_data, link):
-        tk.Frame.__init__(self, parent, bg="#0d47a1")
+        tk.Frame.__init__(self, parent, bg=PROFILE_THEME['bg'])
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         self.Canceal_callback = Canceal_callback
         self.User_data = User_data
         self.Link = link
-        self.details_frame = tk.Frame(self, bg="#1565c0")
-        self.details_frame.pack(side=tk.TOP, fill=tk.X, expand=True)
+        self.details_frame = tk.Frame(self, bg=PROFILE_THEME['card_bg'], highlightthickness=1, highlightbackground=PROFILE_THEME['card_border'])
+        self.details_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=20, pady=18)
+        self.configure(bg=PROFILE_THEME['bg'])
+
+        self._entry_style = {
+            'bg': PROFILE_THEME['row_bg'],
+            'fg': PROFILE_THEME['text'],
+            'insertbackground': PROFILE_THEME['text'],
+            'highlightthickness': 1,
+            'highlightbackground': PROFILE_THEME['card_border'],
+            'highlightcolor': PROFILE_THEME['accent'],
+            'relief': 'flat',
+            'bd': 0,
+            'font': ('Segoe UI', 10),
+        }
+        self._button_style = {
+            'bg': PROFILE_THEME['accent'],
+            'fg': PROFILE_THEME['text'],
+            'activebackground': PROFILE_THEME['accent_dark'],
+            'activeforeground': PROFILE_THEME['text'],
+            'cursor': 'hand2',
+            'relief': 'flat',
+            'bd': 0,
+            'font': ('Segoe UI', 10, 'bold'),
+            'padx': 18,
+            'pady': 8,
+        }
 
         # Create the widgets for the user details
-        self.f_and_lname_label = tk.Label(self.details_frame, text='First and Last Name :', bg="#1565c0", fg="#ffffff")
-        self.fname_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
-        self.lname_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
-        self.name_label = tk.Label(self.details_frame, text='User Name :', bg="#1565c0", fg="#ffffff")
-        self.name_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
+        self.f_and_lname_label = tk.Label(self.details_frame, text='First and Last Name :', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'])
+        self.fname_entry = tk.Entry(self.details_frame, **self._entry_style)
+        self.lname_entry = tk.Entry(self.details_frame, **self._entry_style)
+        self.name_label = tk.Label(self.details_frame, text='User Name :', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'])
+        self.name_entry = tk.Entry(self.details_frame, **self._entry_style)
         
         self.main_name = ""
         self.fname_entry.bind('<KeyRelease>', self.on_name_entry)
         self.lname_entry.bind('<KeyRelease>', self.on_name_entry)
         self.name_entry.bind('<KeyRelease>', self.on_name_entry)
         
-        self.forget_password_label = tk.Label(self.details_frame, text="User Found Did You Forgot Password?", fg="red", cursor="hand2", bg="#1565c0")
+        self.forget_password_label = tk.Label(self.details_frame, text="User Found Did You Forgot Password?", fg="#fda4af", cursor="hand2", bg=PROFILE_THEME['card_bg'])
         self.forget_password_label.bind("<Button-1>", self.forget_password_fuc)
         self.Found_User_id_var = tk.StringVar()
         
-        self.password_num0_label = tk.Label(self.details_frame, text='Password :', bg="#1565c0", fg="#ffffff")
-        self.password_num0_entry = tk.Entry(self.details_frame, show="*", bg="#1976d2", fg="#ffffff")
+        self.password_num0_label = tk.Label(self.details_frame, text='Password :', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'])
+        self.password_num0_entry = tk.Entry(self.details_frame, show="*", **self._entry_style)
         
-        self.password_num1_label = tk.Label(self.details_frame, text='Confirm Password :', bg="#1565c0", fg="#ffffff")
-        self.password_num1_entry = tk.Entry(self.details_frame, show="*", bg="#1976d2", fg="#ffffff")
+        self.password_num1_label = tk.Label(self.details_frame, text='Confirm Password :', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'])
+        self.password_num1_entry = tk.Entry(self.details_frame, show="*", **self._entry_style)
         
         self.show_password_var = tk.IntVar()
-        self.show_password_checkbutton = tk.Checkbutton(self.details_frame, text='Show Passwords', variable=self.show_password_var, bg="#1565c0", fg="#ffffff")
+        self.show_password_checkbutton = tk.Checkbutton(self.details_frame, text='Show Passwords', variable=self.show_password_var, bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'], activebackground=PROFILE_THEME['card_bg'], selectcolor=PROFILE_THEME['row_bg'])
         self.show_password_checkbutton.bind("<Button-1>", self.show_password_fuc)
         
-        self.gender_label = tk.Label(self.details_frame, text='Gender :', bg="#1565c0", fg="#ffffff")
-        self.gender_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
-        self.cuntry_label = tk.Label(self.details_frame, text='Cuntry :', bg="#1565c0", fg="#ffffff")
-        self.cuntry_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
-        self.phone_num_label = tk.Label(self.details_frame, text='Phone No :', bg="#1565c0", fg="#ffffff")
-        self.phone_num_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
-        self.email_label = tk.Label(self.details_frame, text='Email :', bg="#1565c0", fg="#ffffff")
-        self.email_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
-        self.addres_label = tk.Label(self.details_frame, text='Adress :', bg="#1565c0", fg="#ffffff")
-        self.addres_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
-        self.id_num_label = tk.Label(self.details_frame, text='Id No :', bg="#1565c0", fg="#ffffff")
-        self.id_num_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
-        self.home_no_label = tk.Label(self.details_frame, text='Home No :', bg="#1565c0", fg="#ffffff")
-        self.home_no_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
-        self.type_label = tk.Label(self.details_frame, text='Type :', bg="#1565c0", fg="#ffffff")
-        self.type_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
-        self.about_label = tk.Label(self.details_frame, text='About :', bg="#1565c0", fg="#ffffff")
-        self.about_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
+        self.gender_label = tk.Label(self.details_frame, text='Gender :', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'])
+        self.gender_entry = tk.Entry(self.details_frame, **self._entry_style)
+        self.cuntry_label = tk.Label(self.details_frame, text='Cuntry :', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'])
+        self.cuntry_entry = tk.Entry(self.details_frame, **self._entry_style)
+        self.phone_num_label = tk.Label(self.details_frame, text='Phone No :', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'])
+        self.phone_num_entry = tk.Entry(self.details_frame, **self._entry_style)
+        self.email_label = tk.Label(self.details_frame, text='Email :', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'])
+        self.email_entry = tk.Entry(self.details_frame, **self._entry_style)
+        self.addres_label = tk.Label(self.details_frame, text='Adress :', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'])
+        self.addres_entry = tk.Entry(self.details_frame, **self._entry_style)
+        self.id_num_label = tk.Label(self.details_frame, text='Id No :', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'])
+        self.id_num_entry = tk.Entry(self.details_frame, **self._entry_style)
+        self.home_no_label = tk.Label(self.details_frame, text='Home No :', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'])
+        self.home_no_entry = tk.Entry(self.details_frame, **self._entry_style)
+        self.type_label = tk.Label(self.details_frame, text='Type :', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'])
+        self.type_entry = tk.Entry(self.details_frame, **self._entry_style)
+        self.about_label = tk.Label(self.details_frame, text='About :', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'])
+        self.about_entry = tk.Entry(self.details_frame, **self._entry_style)
         
-        self.pimg_label = tk.Label(self.details_frame, text='Image :', bg="#1565c0", fg="#ffffff")
-        self.pimg_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
+        self.pimg_label = tk.Label(self.details_frame, text='Image :', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'])
+        self.pimg_entry = tk.Entry(self.details_frame, **self._entry_style)
 
-        self.shops_label = tk.Label(self.details_frame, text='Shop :', bg="#1565c0", fg="#ffffff")
-        self.shops_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
-        self.work_shop_label = tk.Label(self.details_frame, text='Work Shop :', bg="#1565c0", fg="#ffffff")
-        self.work_shop_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
-        self.acsess_label = tk.Label(self.details_frame, text='ACSSES :', bg="#1565c0", fg="#ffffff")
-        self.acsess_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
+        self.shops_label = tk.Label(self.details_frame, text='Shop :', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'])
+        self.shops_entry = tk.Entry(self.details_frame, **self._entry_style)
+        self.work_shop_label = tk.Label(self.details_frame, text='Work Shop :', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'])
+        self.work_shop_entry = tk.Entry(self.details_frame, **self._entry_style)
+        self.acsess_label = tk.Label(self.details_frame, text='ACSSES :', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'])
+        self.acsess_entry = tk.Entry(self.details_frame, **self._entry_style)
 
-        self.add_button = tk.Button(self.details_frame, text='Create', command=self.add_user, bg="#1976d2", fg="#ffffff")
-        self.cancle_button = tk.Button(self.details_frame, text='Cancle', command=self.canceal_callback, bg="#1976d2", fg="#ffffff")
+        self.add_button = tk.Button(self.details_frame, text='Create', command=self.add_user, **self._button_style)
+        self.cancle_button = tk.Button(self.details_frame, text='Cancel', command=self.canceal_callback, bg=PROFILE_THEME['row_bg'], fg=PROFILE_THEME['text'], activebackground=PROFILE_THEME['card_border'], activeforeground=PROFILE_THEME['text'], cursor='hand2', relief='flat', bd=0, font=('Segoe UI', 10, 'bold'), padx=18, pady=8)
 
         self.f_and_lname_label.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
         self.fname_entry.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)

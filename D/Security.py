@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import sqlite3, os
 import json
+from M.Preferences import THEME_PALETTES
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
 db_path = os.path.join(data_dir, 'my_database.db')
@@ -65,11 +66,16 @@ class SecurityForm(tk.Toplevel):
         self.Security_form.geometry(f"{width}x{height}+{x}+{y}")
         self.selected_indexd = 0
 
-        # Android-style dark blue color scheme
-        self.bg_dark = "#0d47a1"      # Deep blue
-        self.bg_light = "#1565c0"     # Darker blue
-        self.accent_blue = "#1976d2"  # Medium blue
-        self.text_light = "#ffffff"
+        self.palette = getattr(
+            self.MainApplication,
+            '_app_theme_palette',
+            THEME_PALETTES['Blue'],
+        )
+        self.bg_dark = self.palette['background']
+        self.bg_light = self.palette['surface']
+        self.accent_blue = self.palette['accent']
+        self.text_light = self.palette['text']
+        self.button_text = self.palette['button_text']
         self._credentials_shown = False
         self.Security_form.configure(bg=self.bg_dark)
 
@@ -90,7 +96,7 @@ class SecurityForm(tk.Toplevel):
             anchor="w",
             bg=self.bg_dark,
             fg=self.text_light,
-            font=("Roboto", 14, "bold")
+            font=("Segoe UI", 14, "bold")
         )
         self.instruction_label.pack(side="top")
         
@@ -112,11 +118,11 @@ class SecurityForm(tk.Toplevel):
             self.Link_frame,
             text=btntext,
             command=self.close_fun,
-            bg="#424242",
+            bg=self.bg_light,
             fg=self.text_light,
-            font=("Roboto", 8, "bold"),
+            font=("Segoe UI", 9, "bold"),
             relief=tk.FLAT,
-            activebackground="#616161",
+            activebackground=self.palette['accent_dark'],
             activeforeground=self.text_light,
             padx=10,
             pady=8
@@ -128,11 +134,11 @@ class SecurityForm(tk.Toplevel):
             text="Check",
             command=lambda: self.cacke_linked(),
             bg=self.accent_blue,
-            fg=self.text_light,
-            font=("Roboto", 8, "bold"),
+            fg=self.palette['button_text'],
+            font=("Segoe UI", 9, "bold"),
             relief=tk.FLAT,
-            activebackground="#1565c0",
-            activeforeground=self.text_light,
+            activebackground=self.palette['accent_dark'],
+            activeforeground=self.palette['button_text'],
             padx=10,
             pady=8
         )
@@ -201,6 +207,10 @@ class SecurityForm(tk.Toplevel):
         self.bind("<Down>", self.treeview_naigation)
         self.bind("<Return>", self.Selectd)
 
+        recolor = getattr(self.MainApplication, '_app_theme_recolor', None)
+        if recolor:
+            recolor(self.Security_form)
+
         # modal
         self.attributes('-topmost', True)
         #self.Security_form.transient(self.master)
@@ -237,7 +247,7 @@ class SecurityForm(tk.Toplevel):
                 elif self.selected_indexd >= len(self.user_buttons_frame.winfo_children()):
                     self.selected_indexd = 0
                     
-            self.user_buttons_frame.winfo_children()[self.selected_indexd].configure(bg="blue")
+            self.user_buttons_frame.winfo_children()[self.selected_indexd].configure(bg=self.accent_blue)
 
 
         
@@ -414,8 +424,8 @@ class SecurityForm(tk.Toplevel):
                 self._credentials_shown = False
                 self.button_BACK_close['text'] = "Back"
         else:
-            tk.Label(self.master.Error_list_frame, text="Online Login Filed", bg="#fcfafb", fg="red").pack(side=tk.TOP, fill=tk.X, expand=True)
-            tk.Label(self.master.Error_list_frame, text="User Name("+str(entered_username)+") Or Password Incorrect.", bg="#e74c3c", fg="white").pack(side=tk.TOP, fill=tk.X, expand=True)
+            tk.Label(self.master.Error_list_frame, text="Online Login Filed", bg=self.bg_light, fg="#e23b4e", font=('Segoe UI', 9)).pack(side=tk.TOP, fill=tk.X, expand=True)
+            tk.Label(self.master.Error_list_frame, text="User Name("+str(entered_username)+") Or Password Incorrect.", bg="#e23b4e", fg="#ffffff", font=('Segoe UI', 9, 'bold')).pack(side=tk.TOP, fill=tk.X, expand=True)
     
     def _create_user_buttons_container(self):
         # Create a canvas + horizontal scrollbar and an internal frame to hold buttons.
@@ -426,32 +436,32 @@ class SecurityForm(tk.Toplevel):
         self.Top_display_frame.columnconfigure((0, 1, 2, 3), weight=1)
         self.Top_display_frame.rowconfigure((0, 1, 2, 3), weight=1)
 
-        self.user_buttons_canvas  = tk.Canvas(self.Top_display_frame, highlightthickness=0, bg="#0d47a1")
-        self.user_buttons_scrollbar = tk.Scrollbar(self.Top_display_frame, orient="horizontal", command=self.user_buttons_canvas.xview, bg="#0d47a1", activebackground="#1976d2", troughcolor="#0d47a1")
+        self.user_buttons_canvas  = tk.Canvas(self.Top_display_frame, highlightthickness=0, bg=self.bg_dark)
+        self.user_buttons_scrollbar = tk.Scrollbar(self.Top_display_frame, orient="horizontal", command=self.user_buttons_canvas.xview, bg=self.bg_light, activebackground=self.accent_blue, troughcolor=self.bg_dark)
         self.user_buttons_canvas.configure(xscrollcommand=self.user_buttons_scrollbar.set)
 
         # internal frame inside canvas
-        self.user_buttons_inner = tk.Frame(self.user_buttons_canvas, bg="#0d47a1")
+        self.user_buttons_inner = tk.Frame(self.user_buttons_canvas, bg=self.bg_dark)
         # Create window without width restriction so inner frame can expand horizontally
         self.user_buttons_canvas.create_window((0, 0), window=self.user_buttons_inner, anchor="nw")
 
         self.forget_password_label = tk.Label(
             self.Top_display_frame,
             text="Forgot Password?",
-            fg="#64b5f6",
-            bg="#1565c0",
+            fg=self.accent_blue,
+            bg=self.bg_light,
             cursor="hand2",
-            font=("Roboto", 10, "underline")
+            font=("Segoe UI", 10, "underline")
         )
         self.forget_password_label.bind("<Button-1>", self.forget_password_fuc)
 
         self.Create_new_label = tk.Label(
             self.Top_display_frame,
             text="Create Account",
-            fg="#64b5f6",
-            bg="#1565c0",
+            fg=self.accent_blue,
+            bg=self.bg_light,
             cursor="hand2",
-            font=("Roboto", 10, "underline")
+            font=("Segoe UI", 10, "underline")
         )
         self.Create_new_label.bind("<Button-1>", self.Create_new_user)
         # grid the canvas + scrollbar into the parent grid cell
@@ -566,11 +576,15 @@ class SecurityForm(tk.Toplevel):
             c = on_col 
             if name == "New User":
                 btn = tk.Button(self.user_buttons_frame, text=name, command=self._on_new_user_pressed,
-                     bg="#1976d2", fg="#ffffff", activebackground="#1565c0", activeforeground="#ffffff")
+                     bg=self.accent_blue, fg=self.button_text,
+                     activebackground=self.palette['accent_dark'], activeforeground=self.button_text,
+                     font=('Segoe UI', 10, 'bold'), relief='flat', bd=0, cursor='hand2', padx=12, pady=8)
                 btn.grid(row=r, column=c, padx=6, pady=6, sticky="nsew")
             else:
                 btn = tk.Button(self.user_buttons_frame, text=name, command=lambda n=name: self._on_user_button_pressed(n),
-                     bg="#1976d2", fg="#ffffff", activebackground="#1565c0", activeforeground="#ffffff")
+                     bg=self.bg_light, fg=self.text_light,
+                     activebackground=self.palette['accent_dark'], activeforeground=self.text_light,
+                     font=('Segoe UI', 10, 'bold'), relief='flat', bd=0, cursor='hand2', padx=12, pady=8)
                 btn.grid(row=r, column=c, padx=6, pady=6, sticky="nsew")
             for colsc in range(cols):
                 self.user_buttons_frame.grid_columnconfigure(colsc, weight=1, minsize=80)
@@ -706,8 +720,15 @@ class SecurityForm(tk.Toplevel):
         self.Top_display_frame.rowconfigure((0, 1, 2, 3), weight=1)
 
         # Credentials frame (hidden initially)
-        self.credentials_frame = tk.Frame(self.Top_display_frame, bg=self.bg_light)
-        self.credentials_frame.grid(row=2, column=0, columnspan=4, sticky="ew", padx=8, pady=8)
+        self.credentials_frame = tk.Frame(
+            self.Top_display_frame,
+            bg=self.bg_light,
+            highlightthickness=1,
+            highlightbackground=self.palette['accent_dark'],
+            padx=12,
+            pady=10,
+        )
+        self.credentials_frame.grid(row=2, column=0, columnspan=4, sticky="ew", padx=20, pady=16)
         self._credentials_shown = False
         # Username entry
         username_label = tk.Label(
@@ -715,17 +736,21 @@ class SecurityForm(tk.Toplevel):
             text='Username:',
             bg=self.bg_light,
             fg=self.text_light,
-            font=("Roboto", 11)
+            font=("Segoe UI", 11)
         )
         username_label.grid(row=0, column=0, sticky=tk.W, padx=12, pady=8)
         
         self.entered_username_entry = tk.Entry(
             self.credentials_frame,
-            bg="#ffffff",
-            fg="#0d47a1",
-            font=("Roboto", 11),
+            bg=self.bg_dark,
+            fg=self.text_light,
+            insertbackground=self.text_light,
+            font=("Segoe UI", 11),
             relief=tk.FLAT,
-            bd=2
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=self.palette['accent_dark'],
+            highlightcolor=self.accent_blue,
         )
         self.entered_username_entry.grid(row=0, column=1, columnspan=2, sticky="ew", padx=12, pady=8)
         self.forgetuserbtn = tk.Button(
@@ -734,9 +759,9 @@ class SecurityForm(tk.Toplevel):
             command=self.forget_username,
             bg=self.bg_light,
             fg=self.text_light,
-            font=("Roboto", 10),
+            font=("Segoe UI", 10),
             relief=tk.FLAT,
-            activebackground="#1565c0",
+            activebackground=self.palette['accent_dark'],
             activeforeground=self.text_light,
             padx=10,
             pady=8
@@ -747,18 +772,22 @@ class SecurityForm(tk.Toplevel):
             text='Password:',
             bg=self.bg_light,
             fg=self.text_light,
-            font=("Roboto", 11)
+            font=("Segoe UI", 11)
         )
         password_label.grid(row=1, column=0, sticky=tk.W, padx=12, pady=8)
         
         self.entered_password_entry = tk.Entry(
             self.credentials_frame,
             show="*",
-            bg="#ffffff",
-            fg="#0d47a1",
-            font=("Roboto", 11),
+            bg=self.bg_dark,
+            fg=self.text_light,
+            insertbackground=self.text_light,
+            font=("Segoe UI", 11),
             relief=tk.FLAT,
-            bd=2
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=self.palette['accent_dark'],
+            highlightcolor=self.accent_blue,
         )
         self.entered_password_entry.grid(row=1, column=1, columnspan=2, sticky="ew", padx=12, pady=8)
         self.entered_password_entry.bind("<Return>", lambda event: self.log_in())  # allow Enter key to trigger login
@@ -769,9 +798,9 @@ class SecurityForm(tk.Toplevel):
             command=self.log_in,
             bg=self.accent_blue,
             fg=self.text_light,
-            font=("Roboto", 10, "bold"),
+            font=("Segoe UI", 10, "bold"),
             relief=tk.FLAT,
-            activebackground="#1565c0",
+            activebackground=self.palette['accent_dark'],
             activeforeground=self.text_light,
             padx=10,
             pady=8

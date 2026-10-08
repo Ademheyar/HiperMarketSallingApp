@@ -8,10 +8,12 @@ theme the rest of the desktop UI uses.
 """
 import os
 import tkinter as tk
+from tkinter import ttk
 
 from PIL import Image, ImageDraw, ImageTk
 
 from C.API.Get import fetch_as_dict_list
+from M.UITheme import PROFILE_THEME, apply_profile_theme
 from M.ProfileData import (
     build_messages,
     build_notifications,
@@ -77,6 +79,7 @@ class UserProfilePanel(tk.Frame):
 
     def __init__(self, parent, app):
         tk.Frame.__init__(self, parent, bg=BG)
+        apply_profile_theme(self)
         self.app = app
         self.summary = build_summary(
             getattr(app, 'user', None) or {},
@@ -90,12 +93,14 @@ class UserProfilePanel(tk.Frame):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
         self.build()
+        self._apply_app_theme_palette()
 
     # ------------------------------------------------------------------ build
     def build(self):
         root = tk.Frame(self, bg=BG)
         root.pack(fill='both', expand=True, padx=20, pady=18)
         root.columnconfigure(0, weight=1)
+        root.rowconfigure(1, weight=1)
 
         card = tk.Frame(root, bg=CARD_BG, highlightthickness=1,
                         highlightbackground=CARD_BORDER, padx=26, pady=24)
@@ -107,7 +112,6 @@ class UserProfilePanel(tk.Frame):
         self._build_details(card)
         self._build_actions(card)
         self._build_sign_out(card)
-        self._build_section_tabs(card)
 
         content = tk.Frame(root, bg=BG)
         content.grid(row=1, column=0, sticky='nsew', pady=(18, 0))
@@ -115,6 +119,10 @@ class UserProfilePanel(tk.Frame):
         self.content = content
         self._build_sections(content)
         self._select_section(self.active_section)
+
+        self.section_navigation = tk.Frame(root, bg=BG)
+        self.section_navigation.grid(row=2, column=0, sticky='ew', pady=(12, 0))
+        self._build_section_tabs(self.section_navigation)
 
     def _build_identity(self, card):
         header = tk.Frame(card, bg=CARD_BG)
@@ -209,10 +217,11 @@ class UserProfilePanel(tk.Frame):
         button.grid(row=0, column=0, sticky='ew')
 
     def _build_section_tabs(self, card):
-        tk.Frame(card, bg=CARD_BORDER, height=1).grid(
-            row=7, column=0, sticky='ew', pady=(22, 0))
-        tabs = tk.Frame(card, bg=CARD_BG)
-        tabs.grid(row=8, column=0, sticky='ew', pady=(16, 0))
+        self.section_separator = tk.Frame(card, bg=CARD_BORDER, height=1)
+        self.section_separator.pack(fill='x', pady=(0, 12))
+        tabs = tk.Frame(card, bg=BG)
+        tabs.pack(fill='x')
+        self.section_tabs_frame = tabs
         for column, (name, kind) in enumerate(SECTIONS):
             tabs.columnconfigure(column, weight=1)
             self.section_tabs[name] = self._section_tab(tabs, column, name, kind)
@@ -230,19 +239,42 @@ class UserProfilePanel(tk.Frame):
 
         widgets = (frame, inner, icon, label)
 
-        def paint(color):
+        def colors(hover=False):
+            palette = getattr(self.winfo_toplevel(), '_app_theme_palette', None)
+            if not palette:
+                return (hover_bg if hover else bg), fg
+            if kind == 'logout':
+                return (DANGER_DARK if hover else DANGER), '#ffffff'
+            if kind == 'pos':
+                return (
+                    palette['accent_dark'] if hover else palette['button'],
+                    palette['button_text'],
+                )
+            return (
+                palette['accent_dark'] if hover else palette['surface'],
+                palette['text'] if enabled else ('#64748b' if palette['background'] == '#f1f5f9' else MUTED),
+            )
+
+        def paint(hover=False):
+            color, foreground = colors(hover)
             frame.configure(bg=color)
             inner.configure(bg=color)
             icon.configure(bg=color)
-            label.configure(bg=color)
+            icon.delete('all')
+            draw_icon(
+                icon, kind, 16, foreground,
+                icon.winfo_reqwidth() / 2,
+                icon.winfo_reqheight() / 2,
+            )
+            label.configure(bg=color, fg=foreground)
 
         def on_enter(_event):
             if enabled:
-                paint(hover_bg)
+                paint(hover=True)
 
         def on_leave(_event):
             if enabled:
-                paint(bg)
+                paint()
 
         def on_click(_event):
             if enabled:
@@ -252,8 +284,8 @@ class UserProfilePanel(tk.Frame):
             widget.bind('<Enter>', on_enter)
             widget.bind('<Leave>', on_leave)
             widget.bind('<Button-1>', on_click)
-        if not enabled:
-            label.configure(fg=MUTED)
+        frame._apply_app_theme_palette = lambda palette: paint()
+        paint()
         return frame
 
     def _section_tab(self, parent, column, name, kind):
@@ -284,16 +316,47 @@ class UserProfilePanel(tk.Frame):
         if name not in self.sections:
             return
         self.active_section = name
+        palette = getattr(self.winfo_toplevel(), '_app_theme_palette', None)
+        accent = palette['accent'] if palette else ACCENT
+        muted = '#64748b' if palette and palette['background'] == '#f1f5f9' else MUTED
         for frame in self.sections.values():
             frame.pack_forget()
         self.sections[name].pack(fill='both', expand=True)
         for section_name, tab in self.section_tabs.items():
-            color = ACCENT if section_name == name else MUTED
+            color = accent if section_name == name else muted
             tab['icon'].delete('all')
             draw_icon(tab['icon'], tab['kind'], 22, color,
                       tab['icon'].winfo_reqwidth() / 2,
                       tab['icon'].winfo_reqheight() / 2)
             tab['label'].configure(fg=color)
+
+    def _apply_app_theme_palette(self, palette=None):
+        if palette is None:
+            palette = getattr(self.winfo_toplevel(), '_app_theme_palette', None)
+        if not palette or not hasattr(self, 'section_navigation'):
+            return
+
+        background = palette['background']
+        text = palette['text']
+        muted = '#64748b' if background == '#f1f5f9' else MUTED
+        self.configure(bg=background)
+        self.section_navigation.configure(bg=background)
+        self.section_tabs_frame.configure(bg=background)
+        self.section_separator.configure(bg=palette['surface'])
+        for name, tab in self.section_tabs.items():
+            tab['frame'].configure(bg=background)
+            tab['icon'].configure(bg=background)
+            tab['label'].configure(
+                bg=background,
+                fg=palette['accent'] if name == self.active_section else muted,
+            )
+            tab['icon'].delete('all')
+            draw_icon(
+                tab['icon'], tab['kind'], 22,
+                palette['accent'] if name == self.active_section else muted,
+                tab['icon'].winfo_reqwidth() / 2,
+                tab['icon'].winfo_reqheight() / 2,
+            )
 
     def open_edit_dialog(self):
         ProfileEditDialog(
@@ -317,6 +380,7 @@ class UserProfilePanel(tk.Frame):
         self.sections = {}
         self.section_tabs = {}
         self.build()
+        self._apply_app_theme_palette()
 
     def _section_heading(self, parent, kind, title):
         heading = tk.Frame(parent, bg=BG)

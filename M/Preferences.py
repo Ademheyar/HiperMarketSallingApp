@@ -113,6 +113,57 @@ def ensure_preference_columns(connection):
                 connection.execute(f'ALTER TABLE {table_name} ADD COLUMN {column_name} TEXT')
 
 
+def load_saved_theme(connection, user_id=None):
+    if user_id is not None:
+        row = connection.execute(
+            'SELECT Theme FROM setting WHERE User_id=? ORDER BY Id DESC LIMIT 1',
+            (user_id,),
+        ).fetchone()
+        if row and row[0] in THEME_PALETTES:
+            return row[0]
+
+    row = connection.execute(
+        'SELECT Theme FROM setting WHERE User_id IS NULL ORDER BY Id DESC LIMIT 1'
+    ).fetchone()
+    if row and row[0] in THEME_PALETTES:
+        return row[0]
+    return 'Blue'
+
+
+def save_app_preferences(connection, theme_name, language, user_id=None):
+    if theme_name not in THEME_PALETTES:
+        raise ValueError(f'Unsupported application theme: {theme_name}')
+
+    ensure_preference_columns(connection)
+    targets = [None] if user_id is None else [None, user_id]
+    for target_user_id in targets:
+        if target_user_id is None:
+            row = connection.execute(
+                'SELECT Id FROM setting WHERE User_id IS NULL ORDER BY Id DESC LIMIT 1'
+            ).fetchone()
+        else:
+            row = connection.execute(
+                'SELECT Id FROM setting WHERE User_id=? ORDER BY Id DESC LIMIT 1',
+                (target_user_id,),
+            ).fetchone()
+
+        if row:
+            connection.execute(
+                'UPDATE setting SET Theme=?, Language=? WHERE Id=?',
+                (theme_name, language, row[0]),
+            )
+        elif target_user_id is None:
+            connection.execute(
+                'INSERT INTO setting (Theme, Language) VALUES (?, ?)',
+                (theme_name, language),
+            )
+        else:
+            connection.execute(
+                'INSERT INTO setting (User_id, Theme, Language) VALUES (?, ?, ?)',
+                (target_user_id, theme_name, language),
+            )
+
+
 def currency_for_country(country):
     return COUNTRY_CURRENCIES.get(str(country or '').strip())
 
@@ -136,37 +187,46 @@ def format_currency(amount, currency):
 def _recolor_mapped_toplevel(event, app_root):
     try:
         window = event.widget.winfo_toplevel()
-        if window is app_root or not isinstance(window, tk.Toplevel):
+        if window is app_root:
+            target = event.widget
+        elif isinstance(window, tk.Toplevel):
+            target = window
+        else:
             return
     except (tk.TclError, AttributeError):
         return
 
-    window_key = str(window)
+    target_key = str(target)
     pending = getattr(app_root, '_app_theme_pending_toplevels', set())
-    if window_key in pending:
+    if target_key in pending:
         return
-    pending.add(window_key)
+    pending.add(target_key)
     app_root._app_theme_pending_toplevels = pending
 
     def apply_to_window():
-        pending.discard(window_key)
+        pending.discard(target_key)
         try:
-            if window.winfo_exists():
+            if target.winfo_exists():
                 recolor = getattr(app_root, '_app_theme_recolor', None)
                 if recolor:
-                    recolor(window)
+                    recolor(target)
         except tk.TclError:
             pass
 
     try:
         app_root.after_idle(apply_to_window)
     except tk.TclError:
-        pending.discard(window_key)
+        pending.discard(target_key)
 
 
 def apply_app_theme(root, theme_name):
-    palette = THEME_PALETTES.get(theme_name, THEME_PALETTES['Blue'])
+    if theme_name not in THEME_PALETTES:
+        theme_name = 'Blue'
+    palette = THEME_PALETTES[theme_name]
+    root._app_theme_name = theme_name
+    root._app_theme_palette = palette
     style = ttk.Style(root)
+    style.theme_use('clam')
     style.configure('TFrame', background=palette['background'])
     style.configure('TLabel', background=palette['background'], foreground=palette['text'])
     style.configure('TButton', background=palette['button'], foreground=palette['button_text'])
@@ -232,7 +292,7 @@ def apply_app_theme(root, theme_name):
         background_key = str(original_background).lower()
         is_danger = background_key in ('red', '#b42318', '#912018', '#991b1b', '#dc2626')
         is_success = background_key in ('green', '#059669', '#047857', '#16a34a')
-        if widget is root:
+        if widget is root or isinstance(widget, tk.Toplevel):
             set_widget_colors(widget, {'background': palette['background'], 'foreground': palette['text']})
         elif widget_class in ('Frame', 'TFrame', 'Labelframe', 'TLabelframe'):
             container_color = palette['background'] if depth <= 2 else palette['surface']
@@ -282,6 +342,10 @@ def apply_app_theme(root, theme_name):
         for child in widget.winfo_children():
             recolor(child, depth + 1)
 
+        apply_palette = getattr(widget, '_apply_app_theme_palette', None)
+        if callable(apply_palette):
+            apply_palette(palette)
+
     root._app_theme_recolor = recolor
     if not getattr(root, '_app_theme_map_binding', None):
         root._app_theme_map_binding = root.bind_all(
@@ -290,4 +354,7 @@ def apply_app_theme(root, theme_name):
             add='+',
         )
     recolor(root)
+    for child in root.winfo_children():
+        if isinstance(child, tk.Toplevel):
+            recolor(child)
     return palette

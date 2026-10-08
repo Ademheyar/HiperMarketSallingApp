@@ -45,6 +45,7 @@ from C.API.Set import *
 from C.Manager import ManageForm
 from M.Home import HomeFeedMixin
 from M.Preferences import format_currency, resolve_shop_currency
+from M.UITheme import PROFILE_THEME
 from M.UserProfile import UserProfilePanel
 
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
@@ -60,12 +61,29 @@ class BottomTabs(tk.Frame):
         self._current = None
         self._on_change = None
 
-        self.content_area = tk.Frame(self)
-        self.content_area.pack(side='top', fill='both', expand=True)
-
-        self.bar = tk.Frame(self, bg='#0a3d91', padx=8, pady=6)
+        self.bar = tk.Frame(self, bg=PROFILE_THEME['bg'], padx=8, pady=6)
         self.bar.pack(side='bottom', fill='x')
         self.bar.rowconfigure(0, weight=1)
+
+        self.content_area = tk.Frame(self)
+        self.content_area.pack(side='top', fill='both', expand=True)
+        self._apply_app_theme_palette()
+
+    def _apply_app_theme_palette(self, palette=None):
+        if palette is None:
+            palette = getattr(self.winfo_toplevel(), '_app_theme_palette', None)
+        if not palette:
+            return
+
+        self.bar.configure(bg=palette['background'])
+        for tab in self._tabs:
+            selected = tab['frame'] == self._current
+            tab['btn'].configure(
+                bg=palette['accent'] if selected else palette['surface'],
+                fg=palette['text'],
+                activebackground=palette['accent_dark'],
+                activeforeground=palette['text'],
+            )
 
     def add(self, frame, text="Tab", hidden=False):
         frame.pack_forget()
@@ -78,10 +96,10 @@ class BottomTabs(tk.Frame):
             self.bar,
             text=text,
             font=('Segoe UI', 10, 'bold'),
-            bg='#dbeafe',
-            fg='#12315a',
-            activebackground='#bfdbfe',
-            activeforeground='#12315a',
+            bg=PROFILE_THEME['row_bg'],
+            fg=PROFILE_THEME['text'],
+            activebackground=PROFILE_THEME['card_border'],
+            activeforeground=PROFILE_THEME['text'],
             relief='flat',
             bd=0,
             padx=18,
@@ -97,6 +115,7 @@ class BottomTabs(tk.Frame):
         if hidden:
             btn.grid_remove()
 
+        self._apply_app_theme_palette()
         if self._current is None and not hidden:
             self.select(frame)
 
@@ -120,16 +139,19 @@ class BottomTabs(tk.Frame):
         # hide all
         for t in self._tabs:
             t['frame'].pack_forget()
-            t['btn'].config(bg='#dbeafe', fg='#12315a', relief='flat')
 
         # show selected
         target['frame'].pack(fill='both', expand=True)
-        target['btn'].config(bg='#22d3ee', fg='#082f49', relief='flat')
         self._current = target['frame']
+        self._apply_app_theme_palette()
 
         # fire event like ttk.Notebook
         if self._on_change:
             self._on_change(target['text'], frame_id, target['frame'])
+        if target['frame'].winfo_exists():
+            recolor = getattr(self.winfo_toplevel(), '_app_theme_recolor', None)
+            if recolor:
+                recolor(target['frame'])
         print(f"Selected: {target['text']}")
 
     def hide(self, frame):
@@ -238,12 +260,23 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         # this will hold documant that are searched from doc.py file 
         self.Todays_docs = []
         
-        self.bg_dark = "#0d47a1"      # Deep blue
-        self.bg_light = "#1565c0"     # Darker blue
-        self.accent_blue = "#1976d2"  # Medium blue
-        self.text_light = "#ffffff"   # White text
-        self.bg_darker = "#0a3d91"    # Even darker blue
-        self.button_style = {"font": ("Arial", 11, "bold"), "bg": self.accent_blue, "fg": self.text_light, "activebackground": self.bg_light, "activeforeground": self.text_light, "relief": tk.FLAT, "bd": 0}
+        self.bg_dark = PROFILE_THEME['bg']
+        self.bg_light = PROFILE_THEME['card_bg']
+        self.accent_blue = PROFILE_THEME['accent']
+        self.text_light = PROFILE_THEME['text']
+        self.bg_darker = PROFILE_THEME['row_bg']
+        self.button_style = {
+            "font": ("Segoe UI", 10, "bold"),
+            "bg": self.accent_blue,
+            "fg": self.text_light,
+            "activebackground": PROFILE_THEME['accent_dark'],
+            "activeforeground": self.text_light,
+            "relief": tk.FLAT,
+            "bd": 0,
+            "cursor": "hand2",
+            "padx": 10,
+            "pady": 7,
+        }
         
         self.homemaster = self
         self.configure(bg=self.bg_dark)
@@ -322,14 +355,20 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         self.main_frame.rowconfigure(1, weight=2)
         self.main_frame.rowconfigure(2, weight=0)
         
-        self.top_frame = tk.Frame(self.main_frame, height=int(screen_height * 0.70), bg=self.bg_light)
+        self.top_frame = tk.Frame(
+            self.main_frame,
+            height=int(screen_height * 0.70),
+            bg=self.bg_light,
+            highlightthickness=1,
+            highlightbackground=PROFILE_THEME['card_border'],
+        )
         self.top_frame.grid(row=0, column=0, columnspan=2, sticky="nsew")
         self.top_frame.columnconfigure((0), weight=0)
         self.top_frame.columnconfigure((5), weight=1)
         self.top_frame.rowconfigure((0), weight=1)
 
         
-        self.DFsearch_entry = search_entry(self.top_frame, self.Shops_info, self.user, self.Shops, font=("Arial", 12))
+        self.DFsearch_entry = search_entry(self.top_frame, self.Shops_info, self.user, self.Shops, font=("Segoe UI", 12))
         self.DFsearch_entry.grid(row=0, column=2, columnspan=4, sticky="nsew", padx=1, pady=1)
 
 
@@ -352,7 +391,7 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         self.endday_button = tk.Button(self.top_frame, text="Cash Drawer\nCtrl+D", command=lambda: self.open_drower(), **self.button_style)
         self.endday_button.grid(row=0, column=11, sticky="nsew", padx=1, pady=1)
         
-        self.update_button = tk.Button(self.top_frame, text="Update\nCtrl+U", command=lambda: self.Call_Uploading_Form()) #, **self.button_style)
+        self.update_button = tk.Button(self.top_frame, text="Update\nCtrl+U", command=lambda: self.Call_Uploading_Form(), **self.button_style)
         self.update_button.grid(row=0, column=12, sticky="nsew", padx=1, pady=1)
         
         self.Endday_button = tk.Button(self.top_frame, text="End Day\nCtrl+E", command=lambda: self.manage_form.doc_form.perform_endday(), **self.button_style)
@@ -408,7 +447,7 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         self.buttons_frame.rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9), weight=1, minsize=int(self.buttons_frame.winfo_height() *0.1))
 
 
-        self.total_frame = tk.Frame(self.side_frame, height=150, bg=self.bg_light, highlightthickness=2, highlightbackground=self.bg_dark)
+        self.total_frame = tk.Frame(self.side_frame, height=150, bg=self.bg_light, highlightthickness=1, highlightbackground=PROFILE_THEME['card_border'])
         self.total_frame.pack(side="bottom", fill="both", expand=False)
 
         self.total_frame.columnconfigure((0, 1, 2, 3), weight=1, minsize=int(self.total_frame.winfo_height() *0.1))
@@ -418,7 +457,7 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         self.prevlist_button.grid(row=0, column=0, sticky="nsew")
         #self.prevlist_button.config(state=tk.DISABLED)
 
-        self.barcode_label = tk.Label(self.total_frame, text="Barcode", font=("Arial", 12, "bold"), bg=self.bg_light, fg=self.text_light)
+        self.barcode_label = tk.Label(self.total_frame, text="Barcode", font=("Segoe UI", 12, "bold"), bg=self.bg_light, fg=self.text_light)
         self.barcode_label.grid(row=0, column=1, columnspan=5, sticky="nsew", padx=5, pady=5)
         
         self.nextlist_button = tk.Button(self.total_frame, text="New\nF7", command=lambda : self.next_prev_chart("Next"), **self.button_style)
@@ -430,28 +469,28 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         self.master.bind("<F7>", lambda _: self.new_chart(1))
 
 
-        tk.Label(self.total_frame, text="Total Items : ", font=("Arial", 12, "bold"), bg=self.bg_light, fg=self.text_light).grid(row=1, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
-        self.total_items_label = tk.Label(self.total_frame, text="0", font=("Arial", 12, "bold"), bg=self.bg_light, fg=self.text_light)
+        tk.Label(self.total_frame, text="Total Items : ", font=("Segoe UI", 11, "bold"), bg=self.bg_light, fg=self.text_light).grid(row=1, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+        self.total_items_label = tk.Label(self.total_frame, text="0", font=("Segoe UI", 12, "bold"), bg=self.bg_light, fg=self.text_light)
         self.total_items_label.grid(row=1, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
         
-        tk.Label(self.total_frame, text="Total Tax : ", font=("Arial", 12, "bold"), bg=self.bg_light, fg=self.text_light).grid(row=2, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
-        self.total_tax_label = tk.Label(self.total_frame, text="Total Tax : 0", font=("Arial", 12, "bold"), bg=self.bg_light, fg=self.text_light)
+        tk.Label(self.total_frame, text="Total Tax : ", font=("Segoe UI", 11, "bold"), bg=self.bg_light, fg=self.text_light).grid(row=2, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+        self.total_tax_label = tk.Label(self.total_frame, text="Total Tax : 0", font=("Segoe UI", 12, "bold"), bg=self.bg_light, fg=self.text_light)
         self.total_tax_label.grid(row=2, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
         
-        tk.Label(self.total_frame, text="Item Discount : ", font=("Arial", 12, "bold"),  bg=self.bg_light, fg=self.text_light).grid(row=3, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
-        self.total_discount_label = tk.Label(self.total_frame, text="0", font=("Arial", 12, "bold"),  bg=self.bg_light, fg=self.text_light)
+        tk.Label(self.total_frame, text="Item Discount : ", font=("Segoe UI", 11, "bold"),  bg=self.bg_light, fg=self.text_light).grid(row=3, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+        self.total_discount_label = tk.Label(self.total_frame, text="0", font=("Segoe UI", 12, "bold"),  bg=self.bg_light, fg=self.text_light)
         self.total_discount_label.grid(row=3, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
         
-        tk.Label(self.total_frame, text="Total Discount : ", font=("Arial", 12, "bold"),  bg=self.bg_light, fg=self.text_light).grid(row=4, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
-        self.total_tdiscount_label = tk.Label(self.total_frame, text="0", font=("Arial", 12, "bold"),  bg=self.bg_light, fg=self.text_light)
+        tk.Label(self.total_frame, text="Total Discount : ", font=("Segoe UI", 11, "bold"),  bg=self.bg_light, fg=self.text_light).grid(row=4, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+        self.total_tdiscount_label = tk.Label(self.total_frame, text="0", font=("Segoe UI", 12, "bold"),  bg=self.bg_light, fg=self.text_light)
         self.total_tdiscount_label.grid(row=4, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
         
-        tk.Label(self.total_frame, text="Price Befor: ", font=("Arial", 12, "bold"),  bg=self.bg_light, fg=self.text_light).grid(row=5, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
-        self.total_price_label = tk.Label(self.total_frame, text="0", font=("Arial", 12, "bold"),  bg=self.bg_light, fg=self.text_light)
+        tk.Label(self.total_frame, text="Price Befor: ", font=("Segoe UI", 11, "bold"),  bg=self.bg_light, fg=self.text_light).grid(row=5, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+        self.total_price_label = tk.Label(self.total_frame, text="0", font=("Segoe UI", 12, "bold"),  bg=self.bg_light, fg=self.text_light)
         self.total_price_label.grid(row=5, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
         
-        tk.Label(self.total_frame, text="Total After: ", font=("Arial", 16, "bold"),bg=self.bg_light, fg="#4dd0e1").grid(row=6, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
-        self.total_label = tk.Label(self.total_frame, text="0", font=("Arial", 16, "bold"),bg=self.bg_light, fg="#4dd0e1")
+        tk.Label(self.total_frame, text="Total After: ", font=("Segoe UI", 16, "bold"),bg=self.bg_light, fg=PROFILE_THEME['accent']).grid(row=6, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+        self.total_label = tk.Label(self.total_frame, text="0", font=("Segoe UI", 16, "bold"),bg=self.bg_light, fg=PROFILE_THEME['accent'])
         self.total_label.grid(row=6, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
 
 
@@ -460,19 +499,20 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
 
         self.manage_form = ManageForm(self.main_Notebook.content_area, self.user, self.Shops, self.Shops_info, self.on_Shop)
         
-        self.bottum_frame = tk.Frame(self.main_frame, height=150, bg=self.bg_light)
+        self.bottum_frame = tk.Frame(self.main_frame, height=150, bg=self.bg_light,
+                                     highlightthickness=1, highlightbackground=PROFILE_THEME['card_border'])
         self.bottum_frame.grid(row=2, column=0, rowspan=2, columnspan=4, sticky="nsew")
 
         self.bottum_frame.columnconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8), weight=1, minsize=int(self.bottum_frame.winfo_height() *0.1))
         self.bottum_frame.rowconfigure((0), weight=1, minsize=int(self.bottum_frame.winfo_height() *0.1))
         
-        self.Veaw_Notifications_label = tk.Label(self.bottum_frame, text="Notifications", font=("Arial", 10, "bold"),
-                                                 fg="#4dd0e1", bg=self.bg_light, cursor="hand2")
+        self.Veaw_Notifications_label = tk.Label(self.bottum_frame, text="Notifications", font=("Segoe UI", 10, "bold"),
+                                                 fg=PROFILE_THEME['accent'], bg=self.bg_light, cursor="hand2")
         self.Veaw_Notifications_label.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
         self.Veaw_Notifications_label.bind("<Button-1>", lambda _: Veaw_Notifications(self, self.user, self.Shops))
 
-        self.Loged_user_label = tk.Label(self.bottum_frame, text=str(self.user['User_name']), font=("Arial", 10, "bold"),
-                                         fg="#4dd0e1", bg=self.bg_light, cursor="hand2")
+        self.Loged_user_label = tk.Label(self.bottum_frame, text=str(self.user['User_name']), font=("Segoe UI", 10, "bold"),
+                                         fg=PROFILE_THEME['accent'], bg=self.bg_light, cursor="hand2")
         self.Loged_user_label.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
         self.Loged_user_label.bind("<Button-1>", lambda _: UserInfoForm(self, self.user))
                               
@@ -492,17 +532,17 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         else:
             pass
         
-        self.At_Shop_label = tk.Label(self.bottum_frame, text=str(at_shop_name), font=("Arial", 10, "bold"),
-                                      fg="#4dd0e1", bg=self.bg_light, cursor="hand2")
+        self.At_Shop_label = tk.Label(self.bottum_frame, text=str(at_shop_name), font=("Segoe UI", 10, "bold"),
+                                      fg=PROFILE_THEME['accent'], bg=self.bg_light, cursor="hand2")
         self.At_Shop_label.grid(row=0, column=3, sticky="nsew", padx=5, pady=5)
         self.At_Shop_label.bind("<Button-1>", lambda _: UserInfoForm(self))
 
-        self.Add_custemur_label = tk.Label(self.bottum_frame, text="+ Custumer", font=("Arial", 10, "bold"),
-                                           fg="#4dd0e1", bg=self.bg_light, cursor="hand2")
+        self.Add_custemur_label = tk.Label(self.bottum_frame, text="+ Custumer", font=("Segoe UI", 10, "bold"),
+                                           fg=PROFILE_THEME['accent'], bg=self.bg_light, cursor="hand2")
         self.Add_custemur_label.grid(row=0, column=4, sticky="nsew", padx=5, pady=5)
         self.Add_custemur_label.bind("<Button-1>", lambda _: self.Add_Custumer())
 
-        self.date_day_Label = tk.Label(self.bottum_frame, text="H:M D-M-Y :" , font=("Arial", 9, "bold"), 
+        self.date_day_Label = tk.Label(self.bottum_frame, text="H:M D-M-Y :", font=("Segoe UI", 9, "bold"),
                            width=20, bg=self.bg_light, fg=self.text_light)
         
         # Update the label with the current date/time every second
@@ -1099,7 +1139,7 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
             self.group_image_avatarlabel.config(image=groupimg)
             self.group_image_avatarlabel.image = groupimg
             
-            new_group_name = tk.Label(new_itemgroup_fram, text=str(selected_items[2]), font=("Arial", 8, "bold"), bg=self.bg_darker, fg=self.text_light)
+            new_group_name = tk.Label(new_itemgroup_fram, text=str(selected_items[2]), font=("Segoe UI", 8, "bold"), bg=self.bg_darker, fg=self.text_light)
             new_group_name.grid(row=0, column=1, columnspan=2, sticky="nsew")        
 
             
@@ -1143,7 +1183,7 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
 
                     ex_bar_frame = tk.Frame(self.extrnal_frame, bg=self.accent_blue)
                     ex_bar_frame.grid(row=0, column=ch, sticky="nsew", padx=2, pady=2)
-                    search_label = tk.Label(ex_bar_frame, text=selected_item[14], bg=self.accent_blue, fg=self.text_light, font=("Arial", 10, "bold"))
+                    search_label = tk.Label(ex_bar_frame, text=selected_item[14], bg=self.accent_blue, fg=self.text_light, font=("Segoe UI", 10, "bold"))
                     search_label.grid(row=0, column=0, sticky="nsew", padx=5, pady=3)
                     if not selected_item[14] == "" and str(selected_item[14]) in str(self.Todays_docs):
                         Undo_button = tk.Button(ex_bar_frame, text="Undo", command=lambda: self.remove_ex_items(ex_bar_frame, search_label), **self.button_style)
@@ -1159,7 +1199,7 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
                 else:
                     new_item_selecter_fram.grid(row=0, column=0, rowspan=2, sticky="nsew")
                     
-                new_item_QTY_Label = tk.Label(new_item_selecter_fram, text="QTY Max is " + str(selected_item[8]), font=("Arial", 8), bg=self.bg_darker, fg=self.text_light)
+                new_item_QTY_Label = tk.Label(new_item_selecter_fram, text="QTY Max is " + str(selected_item[8]), font=("Segoe UI", 8), bg=self.bg_darker, fg=self.text_light)
                 new_item_QTY_Label.grid(row=0, column=1, sticky="nsew")
                 
                 new_item_QTY_Spinbox = ttk.Spinbox(new_item_selecter_fram, from_=0, to=100, width=10)
@@ -1170,23 +1210,23 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
                 disc = ""
                 if float(selected_item_info['values']['price'])-float(selected_item[10]) > 0:
                     disc = " DISCOUNT " + str(float(selected_item_info['values']['price'])-float(selected_item[10]))
-                new_item_Price_Label = tk.Label(new_item_selecter_fram, text="Price " + price_ + disc, font=("Arial", 8), bg=self.bg_darker, fg=self.text_light)
+                new_item_Price_Label = tk.Label(new_item_selecter_fram, text="Price " + price_ + disc, font=("Segoe UI", 8), bg=self.bg_darker, fg=self.text_light)
                 new_item_Price_Label.grid(row=0, column=2, sticky="nsew")
 
                 new_item_Price_Spinbox = ttk.Spinbox(new_item_selecter_fram, from_=0, to=100, width=10)
                 new_item_Price_Spinbox.grid(row=1, column=2, sticky="nsew")
                 new_item_Price_Spinbox.set(str(selected_item[10]))
                 
-                new_item_name = tk.Label(new_item_selecter_fram, text=str(selected_item[4]), font=("Arial", 12, "bold"), bg=self.bg_darker, fg=self.text_light)
+                new_item_name = tk.Label(new_item_selecter_fram, text=str(selected_item[4]), font=("Segoe UI", 12, "bold"), bg=self.bg_darker, fg=self.text_light)
                 new_item_name.grid(row=0, column=3, columnspan=3, sticky="nsew")
 
-                new_barcode_Label = tk.Label(new_item_selecter_fram, text=str("barcode"), font=("Arial", 8), bg=self.bg_darker, fg=self.text_light)
+                new_barcode_Label = tk.Label(new_item_selecter_fram, text=str("barcode"), font=("Segoe UI", 8), bg=self.bg_darker, fg=self.text_light)
                 new_barcode_Label.grid(row=0, column=6, columnspan=2, sticky="nsew")
                 
-                new_type_Label = tk.Label(new_item_selecter_fram, text=str(selected_item[15]), font=("Arial", 8), bg=self.bg_darker, fg=self.text_light)
+                new_type_Label = tk.Label(new_item_selecter_fram, text=str(selected_item[15]), font=("Segoe UI", 8), bg=self.bg_darker, fg=self.text_light)
                 new_type_Label.grid(row=0, column=8, columnspan=2, sticky="nsew")
                 
-                new_exbarcode_Label = tk.Label(new_item_selecter_fram, text=str(selected_item[14]), font=("Arial", 8), bg=self.bg_darker, fg=self.text_light)
+                new_exbarcode_Label = tk.Label(new_item_selecter_fram, text=str(selected_item[14]), font=("Segoe UI", 8), bg=self.bg_darker, fg=self.text_light)
                 new_exbarcode_Label.grid(row=0, column=8, sticky="nsew")
                 
                 new_item_Shop_Combobox = ttk.Combobox(new_item_selecter_fram, values=[], width=10)

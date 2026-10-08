@@ -9,6 +9,7 @@ from PIL import Image, ImageTk
 
 from C.API.Get import fetch_as_dict_list
 from M.Preferences import format_currency, resolve_shop_currency
+from M.UITheme import PROFILE_THEME
 
 MAIN_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data'))
@@ -254,49 +255,56 @@ class HomeFeedMixin:
         self.home_feed_products = []
         self.home_feed_all_products = []
 
-        self.Home_frame.configure(bg='#f3f4f6')
-        top_bar = tk.Frame(self.Home_frame, bg='#f3f4f6')
+        self.Home_frame.configure(bg=PROFILE_THEME['bg'])
+        top_bar = tk.Frame(self.Home_frame, bg=PROFILE_THEME['card_bg'],
+                           highlightthickness=1, highlightbackground=PROFILE_THEME['card_border'])
         top_bar.pack(fill='x', padx=12, pady=(10, 6))
-        tk.Label(top_bar, text='Connection Link', bg='#f3f4f6', fg='#111827', font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 6))
-        link_row = tk.Frame(top_bar, bg='#f3f4f6')
+        tk.Label(top_bar, text='Connection Link', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'], font=('Segoe UI', 11, 'bold')).pack(anchor='w', padx=12, pady=(10, 6))
+        link_row = tk.Frame(top_bar, bg=PROFILE_THEME['card_bg'])
         link_row.pack(fill='x', pady=(0, 10))
         self.home_link_selector = ttk.Combobox(
             link_row,
             textvariable=self.home_link_var,
             values=self._get_home_link_options(),
-            font=('Arial', 10),
+            font=('Segoe UI', 10),
         )
-        self.home_link_selector.pack(side='left', fill='x', expand=True, ipady=4)
+        self.home_link_selector.pack(side='left', fill='x', expand=True, ipady=4, padx=(12, 0))
         self.home_link_selector.bind('<<ComboboxSelected>>', self._apply_home_link)
         self.home_link_selector.bind('<Return>', self._apply_home_link)
         tk.Button(
             link_row, text='Apply', command=self._apply_home_link,
-            bg='#1976d2', fg='white', activebackground='#1565c0',
-            activeforeground='white', relief='flat', bd=0,
-            padx=14, pady=7, cursor='hand2',
+            bg=PROFILE_THEME['accent'], fg=PROFILE_THEME['text'],
+            activebackground=PROFILE_THEME['accent_dark'],
+            activeforeground=PROFILE_THEME['text'], relief='flat', bd=0,
+            font=('Segoe UI', 10, 'bold'), padx=14, pady=7, cursor='hand2',
         ).pack(side='left', padx=(8, 0))
-        tk.Label(top_bar, text='Search Products', bg='#f3f4f6', fg='#111827', font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 6))
-        search_row = tk.Frame(top_bar, bg='#f3f4f6')
-        search_row.pack(fill='x')
-        search_entry = tk.Entry(search_row, textvariable=self.home_search_var, font=('Arial', 11), bg='white', fg='#111827')
+        tk.Label(top_bar, text='Search Products', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'], font=('Segoe UI', 11, 'bold')).pack(anchor='w', padx=12, pady=(0, 6))
+        search_row = tk.Frame(top_bar, bg=PROFILE_THEME['card_bg'])
+        search_row.pack(fill='x', padx=12, pady=(0, 12))
+        search_entry = tk.Entry(search_row, textvariable=self.home_search_var, font=('Segoe UI', 11),
+                                bg=PROFILE_THEME['row_bg'], fg=PROFILE_THEME['text'],
+                                insertbackground=PROFILE_THEME['text'], relief='flat',
+                                highlightthickness=1, highlightbackground=PROFILE_THEME['card_border'],
+                                highlightcolor=PROFILE_THEME['accent'])
         search_entry.pack(side='left', fill='x', expand=True, ipady=6)
         search_entry.bind('<KeyRelease>', lambda event: self._refresh_home_search())
         if not self.user:
             self.home_cart_button = tk.Button(
                 search_row, text=f'Cart ({len(self.guest_cart)})', command=self.open_guest_cart,
-                bg='#0f766e', fg='white', activebackground='#115e59',
-                activeforeground='white', relief='flat', bd=0,
-                padx=14, cursor='hand2',
+                bg=PROFILE_THEME['row_bg'], fg=PROFILE_THEME['text'],
+                activebackground=PROFILE_THEME['card_border'],
+                activeforeground=PROFILE_THEME['text'], relief='flat', bd=0,
+                font=('Segoe UI', 10, 'bold'), padx=14, cursor='hand2',
             )
             self.home_cart_button.pack(side='right', padx=(8, 0), fill='y')
 
-        feed_wrapper = tk.Frame(self.Home_frame, bg='#f3f4f6')
+        feed_wrapper = tk.Frame(self.Home_frame, bg=PROFILE_THEME['bg'])
         feed_wrapper.pack(fill='both', expand=True)
-        self.home_feed_canvas = tk.Canvas(feed_wrapper, bg='#f3f4f6', highlightthickness=0)
+        self.home_feed_canvas = tk.Canvas(feed_wrapper, bg=PROFILE_THEME['bg'], highlightthickness=0)
         self.home_feed_canvas.pack(side='left', fill='both', expand=True)
         self.home_feed_scroll = tk.Scrollbar(feed_wrapper, orient='vertical', command=self.home_feed_canvas.yview)
         self.home_feed_scroll.pack(side='right', fill='y')
-        self.home_feed_inner = tk.Frame(self.home_feed_canvas, bg='#f3f4f6')
+        self.home_feed_inner = tk.Frame(self.home_feed_canvas, bg=PROFILE_THEME['bg'])
         self.home_feed_window = self.home_feed_canvas.create_window(
             (0, 0), window=self.home_feed_inner, anchor='nw',
             width=max(320, self.Home_frame.winfo_width() - 20),
@@ -455,20 +463,27 @@ class HomeFeedMixin:
         self.home_feed_canvas.configure(scrollregion=self.home_feed_canvas.bbox('all'))
 
     def _render_home_product_card(self, parent, product, row=0, col=0):
-        card = tk.Frame(parent, bg='white', bd=1, relief='solid', highlightbackground='#e5e7eb', padx=12, pady=10)
+        card = tk.Frame(parent, bg=PROFILE_THEME['card_bg'], bd=1, relief='solid',
+                        highlightbackground=PROFILE_THEME['card_border'], padx=12, pady=10)
         card.grid(row=row, column=col, sticky='nsew', padx=10, pady=10)
         parent.grid_columnconfigure(col, weight=1)
 
-        header = tk.Frame(card, bg='white')
+        header = tk.Frame(card, bg=PROFILE_THEME['card_bg'])
         header.pack(fill='x')
 
-        avatar = tk.Label(header, text='◉', font=('Arial', 18, 'bold'), fg='#0f172a', bg='white')
+        avatar = tk.Label(header, text='◉', font=('Segoe UI', 18, 'bold'),
+                          fg=PROFILE_THEME['accent'], bg=PROFILE_THEME['card_bg'])
         avatar.pack(side='left')
 
-        shop_label = tk.Label(header, text=product['shop'], font=('Arial', 12, 'bold'), fg='#111827', bg='white')
+        shop_label = tk.Label(header, text=product['shop'], font=('Segoe UI', 12, 'bold'),
+                              fg=PROFILE_THEME['text'], bg=PROFILE_THEME['card_bg'])
         shop_label.pack(side='left', padx=(8, 0))
 
-        follow_btn = tk.Button(header, text='Follow', font=('Arial', 9, 'bold'), bg='#f3f4f6', fg='#111827', bd=0, relief='flat', padx=8)
+        follow_btn = tk.Button(header, text='Follow', font=('Segoe UI', 9, 'bold'),
+                               bg=PROFILE_THEME['row_bg'], fg=PROFILE_THEME['text'],
+                               activebackground=PROFILE_THEME['card_border'],
+                               activeforeground=PROFILE_THEME['text'], bd=0, relief='flat',
+                               padx=8, cursor='hand2')
         follow_btn.pack(side='right')
 
         image_path = product['image']
@@ -477,84 +492,133 @@ class HomeFeedMixin:
                 img = Image.open(image_path).convert('RGBA')
                 img = img.resize((520, 520), Image.Resampling.LANCZOS)
                 photo = ImageTk.PhotoImage(img)
-                image_label = tk.Label(card, image=photo, bg='white')
+                image_label = tk.Label(card, image=photo, bg=PROFILE_THEME['card_bg'])
                 image_label.image = photo
                 image_label.pack(fill='x', pady=(12, 8))
             except Exception:
-                image_label = tk.Label(card, text='Product Image', bg='#e5e7eb', height=18, font=('Arial', 12, 'bold'))
+                image_label = tk.Label(card, text='Product Image', bg=PROFILE_THEME['row_bg'],
+                                       fg=PROFILE_THEME['muted'], height=18,
+                                       font=('Segoe UI', 12, 'bold'))
                 image_label.pack(fill='x', pady=(12, 8))
         else:
-            image_label = tk.Label(card, text='Product Image', bg='#e5e7eb', height=18, font=('Arial', 12, 'bold'))
+            image_label = tk.Label(card, text='Product Image', bg=PROFILE_THEME['row_bg'],
+                                   fg=PROFILE_THEME['muted'], height=18,
+                                   font=('Segoe UI', 12, 'bold'))
             image_label.pack(fill='x', pady=(12, 8))
 
-        meta = tk.Frame(card, bg='white')
+        meta = tk.Frame(card, bg=PROFILE_THEME['card_bg'])
         meta.pack(fill='x', pady=(0, 8))
 
-        title = tk.Label(meta, text=product['name'], font=('Arial', 14, 'bold'), fg='#111827', bg='white')
+        title = tk.Label(meta, text=product['name'], font=('Segoe UI', 14, 'bold'),
+                         fg=PROFILE_THEME['text'], bg=PROFILE_THEME['card_bg'])
         title.pack(anchor='w')
 
-        desc = tk.Label(meta, text=product['description'], font=('Arial', 10), fg='#374151', bg='white', justify='left', wraplength=500)
+        desc = tk.Label(meta, text=product['description'], font=('Segoe UI', 10),
+                        fg=PROFILE_THEME['muted'], bg=PROFILE_THEME['card_bg'],
+                        justify='left', wraplength=500)
         desc.pack(anchor='w', pady=(4, 0))
 
-        price_label = tk.Label(meta, text=f'Price: {format_currency(product["price"], product.get("currency"))}', font=('Arial', 12, 'bold'), fg='#0f766e', bg='white')
+        price_label = tk.Label(meta, text=f'Price: {format_currency(product["price"], product.get("currency"))}',
+                               font=('Segoe UI', 12, 'bold'), fg=PROFILE_THEME['accent'],
+                               bg=PROFILE_THEME['card_bg'])
         price_label.pack(anchor='w', pady=(6, 0))
 
         for clickable in (shop_label, image_label, title, desc, price_label):
             clickable.configure(cursor='hand2')
             clickable.bind('<Button-1>', lambda _event, selected=product: self.show_home_product_options(selected))
 
-        action_row = tk.Frame(card, bg='white')
+        action_row = tk.Frame(card, bg=PROFILE_THEME['card_bg'])
         action_row.pack(fill='x', pady=(8, 10))
 
-        like_btn = tk.Button(action_row, text=f'❤ {product["likes"]}', bg='#f3f4f6', fg='#111827', font=('Arial', 10, 'bold'), relief='flat', bd=0, padx=10, command=lambda p=product: self.toggle_home_like(p))
+        like_btn = tk.Button(action_row, text=f'❤ {product["likes"]}', bg=PROFILE_THEME['row_bg'],
+                             fg=PROFILE_THEME['text'], activebackground=PROFILE_THEME['card_border'],
+                             activeforeground=PROFILE_THEME['text'], font=('Segoe UI', 10, 'bold'),
+                             relief='flat', bd=0, padx=10, cursor='hand2',
+                             command=lambda p=product: self.toggle_home_like(p))
         like_btn.pack(side='left', padx=(0, 8))
 
-        comment_btn = tk.Button(action_row, text=f'💬 {product["comment_count"]}', bg='#f3f4f6', fg='#111827', font=('Arial', 10, 'bold'), relief='flat', bd=0, padx=10, command=lambda p=product: self.toggle_home_comments(p))
+        comment_btn = tk.Button(action_row, text=f'💬 {product["comment_count"]}', bg=PROFILE_THEME['row_bg'],
+                                fg=PROFILE_THEME['text'], activebackground=PROFILE_THEME['card_border'],
+                                activeforeground=PROFILE_THEME['text'], font=('Segoe UI', 10, 'bold'),
+                                relief='flat', bd=0, padx=10, cursor='hand2',
+                                command=lambda p=product: self.toggle_home_comments(p))
         comment_btn.pack(side='left', padx=(0, 8))
 
-        share_btn = tk.Button(action_row, text='↗ Share', bg='#f3f4f6', fg='#111827', font=('Arial', 10, 'bold'), relief='flat', bd=0, padx=10, command=lambda p=product: self.share_home_product(p))
+        share_btn = tk.Button(action_row, text='↗ Share', bg=PROFILE_THEME['row_bg'],
+                              fg=PROFILE_THEME['text'], activebackground=PROFILE_THEME['card_border'],
+                              activeforeground=PROFILE_THEME['text'], font=('Segoe UI', 10, 'bold'),
+                              relief='flat', bd=0, padx=10, cursor='hand2',
+                              command=lambda p=product: self.share_home_product(p))
         share_btn.pack(side='left', padx=(0, 8))
 
-        save_btn = tk.Button(action_row, text='Save', bg='#f3f4f6', fg='#111827', font=('Arial', 10, 'bold'), relief='flat', bd=0, padx=10, command=lambda p=product: self.toggle_home_saved(p))
+        save_btn = tk.Button(action_row, text='Save', bg=PROFILE_THEME['row_bg'],
+                             fg=PROFILE_THEME['text'], activebackground=PROFILE_THEME['card_border'],
+                             activeforeground=PROFILE_THEME['text'], font=('Segoe UI', 10, 'bold'),
+                             relief='flat', bd=0, padx=10, cursor='hand2',
+                             command=lambda p=product: self.toggle_home_saved(p))
         save_btn.pack(side='left', padx=(0, 8))
 
-        cart_btn = tk.Button(action_row, text='Add to chart', bg='#2563eb', fg='white', font=('Arial', 10, 'bold'), relief='flat', bd=0, padx=12, command=lambda p=product: self.add_home_product_to_cart(p))
+        cart_btn = tk.Button(action_row, text='Add to chart', bg=PROFILE_THEME['accent'],
+                             fg=PROFILE_THEME['text'], activebackground=PROFILE_THEME['accent_dark'],
+                             activeforeground=PROFILE_THEME['text'], font=('Segoe UI', 10, 'bold'),
+                             relief='flat', bd=0, padx=12, cursor='hand2',
+                             command=lambda p=product: self.add_home_product_to_cart(p))
         cart_btn.pack(side='right')
 
-        comment_frame = tk.Frame(card, bg='#f9fafb', bd=1, relief='solid', highlightbackground='#e5e7eb')
+        comment_frame = tk.Frame(card, bg=PROFILE_THEME['row_bg'], bd=1, relief='solid',
+                                 highlightbackground=PROFILE_THEME['card_border'])
         comment_frame.pack(fill='x', pady=(4, 0))
         comment_frame.pack_forget()
 
-        comment_label = tk.Label(comment_frame, text='Comments', bg='#f9fafb', fg='#111827', font=('Arial', 10, 'bold'), anchor='w')
+        comment_label = tk.Label(comment_frame, text='Comments', bg=PROFILE_THEME['row_bg'],
+                                 fg=PROFILE_THEME['text'], font=('Segoe UI', 10, 'bold'), anchor='w')
         comment_label.pack(anchor='w', padx=8, pady=(8, 4))
 
-        comments_box = tk.Frame(comment_frame, bg='#f9fafb')
+        comments_box = tk.Frame(comment_frame, bg=PROFILE_THEME['row_bg'])
         comments_box.pack(fill='x', padx=8, pady=(0, 8))
 
         comments = self.home_comments.get(str(product['id']), [])
         for index, comment in enumerate(comments[:4]):
-            comment_row = tk.Frame(comments_box, bg='#ffffff', pady=6, padx=8, bd=1, relief='solid', highlightbackground='#e5e7eb')
+            comment_row = tk.Frame(comments_box, bg=PROFILE_THEME['card_bg'], pady=6, padx=8,
+                                   bd=1, relief='solid', highlightbackground=PROFILE_THEME['card_border'])
             comment_row.pack(fill='x', pady=3)
-            user_name = tk.Label(comment_row, text=comment.get('user', 'Guest') + ':', bg='white', fg='#111827', font=('Arial', 9, 'bold'), justify='left')
+            user_name = tk.Label(comment_row, text=comment.get('user', 'Guest') + ':',
+                                 bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'],
+                                 font=('Segoe UI', 9, 'bold'), justify='left')
             user_name.pack(anchor='w')
-            msg = tk.Label(comment_row, text=comment.get('text', ''), bg='white', fg='#374151', font=('Arial', 9), justify='left', wraplength=480)
+            msg = tk.Label(comment_row, text=comment.get('text', ''), bg=PROFILE_THEME['card_bg'],
+                           fg=PROFILE_THEME['muted'], font=('Segoe UI', 9), justify='left', wraplength=480)
             msg.pack(anchor='w', pady=(2, 0))
 
-            reply_entry = tk.Entry(comment_row, font=('Arial', 9), width=32)
+            reply_entry = tk.Entry(comment_row, font=('Segoe UI', 9), width=32,
+                                   bg=PROFILE_THEME['row_bg'], fg=PROFILE_THEME['text'],
+                                   insertbackground=PROFILE_THEME['text'], relief='flat')
             reply_entry.pack(fill='x', pady=(6, 0))
-            reply_btn = tk.Button(comment_row, text='Reply', bg='#e5e7eb', fg='#111827', relief='flat', bd=0, padx=8, command=lambda p=product, i=index, entry=reply_entry: self.add_home_reply(p, i, entry.get()))
+            reply_btn = tk.Button(comment_row, text='Reply', bg=PROFILE_THEME['row_bg'],
+                                  fg=PROFILE_THEME['text'], activebackground=PROFILE_THEME['card_border'],
+                                  activeforeground=PROFILE_THEME['text'], font=('Segoe UI', 9, 'bold'),
+                                  relief='flat', bd=0, padx=8, cursor='hand2',
+                                  command=lambda p=product, i=index, entry=reply_entry: self.add_home_reply(p, i, entry.get()))
             reply_btn.pack(anchor='e', pady=(4, 0))
 
             if comment.get('replies'):
                 for reply in comment['replies']:
-                    reply_row = tk.Frame(comment_row, bg='#f3f4f6', pady=4, padx=6)
+                    reply_row = tk.Frame(comment_row, bg=PROFILE_THEME['row_bg'], pady=4, padx=6)
                     reply_row.pack(fill='x', pady=(4, 0))
-                    tk.Label(reply_row, text=f"{reply.get('user', 'Guest')}: {reply.get('text', '')}", bg='#f3f4f6', fg='#4b5563', font=('Arial', 8), justify='left', wraplength=440).pack(anchor='w')
+                    tk.Label(reply_row, text=f"{reply.get('user', 'Guest')}: {reply.get('text', '')}",
+                             bg=PROFILE_THEME['row_bg'], fg=PROFILE_THEME['muted'],
+                             font=('Segoe UI', 8), justify='left', wraplength=440).pack(anchor='w')
 
-        comment_input = tk.Entry(comment_frame, width=60, font=('Arial', 10))
+        comment_input = tk.Entry(comment_frame, width=60, font=('Segoe UI', 10),
+                                 bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'],
+                                 insertbackground=PROFILE_THEME['text'], relief='flat')
         comment_input.pack(fill='x', padx=8, pady=(0, 8))
 
-        post_button = tk.Button(comment_frame, text='Post Comment', bg='#2563eb', fg='white', relief='flat', bd=0, padx=12, command=lambda p=product, entry=comment_input: self.add_home_comment(p, entry.get()))
+        post_button = tk.Button(comment_frame, text='Post Comment', bg=PROFILE_THEME['accent'],
+                                fg=PROFILE_THEME['text'], activebackground=PROFILE_THEME['accent_dark'],
+                                activeforeground=PROFILE_THEME['text'], font=('Segoe UI', 9, 'bold'),
+                                relief='flat', bd=0, padx=12, cursor='hand2',
+                                command=lambda p=product, entry=comment_input: self.add_home_comment(p, entry.get()))
         post_button.pack(anchor='e', padx=8, pady=(0, 10))
 
         comment_btn.configure(command=lambda p=product, panel=comment_frame: self.toggle_home_comments(p, panel))
@@ -629,58 +693,68 @@ class HomeFeedMixin:
             frame_width = self.winfo_screenwidth()
         frame_height = max(self.Home_frame.winfo_height(), 360)
         drawer_width = min(380, frame_width)
-        drawer = tk.Frame(self.Home_frame, bg='white', bd=1, relief='solid', padx=20, pady=18)
+        drawer = tk.Frame(self.Home_frame, bg=PROFILE_THEME['card_bg'], bd=1, relief='solid',
+                          highlightthickness=1, highlightbackground=PROFILE_THEME['card_border'],
+                          padx=20, pady=18)
         drawer.place(x=0, y=0, width=drawer_width, height=frame_height)
         self.home_quick_drawer = drawer
 
-        header = tk.Frame(drawer, bg='white')
+        header = tk.Frame(drawer, bg=PROFILE_THEME['card_bg'])
         header.pack(fill='x')
-        tk.Label(header, text='Choose options', bg='white', fg='#111827', font=('Arial', 16, 'bold')).pack(side='left')
+        tk.Label(header, text='Choose options', bg=PROFILE_THEME['card_bg'],
+                 fg=PROFILE_THEME['text'], font=('Segoe UI', 16, 'bold')).pack(side='left')
         tk.Button(
             header, text='X', command=self.close_home_product_options,
-            bg='white', fg='#374151', relief='flat', bd=0, cursor='hand2',
+            bg=PROFILE_THEME['row_bg'], fg=PROFILE_THEME['text'],
+            activebackground=PROFILE_THEME['card_border'],
+            activeforeground=PROFILE_THEME['text'], relief='flat', bd=0, cursor='hand2',
         ).pack(side='right')
 
-        tk.Label(drawer, text=product['name'], bg='white', fg='#111827', font=('Arial', 13, 'bold'), wraplength=320, justify='left').pack(anchor='w', pady=(22, 4))
-        price_label = tk.Label(drawer, text=f"{product['shop']}  |  {format_currency(product['price'], product.get('currency'))}", bg='white', fg='#4b5563', font=('Arial', 10))
+        tk.Label(drawer, text=product['name'], bg=PROFILE_THEME['card_bg'],
+                 fg=PROFILE_THEME['text'], font=('Segoe UI', 13, 'bold'),
+                 wraplength=320, justify='left').pack(anchor='w', pady=(22, 4))
+        price_label = tk.Label(drawer, text=f"{product['shop']}  |  {format_currency(product['price'], product.get('currency'))}",
+                               bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['muted'],
+                               font=('Segoe UI', 10))
         price_label.pack(anchor='w', pady=(0, 18))
         self.home_quick_price_label = price_label
 
-        tk.Label(drawer, text='Color', bg='white', fg='#374151', font=('Arial', 10, 'bold')).pack(anchor='w')
+        tk.Label(drawer, text='Color', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'], font=('Segoe UI', 10, 'bold')).pack(anchor='w')
         color_values = list(dict.fromkeys(variant['color'] for variant in variants))
         color_box = ttk.Combobox(drawer, state='readonly', values=color_values)
         color_box.pack(fill='x', pady=(4, 14), ipady=3)
         self.home_quick_color = color_box
 
-        tk.Label(drawer, text='Size', bg='white', fg='#374151', font=('Arial', 10, 'bold')).pack(anchor='w')
+        tk.Label(drawer, text='Size', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'], font=('Segoe UI', 10, 'bold')).pack(anchor='w')
         size_box = ttk.Combobox(drawer, state='readonly')
         size_box.pack(fill='x', pady=(4, 14), ipady=3)
         self.home_quick_size = size_box
 
-        option_label = tk.Label(drawer, text='Type', bg='white', fg='#374151', font=('Arial', 10, 'bold'))
+        option_label = tk.Label(drawer, text='Type', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'], font=('Segoe UI', 10, 'bold'))
         option_label.pack(anchor='w')
         option_box = ttk.Combobox(drawer, state='readonly')
         option_box.pack(fill='x', pady=(4, 14), ipady=3)
         self.home_quick_option = option_box
 
-        tk.Label(drawer, text='Quantity', bg='white', fg='#374151', font=('Arial', 10, 'bold')).pack(anchor='w')
+        tk.Label(drawer, text='Quantity', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'], font=('Segoe UI', 10, 'bold')).pack(anchor='w')
         quantity_box = ttk.Spinbox(drawer, from_=1, to=1, increment=1, width=8)
         quantity_box.set('1')
         quantity_box.pack(anchor='w', pady=(4, 10), ipady=3)
         self.home_quick_quantity = quantity_box
 
-        stock_label = tk.Label(drawer, text='No stock available', bg='white', fg='#b91c1c', font=('Arial', 10))
+        stock_label = tk.Label(drawer, text='No stock available', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['danger'], font=('Segoe UI', 10))
         stock_label.pack(anchor='w', pady=(0, 16))
         self.home_quick_stock_label = stock_label
 
-        status_label = tk.Label(drawer, text='', bg='white', fg='#b91c1c', font=('Arial', 9), wraplength=320, justify='left')
+        status_label = tk.Label(drawer, text='', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['danger'], font=('Segoe UI', 9), wraplength=320, justify='left')
         status_label.pack(anchor='w', pady=(0, 8))
         self.home_quick_status_label = status_label
 
         add_button = tk.Button(
             drawer, text='Add to chart', command=self.confirm_home_product_to_cart,
-            bg='#2563eb', fg='white', activebackground='#1d4ed8', activeforeground='white',
-            font=('Arial', 11, 'bold'), relief='flat', bd=0, padx=14, pady=10, cursor='hand2',
+            bg=PROFILE_THEME['accent'], fg=PROFILE_THEME['text'],
+            activebackground=PROFILE_THEME['accent_dark'], activeforeground=PROFILE_THEME['text'],
+            font=('Segoe UI', 11, 'bold'), relief='flat', bd=0, padx=14, pady=10, cursor='hand2',
         )
         add_button.pack(fill='x', side='bottom')
         self.home_quick_add_button = add_button
@@ -716,13 +790,13 @@ class HomeFeedMixin:
                 stock = selected['stock']
                 quantity_box.configure(from_=1, to=max(1, int(stock)))
                 quantity_box.set('1')
-                stock_label.configure(text=f"{stock:g} available  |  Code {selected['code']}", fg='#047857')
+                stock_label.configure(text=f"{stock:g} available  |  Code {selected['code']}", fg=PROFILE_THEME['accent'])
                 price_label.configure(text=f"{selected['shop']}  |  {format_currency(selected['price'], product.get('currency'))}")
                 add_button.configure(state=tk.NORMAL)
             else:
                 quantity_box.configure(from_=1, to=1)
                 quantity_box.set('1')
-                stock_label.configure(text='No stock available', fg='#b91c1c')
+                stock_label.configure(text='No stock available', fg=PROFILE_THEME['danger'])
                 add_button.configure(state=tk.DISABLED)
             status_label.configure(text='')
 

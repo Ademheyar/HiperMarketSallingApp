@@ -7,7 +7,7 @@ import atexit
 import sys
 import json
 import ast
-from M.Preferences import ensure_preference_columns
+from M.Preferences import apply_app_theme, ensure_preference_columns, load_saved_theme
 
 
 # Create a connection to the SQLite database
@@ -229,7 +229,7 @@ cur.execute('''CREATE TABLE IF NOT EXISTS product
 #query = f"DROP TABLE IF EXISTS Shops"
 #cur.execute(query)
 
-#`Shop_name`, `Shop_brand_name`, `Shop_oweners_id`, `shop_type`, `Shop_location`, `shop_email`, 
+#`Shop_name`, `Shop_brand_name`, `Shop_owners_id`, `shop_type`, `Shop_location`, `shop_email`,
 # `Shop_contact`, `Shop_password`, `Shop_Page`, `Shop_rate`, `Shop_items`, `Shop_followers`, 
 # `Shop_workers`,  `Shop_Payment_Tools`, `Shop_about`, `Shop_Security_Levels`,
 # `Company_Started_Date`, `Shop_likes`, `Shop_rules`, `Shop_link`, `Shop_Settings`,
@@ -237,12 +237,82 @@ cur.execute('''CREATE TABLE IF NOT EXISTS product
 #  `Shop_Slip_Settings`, `Shop_Expenses`, `Shop_Actions`
 #cur.execute('ALTER TABLE Shops RENAME COLUMN Shop_SocLinks TO Shop_Items_type')
 #cur.execute('ALTER TABLE Shops ADD COLUMN Shop_SocLinks TEXT')
+cur.execute("PRAGMA table_info(Shops)")
+shops_columns = [row[1] for row in cur.fetchall()]
+if 'Shop_oweners_id' in shops_columns and 'Shop_owners_id' not in shops_columns:
+    try:
+        cur.execute('ALTER TABLE Shops RENAME COLUMN Shop_oweners_id TO Shop_owners_id')
+    except sqlite3.OperationalError:
+        cur.execute('ALTER TABLE Shops RENAME TO Shops_old')
+        cur.execute('''CREATE TABLE IF NOT EXISTS Shops
+                     (Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      Shop_Id INTEGER,
+                      Shop_name TEXT,
+                      Shop_brand_name TEXT,
+                      Shop_owners_id TEXT,
+                      Shop_type TEXT,
+                      Shop_email TEXT,
+                      Shop_link TEXT,
+                      Shop_password TEXT,
+                      Shop_about TEXT,
+                      Shop_country TEXT,
+                      Shop_SocLinks TEXT,
+                      Shop_rules TEXT,
+                      Shop_location TEXT,
+
+                      Shop_profile_img TEXT,
+                      Shop_banner_imgs TEXT,
+
+                      Company_Started_Date TEXT,
+                      Shop_rate TEXT,
+
+                      Shop_Page TEXT,
+
+                      Shop_items TEXT,
+                      Shop_followers TEXT,
+                      Shop_workers TEXT,
+                      Shop_Payment_Tools TEXT,
+                      Shop_Security_Levels TEXT,
+                      Shop_likes TEXT,
+                      Shop_Settings TEXT,
+                      Shop_payment_info TEXT,
+                      Shop_Slip_Settings TEXT,
+                      Shop_Expenses TEXT,
+                      Shop_Actions TEXT,
+
+
+                      Shop_Items_type TEXT,
+                      Shop_payment_r TEXT,
+                      Shop_Access_levels TEXT)''')
+        cur.execute('''INSERT INTO Shops (
+                        Id, Shop_Id, Shop_name, Shop_brand_name, Shop_owners_id,
+                        Shop_type, Shop_email, Shop_link, Shop_password, Shop_about,
+                        Shop_country, Shop_SocLinks, Shop_rules, Shop_location,
+                        Shop_profile_img, Shop_banner_imgs, Company_Started_Date,
+                        Shop_rate, Shop_Page, Shop_items, Shop_followers, Shop_workers,
+                        Shop_Payment_Tools, Shop_Security_Levels, Shop_likes,
+                        Shop_Settings, Shop_payment_info, Shop_Slip_Settings,
+                        Shop_Expenses, Shop_Actions, Shop_Items_type, Shop_payment_r,
+                        Shop_Access_levels)
+                        SELECT
+                        Id, Shop_Id, Shop_name, Shop_brand_name, Shop_oweners_id,
+                        Shop_type, Shop_email, Shop_link, Shop_password, Shop_about,
+                        Shop_country, Shop_SocLinks, Shop_rules, Shop_location,
+                        Shop_profile_img, Shop_banner_imgs, Company_Started_Date,
+                        Shop_rate, Shop_Page, Shop_items, Shop_followers, Shop_workers,
+                        Shop_Payment_Tools, Shop_Security_Levels, Shop_likes,
+                        Shop_Settings, Shop_payment_info, Shop_Slip_Settings,
+                        Shop_Expenses, Shop_Actions, Shop_Items_type, Shop_payment_r,
+                        Shop_Access_levels
+                        FROM Shops_old''')
+        cur.execute('DROP TABLE Shops_old')
+
 cur.execute('''CREATE TABLE IF NOT EXISTS Shops
              (Id INTEGER PRIMARY KEY AUTOINCREMENT,
               Shop_Id INTEGER,
               Shop_name TEXT,
               Shop_brand_name TEXT,
-              Shop_oweners_id TEXT,
+              Shop_owners_id TEXT,
               Shop_type TEXT,
               Shop_email TEXT,
               Shop_link TEXT,
@@ -278,6 +348,7 @@ cur.execute('''CREATE TABLE IF NOT EXISTS Shops
               Shop_payment_r TEXT,
               Shop_Access_levels TEXT)''')
 ensure_preference_columns(conn)
+SAVED_APP_THEME = load_saved_theme(conn)
 
 #cur.execute("ALTER TABLE Id ADD COLUMN Shop_Settings TEXT AFTER Shop_link")
 
@@ -375,36 +446,19 @@ class MainApplication(tk.Tk):
         self.MainApplication_root = ""
         self.COUNTRIES_WITH_CITIES = COUNTRIES_WITH_CITIES
         self.Link = ""
-        # Android-style dark blue color scheme
-        
-        self.bg_dark = "#0d47a1"      # Deep blue
-        self.bg_light = "#1565c0"     # Darker blue
-        self.accent_blue = "#1976d2"  # Medium blue
-        self.text_light = "#ffffff"   # White text
-        self.bg_darker = "#0a3d91"    # Even darker blue
-
-        # Modern battery/energy-inspired color scheme
-        bg_dark = "#0d47a1"      # Dark navy 1a1a2e
-        bg_medium = "#16213e"    # Medium navy
-        accent_green = "#0f3460" # Deep blue-green
-        accent_yellow = "#e94560" # Energy red
-        text_light = "#eaeaea"   # Light gray
-        text_secondary = "#b0b0b0" # Secondary text
-        
-        # Configure style for battery-inspired theme
+        palette = apply_app_theme(self, SAVED_APP_THEME)
+        self.bg_dark = palette['background']
+        self.bg_light = palette['surface']
+        self.accent_blue = palette['accent']
+        self.text_light = palette['text']
+        self.bg_darker = palette['surface']
         style = ttk.Style()
-        style.theme_use('clam')
-        style.configure('TNotebook', background=bg_dark, borderwidth=1, relief='flat')
-        style.configure('TNotebook.Tab', padding=[10, 5], background=bg_medium, foreground=text_light, borderwidth=0)
-        style.map('TNotebook.Tab', background=[('selected', accent_green)], foreground=[('selected', 'white')])
-        style.configure('TFrame', background=bg_dark)
-        style.configure('COSTUM.LISTSELECTED', background='#1a1a2e')
-        style.configure('COSTUM.LISTS', background=bg_dark)
-        style.configure('TButton', forground=self.bg_light)
-        style.configure('TButton', background=self.text_light)
-        style.configure('TLabel', background=bg_dark, foreground=text_light)
-        style.configure('Treeview', fieldbackground=self.accent_blue, foreground=self.bg_light, background=self.text_light)
-        style.map('Treeview', background=[('selected', self.bg_light)], foreground=[('selected', 'white')])
+        style.configure('TNotebook', background=self.bg_dark, borderwidth=1, relief='flat')
+        style.configure('TNotebook.Tab', padding=[10, 5], background=self.bg_light, foreground=self.text_light, borderwidth=0)
+        style.map('TNotebook.Tab', background=[('selected', palette['selected'])], foreground=[('selected', self.text_light)])
+        style.configure('COSTUM.LISTSELECTED', background=palette['selected'])
+        style.configure('COSTUM.LISTS', background=self.bg_dark)
+        style.configure('TButton', background=palette['button'], foreground=palette['button_text'], borderwidth=0, relief='flat', padding=(12, 8))
         
         # Configure main window styling
         self.configure(bg=self.bg_dark)
@@ -426,7 +480,7 @@ class MainApplication(tk.Tk):
         self.frames["Select_User_Company_State_Frame"] = None
         
         #self.show_frame("DisplayFrame")
-            
+
     def self_focus(self):
         #print("focus main window")
         self.grab_set()

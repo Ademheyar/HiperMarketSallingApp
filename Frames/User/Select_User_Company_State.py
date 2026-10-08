@@ -7,6 +7,7 @@ import json
 
 import os
 import os, sys
+from M.UITheme import PROFILE_THEME
 from C.List import *
 # from D.docediterform import DocEditForm
 from D.printer import PrinterForm
@@ -24,7 +25,7 @@ from Frames.Company.Request_Company import Request_Company_Frame
 
 class Select_User_Company_State_Frame(tk.Frame):
     def __init__(self, parent, Canceal_callback, User_data, Link):
-        tk.Frame.__init__(self, parent, bg="#0d47a1")  # Set background to deep blue
+        tk.Frame.__init__(self, parent, bg=PROFILE_THEME['bg'])
         self.Canceal_callback = Canceal_callback
         self.User_data = User_data
         self.Link = Link
@@ -60,10 +61,10 @@ class Select_User_Company_State_Frame(tk.Frame):
         self.display_frame = None
 
         # create the second frame and add it to the container
-        select_User_Company_State_Frame = tk.Frame(self, bg="#0d47a1")
+        select_User_Company_State_Frame = tk.Frame(self, bg=PROFILE_THEME['bg'])
         
-        self.details_frame = tk.Frame(select_User_Company_State_Frame, bg="#1565c0")
-        self.details_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.details_frame = tk.Frame(select_User_Company_State_Frame, bg=PROFILE_THEME['card_bg'], highlightthickness=1, highlightbackground=PROFILE_THEME['card_border'])
+        self.details_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=20, pady=18)
 
 
         self.details_frame.columnconfigure((0, 1, 2, 3, 4), weight=1, minsize=int(self.details_frame.winfo_height() *0.1))
@@ -82,13 +83,13 @@ class Select_User_Company_State_Frame(tk.Frame):
         self.frames["Company_Forget_Info_Frame"] = company_Forget_Info_Frame
         
         # Create a label and an entry widget for the search box
-        self.company_name_label = tk.Label(self.details_frame, text='Company Name :', bg="#1565c0", fg="#ffffff")
-        self.company_name_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
+        self.company_name_label = tk.Label(self.details_frame, text='Company Name :', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'])
+        self.company_name_entry = tk.Entry(self.details_frame, bg=PROFILE_THEME['row_bg'], fg=PROFILE_THEME['text'], insertbackground=PROFILE_THEME['text'], highlightthickness=1, highlightbackground=PROFILE_THEME['card_border'], relief='flat')
         self.company_name_entry.insert(0, "Test_Shop_Name")
-        self.company_brandname_label = tk.Label(self.details_frame, text='Company Brand Name :', bg="#1565c0", fg="#ffffff")
-        self.company_brandname_entry = tk.Entry(self.details_frame, bg="#1976d2", fg="#ffffff")
+        self.company_brandname_label = tk.Label(self.details_frame, text='Company Brand Name :', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'])
+        self.company_brandname_entry = tk.Entry(self.details_frame, bg=PROFILE_THEME['row_bg'], fg=PROFILE_THEME['text'], insertbackground=PROFILE_THEME['text'], highlightthickness=1, highlightbackground=PROFILE_THEME['card_border'], relief='flat')
         self.company_brandname_entry.insert(0, "test_shop_brand_name")
-        self.Search_button = tk.Button(self.details_frame, text='Search', command=self.Search_shops, bg="#1976d2", fg="#ffffff")
+        self.Search_button = tk.Button(self.details_frame, text='Search', command=self.Search_shops, bg=PROFILE_THEME['accent'], fg=PROFILE_THEME['text'], activebackground=PROFILE_THEME['accent_dark'], activeforeground=PROFILE_THEME['text'], cursor='hand2', relief='flat', bd=0, font=('Segoe UI', 10, 'bold'), padx=18, pady=8)
         
         # * New frame next to list_items in the main frame
         self.selecte_work_midel_frame = tk.Frame(self.details_frame, bg="#1565c0")

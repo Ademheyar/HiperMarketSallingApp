@@ -2,7 +2,14 @@ import json
 import unittest
 
 from M.Display import DisplayFrame
-from M.Preferences import THEME_PALETTES, ensure_preference_columns, format_currency, resolve_shop_currency
+from M.Preferences import (
+    THEME_PALETTES,
+    ensure_preference_columns,
+    format_currency,
+    load_saved_theme,
+    resolve_shop_currency,
+    save_app_preferences,
+)
 
 
 class HomeFeedTests(unittest.TestCase):
@@ -143,6 +150,23 @@ class HomeFeedTests(unittest.TestCase):
         self.assertEqual(light['button'], '#ffffff')
         self.assertEqual(light['button_text'], '#0f172a')
         self.assertEqual(light['selected'], '#2563eb')
+
+    def test_theme_preference_persists_for_launch_and_user(self):
+        import sqlite3
+
+        with sqlite3.connect(':memory:') as connection:
+            connection.execute('CREATE TABLE Shops (Id INTEGER PRIMARY KEY)')
+            connection.execute('CREATE TABLE setting (Id INTEGER PRIMARY KEY, User_id INTEGER)')
+            ensure_preference_columns(connection)
+
+            save_app_preferences(connection, 'Dark', 'English', user_id=7)
+            self.assertEqual(load_saved_theme(connection), 'Dark')
+            self.assertEqual(load_saved_theme(connection, 7), 'Dark')
+
+            save_app_preferences(connection, 'Green', 'English', user_id=8)
+            self.assertEqual(load_saved_theme(connection), 'Green')
+            self.assertEqual(load_saved_theme(connection, 7), 'Dark')
+            self.assertEqual(load_saved_theme(connection, 8), 'Green')
 
 
 if __name__ == '__main__':
