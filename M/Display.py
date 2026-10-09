@@ -26,8 +26,6 @@ from M.Product import ProductForm
 from D.iteminfo import *
 from D.endday import EnddayForm
 from D.Upload_ import UploadingForm
-from D.user_info import UserInfoForm
-from D.Veaw_Notifications import Veaw_Notifications
 from M.Setting import Appelication_SettingForm
 from D.printer import PrinterForm
 from C.slipe import load_slip
@@ -61,7 +59,7 @@ class BottomTabs(tk.Frame):
         self._current = None
         self._on_change = None
 
-        self.bar = tk.Frame(self, bg=PROFILE_THEME['bg'], padx=8, pady=6)
+        self.bar = tk.Frame(self, bg=PROFILE_THEME['bg'], padx=8, pady=4)
         self.bar.pack(side='bottom', fill='x')
         self.bar.rowconfigure(0, weight=1)
 
@@ -78,45 +76,82 @@ class BottomTabs(tk.Frame):
         self.bar.configure(bg=palette['background'])
         for tab in self._tabs:
             selected = tab['frame'] == self._current
+            background = palette['selected'] if selected else palette['surface']
+            foreground = palette['text']
+            if selected:
+                color = palette['selected'].lstrip('#')
+                if len(color) == 6:
+                    red, green, blue = (int(color[index:index + 2], 16) for index in (0, 2, 4))
+                    if (red * 299 + green * 587 + blue * 114) / 1000 > 140:
+                        foreground = palette.get('panel_text', '#111827')
+            tab['cell'].configure(bg=background)
+            tab['icon_label'].configure(bg=background, fg=foreground)
             tab['btn'].configure(
-                bg=palette['accent'] if selected else palette['surface'],
-                fg=palette['text'],
+                bg=background,
+                fg=foreground,
                 activebackground=palette['accent_dark'],
-                activeforeground=palette['text'],
+                activeforeground=foreground,
             )
 
-    def add(self, frame, text="Tab", hidden=False):
+    def add(self, frame, text="Tab", hidden=False, icon=None, preserve_panel=False):
         frame.pack_forget()
         frame.place_forget()
         
         def select_this():
             self.select(frame)
 
+        icon = icon or {
+            'home': '\u2302',
+            'user profile': '\u2659',
+            'pos terminal': '\u25a3',
+            'manage': '\u2699',
+            'settings': '\u2699',
+        }.get(text.strip().lower(), '\u2022')
+        visible_count = sum(1 for item in self._tabs if not item.get('hidden'))
+        cell = tk.Frame(self.bar, bg=PROFILE_THEME['row_bg'])
+        self.bar.columnconfigure(visible_count, weight=1)
+        cell.grid(row=0, column=visible_count, sticky='nsew', padx=4, pady=2)
+        icon_label = tk.Label(
+            cell,
+            text=icon,
+            font=('Segoe UI Symbol', 17),
+            bg=PROFILE_THEME['row_bg'],
+            fg=PROFILE_THEME['text'],
+        )
+        icon_label.pack(side='top', pady=(3, 0))
         btn = tk.Button(
-            self.bar,
+            cell,
             text=text,
-            font=('Segoe UI', 10, 'bold'),
+            font=('Segoe UI', 9, 'bold'),
             bg=PROFILE_THEME['row_bg'],
             fg=PROFILE_THEME['text'],
             activebackground=PROFILE_THEME['card_border'],
             activeforeground=PROFILE_THEME['text'],
             relief='flat',
             bd=0,
-            padx=18,
-            pady=9,
+            padx=8,
+            pady=2,
             cursor='hand2',
             command=select_this,
         )
-        visible_count = sum(1 for item in self._tabs if not item.get('hidden'))
-        self.bar.columnconfigure(visible_count, weight=1)
-        btn.grid(row=0, column=visible_count, sticky='nsew', padx=4, pady=2)
+        btn.pack(side='top', fill='x', pady=(0, 3))
+        icon_label.bind('<Button-1>', lambda _event: select_this())
 
-        self._tabs.append({'frame': frame, 'text': text, 'btn': btn, 'hidden': hidden})
+        self._tabs.append({
+            'frame': frame,
+            'text': text,
+            'btn': btn,
+            'cell': cell,
+            'icon_label': icon_label,
+            'icon': icon,
+            'hidden': hidden,
+            'preserve_panel': preserve_panel,
+        })
         if hidden:
-            btn.grid_remove()
+            cell.grid_remove()
 
         self._apply_app_theme_palette()
-        if self._current is None and not hidden:
+        if self._current is None and not hidden and not preserve_panel:
             self.select(frame)
 
     def select(self, frame_or_id):
@@ -134,6 +169,11 @@ class BottomTabs(tk.Frame):
                 break
         
         if not target:
+            return
+
+        if target.get('preserve_panel'):
+            if self._on_change:
+                self._on_change(target['text'], frame_id, target['frame'])
             return
 
         # hide all
@@ -159,7 +199,7 @@ class BottomTabs(tk.Frame):
             if t['frame'] == frame or t['text'] == frame:
                 t['frame'].pack_forget()
                 t['hidden'] = True
-                t['btn'].grid_remove()
+                t['cell'].grid_remove()
                 if self._current == t['frame']:
                     self._current = None
                 self._relayout()
@@ -180,7 +220,7 @@ class BottomTabs(tk.Frame):
             if item.get('hidden'):
                 continue
             self.bar.columnconfigure(column, weight=1)
-            item['btn'].grid_configure(column=column)
+            item['cell'].grid_configure(column=column)
             column += 1
 
     def move_tab(self, frame, position):
@@ -217,6 +257,7 @@ class BottomTabs(tk.Frame):
         if tab is None:
             return
         tab['text'] = text
+        tab['preserve_panel'] = False
         tab['btn'].configure(text=text)
         if move_to_end:
             self._tabs.remove(tab)
@@ -237,6 +278,13 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
 
     def __init__(self, master, Shops_info, user, User_Shops_List, Shops):
         tk.Frame.__init__(self, master)
+        self._master_binding_ids = []
+        self._master_bindings_cleaned = False
+        self.bind(
+            '<Destroy>',
+            lambda event: self._cleanup_master_bindings() if event.widget is self else None,
+            add='+',
+        )
         
         self.onDisplayFrame = "" # to show this is manin display
 
@@ -307,7 +355,7 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         self.ex_doc = []
 
         self.At_Shop_id = -1
-        self.on_Shop = -1         
+        self.on_Shop = 0 if self.Shops else -1
         #print("Display Frame Initialized with screen size: {}x{}".format(screen_width, screen_height))
         
         self.main_Notebook = BottomTabs(self)
@@ -323,7 +371,12 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
 
         self.can_manage = False
         self.login_frame = tk.Frame(self.main_Notebook.content_area, bg=self.bg_dark)
-        self.main_Notebook.add(self.login_frame, text='User Profile')
+        logged_in = bool(self.user and self.Shops)
+        self.main_Notebook.add(
+            self.login_frame,
+            text='User Profile' if logged_in else 'Login',
+            preserve_panel=not logged_in,
+        )
 
         if Shops_info is None or user is None or User_Shops_List is None or Shops is None:
             pass
@@ -341,19 +394,18 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         self.Shops_Names = [shop['Shop_name'] for shop in self.Shops]
+        self.select_shop(self.on_Shop)
         self.Shops_brands = [shop['Shop_brand_name'] for shop in self.Shops]
         
         self.main_frame = tk.Frame(self.main_Notebook.content_area, bg=self.bg_dark)
         self.main_Notebook.add(self.main_frame, text='POS Terminal')
         self.main_Notebook.move_tab(self.main_frame, 1)
 
-                      
-        
         self.main_frame.columnconfigure((0, 1), weight=1)
-        self.main_frame.columnconfigure(1, weight=0)
         self.main_frame.rowconfigure(0, weight=0)
-        self.main_frame.rowconfigure(1, weight=2)
-        self.main_frame.rowconfigure(2, weight=0)
+        self.main_frame.rowconfigure(1, weight=0)
+        self.main_frame.rowconfigure(2, weight=1)
+        self.main_frame.rowconfigure(3, weight=0)
         
         self.top_frame = tk.Frame(
             self.main_frame,
@@ -364,41 +416,52 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         )
         self.top_frame.grid(row=0, column=0, columnspan=2, sticky="nsew")
         self.top_frame.columnconfigure((0), weight=0)
-        self.top_frame.columnconfigure((5), weight=1)
+        self.top_frame.columnconfigure((2, 3, 4, 5, 6, 7), weight=1, uniform='toolbar')
         self.top_frame.rowconfigure((0), weight=1)
+        self.top_frame.rowconfigure(1, weight=0, minsize=38)
 
-        
         self.DFsearch_entry = search_entry(self.top_frame, self.Shops_info, self.user, self.Shops, font=("Segoe UI", 12))
-        self.DFsearch_entry.grid(row=0, column=2, columnspan=4, sticky="nsew", padx=1, pady=1)
+        self.DFsearch_entry.grid(row=0, column=2, columnspan=6, sticky="nsew", padx=1, pady=1)
+
+        self.Add_custemur_label = tk.Button(
+            self.top_frame,
+            text="+ Custumer",
+            font=("Segoe UI", 10, "bold"),
+            fg=PROFILE_THEME['accent'],
+            bg=self.bg_light,
+            relief="flat",
+            cursor="hand2",
+            command=self.Add_Custumer,
+        )
+        self.Add_custemur_label.grid(row=1, column=2, sticky="nsew", padx=2, pady=2)
 
 
         self.Calculter_button = tk.Button(self.top_frame, text="Calcu\nF1", command=lambda: GetvalueForm(self, '0', ["Calculater"]), **self.button_style)
         self.Calculter_button.grid(row=0, column=0, sticky="nsew", padx=2, pady=5)
-        self.master.bind("<F1>", lambda _: GetvalueForm(self, '0', ["Calculater"]))
+        self._bind_master("<F1>", lambda _: GetvalueForm(self, '0', ["Calculater"]))
         
         self.Add_None_item_button = tk.Button(self.top_frame, text="None\nF2", command=lambda: DocEditForm.Create_Unowen_item(self), **self.button_style)
         self.Add_None_item_button.grid(row=0, column=1, sticky="nsew", padx=2, pady=5)
-        self.master.bind("<F2>", lambda _: DocEditForm.Create_Unowen_item(self))
+        self._bind_master("<F2>", lambda _: DocEditForm.Create_Unowen_item(self))
         
-        self.activets_button = tk.Button(self.top_frame, text="Activets\nF6", command=self.call_chartForm, **self.button_style)
-        self.activets_button.grid(row=0, column=9, sticky="nsew", padx=1, pady=1)
-        self.master.bind("<F6>", lambda _: self.call_chartForm())
+        self.activets_button = tk.Button(self.top_frame, text="Activities\nF6", command=self.call_chartForm, **self.button_style)
+        self.activets_button.grid(row=1, column=3, sticky="nsew", padx=1, pady=1)
+        self._bind_master("<F6>", lambda _: self.call_chartForm())
         
         self.payment_button = tk.Button(self.top_frame, text="Payment\nF10", command=self.call_splitpayment, **self.button_style)
-        self.payment_button.grid(row=0, column=10, sticky="nsew", padx=1, pady=1)
-        self.master.bind("<F10>", lambda _: self.call_splitpayment())
+        self.payment_button.grid(row=1, column=4, sticky="nsew", padx=1, pady=1)
+        self._bind_master("<F10>", lambda _: self.call_splitpayment())
         
         self.endday_button = tk.Button(self.top_frame, text="Cash Drawer\nCtrl+D", command=lambda: self.open_drower(), **self.button_style)
-        self.endday_button.grid(row=0, column=11, sticky="nsew", padx=1, pady=1)
+        self.endday_button.grid(row=1, column=5, sticky="nsew", padx=1, pady=1)
         
         self.update_button = tk.Button(self.top_frame, text="Update\nCtrl+U", command=lambda: self.Call_Uploading_Form(), **self.button_style)
-        self.update_button.grid(row=0, column=12, sticky="nsew", padx=1, pady=1)
+        self.update_button.grid(row=1, column=6, sticky="nsew", padx=1, pady=1)
         
         self.Endday_button = tk.Button(self.top_frame, text="End Day\nCtrl+E", command=lambda: self.manage_form.doc_form.perform_endday(), **self.button_style)
-        self.Endday_button.grid(row=0, column=13, sticky="nsew", padx=1, pady=1)
+        self.Endday_button.grid(row=1, column=7, sticky="nsew", padx=1, pady=1)
         
         self.midel_frame = tk.Frame(self.main_frame, bg=self.bg_dark)
-        self.midel_frame.grid(row=1, column=0, sticky="nsew")
         
         self.extrnal_frame = tk.Frame(self.midel_frame, height=int(screen_height * 0.050), bg=self.bg_darker)
         self.extrnal_frame.pack(side="top", fill="x")
@@ -437,135 +500,102 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
             self.item_List_canvas.itemconfig(self.window_id, width=screen_width-(screen_width/4))
         self.Selected_item_Display_frame.bind('<Configure>', resize)
 
-        self.side_frame = tk.Frame(self.main_frame, bg=self.bg_darker)
-        self.side_frame.grid(row=1, column=1, rowspan=1, sticky="nsew")
-        
-        self.buttons_frame = tk.LabelFrame(self.side_frame, text="Payment Tools", height=150, bg=self.bg_light, padx=5, pady=5)
-        self.buttons_frame.pack(side="top", fill="both", expand=True)
+        self.buttons_frame = tk.LabelFrame(self.main_frame, text="Payment Tools", height=150, bg=self.bg_light, padx=5, pady=5)
 
         self.buttons_frame.columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1, minsize=int(self.buttons_frame.winfo_height() *0.1))
         self.buttons_frame.rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9), weight=1, minsize=int(self.buttons_frame.winfo_height() *0.1))
 
 
-        self.total_frame = tk.Frame(self.side_frame, height=150, bg=self.bg_light, highlightthickness=1, highlightbackground=PROFILE_THEME['card_border'])
-        self.total_frame.pack(side="bottom", fill="both", expand=False)
+        self.total_frame = tk.Frame(self.main_frame, height=250, bg=self.bg_light, highlightthickness=1, highlightbackground=PROFILE_THEME['card_border'])
 
         self.total_frame.columnconfigure((0, 1, 2, 3), weight=1, minsize=int(self.total_frame.winfo_height() *0.1))
-        self.total_frame.rowconfigure((0, 1, 2, 3, 4, 5, 6), weight=1, minsize=int(self.total_frame.winfo_height() *0.1))
+        self.total_frame.rowconfigure((0, 1), weight=0)
+        self.total_frame.rowconfigure(2, weight=1)
+
+        self.date_time_frame = tk.Frame(self.total_frame, bg=self.bg_light)
+        self.date_time_frame.grid(row=0, column=0, columnspan=7, sticky='ew', padx=5, pady=3)
+        self.date_day_Label = tk.Label(
+            self.date_time_frame,
+            text='',
+            font=("Segoe UI", 9, "bold"),
+            bg=self.bg_light,
+            fg=self.text_light,
+        )
+        self.date_day_Label.pack(side='left', padx=(0, 6))
+
+        self.date_day_Spinbox = ttk.Spinbox(self.date_time_frame, from_=1, to=31, width=3)
+        self.date_day_Spinbox.pack(side='left', padx=2)
+        self.date_day_Spinbox.set(str(datetime.datetime.now().strftime('%d')))
+        self.date_month_Spinbox = ttk.Spinbox(self.date_time_frame, from_=1, to=12, width=3)
+        self.date_month_Spinbox.pack(side='left', padx=2)
+        self.date_month_Spinbox.set(str(datetime.datetime.now().strftime('%m')))
+        self.date_year_Spinbox = ttk.Spinbox(self.date_time_frame, from_=1990, width=5)
+        self.date_year_Spinbox.pack(side='left', padx=2)
+        self.date_year_Spinbox.set(str(datetime.datetime.now().strftime('%Y')))
+
+        def _update_datetime():
+            now = datetime.datetime.now().strftime('%H:%M')
+            self.date_day_Label.config(text='Time: ' + now + '  Date:')
+            self.date_day_Label.after(1000, _update_datetime)
+
+        _update_datetime()
         
         self.prevlist_button = tk.Button(self.total_frame, text="<<<\nF4", command=lambda: self.next_prev_chart("prev"), **self.button_style)
-        self.prevlist_button.grid(row=0, column=0, sticky="nsew")
+        self.prevlist_button.grid(row=1, column=0, sticky="nsew")
         #self.prevlist_button.config(state=tk.DISABLED)
 
         self.barcode_label = tk.Label(self.total_frame, text="Barcode", font=("Segoe UI", 12, "bold"), bg=self.bg_light, fg=self.text_light)
-        self.barcode_label.grid(row=0, column=1, columnspan=5, sticky="nsew", padx=5, pady=5)
+        self.barcode_label.grid(row=1, column=1, columnspan=5, sticky="nsew", padx=5, pady=5)
+        self.barcode_label.configure(cursor='hand2')
+        self.barcode_label.bind('<Button-1>', lambda _event: self.toggle_totals_panel())
         
         self.nextlist_button = tk.Button(self.total_frame, text="New\nF7", command=lambda : self.next_prev_chart("Next"), **self.button_style)
-        self.nextlist_button.grid(row=0, column=6, sticky="nsew")
+        self.nextlist_button.grid(row=1, column=6, sticky="nsew")
         #self.nextlist_button.config(state=tk.DISABLED)
-        self.master.bind("<F4>", lambda _: self.next_prev_chart("Prev"))
-        self.master.bind("<F3>", lambda _: self.void_())
-        self.master.bind("<F5>", lambda _: self.next_prev_chart("Next"))
-        self.master.bind("<F7>", lambda _: self.new_chart(1))
+        self._bind_master("<F4>", lambda _: self.next_prev_chart("Prev"))
+        self._bind_master("<F3>", lambda _: self.void_())
+        self._bind_master("<F5>", lambda _: self.next_prev_chart("Next"))
+        self._bind_master("<F7>", lambda _: self.new_chart(1))
 
 
-        tk.Label(self.total_frame, text="Total Items : ", font=("Segoe UI", 11, "bold"), bg=self.bg_light, fg=self.text_light).grid(row=1, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
-        self.total_items_label = tk.Label(self.total_frame, text="0", font=("Segoe UI", 12, "bold"), bg=self.bg_light, fg=self.text_light)
-        self.total_items_label.grid(row=1, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
+        self.totals_details_frame = tk.Frame(self.total_frame, bg=self.bg_light)
+        self.totals_details_frame.grid(row=2, column=0, columnspan=7, sticky='ew')
+        self.totals_details_frame.columnconfigure((0, 1, 2, 3, 4), weight=1)
+        tk.Label(self.totals_details_frame, text="Total Items : ", font=("Segoe UI", 11, "bold"), bg=self.bg_light, fg=self.text_light).grid(row=0, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+        self.total_items_label = tk.Label(self.totals_details_frame, text="0", font=("Segoe UI", 12, "bold"), bg=self.bg_light, fg=self.text_light)
+        self.total_items_label.grid(row=0, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
         
-        tk.Label(self.total_frame, text="Total Tax : ", font=("Segoe UI", 11, "bold"), bg=self.bg_light, fg=self.text_light).grid(row=2, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
-        self.total_tax_label = tk.Label(self.total_frame, text="Total Tax : 0", font=("Segoe UI", 12, "bold"), bg=self.bg_light, fg=self.text_light)
-        self.total_tax_label.grid(row=2, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
+        tk.Label(self.totals_details_frame, text="Total Tax : ", font=("Segoe UI", 11, "bold"), bg=self.bg_light, fg=self.text_light).grid(row=1, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+        self.total_tax_label = tk.Label(self.totals_details_frame, text="Total Tax : 0", font=("Segoe UI", 12, "bold"), bg=self.bg_light, fg=self.text_light)
+        self.total_tax_label.grid(row=1, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
         
-        tk.Label(self.total_frame, text="Item Discount : ", font=("Segoe UI", 11, "bold"),  bg=self.bg_light, fg=self.text_light).grid(row=3, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
-        self.total_discount_label = tk.Label(self.total_frame, text="0", font=("Segoe UI", 12, "bold"),  bg=self.bg_light, fg=self.text_light)
-        self.total_discount_label.grid(row=3, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
+        tk.Label(self.totals_details_frame, text="Item Discount : ", font=("Segoe UI", 11, "bold"),  bg=self.bg_light, fg=self.text_light).grid(row=2, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+        self.total_discount_label = tk.Label(self.totals_details_frame, text="0", font=("Segoe UI", 12, "bold"),  bg=self.bg_light, fg=self.text_light)
+        self.total_discount_label.grid(row=2, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
         
-        tk.Label(self.total_frame, text="Total Discount : ", font=("Segoe UI", 11, "bold"),  bg=self.bg_light, fg=self.text_light).grid(row=4, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
-        self.total_tdiscount_label = tk.Label(self.total_frame, text="0", font=("Segoe UI", 12, "bold"),  bg=self.bg_light, fg=self.text_light)
-        self.total_tdiscount_label.grid(row=4, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
+        tk.Label(self.totals_details_frame, text="Total Discount : ", font=("Segoe UI", 11, "bold"),  bg=self.bg_light, fg=self.text_light).grid(row=3, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+        self.total_tdiscount_label = tk.Label(self.totals_details_frame, text="0", font=("Segoe UI", 12, "bold"), bg=self.bg_light, fg=self.text_light)
+        self.total_tdiscount_label.grid(row=3, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
         
-        tk.Label(self.total_frame, text="Price Befor: ", font=("Segoe UI", 11, "bold"),  bg=self.bg_light, fg=self.text_light).grid(row=5, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
-        self.total_price_label = tk.Label(self.total_frame, text="0", font=("Segoe UI", 12, "bold"),  bg=self.bg_light, fg=self.text_light)
-        self.total_price_label.grid(row=5, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
+        tk.Label(self.totals_details_frame, text="Price Befor: ", font=("Segoe UI", 11, "bold"),  bg=self.bg_light, fg=self.text_light).grid(row=4, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+        self.total_price_label = tk.Label(self.totals_details_frame, text="0", font=("Segoe UI", 12, "bold"),  bg=self.bg_light, fg=self.text_light)
+        self.total_price_label.grid(row=4, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
         
-        tk.Label(self.total_frame, text="Total After: ", font=("Segoe UI", 16, "bold"),bg=self.bg_light, fg=PROFILE_THEME['accent']).grid(row=6, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
-        self.total_label = tk.Label(self.total_frame, text="0", font=("Segoe UI", 16, "bold"),bg=self.bg_light, fg=PROFILE_THEME['accent'])
-        self.total_label.grid(row=6, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
+        tk.Label(self.totals_details_frame, text="Total After: ", font=("Segoe UI", 16, "bold"),bg=self.bg_light, fg=PROFILE_THEME['accent']).grid(row=5, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
+        self.total_label = tk.Label(self.totals_details_frame, text="0", font=("Segoe UI", 16, "bold"),bg=self.bg_light, fg=PROFILE_THEME['accent'])
+        self.total_label.grid(row=5, column=3, columnspan=2, sticky="nsew", padx=5, pady=5)
 
-
-
-
+        self.total_frame.grid_propagate(False)
+        self._totals_full_height = 250
+        self._totals_collapsed_height = 68
+        self._totals_expanded = True
+        self._totals_animation_id = None
+        self._pos_layout_is_narrow = None
+        self.main_frame.bind('<Configure>', self._on_pos_layout_configure, add='+')
+        self._apply_pos_layout(screen_width, screen_height)
 
         self.manage_form = ManageForm(self.main_Notebook.content_area, self.user, self.Shops, self.Shops_info, self.on_Shop)
         
-        self.bottum_frame = tk.Frame(self.main_frame, height=150, bg=self.bg_light,
-                                     highlightthickness=1, highlightbackground=PROFILE_THEME['card_border'])
-        self.bottum_frame.grid(row=2, column=0, rowspan=2, columnspan=4, sticky="nsew")
-
-        self.bottum_frame.columnconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8), weight=1, minsize=int(self.bottum_frame.winfo_height() *0.1))
-        self.bottum_frame.rowconfigure((0), weight=1, minsize=int(self.bottum_frame.winfo_height() *0.1))
-        
-        self.Veaw_Notifications_label = tk.Label(self.bottum_frame, text="Notifications", font=("Segoe UI", 10, "bold"),
-                                                 fg=PROFILE_THEME['accent'], bg=self.bg_light, cursor="hand2")
-        self.Veaw_Notifications_label.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
-        self.Veaw_Notifications_label.bind("<Button-1>", lambda _: Veaw_Notifications(self, self.user, self.Shops))
-
-        self.Loged_user_label = tk.Label(self.bottum_frame, text=str(self.user['User_name']), font=("Segoe UI", 10, "bold"),
-                                         fg=PROFILE_THEME['accent'], bg=self.bg_light, cursor="hand2")
-        self.Loged_user_label.grid(row=0, column=1, sticky="nsew", padx=5, pady=5)
-        self.Loged_user_label.bind("<Button-1>", lambda _: UserInfoForm(self, self.user))
-                              
-        self.User_Shopes_Combobox = ttk.Combobox(self.bottum_frame, values=self.Shops_Names, width=10)
-        self.User_Shopes_Combobox.grid(row=0, column=2, sticky="nsew", padx=5, pady=5)
-        
-
-        self.at_shop_name = ""
-        self.Shop_brand_name = self.Shops[0]['Shop_brand_name']
-        if(len(self.Shops_Names) == 1):
-            #print("Only one shop found, selecting it by default.")
-            #print("Shop Name: ", self.Shops)
-            Shop_brand_name = self.Shops[0]['Shop_brand_name']
-            self.At_Shop_id = self.Shops[0]['Shop_Id']
-            at_shop_name = self.Shops[0]['Shop_name']
-            self.on_Shop = 0
-        else:
-            pass
-        
-        self.At_Shop_label = tk.Label(self.bottum_frame, text=str(at_shop_name), font=("Segoe UI", 10, "bold"),
-                                      fg=PROFILE_THEME['accent'], bg=self.bg_light, cursor="hand2")
-        self.At_Shop_label.grid(row=0, column=3, sticky="nsew", padx=5, pady=5)
-        self.At_Shop_label.bind("<Button-1>", lambda _: UserInfoForm(self))
-
-        self.Add_custemur_label = tk.Label(self.bottum_frame, text="+ Custumer", font=("Segoe UI", 10, "bold"),
-                                           fg=PROFILE_THEME['accent'], bg=self.bg_light, cursor="hand2")
-        self.Add_custemur_label.grid(row=0, column=4, sticky="nsew", padx=5, pady=5)
-        self.Add_custemur_label.bind("<Button-1>", lambda _: self.Add_Custumer())
-
-        self.date_day_Label = tk.Label(self.bottum_frame, text="H:M D-M-Y :", font=("Segoe UI", 9, "bold"),
-                           width=20, bg=self.bg_light, fg=self.text_light)
-        
-        # Update the label with the current date/time every second
-        def _update_datetime():
-            now = datetime.datetime.now().strftime('%H:%M')
-            self.date_day_Label.config(text=now + " D-M-Y :")
-            self.date_day_Label.after(100, _update_datetime)
-        _update_datetime()
-
-        self.date_day_Label.grid(row=0, column=5, sticky="w", padx=2, pady=5)
-        
-        self.date_day_Spinbox = ttk.Spinbox(self.bottum_frame, from_=1, to=31, width=5)
-        self.date_day_Spinbox.grid(row=0, column=6, sticky="w", padx=2, pady=5)
-        self.date_day_Spinbox.set(str(datetime.datetime.now().strftime('%d')))
-        
-        self.date_month_Spinbox = ttk.Spinbox(self.bottum_frame, from_=1, to=13, width=5)
-        self.date_month_Spinbox.grid(row=0, column=7, sticky="w", padx=2, pady=5)
-        self.date_month_Spinbox.set(str(datetime.datetime.now().strftime('%m')))
-        
-        self.date_year_Spinbox = ttk.Spinbox(self.bottum_frame, from_=1990, width=5)
-        self.date_year_Spinbox.grid(row=0, column=8, sticky="w", padx=2, pady=5)
-        self.date_year_Spinbox.set(str(datetime.datetime.now().strftime('%Y')))
-    
         self.can_manage = Chacke_Security(self, self.user, self.Shops[self.on_Shop], 26, f'User Has No Permission To Access MANAGE FRAME OR LOGIN AS ADMIN')
         if self.can_manage:
             self.manage_form.pack_forget()
@@ -595,12 +625,12 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         self.next_prev_chart("Next") # load the prev item will staring if there is 
         self.update_info()
         
-        self.master.bind("<Escape>", self.change_focus)
-        self.master.bind("<KeyPress-d>", self.crtl_d_focus)
-        self.master.bind("<KeyPress-D>", self.crtl_d_focus)
-        self.master.bind("<Up>", self.treeview_naigation)
-        self.master.bind("<Down>", self.treeview_naigation)
-        self.master.bind("<Delete>", self.Selectd_item_remove)
+        self._bind_master("<Escape>", self.change_focus)
+        self._bind_master("<KeyPress-d>", self.crtl_d_focus)
+        self._bind_master("<KeyPress-D>", self.crtl_d_focus)
+        self._bind_master("<Up>", self.treeview_naigation)
+        self._bind_master("<Down>", self.treeview_naigation)
+        self._bind_master("<Delete>", self.Selectd_item_remove)
         self.selected_indexd = -1
         
         # IF THE USER HAS PERMISSION TO ACCESS PAYMENT TOOLS
@@ -640,7 +670,8 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         self.login_frame.configure(bg='#0b1726')
         self.profile_panel = UserProfilePanel(self.login_frame, self)
         self.profile_panel.pack(fill='both', expand=True)
-        self.main_Notebook.rename_tab(self.login_frame, 'User Profile')
+        tab_name = (self.user or {}).get('User_name') or 'User Profile'
+        self.main_Notebook.rename_tab(self.login_frame, str(tab_name))
 
     def _show_account_panel(self):
         if not hasattr(self, 'profile_panel') or not self.profile_panel.winfo_exists():
@@ -652,13 +683,130 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         """Open the POS (sell) terminal tab."""
         self.main_Notebook.select(self.main_frame)
 
+    def _on_pos_layout_configure(self, event):
+        if event.widget is self.main_frame:
+            self._apply_pos_layout(event.width, event.height)
+
+    def _apply_pos_layout(self, width, height):
+        narrow = width < 1100 or height < 700
+        if narrow == self._pos_layout_is_narrow:
+            return
+        self._pos_layout_is_narrow = narrow
+
+        for row in range(4):
+            self.main_frame.rowconfigure(row, weight=0)
+        self.main_frame.columnconfigure(0, weight=1 if narrow else 3, minsize=0)
+        self.main_frame.columnconfigure(1, weight=0 if narrow else 1, minsize=0 if narrow else 300)
+        self.midel_frame.grid_forget()
+        self.buttons_frame.grid_forget()
+        self.total_frame.grid_forget()
+
+        if narrow:
+            self.main_frame.rowconfigure(2, weight=1)
+            self.buttons_frame.grid(row=1, column=0, columnspan=2, sticky='ew')
+            self.midel_frame.grid(row=2, column=0, columnspan=2, sticky='nsew')
+            self.total_frame.grid(row=3, column=0, columnspan=2, sticky='ew')
+        else:
+            self.main_frame.rowconfigure(1, weight=1)
+            self.midel_frame.grid(row=1, column=0, rowspan=2, sticky='nsew')
+            self.buttons_frame.grid(row=1, column=1, sticky='nsew')
+            self.total_frame.grid(row=2, column=1, sticky='sew')
+
+    def toggle_totals_panel(self):
+        if self._totals_animation_id:
+            self.after_cancel(self._totals_animation_id)
+            self._totals_animation_id = None
+
+        expanded = not self._totals_expanded
+        self._totals_expanded = expanded
+        if expanded:
+            self.totals_details_frame.grid()
+
+        start_height = self.total_frame.winfo_height()
+        if start_height <= 1:
+            start_height = self._totals_collapsed_height if expanded else self._totals_full_height
+        target_height = self._totals_full_height if expanded else self._totals_collapsed_height
+        steps = 10
+
+        def animate(step):
+            fraction = step / steps
+            height = round(start_height + (target_height - start_height) * fraction)
+            try:
+                self.total_frame.configure(height=height)
+            except tk.TclError:
+                self._totals_animation_id = None
+                return
+
+            if step >= steps:
+                if not expanded:
+                    self.totals_details_frame.grid_remove()
+                self._totals_animation_id = None
+                return
+            self._totals_animation_id = self.after(12, animate, step + 1)
+
+        self._totals_animation_id = self.after(0, animate, 1)
+
+    def _bind_master(self, sequence, callback):
+        binding_id = self.master.bind(sequence, callback)
+        if binding_id:
+            self._master_binding_ids.append((sequence, binding_id))
+
+    def _cleanup_master_bindings(self):
+        if self._master_bindings_cleaned:
+            return
+        self._master_bindings_cleaned = True
+        if getattr(self, '_totals_animation_id', None):
+            try:
+                self.after_cancel(self._totals_animation_id)
+            except tk.TclError:
+                pass
+            self._totals_animation_id = None
+        for sequence, binding_id in self._master_binding_ids:
+            try:
+                self.master.unbind(sequence, binding_id)
+            except tk.TclError:
+                pass
+        self._master_binding_ids.clear()
+
     def go_to_manager(self):
         """Open the manager page; the MANAGE tab itself is hidden."""
-        if getattr(self, 'can_manage', False) and hasattr(self, 'manage_form'):
-            self.main_Notebook.select(self.manage_form)
+        if not self.Shops or not hasattr(self, 'manage_form'):
+            return
+
+        if not getattr(self, 'can_manage', False):
+            shop_index = getattr(self, 'on_Shop', -1)
+            if not isinstance(shop_index, int) or not 0 <= shop_index < len(self.Shops):
+                return
+            if not Chacke_Security(
+                self,
+                self.user,
+                self.Shops[shop_index],
+                26,
+                'User Has No Permission To Access MANAGE FRAME OR LOGIN AS ADMIN',
+            ):
+                return
+            self.can_manage = True
+
+        if self.manage_form not in self.main_Notebook.tabs():
+            self.main_Notebook.add(self.manage_form, text='MANAGE', hidden=True)
+        self.main_Notebook.select(self.manage_form)
+
+    def select_shop(self, index):
+        if not isinstance(index, int) or not 0 <= index < len(self.Shops):
+            return
+        shop = self.Shops[index]
+        self.on_Shop = index
+        self.At_Shop_id = shop.get('Shop_Id', -1)
+        self.at_shop_name = shop.get('Shop_name', '')
+        self.Shop_brand_name = shop.get('Shop_brand_name', '')
+        if hasattr(self, 'manage_form'):
+            self.manage_form.on_Shop = index
+        if hasattr(self, 'profile_panel') and self.profile_panel.winfo_exists():
+            self.profile_panel.refresh()
 
     def sign_out(self):
         application = self.master
+        self._cleanup_master_bindings()
         atexit.unregister(self.backup_database)
         display_frame = DisplayFrame(application, None, None, None, None)
         display_frame.grid(row=0, column=0, sticky='nsew')
@@ -666,9 +814,6 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         application.frames['DisplayFrame'] = display_frame
         self.destroy()
             
-    def Veaw_Notifications(self):
-        pass
-    
     def Load_Shop_items(self):
         self.Shops_info['Shop_items'] = []
         for s, shop in enumerate(self.Shops):
@@ -676,7 +821,7 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
             #print("Selected Shop ", self.shop_name_Combobox.get())
             #print("Shop items = ", shop['Shop_items'])
             FOUND = []
-            if shop['Shop_items'] and (shop['Shop_name'] == "" or s == self.User_Shopes_Combobox.current() or self.User_Shopes_Combobox.current() == ""):
+            if shop['Shop_items'] and (shop['Shop_name'] == "" or s == self.on_Shop):
                 found_shop_items = json.loads(shop['Shop_items'])
                 #print("Shop items --> ", found_shop_items)
                 if found_shop_items:
@@ -789,9 +934,9 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
             if Chacke_Security(self, self.user, self.Shops[self.on_Shop], perm_level, f'User Not allowed to Use {payment_tool_type} Payment Tool'):
                 new_button = tk.Button(self.buttons_frame, text=tool_name+"\nCtrl + "+str(row[3]), command=lambda r=str(row[3]), d=tool_name, t=payment_tool_type: self.Q_Payment(r, d, t), **self.button_style)
                 new_button.bind("<Button-3>", lambda d=str(row[3]), t=payment_tool_type: self.Q_Payment(d, d.widget["text"].split("\n")[0], t))
-                self.master.bind("<KeyPress-" + str(row[3]) + ">", lambda r=str(row[3]), d=tool_name, k=new_button, t=payment_tool_type: self.Q_Payment(r, d, t) if "Control" in str(r)else r)
+                self._bind_master("<KeyPress-" + str(row[3]) + ">", lambda r=str(row[3]), d=tool_name, k=new_button, t=payment_tool_type: self.Q_Payment(r, d, t) if "Control" in str(r)else r)
                 if payment_tool_type == "CASH":
-                    self.master.bind("<F12>", lambda r=str(row[3]), d=tool_name, k=new_button, t=payment_tool_type: self.Q_Payment(r, d, t))
+                    self._bind_master("<F12>", lambda r=str(row[3]), d=tool_name, k=new_button, t=payment_tool_type: self.Q_Payment(r, d, t))
                 new_button.grid(row=a, column=b, sticky="nsew", padx=2, pady=5)
                 self.Loded_payment_buttons.append([row[1], row[3], new_button])
                 b += 1
@@ -1932,6 +2077,7 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
                 self.profile_pending = True
                 self.loged()
                 self._show_account_panel()
+                self.main_Notebook.select(self.login_frame)
                 #print("User data loaded successfully")
         
         if tab_text == "Manager":

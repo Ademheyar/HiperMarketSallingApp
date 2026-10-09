@@ -592,10 +592,10 @@ class WorkersForm(tk.Frame):
         for s, shop in enumerate(self.Shops):
             #if self.Selected_Shop != "" and shop['Shop_name'] != self.Selected_Shop:
             #    continue
-            if shop['Shop_oweners_id'] and shop['Shop_oweners_id'] != "":
-                #print("shop['Shop_oweners_id'] ", shop['Shop_oweners_id'])
+            owner_id = shop.get('Shop_owners_id') or shop.get('Shop_oweners_id')
+            if owner_id:
                 # Fetch the user details for the shop owner
-                users = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM USERS WHERE User_id=?', (shop['Shop_oweners_id'],))
+                users = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM USERS WHERE User_id=?', (owner_id,))
                 if users:
                     users= users[0]
                     self.Shop_workers.append([users['User_id'], users['User_fname'] +" "+users['User_Lname'], users['User_name'], "OWNER", shop['Shop_name'], shop['Shop_brand_name'], "10"])

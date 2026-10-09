@@ -38,6 +38,11 @@ class StubApp:
             'Shop_name': 'Hiper Mart',
             'Shop_brand_name': 'Hiper Mart',
             'Shop_country': 'South Africa',
+        }, {
+            'Shop_Id': 2,
+            'Shop_name': 'City Shop',
+            'Shop_brand_name': 'City Shop',
+            'Shop_country': 'South Africa',
         }]
         self.on_Shop = 0
         self.Link = ''
@@ -50,6 +55,9 @@ class StubApp:
 
     def go_to_manager(self):
         self.manager_calls += 1
+
+    def select_shop(self, index):
+        self.on_Shop = index
 
     def sign_out(self):
         pass
@@ -90,10 +98,24 @@ def test_panel_constructs_and_switches():
     assert 'Messages' in panel.sections
     assert 'Notif' in panel.sections
     assert 'History' in panel.sections
+    assert isinstance(panel.notifications_viewer, tk.Frame)
+    assert panel.notifications_viewer.master is panel.sections['Notif']
+    assert len(panel.notifications_viewer.Notifications_list) == len(app.Shops)
     assert panel.section_navigation.winfo_manager() == 'grid'
     assert panel.section_navigation.grid_info()['row'] == 2
     assert panel.section_navigation.cget('bg') == THEME_PALETTES['Green']['background']
     assert panel.section_tabs['Messages']['label'].cget('fg') == THEME_PALETTES['Green']['accent']
+    app.can_manage = False
+    root.deiconify()
+    root.update()
+    panel.manage_action.event_generate('<Button-1>')
+    root.update()
+    assert app.manager_calls == 1
+    assert panel.shop_selector.get() == 'Hiper Mart'
+    panel.shop_selector.current(1)
+    panel.shop_selector.event_generate('<<ComboboxSelected>>')
+    assert app.on_Shop == 1
+    assert panel.shop_selector.get() == 'City Shop'
     panel._select_section('Notif')
     assert panel.active_section == 'Notif'
     panel._select_section('History')

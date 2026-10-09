@@ -16,10 +16,10 @@ from C.API.Get import fetch_as_dict_list
 from M.UITheme import PROFILE_THEME, apply_profile_theme
 from M.ProfileData import (
     build_messages,
-    build_notifications,
     build_summary,
     format_history_rows,
 )
+from D.Veaw_Notifications import Veaw_Notifications
 from M.ProfileEdit import ProfileEditDialog
 from M.ProfileIcons import draw_icon, icon_label
 
@@ -168,7 +168,23 @@ class UserProfilePanel(tk.Frame):
         self._icon_text(top_row, 'briefcase', 'Role: ' + self.summary['role'])
         tk.Label(top_row, text=' | ', bg=CARD_BG, fg=CARD_BORDER,
                  font=('Segoe UI', 11)).pack(side='left')
-        self._icon_text(top_row, 'store', 'Shop: ' + self.summary['shop_name'])
+        shop_holder = tk.Frame(top_row, bg=CARD_BG)
+        shop_holder.pack(side='left')
+        icon_label(shop_holder, 'store', 16, MUTED, CARD_BG).pack(side='left', padx=(0, 8))
+        shop_names = [shop.get('Shop_name', '') for shop in getattr(self.app, 'Shops', [])]
+        self.shop_selector = ttk.Combobox(
+            shop_holder,
+            values=shop_names,
+            state='readonly',
+            width=18,
+        )
+        self.shop_selector.pack(side='left')
+        selected_shop = getattr(self.app, 'on_Shop', 0)
+        if shop_names:
+            if not isinstance(selected_shop, int) or not 0 <= selected_shop < len(shop_names):
+                selected_shop = 0
+            self.shop_selector.current(selected_shop)
+        self.shop_selector.bind('<<ComboboxSelected>>', self._on_shop_selected)
 
         bottom_row = tk.Frame(details, bg=CARD_BG)
         bottom_row.pack(fill='x', pady=3)
@@ -199,14 +215,24 @@ class UserProfilePanel(tk.Frame):
                                 self.app.go_to_pos)
         pos.grid(row=0, column=0, sticky='ew', padx=(0, 10))
 
-        can_manage = bool(getattr(self.app, 'can_manage', False))
         manage = self._pill_button(row, 'shield', 'Manage', ROW_BG, '#2c4262', TEXT,
-                                   self.app.go_to_manager, enabled=can_manage)
+                                   self.app.go_to_manager)
         manage.grid(row=0, column=1, sticky='ew', padx=(0, 10))
+        self.manage_action = manage
 
         edit = self._pill_button(row, 'edit', 'Edit Profile', ROW_BG, '#2c4262', TEXT,
                                  self.open_edit_dialog)
         edit.grid(row=0, column=2, sticky='ew')
+
+    def _on_shop_selected(self, _event=None):
+        index = self.shop_selector.current()
+        if index < 0:
+            return
+        select_shop = getattr(self.app, 'select_shop', None)
+        if callable(select_shop):
+            select_shop(index)
+        else:
+            self.app.on_Shop = index
 
     def _build_sign_out(self, card):
         row = tk.Frame(card, bg=CARD_BG)
@@ -428,20 +454,14 @@ class UserProfilePanel(tk.Frame):
 
     def _build_notifications(self, parent):
         frame = tk.Frame(parent, bg=BG)
-        self._section_heading(frame, 'bell', 'Notifications')
         shop_rows = getattr(self.app, 'Shops', None) or []
-        notifications = build_notifications(self.summary, shop_rows)
-        if not notifications:
-            self._empty_state(frame, 'No notifications right now.')
-        for note in notifications:
-            card = tk.Frame(frame, bg=CARD_BG, highlightthickness=1,
-                            highlightbackground=CARD_BORDER, padx=14, pady=12)
-            card.pack(fill='x', pady=6)
-            tk.Label(card, text=note['title'], bg=CARD_BG, fg=ACCENT,
-                     font=('Segoe UI', 11, 'bold'), anchor='w').pack(fill='x')
-            tk.Label(card, text=note['text'], bg=CARD_BG, fg=TEXT,
-                     font=('Segoe UI', 10), anchor='w', justify='left',
-                     wraplength=520).pack(fill='x', pady=(3, 0))
+        self.notifications_viewer = Veaw_Notifications(
+            frame,
+            getattr(self.app, 'user', None) or {},
+            shop_rows,
+            app=self.app,
+        )
+        self.notifications_viewer.pack(fill='both', expand=True)
         return frame
 
     def _load_history_rows(self):

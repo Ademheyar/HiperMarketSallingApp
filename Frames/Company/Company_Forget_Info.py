@@ -206,7 +206,7 @@ class Company_Forget_Info_Frame(tk.Frame):
                       Shop_name TEXT,
                       Shop_brand_name TEXT,
                       Shop_type TEXT,
-                      Shop_oweners_id TEXT,
+                      Shop_owners_id TEXT,
                       Shop_link TEXT,
                       Shop_email TEXT,
                       Shop_phone_num TEXT,
@@ -228,7 +228,7 @@ class Company_Forget_Info_Frame(tk.Frame):
                       Shop_isenabled TEXT,
                       Shop_Access_levels TEXT'''
                   
-                      Update_table_database('INSERT INTO Shops(Shop_name, Shop_brand_name, Shop_type, Shop_email, Shop_phone_num, Shop_country, Shop_currency, Shop_location, Shop_password, Shop_about, Shop_profile_img, Shop_oweners_id) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (User_fname, User_name, User_type, User_email, User_phone_num, User_country, Shop_currency, User_address, User_password0, User_about, User_pimg, owner_id))
+                      Update_table_database('INSERT INTO Shops(Shop_name, Shop_brand_name, Shop_type, Shop_email, Shop_phone_num, Shop_country, Shop_currency, Shop_location, Shop_password, Shop_about, Shop_profile_img, Shop_owners_id) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (User_fname, User_name, User_type, User_email, User_phone_num, User_country, Shop_currency, User_address, User_password0, User_about, User_pimg, owner_id))
                       print("new shop created ")
                   else:
                       print("filde no owner")

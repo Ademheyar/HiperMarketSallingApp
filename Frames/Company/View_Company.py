@@ -213,7 +213,7 @@ class Company_Info_Frame(tk.Frame):
                         User_rate = ""
 
                         user_info = User_phone_num + User_country + User_address
-                        newShops = Set_Shop(None, ['Shop_name', 'Shop_brand_name', 'Shop_type', 'Shop_email', 'Shop_location', 'Shop_password', 'Shop_about', 'Shop_profile_img', 'Shop_oweners_id', 'Shop_country', 'Shop_currency'], [User_fname, User_name, User_type, User_email, user_info, User_password0, User_about, User_pimg, owner_id, User_country, Shop_currency])
+                        newShops = Set_Shop(None, ['Shop_name', 'Shop_brand_name', 'Shop_type', 'Shop_email', 'Shop_location', 'Shop_password', 'Shop_about', 'Shop_profile_img', 'Shop_owners_id', 'Shop_country', 'Shop_currency'], [User_fname, User_name, User_type, User_email, user_info, User_password0, User_about, User_pimg, owner_id, User_country, Shop_currency])
                         print("newshop : ", newShops)
                         new_id = newShops['Shop_Id'] if newShops else None
                         print("company_name : ", newShops['Shop_name'])

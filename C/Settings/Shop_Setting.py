@@ -1818,8 +1818,9 @@ class Shop_SettingForm(ttk.Notebook):
             self.load_shop_image()
             self.load_Brand_image()
 
-            self.user_name_var.set(self.user_map_id.get(shop_['Shop_oweners_id'], ''))
-            self.user_id_var.set(self.user_map.get(shop_['Shop_oweners_id'], ''))
+            owner_id = shop_.get('Shop_owners_id') or shop_.get('Shop_oweners_id') or ''
+            self.user_name_var.set(self.user_map_id.get(owner_id, ''))
+            self.user_id_var.set(self.user_map.get(owner_id, ''))
             
             self.Shop_email_entry.delete(0, tk.END)
             self.Shop_email_entry.insert(0, str(shop_['Shop_email']))
@@ -1881,7 +1882,7 @@ class Shop_SettingForm(ttk.Notebook):
             self.Shop_brand_name_entry.get()
             #'Shop_brand_name'
             self.user_id_var.get()
-            #'Shop_oweners_id'
+            #'Shop_owners_id'
             self.Shop_email_entry.get()
             #'Shop_email'
             self.Shop_about_entry.get()
@@ -1919,7 +1920,7 @@ class Shop_SettingForm(ttk.Notebook):
             #'Shop_Adress_Information'
             
             shop_info =  "Phone Number="+str(self.Shop_phone_nums)+"+Location="+str(self.Shop_locations)             
-            s = Update_Shop(None, None, ['Shop_name', 'Shop_brand_name', 'Shop_oweners_id', 'Shop_email', 'Shop_about', 'Shop_country', 'Shop_currency', 'Shop_password', 'Shop_link', 'Shop_contact', 'Shop_isenabled', 'Shop_type', 'Shop_rate', 'Shop_SocLinks', 'Shop_rules', 'Shop_Adress_Information'], [self.Shop_name_entry.get(), self.Shop_brand_name_entry.get(), self.user_id_var.get(), self.Shop_email_entry.get(), self.Shop_about_entry.get(), shop_country, shop_currency, self.Shop_password_entry.get(), self.Shop_link_entry.get(), self.Shop_Contact_entry.get(), self.Shop_isenabled_var.get(), self.Shop_types_var.get(), self.Shop_rate, self.Shop_slinks, self.Shop_rules, shop_info], [idq], [idv])
+            s = Update_Shop(None, None, ['Shop_name', 'Shop_brand_name', 'Shop_owners_id', 'Shop_email', 'Shop_about', 'Shop_country', 'Shop_currency', 'Shop_password', 'Shop_link', 'Shop_contact', 'Shop_isenabled', 'Shop_type', 'Shop_rate', 'Shop_SocLinks', 'Shop_rules', 'Shop_Adress_Information'], [self.Shop_name_entry.get(), self.Shop_brand_name_entry.get(), self.user_id_var.get(), self.Shop_email_entry.get(), self.Shop_about_entry.get(), shop_country, shop_currency, self.Shop_password_entry.get(), self.Shop_link_entry.get(), self.Shop_Contact_entry.get(), self.Shop_isenabled_var.get(), self.Shop_types_var.get(), self.Shop_rate, self.Shop_slinks, self.Shop_rules, shop_info], [idq], [idv])
             
             #  = fetch_as_dict_list("SELECT * FROM Shops WHERE " + idq + "=?", (str(idv),))
             if s:
