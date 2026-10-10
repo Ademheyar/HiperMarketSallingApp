@@ -89,6 +89,8 @@ class UserProfilePanel(tk.Frame):
         self.sections = {}
         self.section_tabs = {}
         self.active_section = SECTIONS[0][0]
+        self.active_chat_message = None
+        self._message_animation_after = None
         self._avatar_photo = None
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
@@ -97,10 +99,35 @@ class UserProfilePanel(tk.Frame):
 
     # ------------------------------------------------------------------ build
     def build(self):
-        root = tk.Frame(self, bg=BG)
+        self.profile_canvas = tk.Canvas(
+            self,
+            bg=BG,
+            highlightthickness=0,
+            bd=0,
+        )
+        self.profile_scrollbar = ttk.Scrollbar(
+            self,
+            orient='vertical',
+            command=self.profile_canvas.yview,
+        )
+        self.profile_canvas.configure(yscrollcommand=self.profile_scrollbar.set)
+        self.profile_canvas.pack(side='left', fill='both', expand=True)
+        self.profile_content = tk.Frame(self.profile_canvas, bg=BG)
+        self.profile_window = self.profile_canvas.create_window(
+            (0, 0),
+            window=self.profile_content,
+            anchor='nw',
+        )
+        self.profile_content.bind(
+            '<Configure>',
+            lambda _event: self.after_idle(self._update_profile_scrollregion),
+        )
+        self.profile_canvas.bind('<Configure>', self._on_profile_canvas_configure)
+
+        root = tk.Frame(self.profile_content, bg=BG)
         root.pack(fill='both', expand=True, padx=20, pady=18)
         root.columnconfigure(0, weight=1)
-        root.rowconfigure(1, weight=1)
+        root.rowconfigure(2, weight=1)
 
         card = tk.Frame(root, bg=CARD_BG, highlightthickness=1,
                         highlightbackground=CARD_BORDER, padx=26, pady=24)
@@ -113,16 +140,34 @@ class UserProfilePanel(tk.Frame):
         self._build_actions(card)
         self._build_sign_out(card)
 
+        self.section_navigation = tk.Frame(root, bg=BG)
+        self.section_navigation.grid(row=1, column=0, sticky='ew', pady=(18, 0))
+        self._build_section_tabs(self.section_navigation)
+
         content = tk.Frame(root, bg=BG)
-        content.grid(row=1, column=0, sticky='nsew', pady=(18, 0))
+        content.grid(row=2, column=0, sticky='nsew', pady=(12, 0))
         content.columnconfigure(0, weight=1)
         self.content = content
         self._build_sections(content)
         self._select_section(self.active_section)
+        self.after_idle(self._update_profile_scrollregion)
 
-        self.section_navigation = tk.Frame(root, bg=BG)
-        self.section_navigation.grid(row=2, column=0, sticky='ew', pady=(12, 0))
-        self._build_section_tabs(self.section_navigation)
+    def _on_profile_canvas_configure(self, event):
+        self.profile_canvas.itemconfigure(self.profile_window, width=event.width)
+        self.after_idle(self._update_profile_scrollregion)
+
+    def _update_profile_scrollregion(self):
+        if not self.winfo_exists():
+            return
+        bounds = self.profile_canvas.bbox(self.profile_window)
+        if bounds is None:
+            return
+        self.profile_canvas.configure(scrollregion=bounds)
+        if bounds[3] > self.profile_canvas.winfo_height():
+            if not self.profile_scrollbar.winfo_manager():
+                self.profile_scrollbar.pack(side='right', fill='y')
+        elif self.profile_scrollbar.winfo_manager():
+            self.profile_scrollbar.pack_forget()
 
     def _build_identity(self, card):
         header = tk.Frame(card, bg=CARD_BG)
@@ -328,6 +373,10 @@ class UserProfilePanel(tk.Frame):
 
         for widget in (tab, icon, label):
             widget.bind('<Button-1>', on_click)
+        label._apply_app_theme_palette = (
+            lambda palette, section_name=name:
+            self._apply_section_tab_palette(section_name, palette)
+        )
         return {'frame': tab, 'icon': icon, 'label': label, 'kind': kind}
 
     # --------------------------------------------------------------- sections
@@ -363,26 +412,27 @@ class UserProfilePanel(tk.Frame):
             return
 
         background = palette['background']
-        text = palette['text']
-        muted = '#64748b' if background == '#f1f5f9' else MUTED
         self.configure(bg=background)
         self.section_navigation.configure(bg=background)
         self.section_tabs_frame.configure(bg=background)
         self.section_separator.configure(bg=palette['surface'])
-        for name, tab in self.section_tabs.items():
-            tab['frame'].configure(bg=background)
-            tab['icon'].configure(bg=background)
-            tab['label'].configure(
-                bg=background,
-                fg=palette['accent'] if name == self.active_section else muted,
-            )
-            tab['icon'].delete('all')
-            draw_icon(
-                tab['icon'], tab['kind'], 22,
-                palette['accent'] if name == self.active_section else muted,
-                tab['icon'].winfo_reqwidth() / 2,
-                tab['icon'].winfo_reqheight() / 2,
-            )
+        for name in self.section_tabs:
+            self._apply_section_tab_palette(name, palette)
+
+    def _apply_section_tab_palette(self, name, palette):
+        tab = self.section_tabs[name]
+        background = palette['background']
+        muted = '#64748b' if background == '#f1f5f9' else MUTED
+        color = palette['accent'] if name == self.active_section else muted
+        tab['frame'].configure(bg=background)
+        tab['icon'].configure(bg=background)
+        tab['label'].configure(bg=background, fg=color)
+        tab['icon'].delete('all')
+        draw_icon(
+            tab['icon'], tab['kind'], 22, color,
+            tab['icon'].winfo_reqwidth() / 2,
+            tab['icon'].winfo_reqheight() / 2,
+        )
 
     def open_edit_dialog(self):
         ProfileEditDialog(
@@ -396,6 +446,10 @@ class UserProfilePanel(tk.Frame):
         self.refresh()
 
     def refresh(self):
+        if self._message_animation_after is not None:
+            self.after_cancel(self._message_animation_after)
+            self._message_animation_after = None
+        self.active_chat_message = None
         self.summary = build_summary(
             getattr(self.app, 'user', None) or {},
             getattr(self.app, 'Shops', None) or [],
@@ -434,6 +488,7 @@ class UserProfilePanel(tk.Frame):
     def _chat_row(self, parent, sender, preview):
         card = tk.Frame(parent, bg=CARD_BG, highlightthickness=1,
                         highlightbackground=CARD_BORDER, padx=14, pady=12)
+        card.configure(cursor='hand2')
         card.pack(fill='x', pady=6)
         self._person_badge(card, 42).pack(side='left', padx=(0, 12))
         text_holder = tk.Frame(card, bg=CARD_BG)
@@ -443,14 +498,196 @@ class UserProfilePanel(tk.Frame):
         tk.Label(text_holder, text=preview, bg=CARD_BG, fg=TEXT,
                  font=('Segoe UI', 10), anchor='w', justify='left',
                  wraplength=520).pack(fill='x', pady=(3, 0))
+        return card
+
+    def _create_scrollable_list(self, parent, height=240):
+        holder = tk.Frame(parent, bg=BG, height=height)
+        holder.pack_propagate(False)
+        canvas = tk.Canvas(holder, bg=BG, highlightthickness=0, bd=0)
+        scrollbar = ttk.Scrollbar(
+            holder,
+            orient='vertical',
+            command=canvas.yview,
+        )
+        content = tk.Frame(canvas, bg=BG)
+        window = canvas.create_window((0, 0), window=content, anchor='nw')
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side='left', fill='both', expand=True)
+
+        def update_scrollregion(_event=None):
+            bounds = canvas.bbox(window)
+            if bounds is None:
+                return
+            canvas.configure(scrollregion=bounds)
+            if bounds[3] > canvas.winfo_height():
+                if not scrollbar.winfo_manager():
+                    scrollbar.pack(side='right', fill='y')
+            elif scrollbar.winfo_manager():
+                scrollbar.pack_forget()
+
+        content.bind(
+            '<Configure>',
+            lambda _event: self.after_idle(update_scrollregion),
+        )
+        def resize_canvas(event):
+            canvas.itemconfigure(window, width=event.width)
+            self.after_idle(update_scrollregion)
+
+        canvas.bind('<Configure>', resize_canvas)
+        return holder, canvas, content, scrollbar
 
     def _build_messages(self, parent):
         frame = tk.Frame(parent, bg=BG)
         self._section_heading(frame, 'chat', 'Messages & Chats')
+        self.message_stage = tk.Frame(frame, bg=BG, height=240)
+        self.message_stage.pack(fill='x')
+        self.message_stage.pack_propagate(False)
+        (
+            self.message_list_view,
+            self.message_list_canvas,
+            self.message_list_content,
+            self.message_list_scrollbar,
+        ) = self._create_scrollable_list(self.message_stage)
+        self.message_list_view.pack(fill='both', expand=True)
+
         shop_rows = getattr(self.app, 'Shops', None) or []
-        for message in build_messages(self.summary, shop_rows):
-            self._chat_row(frame, message['sender'], message['preview'])
+        self.messages = build_messages(self.summary, shop_rows)
+        self.message_rows = []
+        for message in self.messages:
+            row = self._chat_row(
+                self.message_list_content,
+                message['sender'],
+                message['preview'],
+            )
+            row.bind(
+                '<Button-1>',
+                lambda _event, selected=message: self._open_chat_message(selected),
+            )
+            for child in row.winfo_children():
+                child.bind(
+                    '<Button-1>',
+                    lambda _event, selected=message: self._open_chat_message(selected),
+                )
+                for grandchild in child.winfo_children():
+                    grandchild.bind(
+                        '<Button-1>',
+                        lambda _event, selected=message: self._open_chat_message(selected),
+                    )
+            self.message_rows.append(row)
+
+        self.message_action_panel = tk.Frame(
+            self.message_stage,
+            bg=BG,
+            highlightthickness=1,
+            highlightbackground=CARD_BORDER,
+        )
+        action_header = tk.Frame(self.message_action_panel, bg=BG)
+        action_header.pack(fill='x', padx=12, pady=(10, 6))
+        back_button = tk.Button(
+            action_header,
+            text='< Messages',
+            command=self._hide_chat_message,
+            bg=ROW_BG,
+            fg=TEXT,
+            activebackground=CARD_BG,
+            activeforeground=TEXT,
+            relief='flat',
+            cursor='hand2',
+        )
+        back_button.pack(side='left')
+        self.chat_back_button = back_button
+        self.chat_sender_label = tk.Label(
+            action_header,
+            text='',
+            bg=BG,
+            fg=TEXT,
+            font=('Segoe UI', 12, 'bold'),
+        )
+        self.chat_sender_label.pack(side='left', padx=(12, 0))
+        self.chat_message_label = tk.Label(
+            self.message_action_panel,
+            text='',
+            bg=CARD_BG,
+            fg=TEXT,
+            justify='left',
+            anchor='nw',
+            wraplength=520,
+            padx=14,
+            pady=12,
+        )
+        self.chat_message_label.pack(fill='x', padx=12, pady=(8, 12))
         return frame
+
+    def _slide_message_panel(self, opening):
+        stage = self.message_stage
+        width = max(stage.winfo_width(), 1)
+        steps = 10
+        action_start = width if opening else 0
+        action_finish = 0 if opening else width
+
+        self.message_list_view.place(
+            x=0 if opening else -width,
+            y=0,
+            width=width,
+            height=stage.winfo_height(),
+        )
+        self.message_action_panel.place(
+            x=width if opening else 0,
+            y=0,
+            width=width,
+            height=stage.winfo_height(),
+        )
+
+        def animate(step=0):
+            progress = min(step / steps, 1)
+            list_x = round((0 if opening else -width) +
+                           ((-width if opening else 0) -
+                            (0 if opening else -width)) * progress)
+            action_x = round(
+                action_start + (action_finish - action_start) * progress,
+            )
+            self.message_list_view.place_configure(x=list_x)
+            self.message_action_panel.place_configure(x=action_x)
+            if step < steps:
+                self._message_animation_after = self.after(
+                    12,
+                    lambda: animate(step + 1),
+                )
+            else:
+                self._message_animation_after = None
+            if step >= steps and not opening:
+                self.message_action_panel.place_forget()
+                self.message_list_view.place(
+                    x=0,
+                    y=0,
+                    width=width,
+                    height=stage.winfo_height(),
+                )
+
+        animate()
+
+    def _open_chat_message(self, message):
+        if self._message_animation_after is not None:
+            self.after_cancel(self._message_animation_after)
+            self._message_animation_after = None
+        self.active_chat_message = message
+        self.chat_sender_label.configure(text=message['sender'])
+        self.chat_message_label.configure(text=message['preview'])
+        self.message_list_view.pack_forget()
+        self.message_list_view.place(
+            x=0,
+            y=0,
+            width=max(self.message_stage.winfo_width(), 1),
+            height=self.message_stage.winfo_height(),
+        )
+        self._slide_message_panel(opening=True)
+
+    def _hide_chat_message(self):
+        if self._message_animation_after is not None:
+            self.after_cancel(self._message_animation_after)
+            self._message_animation_after = None
+        self.active_chat_message = None
+        self._slide_message_panel(opening=False)
 
     def _build_notifications(self, parent):
         frame = tk.Frame(parent, bg=BG)
@@ -481,15 +718,25 @@ class UserProfilePanel(tk.Frame):
     def _build_history(self, parent):
         frame = tk.Frame(parent, bg=BG)
         self._section_heading(frame, 'clock', 'History')
+        (
+            self.history_list_view,
+            self.history_list_canvas,
+            self.history_list_content,
+            self.history_list_scrollbar,
+        ) = self._create_scrollable_list(frame)
+        self.history_list_view.pack(fill='both', expand=True)
         shop_rows = getattr(self.app, 'Shops', None) or []
         history = format_history_rows(
             self._load_history_rows(), shop_rows, getattr(self.app, 'on_Shop', 0),
         )
         if not history:
-            self._empty_state(frame, 'No recorded orders for this account yet.')
+            self._empty_state(
+                self.history_list_content,
+                'No recorded orders for this account yet.',
+            )
             return frame
         for entry in history:
-            card = tk.Frame(frame, bg=CARD_BG, highlightthickness=1,
+            card = tk.Frame(self.history_list_content, bg=CARD_BG, highlightthickness=1,
                             highlightbackground=CARD_BORDER, padx=14, pady=12)
             card.pack(fill='x', pady=6)
             top = tk.Frame(card, bg=CARD_BG)

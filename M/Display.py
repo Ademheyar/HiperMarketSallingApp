@@ -351,6 +351,7 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         self.pid_peyment = []
         self.ex_pid_peyment = []
         self.Loded_payment_buttons = []
+        self._quick_pay_dialog = None
         self.ex_items = []
         self.ex_doc = []
 
@@ -409,22 +410,71 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         
         self.top_frame = tk.Frame(
             self.main_frame,
-            height=int(screen_height * 0.70),
             bg=self.bg_light,
             highlightthickness=1,
             highlightbackground=PROFILE_THEME['card_border'],
         )
-        self.top_frame.grid(row=0, column=0, columnspan=2, sticky="nsew")
+        self.top_frame.grid(row=0, column=0, columnspan=3, sticky="nsew")
         self.top_frame.columnconfigure((0), weight=0)
         self.top_frame.columnconfigure((2, 3, 4, 5, 6, 7), weight=1, uniform='toolbar')
         self.top_frame.rowconfigure((0), weight=1)
-        self.top_frame.rowconfigure(1, weight=0, minsize=38)
+        self.top_frame.rowconfigure(1, weight=0, minsize=46)
+        self.top_frame.columnconfigure(0, weight=0)
+        self.top_frame.columnconfigure(1, weight=0)
 
         self.DFsearch_entry = search_entry(self.top_frame, self.Shops_info, self.user, self.Shops, font=("Segoe UI", 12))
         self.DFsearch_entry.grid(row=0, column=2, columnspan=6, sticky="nsew", padx=1, pady=1)
 
-        self.Add_custemur_label = tk.Button(
+        self.action_buttons_frame = tk.Frame(
             self.top_frame,
+            bg=self.bg_light,
+            bd=0,
+            highlightthickness=0,
+        )
+        self.action_buttons_frame.grid(row=1, column=2, columnspan=6, sticky='ew')
+        self.action_buttons_frame.columnconfigure(tuple(range(6)), weight=1, uniform='action_buttons')
+
+        self.buttons_frame = tk.Frame(
+            self.top_frame,
+            bg=self.bg_light,
+            bd=0,
+            highlightthickness=0,
+        )
+        self.buttons_frame.grid(row=1, column=0, columnspan=2, sticky='ew')
+
+        self.payment_buttons_canvas = tk.Canvas(
+            self.buttons_frame,
+            height=46,
+            bg=self.bg_light,
+            highlightthickness=0,
+            bd=0,
+        )
+        self.payment_buttons_scrollbar = tk.Scrollbar(
+            self.buttons_frame,
+            orient='horizontal',
+            command=self.payment_buttons_canvas.xview,
+            bg=self.bg_light,
+        )
+        self.payment_buttons_canvas.configure(xscrollcommand=self.payment_buttons_scrollbar.set)
+        self.payment_buttons_canvas.pack(side='top', fill='both', expand=True)
+
+        self.payment_buttons_inner = tk.Frame(self.payment_buttons_canvas, bg=self.bg_light)
+        self.payment_buttons_window = self.payment_buttons_canvas.create_window(
+            (0, 0),
+            window=self.payment_buttons_inner,
+            anchor='nw',
+        )
+        self.payment_buttons_inner.bind(
+            '<Configure>',
+            lambda _event: self.after_idle(self._update_payment_scrollbar),
+        )
+        self.payment_buttons_canvas.bind(
+            '<Configure>',
+            self._on_payment_buttons_canvas_configure,
+        )
+
+        self.Add_custemur_label = tk.Button(
+            self.action_buttons_frame,
             text="+ Custumer",
             font=("Segoe UI", 10, "bold"),
             fg=PROFILE_THEME['accent'],
@@ -433,8 +483,14 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
             cursor="hand2",
             command=self.Add_Custumer,
         )
-        self.Add_custemur_label.grid(row=1, column=2, sticky="nsew", padx=2, pady=2)
+        self.Add_custemur_label.grid(row=0, column=0, sticky="nsew", padx=2, pady=2)
 
+        self.quick_pay_button = tk.Button(
+            self.top_frame,
+            text="Quick Pay",
+            command=self.open_quick_pay,
+            **self.button_style,
+        )
 
         self.Calculter_button = tk.Button(self.top_frame, text="Calcu\nF1", command=lambda: GetvalueForm(self, '0', ["Calculater"]), **self.button_style)
         self.Calculter_button.grid(row=0, column=0, sticky="nsew", padx=2, pady=5)
@@ -444,22 +500,22 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         self.Add_None_item_button.grid(row=0, column=1, sticky="nsew", padx=2, pady=5)
         self._bind_master("<F2>", lambda _: DocEditForm.Create_Unowen_item(self))
         
-        self.activets_button = tk.Button(self.top_frame, text="Activities\nF6", command=self.call_chartForm, **self.button_style)
-        self.activets_button.grid(row=1, column=3, sticky="nsew", padx=1, pady=1)
+        self.activets_button = tk.Button(self.action_buttons_frame, text="Activities\nF6", command=self.call_chartForm, **self.button_style)
+        self.activets_button.grid(row=0, column=1, sticky="nsew", padx=1, pady=1)
         self._bind_master("<F6>", lambda _: self.call_chartForm())
         
-        self.payment_button = tk.Button(self.top_frame, text="Payment\nF10", command=self.call_splitpayment, **self.button_style)
-        self.payment_button.grid(row=1, column=4, sticky="nsew", padx=1, pady=1)
+        self.payment_button = tk.Button(self.action_buttons_frame, text="Payment\nF10", command=self.call_splitpayment, **self.button_style)
+        self.payment_button.grid(row=0, column=2, sticky="nsew", padx=1, pady=1)
         self._bind_master("<F10>", lambda _: self.call_splitpayment())
         
-        self.endday_button = tk.Button(self.top_frame, text="Cash Drawer\nCtrl+D", command=lambda: self.open_drower(), **self.button_style)
-        self.endday_button.grid(row=1, column=5, sticky="nsew", padx=1, pady=1)
+        self.endday_button = tk.Button(self.action_buttons_frame, text="Cash Drawer\nCtrl+D", command=lambda: self.open_drower(), **self.button_style)
+        self.endday_button.grid(row=0, column=3, sticky="nsew", padx=1, pady=1)
         
-        self.update_button = tk.Button(self.top_frame, text="Update\nCtrl+U", command=lambda: self.Call_Uploading_Form(), **self.button_style)
-        self.update_button.grid(row=1, column=6, sticky="nsew", padx=1, pady=1)
+        self.update_button = tk.Button(self.action_buttons_frame, text="Update\nCtrl+U", command=lambda: self.Call_Uploading_Form(), **self.button_style)
+        self.update_button.grid(row=0, column=4, sticky="nsew", padx=1, pady=1)
         
-        self.Endday_button = tk.Button(self.top_frame, text="End Day\nCtrl+E", command=lambda: self.manage_form.doc_form.perform_endday(), **self.button_style)
-        self.Endday_button.grid(row=1, column=7, sticky="nsew", padx=1, pady=1)
+        self.Endday_button = tk.Button(self.action_buttons_frame, text="End Day\nCtrl+E", command=lambda: self.manage_form.doc_form.perform_endday(), **self.button_style)
+        self.Endday_button.grid(row=0, column=5, sticky="nsew", padx=1, pady=1)
         
         self.midel_frame = tk.Frame(self.main_frame, bg=self.bg_dark)
         
@@ -499,12 +555,6 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
             self.item_List_canvas.configure(scrollregion=self.item_List_canvas.bbox("all"))
             self.item_List_canvas.itemconfig(self.window_id, width=screen_width-(screen_width/4))
         self.Selected_item_Display_frame.bind('<Configure>', resize)
-
-        self.buttons_frame = tk.LabelFrame(self.main_frame, text="Payment Tools", height=150, bg=self.bg_light, padx=5, pady=5)
-
-        self.buttons_frame.columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1, minsize=int(self.buttons_frame.winfo_height() *0.1))
-        self.buttons_frame.rowconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9), weight=1, minsize=int(self.buttons_frame.winfo_height() *0.1))
-
 
         self.total_frame = tk.Frame(self.main_frame, height=250, bg=self.bg_light, highlightthickness=1, highlightbackground=PROFILE_THEME['card_border'])
 
@@ -559,7 +609,7 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
 
 
         self.totals_details_frame = tk.Frame(self.total_frame, bg=self.bg_light)
-        self.totals_details_frame.grid(row=2, column=0, columnspan=7, sticky='ew')
+        self.totals_details_frame.grid(row=2, column=0, columnspan=7, sticky='nsew')
         self.totals_details_frame.columnconfigure((0, 1, 2, 3, 4), weight=1)
         tk.Label(self.totals_details_frame, text="Total Items : ", font=("Segoe UI", 11, "bold"), bg=self.bg_light, fg=self.text_light).grid(row=0, column=0, columnspan=3, sticky="nsew", padx=5, pady=5)
         self.total_items_label = tk.Label(self.totals_details_frame, text="0", font=("Segoe UI", 12, "bold"), bg=self.bg_light, fg=self.text_light)
@@ -688,29 +738,114 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
             self._apply_pos_layout(event.width, event.height)
 
     def _apply_pos_layout(self, width, height):
-        narrow = width < 1100 or height < 700
+        navigation_bar_height = self.main_Notebook.bar.winfo_reqheight()
+        narrow = width < 900 or height + navigation_bar_height < 600
         if narrow == self._pos_layout_is_narrow:
             return
         self._pos_layout_is_narrow = narrow
 
         for row in range(4):
             self.main_frame.rowconfigure(row, weight=0)
-        self.main_frame.columnconfigure(0, weight=1 if narrow else 3, minsize=0)
-        self.main_frame.columnconfigure(1, weight=0 if narrow else 1, minsize=0 if narrow else 300)
+        for column in range(3):
+            self.main_frame.columnconfigure(column, weight=0, minsize=0)
         self.midel_frame.grid_forget()
-        self.buttons_frame.grid_forget()
         self.total_frame.grid_forget()
 
         if narrow:
-            self.main_frame.rowconfigure(2, weight=1)
-            self.buttons_frame.grid(row=1, column=0, columnspan=2, sticky='ew')
-            self.midel_frame.grid(row=2, column=0, columnspan=2, sticky='nsew')
-            self.total_frame.grid(row=3, column=0, columnspan=2, sticky='ew')
-        else:
+            self.main_frame.columnconfigure(0, weight=1)
+            self.buttons_frame.grid_remove()
+            self.quick_pay_button.grid(
+                row=1,
+                column=0,
+                columnspan=2,
+                sticky='ew',
+                padx=2,
+                pady=2,
+            )
             self.main_frame.rowconfigure(1, weight=1)
-            self.midel_frame.grid(row=1, column=0, rowspan=2, sticky='nsew')
-            self.buttons_frame.grid(row=1, column=1, sticky='nsew')
-            self.total_frame.grid(row=2, column=1, sticky='sew')
+            self.midel_frame.grid(row=1, column=0, columnspan=3, sticky='nsew')
+            self.total_frame.grid(row=2, column=0, columnspan=3, sticky='ew')
+        else:
+            self.quick_pay_button.grid_remove()
+            self.buttons_frame.grid(
+                row=1,
+                column=0,
+                columnspan=2,
+                sticky='ew',
+            )
+            self.main_frame.columnconfigure(0, weight=0, minsize=300)
+            self.main_frame.columnconfigure(1, weight=1)
+            self.main_frame.columnconfigure(2, weight=0, minsize=300)
+            self.main_frame.rowconfigure(1, weight=1)
+            self.main_frame.rowconfigure(2, weight=0)
+            self.midel_frame.grid(row=1, column=0, columnspan=2, sticky='nsew')
+            self.total_frame.grid(row=1, column=2, sticky='nsew')
+
+    def _on_payment_buttons_canvas_configure(self, event):
+        self.payment_buttons_canvas.itemconfigure(
+            self.payment_buttons_window,
+            height=event.height,
+        )
+        self.after_idle(self._update_payment_scrollbar)
+
+    def _update_payment_scrollbar(self):
+        canvas_width = self.payment_buttons_canvas.winfo_width()
+        if canvas_width <= 1:
+            canvas_width = self.payment_buttons_canvas.winfo_reqwidth()
+        content_width = self.payment_buttons_inner.winfo_reqwidth()
+        self.payment_buttons_canvas.configure(
+            scrollregion=(0, 0, content_width, self.payment_buttons_inner.winfo_reqheight()),
+        )
+        if content_width > canvas_width:
+            if not self.payment_buttons_scrollbar.winfo_manager():
+                self.payment_buttons_scrollbar.pack(side='bottom', fill='x')
+        else:
+            self.payment_buttons_scrollbar.pack_forget()
+
+    def open_quick_pay(self):
+        if self._quick_pay_dialog and self._quick_pay_dialog.winfo_exists():
+            self._quick_pay_dialog.deiconify()
+            self._quick_pay_dialog.lift()
+            return
+
+        dialog = tk.Toplevel(self)
+        self._quick_pay_dialog = dialog
+        dialog.title("Quick Pay")
+        dialog.configure(bg=self.bg_dark)
+        dialog.transient(self.winfo_toplevel())
+
+        payment_panel = tk.LabelFrame(
+            dialog,
+            text="Payment Tools",
+            bg=self.bg_light,
+            fg=self.text_light,
+            padx=5,
+            pady=5,
+        )
+        payment_panel.pack(fill='both', expand=True, padx=10, pady=10)
+        payment_buttons = self._populate_payment_buttons(payment_panel)
+        if not payment_buttons:
+            tk.Label(
+                payment_panel,
+                text="No payment methods are available.",
+                bg=self.bg_light,
+                fg=self.text_light,
+            ).grid(row=0, column=0, padx=12, pady=12)
+
+        dialog.update_idletasks()
+        screen_width = dialog.winfo_screenwidth()
+        screen_height = dialog.winfo_screenheight()
+        width = min(max(payment_panel.winfo_reqwidth() + 20, 320), max(1, screen_width - 40))
+        height = min(payment_panel.winfo_reqheight() + 20, max(1, screen_height - 40))
+        x = max(0, (screen_width - width) // 2)
+        y = max(0, (screen_height - height) // 2)
+        dialog.geometry(f"{width}x{height}+{x}+{y}")
+
+        def close_dialog():
+            self._quick_pay_dialog = None
+            dialog.destroy()
+
+        dialog.protocol("WM_DELETE_WINDOW", close_dialog)
 
     def toggle_totals_panel(self):
         if self._totals_animation_id:
@@ -905,42 +1040,62 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         self.master.show_frame("LogingFrame")
 
     def create_payment_buttons(self):
-        # Function to create payment buttons based on tools in the database
         for widget in self.Loded_payment_buttons:
             widget[2].destroy()
         self.Loded_payment_buttons = []
-        
+
+        self._populate_payment_buttons(
+            self.payment_buttons_inner,
+            register_buttons=True,
+            bind_shortcuts=True,
+        )
+
+    def _populate_payment_buttons(self, parent, register_buttons=False, bind_shortcuts=False):
         buttons = []
-        j = 0
-        i = -1
-        for widget in range(len(self.buttons_frame.winfo_children())):
-            j = 0
-        a = 0
-        b = 0
+        parent.rowconfigure(0, weight=1)
+
         for spt, row in enumerate(self.Shop_Payment_Tools):
-            #print("creating row btn = " + str(row))
-            i += 1
-            if b > 3:
-                b = 0
-                a += 1
             tool_name = row[0]
-            # Create a new button
-                    
-                    
             payment_tool_type = row[1]
             permission_level = {'CASH':2, 'CARD':3, 'CREADIT':4, 'CASHOUT':5, 'CASHIN':6, 'OTHER':7}
             perm_level = permission_level.get(payment_tool_type, 7)
-                    
+
             if Chacke_Security(self, self.user, self.Shops[self.on_Shop], perm_level, f'User Not allowed to Use {payment_tool_type} Payment Tool'):
-                new_button = tk.Button(self.buttons_frame, text=tool_name+"\nCtrl + "+str(row[3]), command=lambda r=str(row[3]), d=tool_name, t=payment_tool_type: self.Q_Payment(r, d, t), **self.button_style)
-                new_button.bind("<Button-3>", lambda d=str(row[3]), t=payment_tool_type: self.Q_Payment(d, d.widget["text"].split("\n")[0], t))
-                self._bind_master("<KeyPress-" + str(row[3]) + ">", lambda r=str(row[3]), d=tool_name, k=new_button, t=payment_tool_type: self.Q_Payment(r, d, t) if "Control" in str(r)else r)
-                if payment_tool_type == "CASH":
-                    self._bind_master("<F12>", lambda r=str(row[3]), d=tool_name, k=new_button, t=payment_tool_type: self.Q_Payment(r, d, t))
-                new_button.grid(row=a, column=b, sticky="nsew", padx=2, pady=5)
-                self.Loded_payment_buttons.append([row[1], row[3], new_button])
-                b += 1
-                
+                shortcut = str(row[3])
+                new_button = tk.Button(
+                    parent,
+                    text=tool_name + "\nCtrl + " + shortcut,
+                    command=lambda r=shortcut, d=tool_name, t=payment_tool_type: self.Q_Payment(r, d, t),
+                    **self.button_style,
+                )
+                new_button.bind(
+                    "<Button-3>",
+                    lambda event, d=tool_name, t=payment_tool_type: self.Q_Payment(
+                        event,
+                        d,
+                        t,
+                    ),
+                )
+                column_index = len(buttons)
+                new_button.grid(row=0, column=column_index, sticky="ns", padx=1, pady=1)
+                buttons.append(new_button)
+                if register_buttons:
+                    self.Loded_payment_buttons.append([payment_tool_type, shortcut, new_button])
+                if bind_shortcuts:
+                    self._bind_master(
+                        "<KeyPress-" + shortcut + ">",
+                        lambda r=shortcut, d=tool_name, t=payment_tool_type:
+                        self.Q_Payment(r, d, t) if "Control" in str(r) else r,
+                    )
+                    if payment_tool_type == "CASH":
+                        self._bind_master(
+                            "<F12>",
+                            lambda r=shortcut, d=tool_name, t=payment_tool_type:
+                            self.Q_Payment(r, d, t),
+                        )
+
+        return buttons
+
     def Load_payment_buttons(self):
         self.Shop_Payment_Tools = []
         for Shop in self.Shops:

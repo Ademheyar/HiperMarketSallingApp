@@ -90,6 +90,7 @@ def test_panel_constructs_and_switches():
         print('SKIP: no display available for Tk')
         return
     root.withdraw()
+    root.geometry('640x420')
     apply_app_theme(root, 'Green')
     app = StubApp()
     panel = UserProfilePanel(root, app)
@@ -102,12 +103,56 @@ def test_panel_constructs_and_switches():
     assert panel.notifications_viewer.master is panel.sections['Notif']
     assert len(panel.notifications_viewer.Notifications_list) == len(app.Shops)
     assert panel.section_navigation.winfo_manager() == 'grid'
-    assert panel.section_navigation.grid_info()['row'] == 2
+    assert panel.section_navigation.grid_info()['row'] == 1
+    assert panel.content.grid_info()['row'] == 2
     assert panel.section_navigation.cget('bg') == THEME_PALETTES['Green']['background']
     assert panel.section_tabs['Messages']['label'].cget('fg') == THEME_PALETTES['Green']['accent']
+    assert panel.profile_canvas.cget('yscrollcommand')
     app.can_manage = False
     root.deiconify()
     root.update()
+    for index in range(25):
+        tk.Label(
+            panel.message_list_content,
+            text=f'Additional chat {index}',
+        ).pack(fill='x')
+        tk.Label(
+            panel.history_list_content,
+            text=f'History entry {index}',
+        ).pack(fill='x')
+    for index in range(25):
+        tk.Label(
+            panel.sections['Messages'],
+            text=f'Additional message {index}',
+        ).pack(fill='x')
+    root.update()
+    message_bounds = panel.message_list_canvas.bbox('all')
+    history_bounds = panel.history_list_canvas.bbox('all')
+    assert message_bounds[3] > panel.message_list_canvas.winfo_height()
+    assert history_bounds[3] > panel.history_list_canvas.winfo_height()
+    assert panel.message_list_scrollbar.winfo_manager() == 'pack'
+    panel._select_section('History')
+    root.update()
+    assert panel.history_list_scrollbar.winfo_manager() == 'pack'
+    panel._select_section('Messages')
+    panel.message_rows[0].event_generate('<Button-1>')
+    root.update()
+    assert panel.active_chat_message == panel.messages[0]
+    assert panel.chat_message_label.cget('text') == panel.messages[0]['preview']
+    assert panel.message_action_panel.winfo_manager() == 'place'
+    root.after(180, root.quit)
+    root.mainloop()
+    assert panel.message_action_panel.winfo_x() == 0
+    assert panel.message_list_view.winfo_x() < 0
+    panel.chat_back_button.invoke()
+    assert panel.active_chat_message is None
+    root.after(180, root.quit)
+    root.mainloop()
+    assert not panel.message_action_panel.winfo_manager()
+    assert panel.message_list_view.winfo_manager() == 'place'
+    scroll_bounds = panel.profile_canvas.bbox(panel.profile_window)
+    assert scroll_bounds[3] > panel.profile_canvas.winfo_height()
+    assert panel.profile_scrollbar.winfo_manager() == 'pack'
     panel.manage_action.event_generate('<Button-1>')
     root.update()
     assert app.manager_calls == 1
