@@ -4,7 +4,7 @@ This is a Point of Sale (POS) application designed to help businesses manage sal
 
 ## Features
 
-- **Sales Management**: Process sales transactions, create invoices, and generate receipts. Support various payment methods including cash, credit/debit cards, and mobile payments.
+- **Sales Management**: Process sales transactions, create invoices, and generate receipts. Before finalizing a sale, choose which items to include, edit item names, quantities, prices, sale/expiry dates, and receipt details in the left-side slip editor. Social links and printed payment rows have individual editable fields; location details are loaded from the shop address settings. Review and print the configured receipt before processing; item changes are saved with the sale and used for its stock update, while rule and receipt-detail edits apply only to that receipt. Support various payment methods including cash, credit/debit cards, and mobile payments.
 
 - **Inventory Management**: Track and manage inventory levels, including stock tracking, barcode scanning, product variations, and low stock alerts.
 

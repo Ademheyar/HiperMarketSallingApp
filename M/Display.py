@@ -11,6 +11,7 @@ import sys
 import random
 import json
 import ast
+import re
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
 MAIN_dir = os.path.join(current_dir, '..')
@@ -28,7 +29,15 @@ from D.endday import EnddayForm
 from D.Upload_ import UploadingForm
 from M.Setting import Appelication_SettingForm
 from D.printer import PrinterForm
-from C.slipe import load_slip
+from C.slipe import (
+    find_user,
+    format_social_links,
+    format_slip_rules,
+    get_shop_information_values,
+    load_slip,
+    parse_social_links,
+    parse_slip_rules,
+)
 from D.Doc.Loaddoc import *
 from D.Security import *
 from C.List import *
@@ -348,6 +357,12 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         self.qty = 0
         self.disc = 0
         self.total = 0
+        self._sale_preview_dates = None
+        self._sale_preview_edits = {}
+        self._sale_preview_rules = None
+        self._sale_preview_rules_shop_id = None
+        self._sale_preview_sections = None
+        self._sale_preview_sections_shop_id = None
         self.pid_peyment = []
         self.ex_pid_peyment = []
         self.Loded_payment_buttons = []
@@ -564,6 +579,7 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
 
         self.date_time_frame = tk.Frame(self.total_frame, bg=self.bg_light)
         self.date_time_frame.grid(row=0, column=0, columnspan=7, sticky='ew', padx=5, pady=3)
+        self.date_time_frame.columnconfigure(4, weight=1)
         self.date_day_Label = tk.Label(
             self.date_time_frame,
             text='',
@@ -571,16 +587,16 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
             bg=self.bg_light,
             fg=self.text_light,
         )
-        self.date_day_Label.pack(side='left', padx=(0, 6))
+        self.date_day_Label.grid(row=0, column=0, padx=(0, 6))
 
         self.date_day_Spinbox = ttk.Spinbox(self.date_time_frame, from_=1, to=31, width=3)
-        self.date_day_Spinbox.pack(side='left', padx=2)
+        self.date_day_Spinbox.grid(row=0, column=1, padx=2)
         self.date_day_Spinbox.set(str(datetime.datetime.now().strftime('%d')))
         self.date_month_Spinbox = ttk.Spinbox(self.date_time_frame, from_=1, to=12, width=3)
-        self.date_month_Spinbox.pack(side='left', padx=2)
+        self.date_month_Spinbox.grid(row=0, column=2, padx=2)
         self.date_month_Spinbox.set(str(datetime.datetime.now().strftime('%m')))
         self.date_year_Spinbox = ttk.Spinbox(self.date_time_frame, from_=1990, width=5)
-        self.date_year_Spinbox.pack(side='left', padx=2)
+        self.date_year_Spinbox.grid(row=0, column=3, padx=2)
         self.date_year_Spinbox.set(str(datetime.datetime.now().strftime('%Y')))
 
         def _update_datetime():
@@ -589,6 +605,15 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
             self.date_day_Label.after(1000, _update_datetime)
 
         _update_datetime()
+        self.slip_preview_button = tk.Button(
+            self.date_time_frame,
+            text="Slip Preview",
+            command=lambda: self.open_sale_slip_preview(False),
+            **self.button_style,
+        )
+        self.slip_preview_button.grid(
+            row=1, column=0, columnspan=5, sticky='w', pady=(6, 0),
+        )
         
         self.prevlist_button = tk.Button(self.total_frame, text="<<<\nF4", command=lambda: self.next_prev_chart("prev"), **self.button_style)
         self.prevlist_button.grid(row=1, column=0, sticky="nsew")
@@ -1197,6 +1222,935 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         self.total_price_label.config(text=format_currency(all_total_price, currency))
         self.total_label.config(text=format_currency((all_total_price - self.tax) - self.disc, currency))
         self.update_chart()
+
+    def _get_sale_preview_items(self):
+        return [
+            item
+            for selected_group in self.Selected_items
+            for item in selected_group[0]
+        ]
+
+    def _apply_sale_preview_edits(self, line_edits):
+        selected_item_ids = set()
+        for line_edit in line_edits:
+            item = line_edit["item"]
+            item[4] = line_edit["name"]
+            item[7] = str(line_edit["quantity"])
+            item[10] = str(line_edit["price"])
+            selected_item_ids.add(id(item))
+
+        for selected_group in self.Selected_items:
+            selected_group[0][:] = [
+                item for item in selected_group[0]
+                if id(item) in selected_item_ids
+            ]
+        self.Selected_items[:] = [
+            selected_group for selected_group in self.Selected_items
+            if selected_group[0]
+        ]
+
+    def _format_sale_preview(
+        self, items, selected_rows, created_at, expires_at, rules=None, sections=None,
+        capture_sections=None,
+    ):
+        shop = self.Shops[self.on_Shop]
+        def number(value):
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return 0.0
+
+        receipt_items = []
+        for item, selected in zip(items, selected_rows):
+            if not selected:
+                continue
+            item_values = item[0].get("values", {}) if item and isinstance(item[0], dict) else {}
+            original_price = number(item_values.get("price"))
+            sale_price = number(item[10]) if len(item) > 10 else 0.0
+            receipt_items.append([
+                item[1],
+                item[2],
+                item[3],
+                item[4],
+                item[13] if len(item) > 13 else "",
+                item[5] if len(item) > 5 else "",
+                item[6] if len(item) > 6 else "",
+                item[7] if len(item) > 7 else 0,
+                sale_price,
+                original_price - sale_price,
+                item[11] if len(item) > 11 else 0,
+                item_values.get("cost", 0),
+            ])
+        total_quantity = sum(number(item[7]) for item in receipt_items)
+        total_price = sum(number(item[7]) * number(item[8]) for item in receipt_items)
+        total_discount = sum(number(item[9]) for item in receipt_items)
+        receipt = {
+            "doc_barcode": "PREVIEW",
+            "extension_barcode": "extension_barcode",
+            "At_Shop_Id": str(shop.get("Shop_Id") or shop.get("Shop_brand_name") or ""),
+            "user_id": str(self.user.get("User_id") or self.user.get("User_name") or ""),
+            "Seller_id": "",
+            "customer_id": str(self.custemr or ""),
+            "type": "Sale_item",
+            "item": json.dumps(receipt_items),
+            "qty": total_quantity,
+            "price": total_price,
+            "discount": total_discount,
+            "tax": 0,
+            "payments": json.dumps(self.pid_peyment),
+            "pid": sum(float(payment[2]) for payment in self.pid_peyment if len(payment) > 2),
+            "doc_created_date": created_at,
+            "doc_expire_date": expires_at,
+            "doc_updated_date": created_at,
+        }
+        preview_shop = dict(shop)
+        if rules is not None:
+            preview_shop["Shop_rules"] = "+".join(rule for rule in rules if rule)
+        return load_slip(
+            self.Link, receipt, 0, shop_override=preview_shop,
+            receipt_sections=sections, capture_sections=capture_sections,
+        )
+
+    def open_sale_slip_preview(self, allow_process=False):
+        items = self._get_sale_preview_items()
+        if not items:
+            tkmessagebox.showinfo("Slip Preview", "Add an item before previewing the sale.")
+            return None
+
+        now = datetime.datetime.now()
+        if self._sale_preview_dates:
+            created_at, expires_at = self._sale_preview_dates
+        else:
+            entered_date = (
+                self.date_year_Spinbox.get() + "-"
+                + self.date_month_Spinbox.get().zfill(2) + "-"
+                + self.date_day_Spinbox.get().zfill(2)
+            )
+            created_at = entered_date + " " + now.strftime("%H:%M")
+            expires_at = created_at
+
+        dialog = tk.Toplevel(self)
+        dialog.title("Sale Slip Preview")
+        dialog.configure(bg=self.bg_dark)
+        dialog.transient(self.winfo_toplevel())
+        dialog.geometry("920x620")
+        dialog.minsize(720, 460)
+        dialog.columnconfigure(0, weight=1)
+        dialog.rowconfigure(0, weight=1)
+
+        shop = self.Shops[self.on_Shop]
+        sections_shop_id = shop.get("Shop_Id") or shop.get("Shop_brand_name")
+        captured_defaults = []
+        self._format_sale_preview(
+            items, [True] * len(items), created_at, expires_at,
+            capture_sections=captured_defaults,
+        )
+        saved_sections = getattr(self, "_sale_preview_sections", None)
+        if getattr(self, "_sale_preview_sections_shop_id", None) == sections_shop_id:
+            saved_by_key = {
+                section["key"]: section for section in (saved_sections or [])
+            }
+        else:
+            saved_by_key = {}
+        initial_sections = [
+            {
+                **section,
+                **saved_by_key.get(section["key"], {}),
+                "selected": saved_by_key.get(section["key"], {}).get(
+                    "selected", True,
+                ),
+                "edited": saved_by_key.get(section["key"], {}).get(
+                    "edited", False,
+                ),
+            }
+            for section in captured_defaults
+        ]
+        default_social_links = parse_social_links(shop.get("Shop_SocLinks"))
+        default_rules = parse_slip_rules(shop.get("Shop_rules"))
+        default_payment_rows = [
+            {
+                "type": str(payment[0]) if len(payment) > 0 else "",
+                "name": str(payment[1]) if len(payment) > 1 else "",
+                "amount": str(payment[2]) if len(payment) > 2 else "",
+            }
+            for payment in self.pid_peyment
+        ]
+        for section in initial_sections:
+            if section["index"] == 20:
+                links = section.get("social_links")
+                if links is None:
+                    links = parse_social_links(section["text"]) or default_social_links
+                section["social_links"] = [
+                    {
+                        "link": str(link.get("link", "")),
+                        "selected": bool(link.get("selected", True)),
+                    }
+                    if isinstance(link, dict)
+                    else {"link": str(link), "selected": True}
+                    for link in links
+                ]
+            elif section["index"] == 23:
+                section.setdefault(
+                    "payment_rows",
+                    [payment.copy() for payment in default_payment_rows],
+                )
+            elif section["index"] == 19:
+                section.setdefault(
+                    "rules",
+                    [
+                        {"text": rule, "selected": True}
+                        for rule in default_rules
+                    ],
+                )
+        default_sections = [section.copy() for section in captured_defaults]
+        for section in default_sections:
+            if section["index"] == 20:
+                section["social_links"] = [
+                    {"link": link, "selected": True}
+                    for link in default_social_links
+                ]
+            elif section["index"] == 23:
+                section["payment_rows"] = [
+                    payment.copy() for payment in default_payment_rows
+                ]
+            elif section["index"] == 19:
+                section["rules"] = [
+                    {"text": rule, "selected": True}
+                    for rule in default_rules
+                ]
+
+        content = tk.Frame(dialog, bg=self.bg_dark)
+        content.grid(row=0, column=0, sticky="nsew", padx=12, pady=(10, 8))
+        content.columnconfigure((0, 1), weight=1)
+        content.rowconfigure(0, weight=1)
+
+        selection_frame = tk.LabelFrame(
+            content, text="Slip Contents Editor", bg=self.bg_dark, fg=self.text_light,
+        )
+        selection_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
+        selection_frame.rowconfigure(0, weight=1)
+        selection_frame.columnconfigure(0, weight=1)
+        item_canvas = tk.Canvas(selection_frame, bg=self.bg_dark, highlightthickness=0)
+        item_canvas.grid(row=0, column=0, sticky="nsew")
+        item_scroll = ttk.Scrollbar(selection_frame, orient="vertical", command=item_canvas.yview)
+        item_scroll.grid(row=0, column=1, sticky="ns")
+        item_canvas.configure(yscrollcommand=item_scroll.set)
+        item_rows = tk.Frame(item_canvas, bg=self.bg_dark)
+        item_canvas_window = item_canvas.create_window((0, 0), window=item_rows, anchor="nw")
+        item_rows.bind(
+            "<Configure>",
+            lambda _event: item_canvas.configure(scrollregion=item_canvas.bbox("all")),
+        )
+        item_canvas.bind(
+            "<Configure>",
+            lambda event: item_canvas.itemconfigure(item_canvas_window, width=event.width),
+        )
+
+        preview_frame = tk.LabelFrame(
+            content, text="Receipt Preview", bg=self.bg_dark, fg=self.text_light,
+        )
+        preview_frame.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
+        preview_frame.rowconfigure(0, weight=1)
+        preview_frame.columnconfigure(0, weight=1)
+        preview_canvas = tk.Canvas(
+            preview_frame, bg="#d9dee7", highlightthickness=0,
+        )
+        preview_canvas.grid(row=0, column=0, sticky="nsew")
+        preview_scroll = ttk.Scrollbar(
+            preview_frame, orient="vertical", command=preview_canvas.yview,
+        )
+        preview_scroll.grid(row=0, column=1, sticky="ns")
+        preview_canvas.configure(yscrollcommand=preview_scroll.set)
+        receipt_paper = tk.Frame(
+            preview_canvas, bg="white", padx=16, pady=18,
+            highlightthickness=1, highlightbackground="#c5cbd4",
+        )
+        receipt_window = preview_canvas.create_window(
+            (0, 0), window=receipt_paper, anchor="n",
+        )
+        receipt_paper.bind(
+            "<Configure>",
+            lambda _event: preview_canvas.configure(
+                scrollregion=preview_canvas.bbox("all"),
+            ),
+        )
+        preview_canvas.bind(
+            "<Configure>",
+            lambda event: preview_canvas.coords(
+                receipt_window, event.width // 2, 12,
+            ),
+        )
+
+        selected_vars = []
+        name_vars = []
+        quantity_vars = []
+        price_vars = []
+        section_text_widgets = {}
+        section_vars_by_key = {}
+        section_field_vars = {}
+        section_refreshing = {"active": False}
+        selected_state = dict(getattr(self, "_sale_preview_edits", {}))
+
+        def get_section_text(section):
+            if section["index"] == 20:
+                links = []
+                for variables in section_field_vars.get(section["key"], []):
+                    link = variables["link"].get().strip()
+                    selected = variables["selected"].get()
+                    links.append({"link": link, "selected": selected})
+                section["social_links"] = links
+                return format_social_links(
+                    link["link"] for link in links if link["selected"]
+                )
+            if section["index"] == 23:
+                payment_rows = [
+                    {
+                        field: variables[field].get().strip()
+                        for field in ("type", "name", "amount")
+                    }
+                    for variables in section_field_vars.get(section["key"], [])
+                ]
+                section["payment_rows"] = payment_rows
+                return "".join(
+                    f"{payment['type']} {payment['name']}: {payment['amount']}\n"
+                    for payment in payment_rows
+                    if payment["type"] or payment["name"] or payment["amount"]
+                )
+            if section["index"] == 19:
+                rules = [
+                    {
+                        "text": variables["text"].get().strip(),
+                        "selected": variables["selected"].get(),
+                    }
+                    for variables in section_field_vars.get(section["key"], [])
+                ]
+                section["rules"] = rules
+                return format_slip_rules(
+                    rule["text"] for rule in rules if rule["selected"]
+                )
+            editor = section_text_widgets.get(section["key"])
+            if editor:
+                return editor.get("1.0", "end-1c")
+            return section["text"]
+
+        def get_section_dates(show_error=False):
+            dates = []
+            for section_index, label in ((12, "Sale Date"), (14, "Expiry Date")):
+                section = next(
+                    (section for section in initial_sections
+                     if section["index"] == section_index),
+                    None,
+                )
+                text = get_section_text(section) if section else ""
+                match = re.search(
+                    r"(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2})", text,
+                )
+                if not match:
+                    if show_error:
+                        tkmessagebox.showerror(
+                            "Invalid date",
+                            f"Keep a {label} in YYYY-MM-DD HH:MM format in its slip row.",
+                            parent=dialog,
+                        )
+                        return None
+                    return created_at, expires_at
+                try:
+                    parsed = datetime.datetime.strptime(
+                        match.group(1), "%Y-%m-%d %H:%M",
+                    )
+                except ValueError:
+                    if show_error:
+                        tkmessagebox.showerror(
+                            "Invalid date",
+                            f"Enter {label} using YYYY-MM-DD HH:MM.",
+                            parent=dialog,
+                        )
+                        return None
+                    return created_at, expires_at
+                dates.append(parsed.strftime("%Y-%m-%d %H:%M"))
+            return tuple(dates)
+
+        def current_section_overrides():
+            overrides = {}
+            for section in initial_sections:
+                text = get_section_text(section)
+                if text != section["text"]:
+                    section["text"] = text
+                    section["edited"] = True
+                if not section["selected"]:
+                    overrides[section["key"]] = ""
+                elif section["edited"] and section["index"] != 18:
+                    overrides[section["key"]] = section["text"]
+            return overrides
+
+        def render_section_fields(section, fields_frame):
+            for child in fields_frame.winfo_children():
+                child.destroy()
+
+            if section["index"] == 20:
+                field_rows = []
+                for index, link in enumerate(section.get("social_links", [])):
+                    row = tk.Frame(fields_frame, bg=self.bg_dark)
+                    row.pack(fill="x", pady=2)
+                    selected = tk.BooleanVar(value=link["selected"])
+                    tk.Checkbutton(
+                        row,
+                        variable=selected,
+                        bg=self.bg_dark,
+                        fg=self.text_light,
+                        selectcolor=self.bg_darker,
+                        activebackground=self.bg_dark,
+                        activeforeground=self.text_light,
+                        command=update_preview,
+                    ).pack(side="left")
+                    tk.Label(
+                        row, text=f"Social {index + 1}", bg=self.bg_dark,
+                        fg=self.text_light, width=9, anchor="w",
+                    ).pack(side="left")
+                    link_var = tk.StringVar(value=link["link"])
+                    ttk.Entry(row, textvariable=link_var).pack(
+                        side="left", fill="x", expand=True, padx=3,
+                    )
+                    variables = {"link": link_var, "selected": selected}
+                    link_var.trace_add("write", update_preview)
+                    field_rows.append(variables)
+                    tk.Button(
+                        row, text="Remove",
+                        command=lambda row_index=index, info=section, frame=fields_frame:
+                            remove_section_field(info, "social_links", row_index, frame),
+                        **self.button_style,
+                    ).pack(side="left", padx=3)
+                section_field_vars[section["key"]] = field_rows
+                tk.Button(
+                    fields_frame,
+                    text="Add Social Link",
+                    command=lambda info=section, frame=fields_frame:
+                        add_section_field(
+                            info, "social_links", frame,
+                            {"link": "", "selected": True},
+                        ),
+                    **self.button_style,
+                ).pack(anchor="w", pady=2)
+                return
+
+            if section["index"] == 19:
+                field_rows = []
+                for index, rule in enumerate(section.get("rules", [])):
+                    row = tk.Frame(fields_frame, bg=self.bg_dark)
+                    row.pack(fill="x", pady=2)
+                    selected = tk.BooleanVar(value=rule["selected"])
+                    text = tk.StringVar(value=rule["text"])
+                    tk.Checkbutton(
+                        row,
+                        variable=selected,
+                        bg=self.bg_dark,
+                        fg=self.text_light,
+                        selectcolor=self.bg_darker,
+                        activebackground=self.bg_dark,
+                        activeforeground=self.text_light,
+                        command=update_preview,
+                    ).pack(side="left")
+                    ttk.Entry(row, textvariable=text).pack(
+                        side="left", fill="x", expand=True, padx=3,
+                    )
+                    selected.trace_add("write", update_preview)
+                    text.trace_add("write", update_preview)
+                    field_rows.append({"selected": selected, "text": text})
+                    tk.Button(
+                        row, text="Remove",
+                        command=lambda row_index=index, info=section, frame=fields_frame:
+                            remove_section_field(info, "rules", row_index, frame),
+                        **self.button_style,
+                    ).pack(side="left", padx=3)
+                section_field_vars[section["key"]] = field_rows
+                tk.Button(
+                    fields_frame,
+                    text="Add Rule",
+                    command=lambda info=section, frame=fields_frame:
+                        add_section_field(
+                            info, "rules", frame,
+                            {"text": "", "selected": True},
+                        ),
+                    **self.button_style,
+                ).pack(anchor="w", pady=2)
+                return
+
+            field_rows = []
+            headers = tk.Frame(fields_frame, bg=self.bg_dark)
+            headers.pack(fill="x", pady=(2, 0))
+            for title, width in (("Type", 10), ("Payment", 14), ("Amount", 9)):
+                tk.Label(
+                    headers, text=title, bg=self.bg_dark,
+                    fg=self.text_light, width=width, anchor="w",
+                ).pack(side="left", padx=3)
+            for index, payment in enumerate(section.get("payment_rows", [])):
+                row = tk.Frame(fields_frame, bg=self.bg_dark)
+                row.pack(fill="x", pady=2)
+                variables = {}
+                for field, width in (("type", 10), ("name", 14), ("amount", 9)):
+                    value = tk.StringVar(value=payment.get(field, ""))
+                    ttk.Entry(row, textvariable=value, width=width).pack(
+                        side="left", fill="x", expand=True, padx=3,
+                    )
+                    value.trace_add("write", update_preview)
+                    variables[field] = value
+                field_rows.append(variables)
+                tk.Button(
+                    row, text="Remove",
+                    command=lambda row_index=index, info=section, frame=fields_frame:
+                        remove_section_field(info, "payment_rows", row_index, frame),
+                    **self.button_style,
+                ).pack(side="left", padx=3)
+            section_field_vars[section["key"]] = field_rows
+            tk.Button(
+                fields_frame,
+                text="Add Payment Line",
+                command=lambda info=section, frame=fields_frame:
+                    add_section_field(
+                        info, "payment_rows", frame,
+                        {"type": "", "name": "", "amount": ""},
+                    ),
+                **self.button_style,
+            ).pack(anchor="w", pady=2)
+
+        def add_section_field(section, field, fields_frame, value):
+            get_section_text(section)
+            section[field].append(value)
+            render_section_fields(section, fields_frame)
+            mark_section_edited(section)
+            update_preview()
+
+        def remove_section_field(section, field, index, fields_frame):
+            get_section_text(section)
+            section[field].pop(index)
+            render_section_fields(section, fields_frame)
+            mark_section_edited(section)
+            update_preview()
+
+        def mark_section_edited(section):
+            section["text"] = get_section_text(section)
+            section["edited"] = True
+
+        def snapshot_section(section, selected=None):
+            text = get_section_text(section)
+            snapshot = {
+                **section,
+                "text": text,
+                "edited": section["edited"] or text != section["text"],
+            }
+            if selected is not None:
+                snapshot["selected"] = selected
+            if section["index"] == 20:
+                snapshot["social_links"] = [
+                    link.copy() for link in section["social_links"]
+                ]
+            elif section["index"] == 23:
+                snapshot["payment_rows"] = [
+                    payment.copy() for payment in section["payment_rows"]
+                ]
+            elif section["index"] == 19:
+                snapshot["rules"] = [
+                    rule.copy() for rule in section["rules"]
+                ]
+            return snapshot
+
+        def render_items():
+            for child in item_rows.winfo_children():
+                child.destroy()
+            selected_vars.clear()
+            name_vars.clear()
+            quantity_vars.clear()
+            price_vars.clear()
+            section_text_widgets.clear()
+            section_vars_by_key.clear()
+            section_field_vars.clear()
+            items_editor_rendered = False
+            for section in initial_sections:
+                section_frame = tk.Frame(item_rows, bg=self.bg_dark)
+                section_frame.pack(fill="x", anchor="w", padx=4, pady=(5, 2))
+                section_header = tk.Frame(section_frame, bg=self.bg_dark)
+                section_header.pack(fill="x", anchor="w")
+                selected_var = tk.BooleanVar(value=section["selected"])
+                section_vars_by_key[section["key"]] = selected_var
+                tk.Checkbutton(
+                    section_header,
+                    text=section["label"],
+                    variable=selected_var,
+                    bg=self.bg_dark,
+                    fg=self.text_light,
+                    selectcolor=self.bg_darker,
+                    activebackground=self.bg_dark,
+                    activeforeground=self.text_light,
+                    command=update_preview,
+                ).pack(side="left", anchor="nw")
+                if section["index"] == 18:
+                    if items_editor_rendered:
+                        continue
+                    items_editor_rendered = True
+                    item_fields = tk.Frame(section_frame, bg=self.bg_dark)
+                    item_fields.pack(fill="x", anchor="w", padx=(24, 2), pady=2)
+                    item_headers = tk.Frame(item_fields, bg=self.bg_dark)
+                    item_headers.pack(fill="x", pady=(2, 0))
+                    for label, width in (("Item", 22), ("Quantity", 7), ("Price", 9)):
+                        tk.Label(
+                            item_headers, text=label, width=width,
+                            bg=self.bg_dark, fg=self.text_light, anchor="w",
+                        ).pack(side="left", padx=3)
+                    for item_index, item in enumerate(items):
+                        try:
+                            name = str(item[4] or "Item")
+                            quantity = str(item[7])
+                            price = str(item[10] if len(item) > 10 else "")
+                        except (IndexError, TypeError):
+                            name, quantity, price = "Item", "?", "?"
+                        previous = selected_state.get(id(item), {})
+                        selected_var = tk.BooleanVar(value=previous.get("selected", True))
+                        name_var = tk.StringVar(value=previous.get("name", name))
+                        quantity_var = tk.StringVar(value=previous.get("quantity", quantity))
+                        price_var = tk.StringVar(value=previous.get("price", price))
+                        selected_vars.append(selected_var)
+                        name_vars.append(name_var)
+                        quantity_vars.append(quantity_var)
+                        price_vars.append(price_var)
+                        item_row = tk.Frame(item_fields, bg=self.bg_dark)
+                        item_row.pack(fill="x", pady=2)
+                        tk.Checkbutton(
+                            item_row,
+                            variable=selected_var,
+                            bg=self.bg_dark,
+                            fg=self.text_light,
+                            selectcolor=self.bg_darker,
+                            activebackground=self.bg_dark,
+                            activeforeground=self.text_light,
+                            command=update_preview,
+                        ).pack(side="left")
+                        ttk.Entry(item_row, textvariable=name_var, width=22).pack(
+                            side="left", fill="x", expand=True, padx=3,
+                        )
+                        ttk.Entry(item_row, textvariable=quantity_var, width=7).pack(
+                            side="left", padx=3,
+                        )
+                        ttk.Entry(item_row, textvariable=price_var, width=9).pack(
+                            side="left", padx=3,
+                        )
+                        name_var.trace_add("write", update_preview)
+                        quantity_var.trace_add("write", update_preview)
+                        price_var.trace_add("write", update_preview)
+                    continue
+
+                if section["index"] in (19, 20, 23):
+                    fields_frame = tk.Frame(section_frame, bg=self.bg_dark)
+                    fields_frame.pack(fill="x", expand=True, padx=(24, 2), pady=2)
+                    render_section_fields(section, fields_frame)
+                    continue
+
+                text_widget = tk.Text(
+                    section_frame,
+                    height=max(1, min(8, section["text"].count("\n") + 1)),
+                    wrap="word",
+                    font=("Consolas", 9),
+                )
+                text_widget.pack(fill="x", expand=True, padx=(24, 2), pady=2)
+                text_widget.insert("1.0", section["text"])
+                text_widget.edit_modified(False)
+                section_text_widgets[section["key"]] = text_widget
+
+                def on_section_modified(event, section_info=section, editor=text_widget):
+                    if editor.edit_modified():
+                        if section_refreshing["active"]:
+                            editor.edit_modified(False)
+                            return
+                        section_info["text"] = editor.get("1.0", "end-1c")
+                        section_info["edited"] = True
+                        editor.edit_modified(False)
+                        update_preview()
+
+                text_widget.bind("<<Modified>>", on_section_modified)
+            item_canvas.configure(scrollregion=item_canvas.bbox("all"))
+            update_preview()
+
+        def update_preview(*_args):
+            for section in initial_sections:
+                section["selected"] = section_vars_by_key[section["key"]].get()
+            checked = [variable.get() for variable in selected_vars]
+            line_values_valid = any(checked)
+            for index, is_selected in enumerate(checked):
+                if not is_selected:
+                    continue
+                try:
+                    quantity = float(quantity_vars[index].get())
+                    price = float(price_vars[index].get())
+                    if quantity <= 0 or price < 0:
+                        line_values_valid = False
+                except ValueError:
+                    line_values_valid = False
+            if not line_values_valid:
+                for child in receipt_paper.winfo_children():
+                    child.destroy()
+                message = (
+                    "Select at least one item and enter a valid quantity and price."
+                    if any(checked)
+                    else "Select an item to build the receipt."
+                )
+                tk.Label(
+                    receipt_paper, text=message, bg="white", fg="#111827",
+                    font=("Segoe UI", 10), wraplength=300, justify="center",
+                ).pack(padx=20, pady=28)
+                preview_canvas.configure(scrollregion=preview_canvas.bbox("all"))
+                return
+            preview_items = [item.copy() for item in items]
+            for index, preview_item in enumerate(preview_items):
+                if len(preview_item) > 4:
+                    preview_item[4] = name_vars[index].get()
+                if len(preview_item) > 7:
+                    preview_item[7] = quantity_vars[index].get()
+                if len(preview_item) > 10:
+                    preview_item[10] = price_vars[index].get()
+            created_value, expires_value = get_section_dates()
+            captured_now = []
+            self._format_sale_preview(
+                preview_items,
+                checked,
+                created_value,
+                expires_value,
+                capture_sections=captured_now,
+            )
+            captured_by_key = {
+                section["key"]: section for section in captured_now
+            }
+            section_refreshing["active"] = True
+            for section in initial_sections:
+                current_default = captured_by_key.get(section["key"])
+                if current_default and not section["edited"]:
+                    section["text"] = current_default["text"]
+                    editor = section_text_widgets.get(section["key"])
+                    if editor:
+                        editor.delete("1.0", "end")
+                        editor.insert("1.0", section["text"])
+                        editor.edit_modified(False)
+            section_refreshing["active"] = False
+            text = self._format_sale_preview(
+                preview_items,
+                checked,
+                created_value,
+                expires_value,
+                sections=current_section_overrides(),
+            )
+            for child in receipt_paper.winfo_children():
+                child.destroy()
+            for line_number, line in enumerate(text.rstrip("\n").splitlines()):
+                is_heading = line_number == 0
+                tk.Label(
+                    receipt_paper,
+                    text=line if line else " ",
+                    font=("Consolas", 10 if is_heading else 9, "bold" if is_heading else "normal"),
+                    bg="white",
+                    fg="#111827",
+                    anchor="center" if is_heading else "w",
+                    justify="left",
+                ).pack(fill="x")
+            preview_canvas.configure(scrollregion=preview_canvas.bbox("all"))
+
+        render_items()
+
+        result = {"value": None}
+
+        def validate_line_edits(checked):
+            for index, is_selected in enumerate(checked):
+                if not is_selected:
+                    continue
+                try:
+                    quantity = float(quantity_vars[index].get())
+                    price = float(price_vars[index].get())
+                except ValueError:
+                    tkmessagebox.showerror(
+                        "Invalid item",
+                        "Enter a numeric quantity and price for each selected item.",
+                        parent=dialog,
+                    )
+                    return False
+                if quantity <= 0 or price < 0:
+                    tkmessagebox.showerror(
+                        "Invalid item",
+                        "Selected items need a quantity greater than zero and a price of zero or more.",
+                        parent=dialog,
+                    )
+                    return False
+                try:
+                    available_quantity = float(items[index][8])
+                except (IndexError, TypeError, ValueError):
+                    available_quantity = None
+                if available_quantity is not None and quantity > available_quantity:
+                    tkmessagebox.showerror(
+                        "Insufficient stock",
+                        f"{name_vars[index].get() or 'Item'} has only "
+                        f"{available_quantity:g} available.",
+                        parent=dialog,
+                    )
+                    return False
+            return True
+
+        def get_valid_dates():
+            return get_section_dates(show_error=True)
+
+        def print_preview():
+            dates = get_valid_dates()
+            if not dates:
+                return
+            checked = [variable.get() for variable in selected_vars]
+            if not any(checked):
+                tkmessagebox.showwarning(
+                    "Nothing selected",
+                    "Select at least one item to print.",
+                    parent=dialog,
+                )
+                return
+            preview_items = [item.copy() for item in items]
+            for index, preview_item in enumerate(preview_items):
+                preview_item[4] = name_vars[index].get()
+                preview_item[7] = quantity_vars[index].get()
+                preview_item[10] = price_vars[index].get()
+            if not validate_line_edits(checked):
+                return
+            slip = self._format_sale_preview(
+                preview_items, checked, dates[0], dates[1],
+                sections=current_section_overrides(),
+            )
+            try:
+                PrinterForm.print_slip(
+                    self, self.user, self.Shops[self.on_Shop], slip, 1,
+                )
+                result["printed"] = True
+            except Exception as error:
+                tkmessagebox.showerror(
+                    "Print failed", f"The receipt could not be printed: {error}", parent=dialog,
+                )
+
+        def reset_preview():
+            selected_state.clear()
+            initial_sections[:] = [section.copy() for section in default_sections]
+            render_items()
+            for variable in selected_vars:
+                variable.set(True)
+            for index, item in enumerate(items):
+                name_vars[index].set(str(item[4] or "Item"))
+                quantity_vars[index].set(str(item[7]))
+                price_vars[index].set(str(item[10] if len(item) > 10 else ""))
+            update_preview()
+
+        def add_own_item():
+            selected_state.update({
+                id(item): {
+                    "selected": selected_vars[index].get(),
+                    "name": name_vars[index].get(),
+                    "quantity": quantity_vars[index].get(),
+                    "price": price_vars[index].get(),
+                }
+                for index, item in enumerate(items)
+            })
+            initial_sections[:] = [
+                snapshot_section(
+                    section,
+                    section_vars_by_key[section["key"]].get(),
+                )
+                for section in initial_sections
+            ]
+            dialog.grab_release()
+            dialog.withdraw()
+            try:
+                DocEditForm.Create_Unowen_item(self)
+            finally:
+                dialog.deiconify()
+                dialog.grab_set()
+            items[:] = self._get_sale_preview_items()
+            render_items()
+
+        buttons = tk.Frame(dialog, bg=self.bg_dark)
+        buttons.grid(row=1, column=0, sticky="ew", padx=12, pady=(0, 10))
+        buttons.columnconfigure(0, weight=1)
+        tk.Button(
+            buttons, text="Add Own Item", command=add_own_item, **self.button_style,
+        ).grid(row=0, column=0, sticky="w", padx=3)
+        tk.Button(
+            buttons, text="Print", command=print_preview, **self.button_style,
+        ).grid(row=0, column=1, padx=3)
+        tk.Button(
+            buttons, text="Reset Preview", command=reset_preview, **self.button_style,
+        ).grid(row=0, column=2, padx=3)
+
+        def finish_preview():
+            dates = get_valid_dates()
+            if not dates:
+                return
+            checked = [variable.get() for variable in selected_vars]
+            if not any(checked):
+                tkmessagebox.showwarning(
+                    "Nothing selected",
+                    "Select at least one item to include in the sale.",
+                    parent=dialog,
+                )
+                return
+            if not validate_line_edits(checked):
+                return
+            sections = [
+                snapshot_section(
+                    section,
+                    section_vars_by_key[section["key"]].get(),
+                )
+                for section in initial_sections
+            ]
+            selected_state.clear()
+            line_edits = []
+            for index, item in enumerate(items):
+                quantity_text = quantity_vars[index].get()
+                price_text = price_vars[index].get()
+                line_edit = {
+                    "item": item,
+                    "selected": checked[index],
+                    "name": name_vars[index].get().strip(),
+                    "quantity": float(quantity_text) if checked[index] else 0.0,
+                    "price": float(price_text) if checked[index] else 0.0,
+                }
+                selected_state[id(item)] = {
+                    "selected": line_edit["selected"],
+                    "name": line_edit["name"],
+                    "quantity": quantity_text,
+                    "price": price_text,
+                }
+                if line_edit["selected"]:
+                    line_edits.append(line_edit)
+            if allow_process:
+                result["value"] = {
+                    "created_at": dates[0],
+                    "expires_at": dates[1],
+                    "printed": bool(result.get("printed")),
+                    "sections": {
+                        section["key"]: ""
+                        if not section["selected"] else section["text"]
+                        for section in sections
+                        if (
+                            not section["selected"]
+                            or (section["edited"] and section["index"] != 18)
+                        )
+                    },
+                    "line_edits": line_edits,
+                }
+            self._sale_preview_dates = dates
+            self._sale_preview_edits = selected_state.copy()
+            self._sale_preview_sections = sections
+            self._sale_preview_sections_shop_id = sections_shop_id
+            dialog.destroy()
+
+        tk.Button(
+            buttons,
+            text="Process Sale" if allow_process else "Close",
+            command=finish_preview,
+            **self.button_style,
+        ).grid(row=0, column=3, padx=3)
+        dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
+        dialog.grab_set()
+        self.wait_window(dialog)
+        return result["value"]
         
     
                 
@@ -1784,6 +2738,12 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         self.qty = 0
         self.disc = 0
         self.total = 0
+        self._sale_preview_dates = None
+        self._sale_preview_edits = {}
+        self._sale_preview_rules = None
+        self._sale_preview_rules_shop_id = None
+        self._sale_preview_sections = None
+        self._sale_preview_sections_shop_id = None
         
     def call_chartForm(self):
         v = ShowchartForm(self)
@@ -2169,11 +3129,43 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
                     self.date_month_Spinbox.set(str(datetime.datetime.now().strftime('%m')))
                     self.date_year_Spinbox.set(str(datetime.datetime.now().strftime('%Y')))
             
-            slip_doc_code = DocEditForm.process_payment(self,givendate, self.user, self.custemr, self.Shops, self.on_Shop, self.Shops_info, self.Selected_items, self.pid_peyment)
+            self.process_payment()
 
-            # call void         
-            self.void_items()
-            self.manage_form.doc_form.load_documents(slip_doc_code)
+    def process_payment(self):
+        if not self.Shops or not 0 <= self.on_Shop < len(self.Shops):
+            tkmessagebox.showerror("Sale", "Select a shop before processing the sale.")
+            return False
+
+        preview = self.open_sale_slip_preview(True)
+        if not preview:
+            return False
+
+        self._apply_sale_preview_edits(preview["line_edits"])
+        self.update_info()
+        receipt_shop = dict(self.Shops[self.on_Shop])
+
+        slip_doc_code = DocEditForm.process_payment(
+            self,
+            preview["created_at"][:10],
+            self.user,
+            self.custemr,
+            self.Shops,
+            self.on_Shop,
+            self.Shops_info,
+            self.Selected_items,
+            self.pid_peyment,
+            created_at=preview["created_at"],
+            expires_at=preview["expires_at"],
+            print_after_processing=not preview["printed"],
+            receipt_shop_override=receipt_shop,
+            receipt_sections=preview["sections"],
+        )
+        if not slip_doc_code:
+            return False
+
+        self.void_items()
+        self.manage_form.doc_form.load_documents(slip_doc_code)
+        return True
             
 
 

@@ -205,8 +205,8 @@ class PaymentForm(tk.Tk):
         #self.master.pid_peyment.clear()
         # TODO: SHOW MSG DIALOG IF PAYMENT IS LESS THAN PID
         #print("self.master.pid_peyment = " + str(self.master.pid_peyment))
-        self.master.process_payment()
-        self.payment_form.destroy()
+        if self.master.process_payment():
+            self.payment_form.destroy()
 
     def update_info(self):
         self.list_payment.delete(*self.list_payment.get_children())

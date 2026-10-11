@@ -187,12 +187,23 @@ class Appelication_SettingForm(tk.Frame):
         self.Product_list_frame = self
         self.Product_list_frame.pack()
 
-        # Create the frame for the search bar and buttons
-        self.search_frame = tk.Frame(self.Product_list_frame, bg=self.bg_dark)
-        self.search_frame.pack(fill=tk.BOTH, padx=5, pady=5)
+        self.settings_layout_frame = tk.Frame(self.Product_list_frame, bg=self.bg_dark)
+        self.settings_layout_frame.pack(fill=tk.X, padx=5, pady=5)
+        self._settings_layout_is_wide = None
+        self.settings_layout_frame.bind(
+            "<Configure>", self._on_settings_layout_configure, add="+",
+        )
 
-        self.interface_settings_frame = ttk.LabelFrame(self.Product_list_frame, text='Application & Printer Settings')
-        self.interface_settings_frame.pack(fill='x', padx=5, pady=(0, 8))
+        self.search_frame = tk.LabelFrame(
+            self.settings_layout_frame,
+            text="Printer Settings",
+            bg=self.bg_dark,
+            fg=self.text_light,
+        )
+
+        self.interface_settings_frame = ttk.LabelFrame(
+            self.settings_layout_frame, text='Application Settings',
+        )
         tk.Label(
             self.interface_settings_frame,
             text='Select App Theme (Visual Preview):',
@@ -212,6 +223,7 @@ class Appelication_SettingForm(tk.Frame):
         self.language_selector.bind('<<ComboboxSelected>>', self.save_display_preferences)
 
         if not self.user:
+            self._layout_application_settings(self.settings_layout_frame.winfo_width())
             self.update_Application_sitting()
             return
         
@@ -235,17 +247,20 @@ class Appelication_SettingForm(tk.Frame):
         self.Auto_Print_Creadit_var = tk.IntVar()
         #self.Auto_Print_Creadit_var.set(1)
         self.Auto_Print_Creadit_Checkbutton = tk.Checkbutton(self.search_frame, bg=self.bg_dark, onvalue=1, offvalue=0, text='Auto Print Creadit Slips ', variable=self.Auto_Print_Creadit_var)
-        self.Auto_Print_Creadit_Checkbutton.grid(row=2, column=0)
         self.Auto_Print_Creadit_var.trace_add('write', self.Auto_Print_Creadit)
 
         self.Auto_Print_All_var = tk.IntVar()
         #self.Auto_Print_All_var.set(0)
         self.Auto_Print_All_Checkbutton = tk.Checkbutton(self.search_frame, bg=self.bg_dark, onvalue=1, offvalue=0, text='Auto Print All Slips', variable=self.Auto_Print_All_var)
-        self.Auto_Print_All_Checkbutton.grid(row=2, column=4)
         self.Auto_Print_All_var.trace_add('write', self.Auto_Print_All)
         
         self.var = tk.IntVar()
         self.countcreaditprintout_Spinbox.bind('<KeyRelease>', self.update_countcreaditprintout)
+        self._layout_application_settings(self.settings_layout_frame.winfo_width())
+        self._layout_printer_settings(self.search_frame.winfo_width())
+        self.search_frame.bind(
+            "<Configure>", self._on_printer_settings_configure, add="+",
+        )
 
 
 
@@ -470,6 +485,92 @@ class Appelication_SettingForm(tk.Frame):
         #self.cancle_button.grid(row=30, column=1, padx=5, pady=5, sticky=tk.W)
         self.update_Application_sitting()
         
+    def _on_settings_layout_configure(self, event):
+        if event.widget is self.settings_layout_frame:
+            self._layout_application_settings(event.width)
+
+    def _layout_application_settings(self, width):
+        wide = width >= 1000
+        if wide == self._settings_layout_is_wide:
+            return
+        self._settings_layout_is_wide = wide
+
+        self.interface_settings_frame.grid_forget()
+        self.search_frame.grid_forget()
+        self.settings_layout_frame.grid_columnconfigure(0, weight=1 if wide else 0)
+        self.settings_layout_frame.grid_columnconfigure(1, weight=1 if wide else 0)
+        if not self.user:
+            self.interface_settings_frame.grid(
+                row=0, column=0, columnspan=2, sticky="ew",
+            )
+            return
+        if wide:
+            self.interface_settings_frame.grid(
+                row=0, column=0, sticky="nsew", padx=(0, 5), pady=3,
+            )
+            self.search_frame.grid(
+                row=0, column=1, sticky="nsew", padx=(5, 0), pady=3,
+            )
+        else:
+            self.interface_settings_frame.grid(
+                row=0, column=0, sticky="ew", pady=(0, 5),
+            )
+            self.search_frame.grid(row=1, column=0, sticky="ew")
+
+    def _on_printer_settings_configure(self, event):
+        if event.widget is self.search_frame:
+            self._layout_printer_settings(event.width)
+
+    def _layout_printer_settings(self, width):
+        wide = width >= 440
+        if wide == getattr(self, "_printer_settings_is_wide", None):
+            return
+        self._printer_settings_is_wide = wide
+
+        for widget in (
+            self.Remamber_printer_entry,
+            self.countcreaditprintout_lable,
+            self.countcreaditprintout_Spinbox,
+            self.Auto_Print_Creadit_Checkbutton,
+            self.Auto_Print_All_Checkbutton,
+        ):
+            widget.grid_forget()
+
+        for column in range(2):
+            self.search_frame.grid_columnconfigure(column, weight=1 if wide else 0)
+        if wide:
+            self.Remamber_printer_entry.grid(
+                row=0, column=0, sticky="w", padx=5, pady=5,
+            )
+            self.countcreaditprintout_lable.grid(
+                row=1, column=0, sticky="w", padx=5, pady=5,
+            )
+            self.countcreaditprintout_Spinbox.grid(
+                row=2, column=0, sticky="ew", padx=5, pady=5,
+            )
+            self.Auto_Print_Creadit_Checkbutton.grid(
+                row=0, column=1, sticky="w", padx=5, pady=5,
+            )
+            self.Auto_Print_All_Checkbutton.grid(
+                row=1, column=1, sticky="w", padx=5, pady=5,
+            )
+        else:
+            self.Remamber_printer_entry.grid(
+                row=0, column=0, sticky="w", padx=5, pady=5,
+            )
+            self.countcreaditprintout_lable.grid(
+                row=1, column=0, sticky="w", padx=5, pady=5,
+            )
+            self.countcreaditprintout_Spinbox.grid(
+                row=2, column=0, sticky="ew", padx=5, pady=5,
+            )
+            self.Auto_Print_Creadit_Checkbutton.grid(
+                row=3, column=0, sticky="w", padx=5, pady=5,
+            )
+            self.Auto_Print_All_Checkbutton.grid(
+                row=4, column=0, sticky="w", padx=5, pady=5,
+            )
+
     def update_Application_sitting(self):
         user_id = (self.user or {}).get('User_id') or (self.user or {}).get('Id')
         if user_id is None:

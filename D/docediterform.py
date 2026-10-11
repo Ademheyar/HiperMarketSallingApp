@@ -1120,7 +1120,22 @@ class DocEditForm(tk.Frame):
         self.master.master.destroy()
 
     # about payment
-    def process_payment(self, givendate, user, custemr, shop, shop_on, Shops_info, Selected_items, pid_peyment):
+    def process_payment(
+        self,
+        givendate,
+        user,
+        custemr,
+        shop,
+        shop_on,
+        Shops_info,
+        Selected_items,
+        pid_peyment,
+        created_at=None,
+        expires_at=None,
+        print_after_processing=None,
+        receipt_shop_override=None,
+        receipt_sections=None,
+    ):
         if Chacke_Security(self, user, shop[shop_on], 22, f'User Not allowed to Sell'):
            #print("user "+str(user))
             answer = tk.messagebox.askquestion("Question", "do you whant to continue?")
@@ -1139,7 +1154,8 @@ class DocEditForm(tk.Frame):
             #print("Shops_info = ", shop[shop_on])
             Shop_brand_name = shop[shop_on]['Shop_brand_name']
             today_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
-            date = givendate + " " + datetime.datetime.now().strftime('%H:%M')
+            date = created_at or (givendate + " " + datetime.datetime.now().strftime('%H:%M'))
+            expiry_date = expires_at or date
 
             payments_extra = []
             extra_payment_needs = []
@@ -1635,7 +1651,7 @@ class DocEditForm(tk.Frame):
                         elif d["Barcode"] == "":
                                 #print("custemer : " + str(costumer_name) + "isneded : " + str(payment_customer_required))
                                 # TODO: chacke if At_Shop_Id is selected if not make user selecte one
-                                Set_Document(None, ["doc_barcode", "extension_barcode", "At_Shop_Id", "user_id", "customer_id", "Seller_id", "type", "item", "qty", "price", "discount", "tax", "payments", "pid", "doc_created_date", "doc_expire_date", "doc_updated_date"], [str(brcod), "extension_barcode", Shop_brand_name, self.user['User_name'], costumer_name, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date])
+                                Set_Document(None, ["doc_barcode", "extension_barcode", "At_Shop_Id", "user_id", "customer_id", "Seller_id", "type", "item", "qty", "price", "discount", "tax", "payments", "pid", "doc_created_date", "doc_expire_date", "doc_updated_date"], [str(brcod), "extension_barcode", Shop_brand_name, self.user['User_name'], costumer_name, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, expiry_date, today_date])
                                 #Update_table_database('INSERT INTO upload_doc (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", Shop_brand_name, self.user['User_name'], costumer_name, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date))
                                 #Update_table_database('INSERT INTO doc_table (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, Profite, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", Shop_brand_name, self.user['User_name'], costumer_name, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date))
                                 # Commit the changes to the database
@@ -1686,7 +1702,14 @@ class DocEditForm(tk.Frame):
                PrinterForm.open_drower(self, self.user)
             
              #TODO: MAKE IT SEND SELECTEd SHOP
-            ApproveFrame(HOME, user, shop[0], slip_doc_code, payments_extra, payment_print_slip)
+            auto_print = payment_print_slip
+            if print_after_processing is not None and not print_after_processing:
+                auto_print = 0
+            ApproveFrame(
+                HOME, user, shop[0], slip_doc_code, payments_extra, auto_print,
+                shop_override=receipt_shop_override,
+                receipt_sections=receipt_sections,
+            )
             return slip_doc_code
    
     def close_tab(self, test_tab):

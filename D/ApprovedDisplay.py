@@ -21,7 +21,10 @@ db_path = os.path.join(data_dir, 'my_database.db')
 
 
 class ApproveFrame(tk.Frame):
-    def __init__(self, master, user, shops, slips, left, print_slip):
+    def __init__(
+        self, master, user, shops, slips, left, print_slip,
+        shop_override=None, receipt_sections=None,
+    ):
         tk.Frame.__init__(self, master)
         self.slips = []
         self.print_slip = print_slip
@@ -54,7 +57,10 @@ class ApproveFrame(tk.Frame):
             if doc_:
                 doc_ = doc_[0]
                 print(str(doc_))
-                slip = load_slip(self.homemaster.Link, doc_, 0) #TODO GET ID
+                slip = load_slip(
+                    self.homemaster.Link, doc_, 0, shop_override=shop_override,
+                    receipt_sections=receipt_sections,
+                ) #TODO GET ID
                 self.slips.append([barcode, slip])
                 print(str(slip))
                 

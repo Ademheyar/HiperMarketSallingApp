@@ -64,6 +64,8 @@ def get_sparet_2(Linke, doc, width, pvv, user, shop):
     return [ret + "\n"]
 
 def get_Information(Linke, doc, width, pvv, user, shop):
+    if doc.get("_preview_receipt_sections") is not None:
+        return [""]
     v = shop['Shop_Adress_Information']
     ret = ""
     if v and "+" in v:
@@ -119,6 +121,8 @@ def get_updated_date(Linke, doc, width, pvv, user, shop):
         return ["updated Date :  " + str(doc['doc_updated_date']) + "\n"]
            
 def get_Due_date(Linke, doc, width, pvv, user, shop):
+    if doc.get("_preview_receipt_sections") is not None:
+        return ["Due Date :  " + str(doc['doc_expire_date']) + "\n"]
     if not str(doc['doc_created_date']) == str(doc['doc_expire_date']):
         return ["Due Date :  " + str(doc['doc_expire_date']) + "\n"]
 
@@ -166,6 +170,7 @@ def get_items(Linke, doc, width, pvv, user, shop):
     T_Disc = 0
     count = 1
     thereisdic = 0
+    last_discount = 0
     for iv in list_items_copy:
         print("load_slip items iv: " + str(iv))
         # id, code, bar, name, shop, color, size, qty, price, disc, T_price = iv
@@ -173,6 +178,7 @@ def get_items(Linke, doc, width, pvv, user, shop):
         total_price = float(iv[7])*float(iv[8])
         PRICE += float(total_price)
         T_Disc += float(iv[9])
+        last_discount = float(iv[9])
         TAX += float(0)
         price = str(iv[8])
         T_price += float(iv[8])+float(iv[9])
@@ -201,14 +207,20 @@ def get_items(Linke, doc, width, pvv, user, shop):
             vsl = [2, vsl[1]-1, vsl[2]-1, vsl[3], vsl[4]-1, vsl[5]-1]
             tw -= 4
 
-    v.append([str('-'*vsl[0]), str("-"*vsl[1]), str("-"*vsl[2]), str("-"*vsl[3]), str("-"*vsl[4]), str('-'*vsl[5])])
-    if T_Disc != 0:
-        if float(iv[9]) < 0:
-            v.append([str(""), str(""), str("TOTAL "), str(QTY), str(PRICE+T_Disc+(-T_Disc)), str(PRICE)])
-        else:
-            v.append([str(""), str(""), str("TOTAL "), str(QTY), str(PRICE+T_Disc)+"-"+str(T_Disc), str(PRICE)])
+    preview_sections = doc.get("_preview_receipt_sections")
+    v.append([
+        str('-'*vsl[0]), str("-"*vsl[1]), str("-"*vsl[2]),
+        str("-"*vsl[3]), str("-"*vsl[4]), str('-'*vsl[5]),
+    ])
+    if preview_sections is not None:
+        v.append(["", "", "TOTAL ", str(QTY), str(PRICE), str(PRICE)])
+    elif T_Disc != 0 and last_discount >= 0:
+        v.append([
+            "", "", "TOTAL ", str(QTY),
+            str(PRICE + T_Disc) + "-" + str(T_Disc), str(PRICE),
+        ])
     else:
-        v.append([str(""), str(""), str("TOTAL "), str(QTY), str(PRICE), str(PRICE)])
+        v.append(["", "", "TOTAL ", str(QTY), str(PRICE), str(PRICE)])
     for countv, vs in enumerate(v):
         vl = vsl
         vsy = ['.', '/', ' ', 'x', '=', ' ']
@@ -263,6 +275,9 @@ def get_items(Linke, doc, width, pvv, user, shop):
     slip += itemcolumnsforslip +"\n"
     slip += get_sparet_2(Linke, doc, width, pvv, user, shop)[0]
     slip += itemforslip + "\n"
+    if preview_sections is not None:
+        return [slip, [QTY, PRICE, Disc, TAX, T_price]]
+
     #infos_needed = ["TOTAL QTY", "TOTAL Price", "TOTAL Tax", "TOTAL Discount", "Recived", "Balance"]
     infos_needed = ["TOTAL Price", "TOTAL Tax", "TOTAL Discount", "Recived", "Balance", "LEFT"]
     #, "CHANGE"
@@ -371,8 +386,74 @@ def get_Rules(Linke, doc, width, pvv, user, shop):
             i+=1
             ret += str(i)+". "+add_text_(width, l)[0] + "\n"
     elif v:
-        ret += v
+        ret += v + "\n"
     return [ret]
+
+def parse_slip_rules(value):
+    return [rule.strip() for rule in str(value or "").split("+") if rule.strip()]
+
+def format_slip_rules(rules):
+    selected = [str(rule).strip() for rule in rules if str(rule).strip()]
+    if len(selected) > 1:
+        return "".join(f"{index}. {rule}\n" for index, rule in enumerate(selected, 1))
+    return selected[0] + "\n" if selected else ""
+
+def get_Social(Linke, doc, width, pvv, user, shop):
+    links = parse_social_links(shop.get("Shop_SocLinks"))
+    return [format_social_links(links)]
+
+def parse_social_links(value):
+    return [
+        link.strip()
+        for link in str(value or "").split("+")
+        if link.strip()
+    ]
+
+def format_social_links(links):
+    value = "\n".join(links)
+    return value + ("\n" if value else "")
+
+def get_shop_information_values(shop, label):
+    values = []
+    for field in str(shop.get("Shop_Adress_Information") or "").split("+"):
+        key, separator, value = field.partition("=")
+        if separator and key.strip() == label:
+            values.extend(
+                part.strip()
+                for part in value.split("=")
+                if part.strip()
+            )
+    return values
+
+def get_Location(Linke, doc, width, pvv, user, shop):
+    locations = get_shop_information_values(shop, "Location")
+    return ["".join(f"* {location}\n" for location in locations)]
+
+def get_Shop_Phone(Linke, doc, width, pvv, user, shop):
+    phones = get_shop_information_values(shop, "Phone Number")
+    return ["".join(f"Phone Number: {phone}\n" for phone in phones)]
+
+def get_Payments(Linke, doc, width, pvv, user, shop):
+    payments = json.loads(str(doc.get("payments") or "[]"))
+    return ["".join(
+        f"{payment[0]} {payment[1]}: {payment[2]}\n"
+        for payment in payments if len(payment) > 2
+    )]
+
+def get_Total_Payment(Linke, doc, width, pvv, user, shop):
+    total = float(doc.get("price") or 0)
+    tax = float(doc.get("tax") or 0)
+    discount = float(doc.get("discount") or 0)
+    received = float(doc.get("pid") or 0)
+    amount_due = total + tax - discount
+    balance = max(amount_due - received, 0)
+    return [
+        f"Total: {total:.2f}\n"
+        f"Tax: {tax:.2f}\n"
+        f"Discount: {discount:.2f}\n"
+        f"Received: {received:.2f}\n"
+        f"Balance: {balance:.2f}\n"
+    ]
 
 def get_Logo(Linke, doc, width, pvv, user, shop):
     if width == "":
@@ -415,41 +496,200 @@ def get_sparet_4(Linke, doc, width, pvv, user, shop):
         ret += "~"
     return [ret + "\n"]
 
-slip_order_type=[get_sparet, get_sparet_0, get_sparet_1, get_sparet_2, get_sparet_3, get_sparet_4, get_Logo, get_Information, get_About, get_Phone_No, get_Receipt_no, get_extnsion_Receipt_no, get_date, get_updated_date, get_Due_date, get_user, get_seller, get_customer, get_items, get_Rules]
+slip_order_type=[
+    get_sparet, get_sparet_0, get_sparet_1, get_sparet_2, get_sparet_3,
+    get_sparet_4, get_Logo, get_Information, get_About, get_Phone_No,
+    get_Receipt_no, get_extnsion_Receipt_no, get_date, get_updated_date,
+    get_Due_date, get_user, get_seller, get_customer, get_items, get_Rules,
+    get_Social, get_Location, get_Shop_Phone, get_Payments, get_Total_Payment,
+]
+
+slip_order_labels = [
+    "*", "#", "-", "_", "=", "~", "Shop Name", "Shop Information",
+    "Shop About", "Shop Phone", "Receipt Number", "Extension Receipt Number",
+    "Sale Date", "Updated Date", "Expiry Date", "User Name", "Seller",
+    "Customer Information", "Items", "Rules", "Social", "Location",
+    "Phone Number", "Payments", "Total Payment",
+]
+
+def _insert_preview_order(orders, section_index, anchors):
+    for position, order in enumerate(orders):
+        try:
+            if int(order[0]) == section_index:
+                return
+        except (IndexError, TypeError, ValueError):
+            continue
+    anchor_positions = []
+    for position, order in enumerate(orders):
+        try:
+            if int(order[0]) in anchors:
+                anchor_positions.append(position)
+        except (IndexError, TypeError, ValueError):
+            continue
+    insert_at = min(anchor_positions) if anchor_positions else len(orders)
+    orders.insert(insert_at, [str(section_index)])
+
+def _complete_preview_order(orders):
+    orders = list(orders)
+    for section_index in (20, 21, 22):
+        _insert_preview_order(
+            orders, section_index,
+            set(range(10, 20)) | {23, 24},
+        )
+    for section_index in (12, 14, 15, 17):
+        _insert_preview_order(orders, section_index, {18, 19, 23, 24})
+    _insert_preview_order(orders, 18, {19, 23, 24})
+    _insert_preview_order(orders, 23, {24, 19})
+    _insert_preview_order(orders, 24, {19})
+    _insert_preview_order(orders, 19, set())
+    return orders
 
 import json
 import ast
+import textwrap
 
-def load_slip(Linke, doc, d_id):
+
+def _format_payment_summary_columns(payment_text, total_text, width):
+    width = max(1, int(width))
+    if not payment_text:
+        return total_text
+    if not total_text:
+        return payment_text
+
+    left_width = max(1, (width - 3) // 2)
+    right_width = max(1, width - left_width - 3)
+    left_lines = [
+        wrapped
+        for line in payment_text.splitlines()
+        for wrapped in (textwrap.wrap(line, left_width) or [""])
+    ]
+    right_lines = [
+        wrapped
+        for line in total_text.splitlines()
+        for wrapped in (textwrap.wrap(line, right_width) or [""])
+    ]
+    row_count = max(len(left_lines), len(right_lines))
+    return "".join(
+        f"{left_lines[index] if index < len(left_lines) else '':<{left_width}}"
+        f" | "
+        f"{right_lines[index] if index < len(right_lines) else ''}\n"
+        for index in range(row_count)
+    )
+
+def load_slip(
+    Linke, doc, d_id, shop_override=None, receipt_sections=None,
+    capture_sections=None,
+):
     print("doc : "+str(doc))
     user = find_user(Linke, doc['user_id'])
     print("User : ", user)
-    at_shop = find_shop(Linke, doc['At_Shop_Id'])
+    at_shop = shop_override or find_shop(Linke, doc['At_Shop_Id'])
     print("at_shop", at_shop)
 
     slip = ""
+    footer = ""
+    preview_mode = receipt_sections is not None or capture_sections is not None
+    if preview_mode:
+        doc = dict(doc)
+        doc["_preview_receipt_sections"] = (
+            receipt_sections if receipt_sections is not None else {}
+        )
+        if at_shop and not at_shop.get("Shop_Slip_Settings"):
+            at_shop = dict(at_shop)
+            at_shop["Shop_Slip_Settings"] = json.dumps([
+                [42, 0],
+                [
+                    ["6"], ["7"], ["8"], ["20"], ["21"], ["22"], ["10"],
+                    ["12"], ["14"], ["15"], ["17"], ["18"], ["23"], ["24"],
+                    ["19"],
+                ],
+            ])
     if at_shop and at_shop['Shop_Slip_Settings']:
         sittings = json.loads(at_shop['Shop_Slip_Settings'])
         print("sittings : "+str(sittings))
         width = sittings[0][0]
         hight = sittings[0][1]
         orders = sittings[1]
+        if preview_mode:
+            orders = _complete_preview_order(orders)
         # Make shouer that user shop is same as viewing admin
         print("width : "+str(width))
         print("order : "+str(orders))
         print("shop : "+str(at_shop))
         pvv = []
+        section_occurrences = {}
+        captured = []
+        rendered_sections = []
         for order in orders:
             if order != "":
-                ret = slip_order_type[int(order[0])](Linke, doc, width, pvv, user, at_shop)
+                order_index = int(order[0])
+                occurrence = section_occurrences.get(order_index, 0)
+                section_occurrences[order_index] = occurrence + 1
+                section_key = f"{order_index}:{occurrence}"
+                ret = slip_order_type[order_index](Linke, doc, width, pvv, user, at_shop)
+                section_text = ""
                 if ret:
                     if len(ret) == 1:
-                        slip += ret[0]
+                        section_text = ret[0]
                     elif len(ret) == 2:
-                        slip += ret[0]
+                        section_text = ret[0]
                         pvv = ret[1]
-        slip += "   THANK YOU FOR SHOPING WITH US     \n" \
-                "          " + str(doc['doc_barcode']) + "       \n"
+                if preview_mode and receipt_sections is not None:
+                    section_text = receipt_sections.get(section_key, section_text)
+                rendered_sections.append((order_index, section_text))
+                if capture_sections is not None:
+                    label = (
+                        slip_order_labels[order_index]
+                        if 0 <= order_index < len(slip_order_labels)
+                        else f"Receipt Section {order_index}"
+                    )
+                    captured.append({
+                        "key": section_key,
+                        "index": order_index,
+                        "label": label,
+                        "text": section_text,
+                    })
+        payment_position = next(
+            (
+                position for position, (index, _text) in enumerate(rendered_sections)
+                if index == 23
+            ),
+            None,
+        )
+        total_position = next(
+            (
+                position for position, (index, _text) in enumerate(rendered_sections)
+                if index == 24
+            ),
+            None,
+        )
+        paired_positions = set()
+        if payment_position is not None and total_position is not None:
+            payment_text = rendered_sections[payment_position][1]
+            total_text = rendered_sections[total_position][1]
+            rendered_sections[payment_position] = (
+                23,
+                _format_payment_summary_columns(payment_text, total_text, width),
+            )
+            rendered_sections[total_position] = (24, "")
+            paired_positions.add(total_position)
+        slip += "".join(
+            text
+            for position, (_index, text) in enumerate(rendered_sections)
+            if position not in paired_positions
+        )
+        footer = "   THANK YOU FOR SHOPING WITH US     \n" \
+                 "          " + str(doc['doc_barcode']) + "       \n"
+        if preview_mode and receipt_sections is not None:
+            footer = receipt_sections.get("_footer", footer)
+        if capture_sections is not None:
+            captured.append({
+                "key": "_footer",
+                "index": None,
+                "label": "Thank You and Receipt Barcode",
+                "text": footer,
+            })
+            capture_sections[:] = captured
 
     else:
         #get informations
@@ -647,4 +887,9 @@ def load_slip(Linke, doc, d_id):
             "   YOUR GUARNTEE\n" \
             "       THANK YOU FOR SHOPING WITH US     \n" \
             "          " + str(doc['doc_barcode']) + "       \n"
-    return slip
+    if preview_mode and receipt_sections is not None:
+        footer = receipt_sections.get("_footer", footer)
+        footer = footer.replace(
+            "PREVIEW", str(doc.get("doc_barcode") or "PREVIEW"),
+        )
+    return slip + footer
