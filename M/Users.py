@@ -3,7 +3,15 @@ from tkinter import ttk, filedialog
 import sqlite3
 import json
 
-from PIL import Image, ImageTk
+import sys, subprocess
+try:
+    from PIL import Image, ImageTk
+except (ImportError, ModuleNotFoundError):
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
+        from PIL import Image, ImageTk
+    except Exception:
+        Image, ImageTk = None, None
 
 # Connect to the database or create it if it does not exist
 
@@ -66,7 +74,10 @@ class UserForm(tk.Frame):
         self.search_entry.pack(side=tk.LEFT, padx=5, pady=5)
             
         # bind the update_search_results function to the search box
-        self.search_var.trace("w", self.update_search_results)
+        if hasattr(self.search_var, 'trace_add'):
+            self.search_var.trace_add("write", lambda *args: self.update_search_results())
+        else:
+            self.search_var.trace("w", self.update_search_results)
 
 
         self.userlist_box_Frame = tk.Frame(self, bg=self.bg_dark)
@@ -126,7 +137,10 @@ class UserForm(tk.Frame):
         self.cuntry_label = tk.Label(self.details_frame, text='Country :', bg=self.bg_dark, fg=self.text_light)
         self.cuntry_var = tk.StringVar()  # country selecter
         self.cuntry_Combobox = ttk.Combobox(self.details_frame, textvariable=self.cuntry_var, values=sorted(self.MainApplication.COUNTRIES_WITH_CITIES.keys()), state='readonly')
-        self.cuntry_var.trace('w', lambda name, index, mode: cuntry_changed())
+        if hasattr(self.cuntry_var, 'trace_add'):
+            self.cuntry_var.trace_add('write', lambda *args: cuntry_changed())
+        else:
+            self.cuntry_var.trace('w', lambda name, index, mode: cuntry_changed())
         self.cuntry_label.grid(row=7, column=0, padx=5, pady=5, sticky=tk.W)
         self.cuntry_Combobox.grid(row=7, column=1, padx=5, pady=5, sticky=tk.W)
 

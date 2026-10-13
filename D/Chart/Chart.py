@@ -23,6 +23,18 @@ def create_random_color():
     b = random.randint(0, 255)
     return f'#{r:02x}{g:02x}{b:02x}'
 
+def _get_canvas_dim(canvas, attr='height'):
+    try:
+        val = canvas.cget(attr)
+        if str(val).isdigit():
+            return int(val)
+        return canvas.winfo_pixels(val) if val else ((canvas.winfo_height() if attr == 'height' else canvas.winfo_width()) or 200)
+    except Exception:
+        try:
+            return (canvas.winfo_height() if attr == 'height' else canvas.winfo_width()) or 200
+        except Exception:
+            return 200
+
 def get_with_date(main_values):
     _yearly = []
     _monthly = []
@@ -291,30 +303,30 @@ def draw_cart(parent, tools_styel, main_values, deff_which, deff_style):
             q = 0
             for i, val in enumerate(_values):
 
-                y = (int(canvas.cget('height')) - y_offset/2) - (i*y_gap)
+                y = (_get_canvas_dim(canvas, 'height') - y_offset/2) - (i*y_gap)
 
                 if q < len(result):
-                    scaled_value = result[q] * (int(canvas.cget('height'))-y_offset) / max_value if not max_value == 0 else 1
+                    scaled_value = result[q] * (_get_canvas_dim(canvas, 'height')-y_offset) / max_value if not max_value == 0 else 1
                     txt_angle = 90
-                    if int(canvas.cget('height'))-y_offset == scaled_value or (int(canvas.cget('height'))+((y/10)+len(str(result[q]))))-y_offset >= scaled_value:
+                    if _get_canvas_dim(canvas, 'height')-y_offset == scaled_value or (_get_canvas_dim(canvas, 'height')+((y/10)+len(str(result[q]))))-y_offset >= scaled_value:
                         txt_angle = 0
                     canvas.create_text(0+15, y - (len(str(result[q]))+1), text=str(result[q]), anchor="center", angle=txt_angle, fill=tools_styel['Text_color'])
                 
                 canvas.create_line(x_offset, y, x_offset + (len(_values)-1) *((bar_width+5))+bar_width, y, fill="black") # X-axis
                 
-                canvas.create_line(x_offset+(i*(bar_width+5))+bar_width, int(canvas.cget('height'))-y_offset/2, x_offset+(i*(bar_width+5))+bar_width, 0, fill="black") # Y_asiss
+                canvas.create_line(x_offset+(i*(bar_width+5))+bar_width, _get_canvas_dim(canvas, 'height')-y_offset/2, x_offset+(i*(bar_width+5))+bar_width, 0, fill="black") # Y_asiss
                 
                 q+=1
                 
             # X and Y line to Sparate the text and y value from the drawing graph
-            canvas.create_line(x_offset, 0, x_offset, int(canvas.cget('height')), fill="black")
-            canvas.create_line(0, int(canvas.cget('height'))-y_offset/2, int(canvas.cget('width')), int(canvas.cget('height'))-y_offset/2, fill="black")
+            canvas.create_line(x_offset, 0, x_offset, _get_canvas_dim(canvas, 'height'), fill="black")
+            canvas.create_line(0, _get_canvas_dim(canvas, 'height')-y_offset/2, _get_canvas_dim(canvas, 'width'), _get_canvas_dim(canvas, 'height')-y_offset/2, fill="black")
             
         if style == "Scatter Plot Chart": # Dot style chart if it is choosen one
             total_width = len(values) * (bar_width + x_gap)
-            offset = (int(canvas.cget('width')) - total_width) # use this if dont what to use scroing bar 
+            offset = (_get_canvas_dim(canvas, 'width') - total_width) # use this if dont what to use scroing bar
             
-            W, H = int(canvas.cget('width')), int(canvas.cget('height'))
+            W, H = _get_canvas_dim(canvas, 'width'), _get_canvas_dim(canvas, 'height')
             padding = 50
             range_y = max_y - min_y if max_y != min_y else 1
             zero_y = H-y_offset/2 - ((-min_y) / range_y * (H-y_offset*2))
@@ -324,15 +336,15 @@ def draw_cart(parent, tools_styel, main_values, deff_which, deff_style):
                 
             for i, val in enumerate(_values):
                 x = x_offset + i *(bar_width+5)
-                scaled_value = values[i] * (int(canvas.cget('height'))-y_offset) / max_value if not max_value == 0 else 1
-                y = int(canvas.cget('height')) - scaled_value -  (y_offset/2 )
+                scaled_value = values[i] * (_get_canvas_dim(canvas, 'height')-y_offset) / max_value if not max_value == 0 else 1
+                y = _get_canvas_dim(canvas, 'height') - scaled_value -  (y_offset/2 )
 
                 point.append((x,y-y_gap))
 
                 canvas.create_oval(x-3, y-y_gap-3, x+3, y-y_gap+3, fill=color[i])
 
                 txt_angle = 90
-                if int(canvas.cget('height'))-y_offset == scaled_value or (int(canvas.cget('height'))+((int(canvas.cget('height')) - y_offset/10)+len(str(val[1]))))-y_offset >= scaled_value:
+                if _get_canvas_dim(canvas, 'height')-y_offset == scaled_value or (_get_canvas_dim(canvas, 'height')+((_get_canvas_dim(canvas, 'height') - y_offset/10)+len(str(val[1]))))-y_offset >= scaled_value:
                     txt_angle = 0
                     text_style_var
 
@@ -340,7 +352,7 @@ def draw_cart(parent, tools_styel, main_values, deff_which, deff_style):
                 if i % 3 == 0 and text_style_var.get() == "Oposite" or i % 2 == 0 and text_style_var.get() == "Oposite" or text_style_var.get() == "Top Of The Ege"  or text_style_var.get() ==  "In Middle":
                     canvas.create_text(x + bar_width//2, y-(y_gap+10), text=str(val[1]), anchor="center", angle=txt_angle, fill=tools_styel['Text_color'])
 
-                canvas.create_text(x + bar_width//2, int(canvas.cget('height')) - y_offset/2 + 15, text=str(val[0]), anchor="center", angle=txt_angle, fill=tools_styel['Text_color'])
+                canvas.create_text(x + bar_width//2, _get_canvas_dim(canvas, 'height') - y_offset/2 + 15, text=str(val[0]), anchor="center", angle=txt_angle, fill=tools_styel['Text_color'])
 
                 point.append((x + bar_width//2, y))
 
@@ -352,32 +364,32 @@ def draw_cart(parent, tools_styel, main_values, deff_which, deff_style):
         elif style == "Bar Chart": # ragtangel style chart if it is choosen one
             
             total_width = len(values) * (bar_width + x_gap)
-            offset = (int(canvas.cget('width')) - total_width) # use this if dont what to use scroing bar 
+            offset = (_get_canvas_dim(canvas, 'width') - total_width) # use this if dont what to use scroing bar
             point = []
                 
             for i, val in enumerate(_values):
                 x = x_offset + i *(bar_width+5)
-                scaled_value = values[i] * (int(canvas.cget('height'))-y_offset) / max_value if not max_value == 0 else 1
-                y = int(canvas.cget('height')) - scaled_value -  (y_offset/2 )
+                scaled_value = values[i] * (_get_canvas_dim(canvas, 'height')-y_offset) / max_value if not max_value == 0 else 1
+                y = _get_canvas_dim(canvas, 'height') - scaled_value -  (y_offset/2 )
 
                 
 
 
                 txt_angle = 90
-                if int(canvas.cget('height'))-y_offset == scaled_value or (int(canvas.cget('height'))+((int(canvas.cget('height')) - y_offset/10)+len(str(val[1]))))-y_offset >= scaled_value:
+                if _get_canvas_dim(canvas, 'height')-y_offset == scaled_value or (_get_canvas_dim(canvas, 'height')+((_get_canvas_dim(canvas, 'height') - y_offset/10)+len(str(val[1]))))-y_offset >= scaled_value:
                     txt_angle = 0
 
-                canvas.create_rectangle(x, y-y_gap, x+bar_width, int(canvas.cget('height')) - y_offset/2, fill=color[i])
-                barhight = (int(canvas.cget('height')) - y_offset/2) - (y-y_gap)
+                canvas.create_rectangle(x, y-y_gap, x+bar_width, _get_canvas_dim(canvas, 'height') - y_offset/2, fill=color[i])
+                barhight = (_get_canvas_dim(canvas, 'height') - y_offset/2) - (y-y_gap)
                 
                 if i % 3 == 0 and text_style_var.get() == "Oposite" or text_style_var.get() == "Bottom" or \
                     i % 2 == 0 and text_style_var.get() == "Oposite" or text_style_var.get() == "Top Of The Ege":
                     canvas.create_text(x + bar_width//2, y-(y_gap+10), text=str(val[1]), anchor="center", angle=txt_angle, fill=tools_styel['Text_color'])
 
-                canvas.create_text(x + bar_width//2, int(canvas.cget('height')) - y_offset/2 + 15, text=str(val[0]), anchor="center", angle=txt_angle, fill=tools_styel['Text_color'])
+                canvas.create_text(x + bar_width//2, _get_canvas_dim(canvas, 'height') - y_offset/2 + 15, text=str(val[0]), anchor="center", angle=txt_angle, fill=tools_styel['Text_color'])
                     
                 if text_style_var.get() == "In Middle":
-                    canvas.create_text(x + bar_width/2, y+7+barhight if not y+7+barhight >= int(canvas.cget('height')) - y_offset/2 else y-7, text=str(val[1]), anchor="center", angle=90, fill=tools_styel['Text_color'])
+                    canvas.create_text(x + bar_width/2, y+7+barhight if not y+7+barhight >= _get_canvas_dim(canvas, 'height') - y_offset/2 else y-7, text=str(val[1]), anchor="center", angle=90, fill=tools_styel['Text_color'])
 
                 point.append((x + bar_width//2, y))
 
@@ -393,10 +405,10 @@ def draw_cart(parent, tools_styel, main_values, deff_which, deff_style):
             gap = 40
             start_angle = 0
             for i, value in enumerate(_values):
-                scaled_value = (values[i] * (int(canvas.cget('height'))-y_offset)) / max_value if not max_value == 0 else 1
+                scaled_value = (values[i] * (_get_canvas_dim(canvas, 'height')-y_offset)) / max_value if not max_value == 0 else 1
                 angle = (values[i] / max_value) * 360 
-                x=int(canvas.cget('height'))/2
-                y = int(canvas.cget('height'))/2
+                x=_get_canvas_dim(canvas, 'height')/2
+                y = _get_canvas_dim(canvas, 'height')/2
                 radiuse = x/2  
                 #angle = 360 * values[i] / total_sum
                 #print("values[i] ", values[i])
@@ -425,9 +437,9 @@ def draw_cart(parent, tools_styel, main_values, deff_which, deff_style):
                         gap0 = 20
                     else:
                         gap0 = 40
-                    canvas.create_rectangle(i*20, int(canvas.cget('height'))-gap-5, i*20+20, int(canvas.cget('height'))-gap-22, fill=color[i])
+                    canvas.create_rectangle(i*20, _get_canvas_dim(canvas, 'height')-gap-5, i*20+20, _get_canvas_dim(canvas, 'height')-gap-22, fill=color[i])
                     
-                    canvas.create_text(i*20, int(canvas.cget('height'))-gap0, text=str(value[1]), anchor="center", fill=tools_styel['Text_color'])
+                    canvas.create_text(i*20, _get_canvas_dim(canvas, 'height')-gap0, text=str(value[1]), anchor="center", fill=tools_styel['Text_color'])
                     if gap == 40:
                         gap = 20
                     else:
@@ -451,26 +463,26 @@ def draw_cart(parent, tools_styel, main_values, deff_which, deff_style):
             gap = 30
             total_width = len(values)
             x_offset = 30
-            offset = (int(canvas.cget('width')) - total_width)
+            offset = (_get_canvas_dim(canvas, 'width') - total_width)
             scroll_by = x_offset+(offset/(len(values)-1))
             for i, value in enumerate(_values):
                 v_index0 = v_index if v_index <= len(value)-1 else 1
                 x_offset += (gap)
                 x0 = x_offset + (i)
-                y0 = int(canvas.cget('height')) - 20
+                y0 = _get_canvas_dim(canvas, 'height') - 20
 
-                scaled_value = value[1] * (int(canvas.cget('height'))-40) / max_value if not max_value == 0 else 1
+                scaled_value = value[1] * (_get_canvas_dim(canvas, 'height')-40) / max_value if not max_value == 0 else 1
                 x1 = x_offset + (i + 1) * + (i)
-                y1 = int(canvas.cget('height')) - scaled_value - 20
+                y1 = _get_canvas_dim(canvas, 'height') - scaled_value - 20
 
                 j =i
                 if i+1 < len(values):
                     j = i+1
-                scaled_value2 = _values[j][v_index0] * (int(canvas.cget('height'))-40) / max_value if not max_value == 0 else 1
+                scaled_value2 = _values[j][v_index0] * (_get_canvas_dim(canvas, 'height')-40) / max_value if not max_value == 0 else 1
                 x2 = x_offset + gap + (j + 1) * j
-                y2 = int(canvas.cget('height')) - scaled_value2 - 20
+                y2 = _get_canvas_dim(canvas, 'height') - scaled_value2 - 20
                 txt_angle = 90
-                if int(canvas.cget('height'))-40 == scaled_value or (int(canvas.cget('height'))+((y1/10)+len(str(value[1]))))-40 >= scaled_value:
+                if _get_canvas_dim(canvas, 'height')-40 == scaled_value or (_get_canvas_dim(canvas, 'height')+((y1/10)+len(str(value[1]))))-40 >= scaled_value:
                     txt_angle = 0
                 
                 canvas.create_text((x0 + x1) / 2, y1 - ((y1/10)+len(str(value[1]))), text=str(value[0]), anchor="center", angle=txt_angle, fill=tools_styel['Text_color'])
@@ -479,12 +491,11 @@ def draw_cart(parent, tools_styel, main_values, deff_which, deff_style):
         canvas.configure(scrollregion=canvas.bbox("all"))
 
     
-    which_var.trace("w", lambda *arg, c=chart_canvas, s=style_var, w=which_var, e=Connectby_Line_change_var, r=Show_Line_change_var, t=text_style_var: on_style_selected(chart_canvas, s, w, e, r, t))
-    text_style_var.trace("w", lambda *arg, c=chart_canvas, s=style_var, w=which_var, e=Connectby_Line_change_var, r=Show_Line_change_var, t=text_style_var: on_style_selected(chart_canvas, s, w, e, r, t))
-    Connectby_Line_change_var.trace("w", lambda *arg, c=chart_canvas, s=style_var, w=which_var, e=Connectby_Line_change_var, r=Show_Line_change_var, t=text_style_var: on_style_selected(chart_canvas, s, w, e, r, t))
-    Show_list_var.trace("w", lambda *arg, c=chart_canvas, s=style_var, w=which_var, e=Connectby_Line_change_var, r=Show_Line_change_var, t=text_style_var: on_style_selected(chart_canvas, s, w, e, r, t))
-    Show_Line_change_var.trace("w", lambda *arg, c=chart_canvas, s=style_var, w=which_var, e=Connectby_Line_change_var, r=Show_Line_change_var, t=text_style_var: on_style_selected(chart_canvas, s, w, e, r, t))
-    style_var.trace("w", lambda *arg, c=chart_canvas, s=style_var, w=which_var, e=Connectby_Line_change_var, r=Show_Line_change_var, t=text_style_var: on_style_selected(chart_canvas, s, w, e, r, t))
+    for _v in (which_var, text_style_var, Connectby_Line_change_var, Show_list_var, Show_Line_change_var, style_var):
+        if hasattr(_v, 'trace_add'):
+            _v.trace_add("write", lambda *arg, c=chart_canvas, s=style_var, w=which_var, e=Connectby_Line_change_var, r=Show_Line_change_var, t=text_style_var: on_style_selected(chart_canvas, s, w, e, r, t))
+        else:
+            _v.trace("w", lambda *arg, c=chart_canvas, s=style_var, w=which_var, e=Connectby_Line_change_var, r=Show_Line_change_var, t=text_style_var: on_style_selected(chart_canvas, s, w, e, r, t))
     
     
     on_style_selected(chart_canvas, style_var, which_var, Connectby_Line_change_var, Show_Line_change_var, text_style_var)

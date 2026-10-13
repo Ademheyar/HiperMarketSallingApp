@@ -25,27 +25,21 @@ db_path = os.path.join(data_dir, 'my_database.db')
 # this will fetch data as dict list from data base
 # query : str = the sql query
 # values : tuple = the values to be used in the query
-def fetch_as_dict_list(Link, query, values):
+def fetch_as_dict_list(Link, query=None, values=()):
+    if query is None or (isinstance(Link, str) and (Link.strip().upper().startswith(('SELECT', 'INSERT', 'UPDATE', 'DELETE', 'PRAGMA')) or isinstance(query, (tuple, list)))):
+        if query is not None and isinstance(query, (tuple, list)):
+            values = query
+        query = Link
+        Link = ""
     result = None
     if Link and len(Link) > 5 and islinked(Link):
-        print("fetch_as_dict_list Link ", Link)
         entry = {'Do': "Get", 'QUERYS': query, 'QUERYVALUES': values }
         response_data = Sand_API(Link, entry)
-        if response_data and not response_data == []:
-            if response_data['status'] == 'success':
-                print("SHOP FOUND ", response_data)
-                '''if response_data['Value']:
-                    print("Fetch FOUND : ", response_data['Value'])
-                    return response_data['Value']
-                else:
-                    #print("SHOP NOT FOUND")
-                    result = None'''
-            else:
-                #print("There is Error FOUND")
-                result = None
-    else:
-        #print("API Error")
-        pass
+        if response_data and isinstance(response_data, dict):
+            if response_data.get('status') == 'success':
+                val = response_data.get('Value')
+                if val is not None:
+                    return val
     
     if result == None:
         # #print("fetch_as_dict_list query : ", query)
@@ -262,33 +256,33 @@ def search_documents(Link, doc_id=None, doc_type=None, doc_barcode=None, extensi
     # Build the SQL query based on the provided attributes
     query = 'SELECT * FROM doc_table WHERE'
     q, d = '', ''
-    if doc_id is not None and doc_id is not '':
+    if doc_id is not None and doc_id != '':
         q += f" AND id='{doc_id}'" if q != '' else f" id='{doc_id}'"
     if doc_type is not None and doc_type != '':
         q += f" AND type='{doc_type}'" if q != '' else f" type='{doc_type}'"
-    if doc_barcode is not None and doc_barcode is not '':
+    if doc_barcode is not None and doc_barcode != '':
         q += f" AND doc_barcode='{doc_barcode}'" if q != '' else f" doc_barcode='{doc_barcode}'"
-    if extension_barcode is not None and extension_barcode is not '':
+    if extension_barcode is not None and extension_barcode != '':
         q += f" AND extension_barcode='{extension_barcode}'" if q != '' else f" extension_barcode='{extension_barcode}'"
-    if item is not None and item is not '':
+    if item is not None and item != '':
         q += f" AND item LIKE ?" if q != '' else f" item LIKE ?"
         if given == None:
             given.append(f'%{item}%')
         else:
             given.append(f'%{item}%')
 
-    if user_id is not None and user_id is not '':
+    if user_id is not None and user_id != '':
         #print("doc user_id : ", user_id)
         q += f" AND user_id='{user_id}'" if q != '' else f" user_id='{user_id}'"
-    if customer_id is not None and customer_id is not '':
+    if customer_id is not None and customer_id != '':
         #print("doc customer_id : ", customer_id)
         q += f" AND customer_id='{customer_id}'" if q != '' else f" customer_id='{customer_id}'"
 
-    if sold_item_info is not None and sold_item_info is not '':
+    if sold_item_info is not None and sold_item_info != '':
         q += f" AND sold_item_info='{sold_item_info}'" if q != '' else f" sold_item_info='{sold_item_info}'"
-    if discount is not None and discount is not '':
+    if discount is not None and discount != '':
         q += f" AND discount='{discount}'" if q != '' else f" discount='{discount}'"
-    if seller_id is not None and seller_id is not '':
+    if seller_id is not None and seller_id != '':
         q += f" AND Seller_id='{seller_id}'" if q != '' else f" Seller_id='{seller_id}'"
 
     if doc_created_date is not None and doc_created_date:

@@ -15,7 +15,7 @@ import requests
 
 
 from C.API.API import Sand_API
-from C.API.Get import fetch_as_dict_list, islinked
+from C.API.Get import fetch_as_dict_list, islinked, Get_Shop
 from M.Preferences import resolve_shop_currency
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
@@ -155,46 +155,27 @@ def Update_User(Link, user, ARG, UserVALUE, find_Arg, find_Value):
     if Link and islinked(Link):
         url = Link
         entry = {'Do': "UPDATE USER", 'User': user, 'QUERYS': query, 'QUERYVALUES' : value,  'FIND_ARG': fquery, 'FIND_VALUE': fvalue}
-        #print("Update_User entry ", entry)
         response_data = Sand_API(url, entry)
-        if response_data and not response_data == []:
-            if response_data['status'] == 'success':
-                if response_data['Value']:
-                    #print("User Updated Secessfuly", response_data['Value'])
-                    return response_data['Value']
-                else:
-                    #print("Faild To Update User Data")
-                    User = None
-            else:
-                if response_data['Value']:
-                    #print("There is Error in Update User Data", response_data['Value'])
-                    User = response_data['Value']
-                else:
-                    #print("There is Error in Update User Data")
-                    User = None
-    else:
-        #print("API Error")
-        pass
+        if response_data and isinstance(response_data, dict) and response_data.get('status') == 'success':
+            if response_data.get('Value'):
+                User = response_data['Value']
 
-    #print("user query ", query)
-    #print("user value ", value)
-    #print("user find ", 'UPDATE Users SET ' + query + ' WHERE '+fquery, value + fvalue)
-    if query != "" and User == None:
-        # Update the user into the database
-        SETUser_conn = sqlite3.connect(db_path)
-        SETUser_cur = SETUser_conn.cursor()                       
-        # Commit the changes to the database
-        SETUser_cur.execute('UPDATE Users SET ' + query + ' WHERE '+fquery, value + fvalue)
-        # Commit the changes to the database
-        
-        SETUser_conn.commit()
-        SETUser_cur.execute('SELECT * FROM Users WHERE '+fquery, fvalue)
-        row = SETUser_cur.fetchone()
-        column = SETUser_cur.description
-        SETUser_conn.close()
-        if row:
-            columns = [col[0] for col in column]
-            User = dict(zip(columns, row))
+    if query != "":
+        try:
+            SETUser_conn = sqlite3.connect(db_path)
+            SETUser_cur = SETUser_conn.cursor()
+            SETUser_cur.execute('UPDATE Users SET ' + query + ' WHERE '+fquery, value + fvalue)
+            SETUser_conn.commit()
+            if not User:
+                SETUser_cur.execute('SELECT * FROM Users WHERE '+fquery, fvalue)
+                row = SETUser_cur.fetchone()
+                column = SETUser_cur.description
+                if row:
+                    columns = [col[0] for col in column]
+                    User = dict(zip(columns, row))
+            SETUser_conn.close()
+        except Exception as e:
+            print("Local DB Update_User sync error:", e)
     return User
 
 
@@ -401,49 +382,27 @@ def Update_Shop(Link, user, ARG, ShopsVALUE, find_Arg, find_Value):
     if Link and islinked(Link):
         url = Link
         entry = {'Do': "UPDATE SHOP", 'User': user, 'QUERYS': query, 'QUERYVALUES' : value,  'FIND_ARG': fquery, 'FIND_VALUE': fvalue}
-        #print("Update_Shop entry ", entry)
         response_data = Sand_API(url, entry)
-        if response_data and not response_data == []:
-            if response_data['status'] == 'success':
-                if response_data['Value']:
-                    #print("SHop Updated Secessfuly", response_data['Value'])
-                    return response_data['Value']
-                else:
-                    #print("Faild To Update Shop Data")
-                    Shop = None
-            else:
-                if response_data['Value']:
-                    #print("There is Error in Update Shop Data", response_data['Value'])
-                    Shop = response_data['Value']
-                else:
-                    #print("There is Error in Update Shop Data")
-                    Shop = None
-    else:
-        #print("API Error")
-        pass
+        if response_data and isinstance(response_data, dict) and response_data.get('status') == 'success':
+            if response_data.get('Value'):
+                Shop = response_data['Value']
 
-    #print("update shop query ", query)
-    #print("update shop fquery ", fquery)
-    #print("update shop value ", value+fvalue)
-    if query != "" and Shop == None:
-        # Update the shop into the database
-        
-        UPDATSHOP_conn = sqlite3.connect(db_path)
-        UPDATSHOP_cur = UPDATSHOP_conn.cursor()                       
-        # Commit the changes to the database
-        UPDATSHOP_cur.execute('UPDATE Shops SET ' + query + ' WHERE '+fquery, value + fvalue)
-        # Commit the changes to the database
-        
-        UPDATSHOP_conn.commit()
-        UPDATSHOP_cur.execute('SELECT * FROM Shops WHERE '+fquery, fvalue)
-        row = UPDATSHOP_cur.fetchone()
-        column = UPDATSHOP_cur.description
-        UPDATSHOP_conn.close()
-        if row:
-            columns = [col[0] for col in column]
-            Shop = dict(zip(columns, row))
-        else:
-            return None
+    if query != "":
+        try:
+            UPDATSHOP_conn = sqlite3.connect(db_path)
+            UPDATSHOP_cur = UPDATSHOP_conn.cursor()
+            UPDATSHOP_cur.execute('UPDATE Shops SET ' + query + ' WHERE '+fquery, value + fvalue)
+            UPDATSHOP_conn.commit()
+            if not Shop:
+                UPDATSHOP_cur.execute('SELECT * FROM Shops WHERE '+fquery, fvalue)
+                row = UPDATSHOP_cur.fetchone()
+                column = UPDATSHOP_cur.description
+                if row:
+                    columns = [col[0] for col in column]
+                    Shop = dict(zip(columns, row))
+            UPDATSHOP_conn.close()
+        except Exception as e:
+            print("Local DB Update_Shop sync error:", e)
     return Shop
 
 
@@ -620,47 +579,27 @@ def Update_Producte(Link, user, ARG, ProducteVALUE, find_Arg, find_Value):
     if Link and islinked(Link):
         url = Link
         entry = {'Do': "UPDATE PRODUCT", 'User': user, 'QUERYS': query, 'QUERYVALUES' : value,  'FIND_ARG': fquery, 'FIND_VALUE': fvalue}
-        #print("Update_Producte entry ", entry)
         response_data = Sand_API(url, entry)
-        if response_data and not response_data == []:
-            if response_data['status'] == 'success':
-                if response_data['Value']:
-                    #print("Product Updated Secessfuly", response_data['Value'])
-                    return response_data['Value']
-                else:
-                    #print("Faild To Update Product Data")
-                    product = None
-            else:
-                if response_data['Value']:
-                    #print("There is Error in Update Product Data", response_data['Value'])
-                    product = response_data['Value']
-                else:
-                    #print("There is Error in Update Product Data")
-                    product = None
-    else:
-        #print("API Error")
-        pass
+        if response_data and isinstance(response_data, dict) and response_data.get('status') == 'success':
+            if response_data.get('Value'):
+                product = response_data['Value']
 
-    #print("product query ", query)
-    #print("product fquery ", fquery)
-    #print("product value ", value+fvalue)
-    if query != "" and product == None:
-        update_product_conn = sqlite3.connect(db_path)
-        update_product_cur = update_product_conn.cursor()
-        # Update the product into the database                
-        update_product_cur.execute('UPDATE product SET ' + query + ' WHERE '+fquery, value + fvalue)
-        # Commit the changes to the database
-        update_product_conn.commit()
-        update_product_cur.execute('SELECT * FROM product WHERE '+fquery, fvalue)
-        row = update_product_cur.fetchone()
-        colume = update_product_cur.description
-        update_product_conn.close()
-        if row:
-            columns = [col[0] for col in colume]
-            product = dict(zip(columns, row))
-        else:
-            return None
-        
+    if query != "":
+        try:
+            update_product_conn = sqlite3.connect(db_path)
+            update_product_cur = update_product_conn.cursor()
+            update_product_cur.execute('UPDATE product SET ' + query + ' WHERE '+fquery, value + fvalue)
+            update_product_conn.commit()
+            if not product:
+                update_product_cur.execute('SELECT * FROM product WHERE '+fquery, fvalue)
+                row = update_product_cur.fetchone()
+                colume = update_product_cur.description
+                if row:
+                    columns = [col[0] for col in colume]
+                    product = dict(zip(columns, row))
+            update_product_conn.close()
+        except Exception as e:
+            print("Local DB Update_Producte sync error:", e)
     return product
 
 
@@ -779,42 +718,23 @@ def Update_Documente(Link, user, ARG, DocumenteVALUE, find_Arg, find_Value):
     if Link and islinked(Link):
         url = Link
         entry = {'Do': "UPDATE DOCUMENT", 'User': user, 'QUERYS': query, 'QUERYVALUES' : value,  'FIND_ARG': fquery, 'FIND_VALUE': fvalue}
-        #print("Update_Documente entry ", entry)
         response_data = Sand_API(url, entry)
-        if response_data and not response_data == []:
-            if response_data['status'] == 'success':
-                if response_data['Value']:
-                    #print("Document Updated Secessfuly", response_data['Value'])
-                    return response_data['Value']
-                else:
-                    #print("Faild To Update Document Data")
-                    Document = None
-            else:
-                if response_data['Value']:
-                    #print("There is Error in Update Document Data", response_data['Value'])
-                    Document = response_data['Value']
-                else:
-                    #print("There is Error in Update Document Data")
-                    Document = None
-    else:
-        #print("API Error")
-        pass
+        if response_data and isinstance(response_data, dict) and response_data.get('status') == 'success':
+            if response_data.get('Value'):
+                Document = response_data['Value']
 
-    #print("Document query ", query)
-    #print("Document value ", value)
-    if query != "" and Document == None:
-        update_doc_conn = sqlite3.connect(db_path)
-        update_doc_cur = update_doc_conn.cursor()
-        # Update the Document into the database  
-        Tquery = 'UPDATE doc_table SET ' + query + ' WHERE '+fquery
-        #print("Document Tquery ", Tquery)
-        TqueryV = value + fvalue
-        #print("Document TqueryV ", TqueryV)             
-        update_doc_cur.execute(Tquery, TqueryV)
-        #update_doc_cur.execute('UPDATE upload_doc SET ' + query + ' WHERE '+fquery, value + fvalue)
-        # Commit the changes to the database
-        update_doc_conn.commit()
-        update_doc_conn.close()
-        Document = fetch_as_dict_list(Link, 'SELECT * FROM doc_table WHERE '+fquery, fvalue)
+    if query != "":
+        try:
+            update_doc_conn = sqlite3.connect(db_path)
+            update_doc_cur = update_doc_conn.cursor()
+            Tquery = 'UPDATE doc_table SET ' + query + ' WHERE '+fquery
+            TqueryV = value + fvalue
+            update_doc_cur.execute(Tquery, TqueryV)
+            update_doc_conn.commit()
+            update_doc_conn.close()
+            if not Document:
+                Document = fetch_as_dict_list(Link, 'SELECT * FROM doc_table WHERE '+fquery, fvalue)
+        except Exception as e:
+            print("Local DB Update_Documente sync error:", e)
 
     return Document

@@ -1,6 +1,14 @@
 import tkinter as tk
 from tkinter import ttk, filedialog
-from PIL import Image, ImageTk
+import sys, subprocess
+try:
+    from PIL import Image, ImageTk
+except (ImportError, ModuleNotFoundError):
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
+        from PIL import Image, ImageTk
+    except Exception:
+        Image, ImageTk = None, None
 import os, shutil
 import sqlite3
 import shutil
@@ -1211,9 +1219,11 @@ class ProductQueckEditionForm(ttk.Notebook):
             # credit_var is derived; still trace to revalidate if user edits it
             self.credit_var.trace_add('write', validate_payments)
         except Exception:
-            self.cash_var.trace('w', validate_payments)
-            self.card_var.trace('w', validate_payments)
-            self.credit_var.trace('w', validate_payments)
+            for _v in (self.cash_var, self.card_var, self.credit_var):
+                if hasattr(_v, 'trace_add'):
+                    _v.trace_add('write', validate_payments)
+                else:
+                    _v.trace('w', validate_payments)
 
         # Wrap existing add_product to enforce validation at call time.
         if hasattr(self, 'add_product'):

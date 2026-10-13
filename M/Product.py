@@ -1,6 +1,14 @@
 import tkinter as tk
 from tkinter import ttk, filedialog
-from PIL import Image, ImageTk
+import sys, subprocess
+try:
+    from PIL import Image, ImageTk
+except (ImportError, ModuleNotFoundError):
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
+        from PIL import Image, ImageTk
+    except Exception:
+        Image, ImageTk = None, None
 import os, shutil
 import sqlite3
 import shutil
@@ -56,39 +64,39 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
     given = []
     # Build the SQL query based on the provided attributes
     query = 'SELECT * FROM doc_table WHERE 1=1'
-    if doc_id is not None and doc_id is not '':
+    if doc_id is not None and doc_id != '':
         query += f" AND id='{doc_id}'"
     if doc_type is not None and doc_type != '':
         query += f" AND type='{doc_type}'"
-    if doc_barcode is not None and doc_barcode is not '':
+    if doc_barcode is not None and doc_barcode != '':
         query += f" AND doc_barcode='{doc_barcode}'"
-    if extension_barcode is not None and extension_barcode is not '':
+    if extension_barcode is not None and extension_barcode != '':
         query += f" AND extension_barcode='{extension_barcode}'"
-    if item is not None and item is not '':
+    if item is not None and item != '':
         query += f" AND item LIKE ?"
         if given == None:
             given.append(f'%{item}%')
         else:
             given.append(f'%{item}%')
-    if user_id is not None and user_id is not '':
+    if user_id is not None and user_id != '':
         query += f" AND user_id='{user_id}'"
-    if customer_id is not None and customer_id is not '':
+    if customer_id is not None and customer_id != '':
         query += f" AND customer_id='{customer_id}'"
-    if sold_item_info is not None and sold_item_info is not '':
+    if sold_item_info is not None and sold_item_info != '':
         query += f" AND sold_item_info='{sold_item_info}'"
-    if discount is not None and discount is not '':
+    if discount is not None and discount != '':
         query += f" AND discount='{discount}'"
-    if tax is not None and tax is not '':
+    if tax is not None and tax != '':
         query += f" AND tax='{tax}'"
-    if doc_created_date is not None and doc_created_date is not '':
+    if doc_created_date is not None and doc_created_date != '':
         query += f" AND doc_created_date LIKE ?"
         if given == None:
             given.append(f'%{doc_created_date}%')
         else:
             given.append(f'%{doc_created_date}%')
-    if doc_expire_date is not None and doc_expire_date is not '':
+    if doc_expire_date is not None and doc_expire_date != '':
         query += f" AND doc_expire_date='{doc_expire_date}'"
-    if doc_updated_date is not None and doc_updated_date is not '':
+    if doc_updated_date is not None and doc_updated_date != '':
         query += f" AND doc_updated_date='{doc_updated_date}'"
     
     #print(query+"\n")
@@ -170,7 +178,10 @@ class ProductForm(ttk.Frame):
         if Chacke_Security(self, self.user, self.Shops[self.on_Shop], 9, f'User Has No Permission To Access SEARCH PRODUCT OR LOGIN AS ADMIN'):                        
             self.search_entry.bind('<KeyRelease>', self.update_search_results)
             # bind the update_search_results function to the search box
-            self.search_var.trace("w", self.update_search_results)
+            if hasattr(self.search_var, 'trace_add'):
+                self.search_var.trace_add("write", lambda *args: self.update_search_results())
+            else:
+                self.search_var.trace("w", self.update_search_results)
         self.search_entry.grid(row=0, column=0, columnspan=5, padx=5, pady=5, sticky=tk.W)
         
         self.refresh_button = tk.Button(self.search_Frame, text='Refresh', command=self.Load_Shop_items, **self.button_style)
@@ -325,27 +336,28 @@ class ProductForm(ttk.Frame):
         
         
     def Load_Shop_items(self):
+        if not hasattr(self.homemaster, 'Shops_info') or not isinstance(self.homemaster.Shops_info, dict):
+            self.homemaster.Shops_info = {}
         self.homemaster.Shops_info['Shop_items'] = []
         for s, shop in enumerate(self.Shops):
-            #print("Loop Shop ", shop['Shop_name'])
-            #print("Selected Shop ", self.shop_name_Combobox.get())
-            #print("Shop items = ", shop['Shop_items'])
             FOUND = []
-            if shop['Shop_items'] and (shop['Shop_name'] == "" or s == self.shop_name_Combobox.current()):
-                found_shop_items = json.loads(shop['Shop_items'])
-                #print("Shop items --> ", found_shop_items)
+            shop_items_raw = shop.get('Shop_items')
+            if shop_items_raw and (shop.get('Shop_name') == "" or s == self.shop_name_Combobox.current()):
+                try:
+                    found_shop_items = json.loads(shop_items_raw)
+                except Exception:
+                    found_shop_items = []
                 if found_shop_items:
+                    item_ids = []
                     for item in found_shop_items:
-                        #print('item -- > ', item)
-                        if item[0] in FOUND:
-                            #print("SAME ITEM COUNTERD ", item[0])
-                            pass
-                        else:
+                        if item and len(item) > 0 and item[0] not in FOUND:
                             FOUND.append(item[0])
-                        value = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM product WHERE id=?', (str(item[0]),))
-                        #print("Shop items value --> ", value[0])
-                        if value and not len(value) == 0:
-                            self.homemaster.Shops_info['Shop_items'].append([value[0], [], "", "", "", "", "", "", "", "", "", "", ""])
+                            item_ids.append(str(item[0]))
+                    if item_ids:
+                        placeholders = ','.join(['?'] * len(item_ids))
+                        values = fetch_as_dict_list("", f'SELECT * FROM product WHERE id IN ({placeholders})', tuple(item_ids))
+                        for val in values:
+                            self.homemaster.Shops_info['Shop_items'].append([val, [], "", "", "", "", "", "", "", "", "", "", ""])
                             
                             #print('items = ', self.homemaster.Shops_info['Shop_items'])
                             #print("self.homemaster.Shops_in['Shop_items'] = ", len(self.homemaster.Shops_info['Shop_items']))
@@ -879,7 +891,8 @@ total_qty, total_discount, total_tax, all_total_price = self.chack_list()
         for wedget in self.Listreport_Frame_contaner_frame.winfo_children():
             wedget.destroy()
         shop_items = self.vv
-        ProductFullInfoForm(self.Listreport_Frame_contaner_frame, self.user_info, self.Shops, shop_items, self.homemaster.Shops_info, self.searched_items).pack(side=tk.TOP, fill=tk.BOTH, expand=True)  
+        searched_items = getattr(self, 'searched_items', [])
+        ProductFullInfoForm(self.Listreport_Frame_contaner_frame, self.user_info, self.Shops, shop_items, self.homemaster.Shops_info, searched_items).pack(side=tk.TOP, fill=tk.BOTH, expand=True)  
         
     # for Adding new Product
     # Create the "Add New" button  

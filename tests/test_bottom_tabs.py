@@ -34,6 +34,31 @@ class BottomTabsLayoutTests(unittest.TestCase):
         self.assertGreater(tabs.bar.winfo_height(), 1)
         self.assertTrue(all(item['btn'].winfo_height() > 1 for item in tabs._tabs))
 
+    def test_navigation_switches_between_sidebar_and_phone_bottom_bar(self):
+        tabs = BottomTabs(self.root)
+        tabs.pack(fill='both', expand=True)
+        frames = [tk.Frame(tabs.content_area) for _ in range(3)]
+        for frame, title in zip(frames, ('Home', 'User Profile', 'POS Terminal')):
+            tabs.add(frame, title)
+        self.root.update()
+
+        self.assertEqual(tabs.bar.pack_info()['side'], 'left')
+        self.assertTrue(all(item['cell'].grid_info()['column'] == 0 for item in tabs._tabs))
+        self.assertEqual(tabs._current, frames[0])
+
+        tabs._apply_navigation_layout(480)
+        self.root.update_idletasks()
+
+        self.assertEqual(tabs.bar.pack_info()['side'], 'bottom')
+        self.assertTrue(all(item['cell'].grid_info()['row'] == 0 for item in tabs._tabs))
+        self.assertEqual(tabs._current, frames[0])
+
+        tabs._apply_navigation_layout(800)
+
+        self.assertEqual(tabs.bar.pack_info()['side'], 'left')
+        self.assertTrue(all(item['cell'].grid_info()['column'] == 0 for item in tabs._tabs))
+        self.assertEqual(tabs._current, frames[0])
+
     def test_selected_tab_uses_current_theme_palette(self):
         tabs = BottomTabs(self.root)
         tabs.pack(fill='both', expand=True)

@@ -1,6 +1,14 @@
 import tkinter as tk
 from tkinter import ttk, filedialog
-from PIL import Image, ImageTk
+import sys, subprocess
+try:
+    from PIL import Image, ImageTk
+except (ImportError, ModuleNotFoundError):
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
+        from PIL import Image, ImageTk
+    except Exception:
+        Image, ImageTk = None, None
 import os, shutil
 import sqlite3
 import shutil
@@ -55,39 +63,39 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
     given = []
     # Build the SQL query based on the provided attributes
     query = 'SELECT * FROM doc_table WHERE 1=1'
-    if doc_id is not None and doc_id is not '':
+    if doc_id is not None and doc_id != '':
         query += f" AND id='{doc_id}'"
     if doc_type is not None and doc_type != '':
         query += f" AND type='{doc_type}'"
-    if doc_barcode is not None and doc_barcode is not '':
+    if doc_barcode is not None and doc_barcode != '':
         query += f" AND doc_barcode='{doc_barcode}'"
-    if extension_barcode is not None and extension_barcode is not '':
+    if extension_barcode is not None and extension_barcode != '':
         query += f" AND extension_barcode='{extension_barcode}'"
-    if item is not None and item is not '':
+    if item is not None and item != '':
         query += f" AND item LIKE ?"
         if given == None:
             given.append(f'%{item}%')
         else:
             given.append(f'%{item}%')
-    if user_id is not None and user_id is not '':
+    if user_id is not None and user_id != '':
         query += f" AND user_id='{user_id}'"
-    if customer_id is not None and customer_id is not '':
+    if customer_id is not None and customer_id != '':
         query += f" AND customer_id='{customer_id}'"
-    if sold_item_info is not None and sold_item_info is not '':
+    if sold_item_info is not None and sold_item_info != '':
         query += f" AND sold_item_info='{sold_item_info}'"
-    if discount is not None and discount is not '':
+    if discount is not None and discount != '':
         query += f" AND discount='{discount}'"
-    if tax is not None and tax is not '':
+    if tax is not None and tax != '':
         query += f" AND tax='{tax}'"
-    if doc_created_date is not None and doc_created_date is not '':
+    if doc_created_date is not None and doc_created_date != '':
         query += f" AND doc_created_date LIKE ?"
         if given == None:
             given.append(f'%{doc_created_date}%')
         else:
             given.append(f'%{doc_created_date}%')
-    if doc_expire_date is not None and doc_expire_date is not '':
+    if doc_expire_date is not None and doc_expire_date != '':
         query += f" AND doc_expire_date='{doc_expire_date}'"
-    if doc_updated_date is not None and doc_updated_date is not '':
+    if doc_updated_date is not None and doc_updated_date != '':
         query += f" AND doc_updated_date='{doc_updated_date}'"
     
     #print(query+"\n")
@@ -150,7 +158,10 @@ class ActionsForm(tk.Frame):
         self.search_entry.pack(side=tk.LEFT, padx=5, pady=5)
             
         # bind the update_search_results function to the search box
-        self.search_var.trace("w", self.update_search_results)
+        if hasattr(self.search_var, 'trace_add'):
+            self.search_var.trace_add("write", lambda *args: self.update_search_results())
+        else:
+            self.search_var.trace("w", self.update_search_results)
         
         self.add_new_button = tk.Button(self.search_frame, text='New Action', command=self.show_add_forme, **self.button_style)
         self.add_new_button.pack(side=tk.LEFT, padx=5, pady=5)

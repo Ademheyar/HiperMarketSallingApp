@@ -29,19 +29,15 @@ import barcode
 from barcode.writer import ImageWriter
 #from PIL import Image, ImageTk
 import io
-import win32print
-
-#from reportlab.pdfgen import canvas as reportlab_canvas
-from PyPDF2 import PdfWriter
-from fpdf import FPDF
-#from PIL import ImageGrab
-#import fitz  # PyMuPDF
-import tkinter as tk
-from tkinter import filedialog
-from tkinter.simpledialog import askstring, Dialog
-#from PIL import Image, ImageTk, ImageGrab  # Import ImageGrab
-import win32print
-import win32api  # Corrected impor
+try:
+    import win32print, win32api
+except (ImportError, ModuleNotFoundError):
+    try:
+        import sys, subprocess
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "pywin32"])
+        import win32print, win32api
+    except Exception:
+        win32print, win32api = None, None
 import tempfile
 import os
 

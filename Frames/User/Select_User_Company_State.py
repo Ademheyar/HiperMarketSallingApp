@@ -33,20 +33,17 @@ class Select_User_Company_State_Frame(tk.Frame):
         self.User_work_shops = []
         
         self.MainApplication = self
-        while(True):
+        while self.MainApplication and hasattr(self.MainApplication, 'master') and self.MainApplication.master:
             if hasattr(self.MainApplication, 'MainApplication_root'):
                 print("Select_User_Company_State_Frame Found MainApplication ", self.MainApplication)
                 break
-            else:
-                self.MainApplication = self.MainApplication.master
+            self.MainApplication = self.MainApplication.master
                 
-        
         self.homemaster = self
-        while(True):
+        while self.homemaster and hasattr(self.homemaster, 'master') and self.homemaster.master:
             if hasattr(self.homemaster, 'onDisplayFrame'):
                 break
-            else:
-                self.homemaster = self.homemaster.master
+            self.homemaster = self.homemaster.master
         #print("self.User_data : ", self.User_data)
 
         self.found_shops = []
@@ -255,18 +252,55 @@ class Select_User_Company_State_Frame(tk.Frame):
         for frame in self.frames.values():
             try:
                 frame.grid_remove()
-            except:
+            except Exception:
                 pass
-            if self.Shops and len(self.Shops) > i:
-                Shops_info = {'Selected_Shop': self.Shops[i], 'Shops': self.Shops, 'User': self.User_data, 'User_Shops_List': self.User_work_shops, 'Shop_Link': self.Shops[i]['Shop_link'], 'Shop_items': [], 'Shop_Actions': self.Shops[i]['Shop_Actions'] }
-                if not self.master.master.title == "Security Elevation":
-                    self.master.master.master.user = self.User_data
-                    self.master.master.master.Shops_info = Shops_info
-                    self.master.master.master.Shops = self.Shops
-                    self.master.master.master.on_Shop = i
-                    self.master.master.master.User_Shops_List = self.User_work_shops
-                    #self.homemaster.Link = self.Shops[i]['Shop_link']
-                    self.master.master.destroy()
+
+        selected_shop = None
+        if self.Shops and i < len(self.Shops):
+            selected_shop = self.Shops[i]
+        elif self.User_work_shops and i < len(self.User_work_shops):
+            uws = self.User_work_shops[i]
+            shop_res = Get_Shop(self.Link, self.User_data, ['Shop_name', 'Shop_brand_name'], [uws[1], uws[2]])
+            if shop_res:
+                selected_shop = shop_res[0] if isinstance(shop_res, list) else shop_res
+            else:
+                selected_shop = {
+                    'Shop_Id': uws[0] if len(uws) > 0 else 1,
+                    'Shop_name': uws[1] if len(uws) > 1 else 'Default Shop',
+                    'Shop_brand_name': uws[2] if len(uws) > 2 else '',
+                    'Shop_link': self.Link or '',
+                    'Shop_Actions': ''
+                }
+
+        if selected_shop:
+            shops_list = self.Shops if self.Shops else [selected_shop]
+            Shops_info = {
+                'Selected_Shop': selected_shop,
+                'Shops': shops_list,
+                'User': self.User_data,
+                'User_Shops_List': self.User_work_shops,
+                'Shop_Link': selected_shop.get('Shop_link', self.Link or ''),
+                'Shop_items': [],
+                'Shop_Actions': selected_shop.get('Shop_Actions', '')
+            }
+            sec_window = getattr(self.master, 'master', None)
+            sec_title = sec_window.wm_title() if sec_window and hasattr(sec_window, 'wm_title') else ''
+            if sec_title != "Security Elevation":
+                display = self.homemaster if hasattr(self, 'homemaster') and hasattr(self.homemaster, 'onDisplayFrame') else (getattr(sec_window, 'master', None) if sec_window else None)
+                if display:
+                    display.user = self.User_data
+                    display.Shops_info = Shops_info
+                    display.Shops = shops_list
+                    display.on_Shop = i if i < len(shops_list) else 0
+                    display.User_Shops_List = self.User_work_shops
+                    if hasattr(display, 'loged'):
+                        display.loged()
+                    if hasattr(display, '_show_account_panel'):
+                        display._show_account_panel()
+                    if hasattr(display, 'go_to_pos'):
+                        display.go_to_pos()
+                if sec_window and hasattr(sec_window, 'destroy'):
+                    sec_window.destroy()
                     #print("Login Successfully")
                     #self.master.master.tklevelwin.destroy()
                     
@@ -310,7 +344,7 @@ class Select_User_Company_State_Frame(tk.Frame):
                     self.Shops.append(find_shop_in_sysdb[0])
                     
             def Get_Shop_Data(index, frame, uws):
-                Link = self.master.master.master.link_entry.get()
+                Link = self.MainApplication.link_entry.get() if hasattr(self.MainApplication, 'link_entry') else self.Link
                 shop_result = Get_Shop(Link, self.User_data, ['Shop_name', 'Shop_brand_name'], [uws[1], uws[2]])
                 if shop_result:
                     if shop_result == []:
@@ -334,6 +368,8 @@ class Select_User_Company_State_Frame(tk.Frame):
             if not find_shop_in_sysdb:
                 getshopdb_button = tk.Button(new_item_fram, text="Get Shop Data", font=("Arial", 12), command= lambda index=i, frame=new_item_fram, uws=User_work_shop: Get_Shop_Data(index, frame, uws), bg="#1976d2", fg="#ffffff")
                 getshopdb_button.grid(row=1, column=0, sticky="e")
+                LogIn_button = tk.Button(new_item_fram, text="LogIn", font=("Arial", 12), command= lambda j=i: self.login(j), bg="#1976d2", fg="#ffffff")
+                LogIn_button.grid(row=1, column=1, sticky="e")
             elif User_work_shop[3] and User_work_shop[3][0] == -2:
                 Aggried_button = tk.Button(new_item_fram, text="Aggreed", font=("Arial", 12), command= lambda index=i, frame=new_item_fram: self.remove_item(index, frame), bg="#1976d2", fg="#ffffff")
                 Aggried_button.grid(row=1, column=0, sticky="e")

@@ -1,6 +1,14 @@
 
 import tkinter as tk
-from PIL import Image, ImageTk
+import sys, subprocess
+try:
+    from PIL import Image, ImageTk
+except (ImportError, ModuleNotFoundError):
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
+        from PIL import Image, ImageTk
+    except Exception:
+        Image, ImageTk = None, None
 from tkinter import ttk, filedialog
 import os, shutil
 import sqlite3
@@ -61,7 +69,10 @@ class search_entry(tk.Entry):
         self.setplaceholdervar()
             
         self.chacke_ifitisallowed()
-        self.var.trace('w', lambda name, index, mode: self.changed())
+        if hasattr(self.var, 'trace_add'):
+            self.var.trace_add('write', lambda *args: self.changed())
+        else:
+            self.var.trace('w', lambda name, index, mode: self.changed())
         self.bind("<Up>", self.treeview_naigation)
         self.bind("<Down>", self.treeview_naigation)
         self.bind("<Return>", self.select)
@@ -485,28 +496,31 @@ class search_entry(tk.Entry):
         self.Update_selected_Ifo()
         
     def changed(self):
-        if self.homemaster.Shops_info['Shop_items'] == []:
-            self.Load_Shop_items()
         if self.debounce_id is not None:
+            try:
                 self.after_cancel(self.debounce_id)
-        if self.var == '' and self.main_frame:
-            self.main_frame.destroy()
+            except Exception:
+                pass
+            self.debounce_id = None
+
+        if self.var.get() == '' or self.var.get() == self.entrymsg:
+            if getattr(self, 'main_frame', None) and self.main_frame.winfo_exists():
+                self.main_frame.destroy()
             self.lb_up = False
-        else:
+            return
+
+        def run_debounced_search():
+            self.debounce_id = None
+            if self.homemaster.Shops_info.get('Shop_items') == []:
+                self.Load_Shop_items()
             words = self.comparison()
-            w = self.grid_size()[0]
-            h = self.grid_size()[1]
-            
             screen_width = self.winfo_screenwidth()
             screen_height = self.winfo_screenheight()
             if not self.lb_up:
-                # Main Frame (initially hidden)
                 self.main_frame = tk.Frame(self.master.master, highlightthickness=2, highlightbackground='black')
                 self.Contener_frame = ttk.Frame(self.main_frame)
                 self.Contener_frame.pack(side=tk.LEFT, fill=tk.X)
-                #self.main_frame.pack_forget()  # Hide the main frame initially
-                    
-                self.canvas = tk.Canvas(self.Contener_frame, width =screen_width-(screen_width/3), height=screen_height-(screen_height/3), bg=self.bg_dark, highlightthickness=0)
+                self.canvas = tk.Canvas(self.Contener_frame, width=screen_width-(screen_width/3), height=screen_height-(screen_height/3), bg=self.bg_dark, highlightthickness=0)
                 self.canvas.pack(side=tk.TOP, fill=tk.BOTH)
                 self.scrollbar = tk.Scrollbar(self.main_frame, command=self.canvas.yview, bg=self.bg_light, activebackground=self.accent_blue)
                 self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y, expand=1)
@@ -557,6 +571,37 @@ class search_entry(tk.Entry):
                     words = [word for word in words if word[0] != 'ACTIONS']
             
                 self.load_more_items(words[:self.list_numberofitems])
+
+                # Async background fetch for online documents if connected (minimum 3 characters)
+                from C.API.API import islinked, is_local_mode
+                link = getattr(self.homemaster, 'Link', '') or getattr(self.MainApplication, 'Link', '')
+                query_text = self.var.get().strip()
+                if link and not is_local_mode() and len(query_text) >= 3 and query_text != self.entrymsg and islinked(link):
+                    def async_online_search(q_str=query_text):
+                        try:
+                            online_docs = fetch_as_dict_list(
+                                link,
+                                "SELECT * FROM doc_table WHERE doc_barcode LIKE ? OR extension_barcode LIKE ? OR item LIKE ? OR customer_id LIKE ? OR Seller_id LIKE ? OR user_id LIKE ? ORDER BY id DESC LIMIT 15",
+                                (f"%{q_str}%", f"%{q_str}%", f"%{q_str}%", f"%{q_str}%", f"%{q_str}%", f"%{q_str}%")
+                            ) or []
+                            if online_docs:
+                                def update_ui_with_online_docs():
+                                    existing = {w[1] for w in self.all_items if w[0] == 'DOCUMENT'}
+                                    added = False
+                                    for doc in online_docs:
+                                        bc = doc.get('doc_barcode') or str(doc.get('id', ''))
+                                        if bc and bc not in existing:
+                                            self.all_items.append(["DOCUMENT", bc, doc])
+                                            existing.add(bc)
+                                            added = True
+                                    if added and getattr(self, 'lb', None) and self.lb.winfo_exists():
+                                        self.load_more_items(self.all_items[:self.list_numberofitems])
+                                self.after_idle(update_ui_with_online_docs)
+                        except Exception as e:
+                            print("Async search error:", e)
+
+                    import threading
+                    threading.Thread(target=async_online_search, daemon=True).start()
             else:
                 w = self.grid_size()[0]
                 h = self.grid_size()[1]
@@ -570,6 +615,8 @@ class search_entry(tk.Entry):
                 self.Cancel_btn.pack(fill='x', expand=True, pady=10, padx=10)
                 self.Cancel_btn = ttk.Button(self.lb, text='Create New Actions', command=self.cancel_search, width=screen_width-(screen_width/3))
                 self.Cancel_btn.pack(fill='x', expand=True, pady=10, padx=10)
+
+        self.debounce_id = self.after(300, run_debounced_search)
 
             
     def create_new_item(self):
@@ -778,33 +825,28 @@ class search_entry(tk.Entry):
                         unique_item_results.append(item_id)
 
             if self.perm_docs and len(items_results) + len(Actions_results) < self.list_numberofitems:
-                # single DB query for documents
-                rows = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM doc_table WHERE doc_barcode LIKE ?", (f"%{query}%",))
+                rows = fetch_as_dict_list(
+                    "",
+                    "SELECT * FROM doc_table WHERE doc_barcode LIKE ? OR extension_barcode LIKE ? OR item LIKE ? OR customer_id LIKE ? OR Seller_id LIKE ? OR user_id LIKE ? ORDER BY id DESC LIMIT 25",
+                    (f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%")
+                )
                 for row in rows:
-                    barcode = row['doc_barcode']
-                    if barcode not in unique_barcode_results:
+                    barcode = row.get('doc_barcode') or str(row.get('id', ''))
+                    if barcode and barcode not in unique_barcode_results:
                         barcode_results.append(["DOCUMENT", barcode, row])
                         unique_barcode_results.append(barcode)
-                        
+
             if self.perm_user and len(barcode_results) + len(items_results) + len(Actions_results) < self.list_numberofitems:
-                # single DB query for documents
                 username = query
-                rows = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM Users WHERE User_name LIKE ? OR User_address LIKE ? OR User_id_pp_num LIKE ? OR User_phone_num LIKE ? OR User_email LIKE ? OR User_type LIKE ? OR User_access LIKE ?", 
-                    ('%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%'))
+                rows = fetch_as_dict_list(
+                    "",
+                    "SELECT * FROM Users WHERE User_name LIKE ? OR User_address LIKE ? OR User_id_pp_num LIKE ? OR User_phone_num LIKE ? OR User_email LIKE ? OR User_type LIKE ? OR User_access LIKE ? LIMIT 20",
+                    ('%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%','%' + username + '%')
+                )
                 for row in rows:
-                    User_name = row['User_name']
-                    if User_name not in unique_user_results:
-                        docs = search_documents("", "", "", "", "", "", User_name,
-                            "", "", "", "", "", "", "", "")
-                        getdoc = []
-                        for doc in docs:
-                            barcode = doc['doc_barcode']
-                            if barcode not in unique_barcode_results:
-                                barcode_results.append(["DOCUMENT", barcode, doc])
-                                unique_barcode_results.append(barcode)
-                            getdoc.append(barcode)
-                        
-                        barcode_results.append(["USERS", User_name, row, getdoc])
+                    User_name = row.get('User_name', '')
+                    if User_name and User_name not in unique_user_results:
+                        barcode_results.append(["USERS", User_name, row, []])
                         unique_user_results.append(User_name)
                         
             results.extend(items_results)

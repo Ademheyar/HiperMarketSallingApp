@@ -1,5 +1,13 @@
 import tkinter as tk
-from PIL import Image, ImageTk
+import sys, subprocess
+try:
+    from PIL import Image, ImageTk
+except (ImportError, ModuleNotFoundError):
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
+        from PIL import Image, ImageTk
+    except Exception:
+        Image, ImageTk = None, None
 from tkinter import ttk, filedialog
 import os, shutil
 import sqlite3
@@ -882,39 +890,39 @@ def search_documents(doc_id=None, doc_type=None, doc_barcode=None, extension_bar
     given = []
     # Build the SQL query based on the provided attributes
     query = 'SELECT * FROM doc_table WHERE 1=1'
-    if doc_id is not None and doc_id is not '':
+    if doc_id is not None and doc_id != '':
         query += f" AND id='{doc_id}'"
     if doc_type is not None and doc_type != '':
         query += f" AND type='{doc_type}'"
-    if doc_barcode is not None and doc_barcode is not '':
+    if doc_barcode is not None and doc_barcode != '':
         query += f" AND doc_barcode='{doc_barcode}'"
-    if extension_barcode is not None and extension_barcode is not '':
+    if extension_barcode is not None and extension_barcode != '':
         query += f" AND extension_barcode='{extension_barcode}'"
-    if item is not None and item is not '':
+    if item is not None and item != '':
         query += f" AND item LIKE ?"
         if given == None:
             given.append(f'%{item}%')
         else:
             given.append(f'%{item}%')
-    if user_id is not None and user_id is not '':
+    if user_id is not None and user_id != '':
         query += f" AND user_id='{user_id}'"
-    if customer_id is not None and customer_id is not '':
+    if customer_id is not None and customer_id != '':
         query += f" AND customer_id='{customer_id}'"
-    if sold_item_info is not None and sold_item_info is not '':
+    if sold_item_info is not None and sold_item_info != '':
         query += f" AND sold_item_info='{sold_item_info}'"
-    if discount is not None and discount is not '':
+    if discount is not None and discount != '':
         query += f" AND discount='{discount}'"
-    if tax is not None and tax is not '':
+    if tax is not None and tax != '':
         query += f" AND tax='{tax}'"
-    if doc_created_date is not None and doc_created_date is not '':
+    if doc_created_date is not None and doc_created_date != '':
         query += f" AND doc_created_date LIKE ?"
         if given == None:
             given.append(f'%{doc_created_date}%')
         else:
             given.append(f'%{doc_created_date}%')
-    if doc_expire_date is not None and doc_expire_date is not '':
+    if doc_expire_date is not None and doc_expire_date != '':
         query += f" AND doc_expire_date='{doc_expire_date}'"
-    if doc_updated_date is not None and doc_updated_date is not '':
+    if doc_updated_date is not None and doc_updated_date != '':
         query += f" AND doc_updated_date='{doc_updated_date}'"
     
     #print(query+"\n")
@@ -1152,7 +1160,10 @@ class Shop_SettingForm(ttk.Notebook):
             self.user_combobox.focus()
             self.user_combobox.icursor(tk.END)
             
-        self.user_name_var.trace('w', lambda name, index, mode: on_keyrelease())
+        if hasattr(self.user_name_var, 'trace_add'):
+            self.user_name_var.trace_add('write', lambda *args: on_keyrelease())
+        else:
+            self.user_name_var.trace('w', lambda name, index, mode: on_keyrelease())
         self.user_combobox.bind('<<ComboboxSelected>>', _on_user_selected)
         
         self.Shop_link_label = tk.Label(self.Shop_listinfo_frame, text='Shop API Link :', bg=self.bg_dark, fg=self.text_light)
@@ -1553,7 +1564,10 @@ class Shop_SettingForm(ttk.Notebook):
         self.slip_width_entry.grid(row=11, column=1, sticky=tk.W)
         self.slip_width_var = tk.StringVar()
         self.slip_width_entry["textvariable"] = self.slip_width_var
-        self.slip_width_var.trace('w', self.slip_width_changed)
+        if hasattr(self.slip_width_var, 'trace_add'):
+            self.slip_width_var.trace_add('write', lambda *args: self.slip_width_changed(*args))
+        else:
+            self.slip_width_var.trace('w', self.slip_width_changed)
 
 
         self.slip_hight_label = tk.Label(self.slip_frame, text='slip_hight:', bg=self.bg_dark, fg=self.text_light)
@@ -1562,7 +1576,10 @@ class Shop_SettingForm(ttk.Notebook):
         self.slip_hight_entry.grid(row=12, column=1, sticky=tk.W)
         self.slip_hight_var = tk.StringVar()
         self.slip_hight_entry["textvariable"] = self.slip_hight_var
-        self.slip_hight_var.trace('w', self.slip_hight_changed)
+        if hasattr(self.slip_hight_var, 'trace_add'):
+            self.slip_hight_var.trace_add('write', lambda *args: self.slip_hight_changed(*args))
+        else:
+            self.slip_hight_var.trace('w', self.slip_hight_changed)
 
         
         

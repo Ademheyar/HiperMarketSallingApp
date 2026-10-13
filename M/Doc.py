@@ -234,7 +234,10 @@ class DocForm(tk.Frame):
             self.user_combobox.focus()
             self.user_combobox.icursor(tk.END)
             
-        self.user_name_var.trace('w', lambda name, index, mode: user_on_keyrelease())
+        if hasattr(self.user_name_var, 'trace_add'):
+            self.user_name_var.trace_add('write', lambda *args: user_on_keyrelease())
+        else:
+            self.user_name_var.trace('w', lambda name, index, mode: user_on_keyrelease())
         self.user_combobox.bind('<<ComboboxSelected>>', _on_user_selected)
 
         # Set default selection:
@@ -307,7 +310,10 @@ class DocForm(tk.Frame):
             self.At_shop_combobox.focus()
             self.At_shop_combobox.icursor(tk.END)
             
-        self.At_shop_name_var.trace('w', lambda name, index, mode: At_shop_on_keyrelease())
+        if hasattr(self.At_shop_name_var, 'trace_add'):
+            self.At_shop_name_var.trace_add('write', lambda *args: At_shop_on_keyrelease())
+        else:
+            self.At_shop_name_var.trace('w', lambda name, index, mode: At_shop_on_keyrelease())
         self.At_shop_combobox.bind('<<ComboboxSelected>>', _on_At_shop_selected)
 
         # Create the label and entry for the customer ID search
@@ -337,7 +343,10 @@ class DocForm(tk.Frame):
             self.customer_combobox.focus()
             self.customer_combobox.icursor(tk.END)
             
-        self.customer_name_var.trace('w', lambda name, index, mode: customer_on_keyrelease())
+        if hasattr(self.customer_name_var, 'trace_add'):
+            self.customer_name_var.trace_add('write', lambda *args: customer_on_keyrelease())
+        else:
+            self.customer_name_var.trace('w', lambda name, index, mode: customer_on_keyrelease())
         self.customer_combobox.bind('<<ComboboxSelected>>', _on_customer_selected)
 
         # Create the label and entry for the customer ID search
@@ -367,7 +376,10 @@ class DocForm(tk.Frame):
             self.seller_id_combobox.focus()
             self.seller_id_combobox.icursor(tk.END)
             
-        self.seller_name_var.trace('w', lambda name, index, mode: seller_on_keyrelease())
+        if hasattr(self.seller_name_var, 'trace_add'):
+            self.seller_name_var.trace_add('write', lambda *args: seller_on_keyrelease())
+        else:
+            self.seller_name_var.trace('w', lambda name, index, mode: seller_on_keyrelease())
         self.seller_id_combobox.bind('<<ComboboxSelected>>', _on_seller_selected)
         
         
@@ -455,7 +467,10 @@ class DocForm(tk.Frame):
                 self.grap_Frame.pack(side=tk.TOP, fill=tk.X, expand=1)
                 draw_cart(self.grap_Frame, self.tools_styel, [self.Reoport_Infos["Salle_by_DateandTime"]], "Top Of The Ege", "Bar Chart")
 
-        self.ShowReport_var1.trace("w", Collect_grap)
+        if hasattr(self.ShowReport_var1, 'trace_add'):
+            self.ShowReport_var1.trace_add("write", lambda *args: Collect_grap())
+        else:
+            self.ShowReport_var1.trace("w", Collect_grap)
         Collect_grap()
 
 

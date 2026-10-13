@@ -1137,10 +1137,6 @@ class DocEditForm(tk.Frame):
         receipt_sections=None,
     ):
         if Chacke_Security(self, user, shop[shop_on], 22, f'User Not allowed to Sell'):
-           #print("user "+str(user))
-            answer = tk.messagebox.askquestion("Question", "do you whant to continue?")
-            if answer != 'yes':
-                return
             # GET COPY OF ALL GIVEN INFO
             list_items_copy = []
             if Selected_items and len(Selected_items) > 0 and isinstance(Selected_items[0][0], list):
@@ -1604,92 +1600,51 @@ class DocEditForm(tk.Frame):
                 #print(self.app.user_details)
                 
                 
+            link = getattr(self.homemaster, 'Link', '') or getattr(self.MainApplication, 'Link', '')
             for i, d in enumerate(doc_found):
-                #print("--item = " + str(d['item']))
-                #print("--payments_ : " + str(d['payments_']))
                 if d['payments_'] == [] and payments_extra != []:
                     d['payments_'] = payments_extra
                     payments_extra = []
                     
                 if d['payments_'] != [] or float(d['count_new_items']) != 0:
                         if d["Barcode"] != "":
-                                #print("d[Barcode] = " + str(d["Barcode"]))
-                                # Get_Document(None, user, ['doc_barcode'], [d["Barcode"]])
                                 rows = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM doc_table WHERE doc_barcode=?", (d["Barcode"],))
-                                # fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM doc_table WHERE doc_barcode=?", (d["Barcode"],)).fetchall()
-                                if rows and rows[0]['customer_id']: # if doc found
+                                if rows and rows[0].get('customer_id'):
                                     old_cm_id = rows[0]['customer_id']
-                                    #print("cmd old id = " + str(rows[0]) + " new id " + str(cm_id))
                                 if cm_id and old_cm_id != str(cm_id):
-                                    #[each item [barcode, isitem, ispay, ex_item, ex_item_items, payments, ex_payment_count, ex_item_pric, ex_item_T_disc, ex_item_T_tax, ex_pid]
-                                    Update_Documente(None, user, ['customer_id'], [costumer_name], ['doc_barcode'], [d["Barcode"]])
+                                    Update_Documente(link, user, ['customer_id'], [costumer_name], ['doc_barcode'], [d["Barcode"]])
 
-                                    # Update_table_database('UPDATE doc_table SET customer_id=? WHERE doc_barcode=?', (cm_id, d["Barcode"]))
-                                    # Commit the changes to the database
-                                    # conn.commit()
                                 if Seller_id != None:
-                                    #[each item [barcode, isitem, ispay, ex_item, ex_item_items, payments, ex_payment_count, ex_item_pric, ex_item_T_disc, ex_item_T_tax, ex_pid]
-                                    Update_Documente(None, user, ['Seller_id'], [Seller_id], ['doc_barcode'], [d["Barcode"]])
-                                    # Update_table_database('UPDATE doc_table SET Seller_id=? WHERE doc_barcode=?', (Seller_id, d["Barcode"]))
-                                    # Commit the changes to the database
-                                    # conn.commit()
+                                    Update_Documente(link, user, ['Seller_id'], [Seller_id], ['doc_barcode'], [d["Barcode"]])
                                     
                                 if d['payments_']:
-                                    #todo if needed add pid in doc e_doc_info[10]
-                                    Update_Documente(None, user, ['pid', 'payments', 'doc_updated_date'], [str(d['pid']), json.dumps(d['payments_']), today_date], ['doc_barcode'], [d["Barcode"]])
-                                    # Update_table_database('UPDATE doc_table SET pid=?, payments=?, doc_updated_date=? WHERE doc_barcode=?', (str(d['pid']), json.dumps(d['payments_']), today_date, d["Barcode"]))
-                                    # Commit the changes to the database
-                                    #conn.commit()
+                                    Update_Documente(link, user, ['pid', 'payments', 'doc_updated_date'], [str(d['pid']), json.dumps(d['payments_']), today_date], ['doc_barcode'], [d["Barcode"]])
 
-                                #[each item [barcode, isitem, ispay, ex_item, ex_item_items, payments, ex_payment_count, ex_item_pric, ex_item_T_disc, ex_item_T_tax, ex_pid]
-                                Update_Documente(None, user, ['item', 'qty', 'price', 'Profite', 'discount', 'tax', 'doc_updated_date'], [json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], today_date], ['doc_barcode'], [d["Barcode"]])
-                                # Update_table_database('UPDATE doc_table SET item=?, qty=?, price=?, Profite=?, discount=?, tax=?, doc_updated_date=? WHERE doc_barcode=?', (json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], today_date, d["Barcode"]))
-                                # Commit the changes to the database
-                                # conn.commit()
+                                Update_Documente(link, user, ['item', 'qty', 'price', 'Profite', 'discount', 'tax', 'doc_updated_date'], [json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], today_date], ['doc_barcode'], [d["Barcode"]])
                                 
                                 slip_doc_code.append(d["Barcode"])
                         elif d["Barcode"] == "":
-                                #print("custemer : " + str(costumer_name) + "isneded : " + str(payment_customer_required))
-                                # TODO: chacke if At_Shop_Id is selected if not make user selecte one
-                                Set_Document(None, ["doc_barcode", "extension_barcode", "At_Shop_Id", "user_id", "customer_id", "Seller_id", "type", "item", "qty", "price", "discount", "tax", "payments", "pid", "doc_created_date", "doc_expire_date", "doc_updated_date"], [str(brcod), "extension_barcode", Shop_brand_name, self.user['User_name'], costumer_name, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, expiry_date, today_date])
-                                #Update_table_database('INSERT INTO upload_doc (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", Shop_brand_name, self.user['User_name'], costumer_name, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date))
-                                #Update_table_database('INSERT INTO doc_table (doc_barcode, extension_barcode, At_Shop_Id, user_id, customer_id, Seller_id, type, item, qty, price, Profite, discount, tax, payments, pid, doc_created_date, doc_expire_date, doc_updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (str(brcod), "extension_barcode", Shop_brand_name, self.user['User_name'], costumer_name, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Profite'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, date, today_date))
-                                # Commit the changes to the database
+                                Set_Document(link, ["doc_barcode", "extension_barcode", "At_Shop_Id", "user_id", "customer_id", "Seller_id", "type", "item", "qty", "price", "discount", "tax", "payments", "pid", "doc_created_date", "doc_expire_date", "doc_updated_date"], [str(brcod), "extension_barcode", Shop_brand_name, self.user['User_name'], costumer_name, Seller_id, "Sale_item", json.dumps(d['new_items']), float(d['count_new_items']), d['price'], d['Tdisc'], d['tax'], json.dumps(d['payments_']), d['T_pid'], date, expiry_date, today_date])
                                 slip_doc_code.append(brcod)
                                 
             # Now it is Safe to make change Stock
-            #print("item_tobechanged  : " + str(item_tobechanged))
             for change_item in item_tobechanged:
-                #print("item : " + str(change_item[1]), change_item[2], str(change_item[3]), str(change_item[4]),str(change_item[5]), str(change_item[6]))
-                
-                # we will get the letest stock information to change it
                 it2 = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM product WHERE id=?', (str(change_item[0]),))
                 qty_info_list = []
-                # load information 
                 if it2:
-                    it2=it2[0]
+                    it2 = it2[0]
                     qty_info_list = json.loads(it2['more_info'])
                     if qty_info_list:
-                        # make the change 
-                        #print("item info befor  : " + str(qty_info_list))
                         it_info = change_qty(qty_info_list, change_item[2], str(change_item[3]), str(change_item[4]), str(change_item[5]),str(change_item[6]), str(change_item[7]))
 
-                        if not it_info:
-                                # message there is proplame on item change_item
-                                erroriteminfoanswer = tk.messagebox.askquestion("Question", "There is Proplame On one Item Do you whant to continue?")
-                                if erroriteminfoanswer != 'yes':
-                                        pass #return 
-                        else:               
-                            #print("item info befor  : " + str(it_info))
-                            # update the change 
-                            Update_Producte(None, user, ['more_info'], [json.dumps(it_info)], ['id'], [change_item[0]])
+                        if it_info:
+                            Update_Producte(link, user, ['more_info'], [json.dumps(it_info)], ['id'], [change_item[0]])
 
-                            # update shop_items that are orady loaded 
                             it2 = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM product WHERE id=?', (str(change_item[0]),))
                             if it2 and not len(it2) == 0:
                                 for i3, it3 in enumerate(Shops_info['Shop_items']):
                                     if it3[0]['id'] == it2[0]['id']:
-                                        Shops_info['Shop_items'][i3][0] = it2[0] # we are updateing all information of the procuct
+                                        Shops_info['Shop_items'][i3][0] = it2[0]
                                         break
                         continue
                 

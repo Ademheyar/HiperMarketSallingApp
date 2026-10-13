@@ -92,7 +92,7 @@ class ApproveFrame(tk.Frame):
         self.prev_slip.grid(row=0, column=0, sticky="nsew")
         
 
-        self.on_barid = tk.Label(self.getvalue_form, text=str(len(self.slips)-2), font=("Arial", 25), bg=self.bg_dark)
+        self.on_barid = tk.Label(self.getvalue_form, text="0", font=("Arial", 25), bg=self.bg_dark)
         self.on_barid.grid(row=0, column=1, sticky="nsew")
 
         self.next_slip = tk.Button(self.getvalue_form, text=">>", command= self.get_next_slip, **self.button_style)
@@ -175,42 +175,47 @@ class ApproveFrame(tk.Frame):
         self.print_button.focus_set()
         
     def set_slip_lines(self, text):
-        #active_var = tk.IntVar()
-        #active_checkbutton = tk.Checkbutton(New_item_contener_frame, text='Active', variable=active_var)
-        
         for items in self.resipt_fram.winfo_children():
             items.destroy()
+        if not text:
+            return
         lines = text.split("\n")
         for l in lines:
             tk.Label(self.resipt_fram, text=l, font=("Arial", 10), bg='white').pack()
         
     def get_next_slip(self):
-        i = 0;
-        if self.on_barid.cget('text') != "":
+        if not self.slips:
+            self.set_slip_lines("No slip data available.")
+            return
+        try:
             i = int(self.on_barid.cget('text'))
-        if not i+1 >= len(self.slips):
-            i += 1
-            self.on_barid.config(text=str(i))
-            self.set_slip_lines(str(self.slips[i][1]))
-        else:
+        except (ValueError, TypeError):
             i = 0
-            self.on_barid.config(text=str(i))
+        i += 1
+        if i >= len(self.slips):
+            i = 0
+        self.on_barid.config(text=str(i))
+        if 0 <= i < len(self.slips):
             self.set_slip_lines(str(self.slips[i][1]))
             
     def get_prev_slip(self):
-        i = 0;
-        if self.on_barid.cget('text') != "":
+        if not self.slips:
+            self.set_slip_lines("No slip data available.")
+            return
+        try:
             i = int(self.on_barid.cget('text'))
-        if not i-1 < 0:
-            i -= 1
-            self.on_barid.config(text=str(i))
-            self.set_slip_lines(str(self.slips[i][1]))
-        else:
-            i = len(self.slips)-1
-            self.on_barid.config(text=str(i))
+        except (ValueError, TypeError):
+            i = 0
+        i -= 1
+        if i < 0:
+            i = len(self.slips) - 1
+        self.on_barid.config(text=str(i))
+        if 0 <= i < len(self.slips):
             self.set_slip_lines(str(self.slips[i][1]))
             
     def print_item(self, autop):
+        if not self.slips:
+            return
         printc = 1
         b = fetch_as_dict_list(self.homemaster.Link, "SELECT * FROM setting WHERE User_id = ?", (self.user['User_id'],))
         if b and len(b) > 0:

@@ -128,27 +128,10 @@ class SecurityForm(tk.Toplevel):
             pady=8
         )
         self.button_BACK_close.pack(side="left")
-        # Buttons with Android Material style
-        self.link_button = tk.Button(
-            self.Link_frame,
-            text="Check",
-            command=lambda: self.cacke_linked(),
-            bg=self.accent_blue,
-            fg=self.palette['button_text'],
-            font=("Segoe UI", 9, "bold"),
-            relief=tk.FLAT,
-            activebackground=self.palette['accent_dark'],
-            activeforeground=self.palette['button_text'],
-            padx=10,
-            pady=8
-        )
-        self.link_button.pack(side="left")
-        
         self.user_linkes = []
         self.selected_linke = tk.StringVar()
-        
-        self.MainApplication.link_entry = ttk.Combobox(self.Link_frame, values=self.user_linkes, textvariable=self.selected_linke, width=10)
-        self.MainApplication.link_entry.pack(side="right", fill="x", expand=True)
+        if not hasattr(self.MainApplication, 'link_entry'):
+            self.MainApplication.link_entry = tk.StringVar()
         
         
         
@@ -278,7 +261,10 @@ class SecurityForm(tk.Toplevel):
                             self.user_map[user_name] = user_id
                             self.user_names.append(user_name)
                             self.user_linkes.append(User_url)
-                            self.MainApplication.link_entry['values'] = self.user_linkes   
+                            try:
+                                self.MainApplication.link_entry['values'] = self.user_linkes
+                            except Exception:
+                                pass
 
     # instance-bound helper to update the logged-user list/file when a user logs in.
     # Use: self.update_logged_user("Alice", 5) or self.update_logged_user("Alice")
@@ -363,69 +349,52 @@ class SecurityForm(tk.Toplevel):
         self.button_BACK_close['text'] = "Back"
 
     def log_in(self):
-        
-        entered_username = self.entered_username_entry.get()
+        entered_username = self.entered_username_entry.get().strip()
         entered_password = self.entered_password_entry.get()
-        for child in self.Top_display_frame.winfo_children():
-            child.destroy()
-        self.Top_display_frame.columnconfigure((0, 1, 2, 3), weight=1)
-        self.Top_display_frame.rowconfigure((0, 1, 2, 3), weight=1)
+        if not entered_username:
+            return
 
-        link = self.MainApplication.link_entry.get()
-        #print("Attempting login for user: " + entered_username)
-        user = Get_User(link, ["User_name", "User_password"], [entered_username, entered_password])
-        #print("Login result: " + str(user))
-        if isinstance(user, list) and len(user) > 0 and user[0] != 'User_id':
-            user = user[0]
+        # 1. Fast local database authentication
+        users = fetch_as_dict_list("", "SELECT * FROM USERS WHERE User_name=? AND User_password=?", (entered_username, entered_password))
+        user = users[0] if users else None
+
+        # 2. If not matched locally and not local mode, check online API
+        from C.API.API import get_app_api_url, is_local_mode
+        link = "" if is_local_mode() else get_app_api_url()
+        if not user and link and islinked(link):
+            online_res = Get_User(link, ["User_name", "User_password"], [entered_username, entered_password])
+            if online_res and isinstance(online_res, list) and len(online_res) > 0 and online_res[0] != 'User_id':
+                user = online_res[0]
+
         if user:
-            #print("User : ", user)
             self.Security_form.Loged_User = user
-            if not 'Id' in user:
-                lb = tk.Label(self.master.Error_list_frame, text="Online Login Secsesfull", fg="green")
-                lb.pack(side=tk.BOTTOM, fill=tk.X, expand=True)
-                answer = tk.messagebox.askquestion("Question", "User Data has been found online. for fast performance better to download datas. Do you what to download user data?", parent=self.Security_form)
-                if answer == 'yes':
-                    offlineuser = Add_User_data_From_list(user)
-                    if offlineuser:
-                        lb = tk.Label(self.master.Error_list_frame, text="Data Downloaded Successfully", fg="Green").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
-                        user = offlineuser
-                    else:
-                        lb = tk.Label(self.master.Error_list_frame, text="User Data Download Filed", fg="red").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
-                else:
-                    lb = tk.Label(self.master.Error_list_frame, text="User Data Found Online", fg="Green").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
-            else:     
-                lb = tk.Label(self.master.Error_list_frame, text="Offline Login Secsesfull", fg="Green").pack(side=tk.BOTTOM, fill=tk.X, expand=True)
-            
-            #print("Logged User : ", user)
-            if user:
-                select_User_Company_State_Frame = Select_User_Company_State_Frame(self.Top_display_frame, self._show_credentials_page, user, link)
-                select_User_Company_State_Frame.grid(row=2, column=0, columnspan=8, sticky="nsew")
-                select_User_Company_State_Frame.Link = link
-                select_User_Company_State_Frame.User_data = user
-                self.homemaster.Link = link
-                if user:
-                    self.Security_form.Loged_User = user
-                else:
-                    self.Security_form.Loged_User = []
-                self.update_logged_user(user['User_name'], user['User_id'])
-                
-                
-                # hide credentials frame and restore user selection canvas + scrollbar
-                try:
-                    self.credentials_frame.grid_remove()
-                except Exception:
-                    pass
-                
-                # disable login until a user is chosen again (existing handlers will enable it)
-                try:
-                    self.log_in_button.configure(state='disabled')
-                except Exception:
-                    pass
-                self._credentials_shown = False
-                self.button_BACK_close['text'] = "Back"
+            self.update_logged_user(user.get('User_name', ''), user.get('User_id'))
+            display = getattr(self, 'homemaster', None) or getattr(self.master, 'master', None)
+            if display:
+                display.user = user
+                work_shops_data = []
+                if user.get('User_work_shop'):
+                    try:
+                        work_shops_data = json.loads(user['User_work_shop'])
+                    except Exception:
+                        pass
+                shops_list = Get_all_User_work_shops_info(link, user, work_shops_data) if work_shops_data else []
+                display.Shops = shops_list if shops_list else []
+                display.Shops_info = {'Selected_Shop': shops_list[0] if shops_list else {}, 'Shops': shops_list, 'User': user} if shops_list else {}
+                display.on_Shop = 0
+                if hasattr(display, 'loged'):
+                    display.loged()
+                if hasattr(display, '_show_account_panel'):
+                    display._show_account_panel()
+                if hasattr(display, 'go_to_pos'):
+                    display.go_to_pos()
+            self.Security_form.destroy()
         else:
-            tk.Label(self.master.Error_list_frame, text="Online Login Filed", bg=self.bg_light, fg="#e23b4e", font=('Segoe UI', 9)).pack(side=tk.TOP, fill=tk.X, expand=True)
-            tk.Label(self.master.Error_list_frame, text="User Name("+str(entered_username)+") Or Password Incorrect.", bg="#e23b4e", fg="#ffffff", font=('Segoe UI', 9, 'bold')).pack(side=tk.TOP, fill=tk.X, expand=True)
+            error_frame = getattr(self.master, 'Error_list_frame', self.Top_display_frame)
+            for child in error_frame.winfo_children():
+                try: child.destroy()
+                except Exception: pass
+            tk.Label(error_frame, text="User Name or Password Incorrect.", bg="#e23b4e", fg="#ffffff", font=('Segoe UI', 9, 'bold')).pack(side=tk.TOP, fill=tk.X, expand=True)
     
     def _create_user_buttons_container(self):
         # Create a canvas + horizontal scrollbar and an internal frame to hold buttons.

@@ -20,76 +20,126 @@ data_dir = os.path.join(MAIN_dir, 'data')
 db_path = os.path.join(data_dir, 'my_database.db')
 
 
+import re
+from urllib.parse import urlparse
+
+_API_SESSION = requests.Session()
+_API_SESSION.headers.update({
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'application/json, text/html, */*'
+})
+
+def _solve_aes_challenge(session, url, html):
+    try:
+        m_a = re.search(r'a=toNumbers\("([0-9a-fA-F]+)"\)', html)
+        m_b = re.search(r'b=toNumbers\("([0-9a-fA-F]+)"\)', html)
+        m_c = re.search(r'c=toNumbers\("([0-9a-fA-F]+)"\)', html)
+        if m_a and m_b and m_c:
+            from Crypto.Cipher import AES
+            key = bytes.fromhex(m_a.group(1))
+            iv = bytes.fromhex(m_b.group(1))
+            ct = bytes.fromhex(m_c.group(1))
+            cipher = AES.new(key, AES.MODE_CBC, iv)
+            cookie_val = cipher.decrypt(ct).hex()
+            parsed = urlparse(url)
+            session.cookies.set('__test', cookie_val, domain=parsed.netloc, path='/')
+            return True
+    except Exception as e:
+        print(f"AES challenge solve error: {e}")
+    return False
+
 # API Connection 
 
+def normalize_url(url):
+    if not url:
+        return ""
+    url = str(url).strip()
+    if not url.startswith("http://") and not url.startswith("https://"):
+        url = "http://" + url
+    return url
+
+def get_app_data_mode():
+    try:
+        conn = sqlite3.connect(db_path)
+        from M.Preferences import load_api_preferences
+        _url, mode = load_api_preferences(conn)
+        conn.close()
+        return mode
+    except Exception:
+        return "Cloud API"
+
+def get_app_api_url():
+    try:
+        conn = sqlite3.connect(db_path)
+        from M.Preferences import load_api_preferences
+        url, _mode = load_api_preferences(conn)
+        conn.close()
+        return url
+    except Exception:
+        return "https://hipermarket0.xo.je/API/API.php"
+
+def is_local_mode():
+    return get_app_data_mode() == "Local Database"
+
 def Chacke_Connection(Link):
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    url = Link
+    if not Link or is_local_mode():
+        return False
+    url = normalize_url(Link)
     entry = {'Do': "Testing Connection", 'shop': 0, 'user' : 0, 'ISNEW_USER' : 0 , 'ISNEW_SHOP' : 0 }
-    while 1:
-        response_data = Sand_API(url, entry)
-        if response_data and not response_data == []:
-            if response_data['status'] == 'success':
-                #print("Chacke_Connection there is connection")
-                return True
-            elif response_data['status'] == 'Erorr':
-                if response_data['Erorr'] == 'NO USER FOUND':
-                    print("Chacke_Connection there is Erorr")
-                elif response_data['Erorr'] == 'NO SHOP FOUND':
-                    print("Chacke_Connection there is Erorr")
-                elif response_data['Erorr'] == 'Try Agane':
-                    print("Chacke_Connection there is Erorr")    
-                elif response_data['Erorr'] == 'FILED REGISTERING SHOP':
-                    print("Chacke_Connection there is Erorr")
-            else:
-                #print('Chacke_Connection Failed to save data:', response_data['message'])
-                #self.found_linke_list_box.insert('', 'end', text="Failed Reading Data", values=(shop['Shop_name'], shop['Shop_link']))
-                break
-        break
+    response_data = Sand_API(url, entry)
+    if response_data and isinstance(response_data, dict):
+        status = response_data.get('status')
+        if status == 'success' or response_data.get('ok') is True or response_data.get('message') == 'Connection OK':
+            return True
+        elif response_data.get('Erorr') in ['NO USER FOUND', 'NO SHOP FOUND', 'Try Agane', 'FILED REGISTERING SHOP']:
+            return True
+    return False
+
+import time
+_LINK_CACHE = {}
 
 def islinked(link):
-        if not link == "":
-            resulet = Chacke_Connection(link)
-            if resulet:
-                #print("Connection OK")
-                return True
-            else:
-                #print("Connection Failed")
-                pass
-        else:
-            #print("Empty Link")
-            pass
+    if not link or is_local_mode():
         return False
-    
+    url = normalize_url(link)
+    now = time.time()
+    cached = _LINK_CACHE.get(url)
+    if cached and (now - cached['time']) < 30:
+        return cached['status']
+
+    status = Chacke_Connection(link)
+    _LINK_CACHE[url] = {'status': status, 'time': now}
+    return status
+
 def Sand_API(url, entry):
-    response_data = None
+    if not url or is_local_mode():
+        return None
+    url = normalize_url(url)
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
     try:
-        # Send the data to the API
-        #print('Chacke_Connection Data  ', entry)
-        #print('Chacke_Connection Data send to ', url)
-        response = requests.post(url, json=entry)
-        if response is not None:
-            if response.status_code == 200:
-                #print('Chacke_Connection Data sent successfully.')
-                #print('Chacke_Connection Data sent response.', response)
+        response = _API_SESSION.post(url, json=entry, headers=headers, timeout=10)
+        if response is not None and response.status_code == 200:
+            text = response.text.strip()
+            # If server returned InfinityFree / Epizy free hosting anti-bot JS challenge
+            if 'slowAES' in text or 'aes.js' in text or 'toNumbers' in text:
+                if _solve_aes_challenge(_API_SESSION, url, text):
+                    response = _API_SESSION.post(url, json=entry, headers=headers, timeout=10)
+                    text = response.text.strip()
+
+            if '{' in text and '}' in text:
+                json_str = text[text.find('{'):text.rfind('}')+1]
                 try:
-                    response_data = response.json()
-                    #print('Chacke_Connection Response data:', response_data)
-                except requests.exceptions.RequestException as e:
-                    #print('Chacke_Connection Failed to read data:', e)
-                    #print(f'Chacke_Connection Error response: {response.text}')
+                    return json.loads(json_str)
+                except Exception:
                     pass
-                return response_data
-            else:
-                #print(f'Chacke_Connection API Error: Status code {response.status_code}')
-                #print(f'Chacke_Connection Error response: {response.text}')
+            try:
+                return response.json()
+            except Exception:
                 pass
-        else:
-            #print('Chacke_Connection Failed to retrieve data from the website.')
-            pass
-    except requests.exceptions.RequestException as e:
-        #print('Chacke_Connection Failed to send data:', e)
-        pass
+    except Exception as e:
+        print(f"Sand_API error for {url}: {e}")
     return None
     

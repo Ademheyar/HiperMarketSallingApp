@@ -189,7 +189,10 @@ class UploadingForm(tk.Toplevel):
         self.UpgradeActivetis_button.grid(row=0, column=2, sticky="nsew")
         
         
-        self.selected.trace('w', self.update_info)
+        if hasattr(self.selected, 'trace_add'):
+            self.selected.trace_add('write', lambda *args: self.update_info())
+        else:
+            self.selected.trace('w', self.update_info)
         
         a = Chacke_Security(self, self.user, 7)
         #if a:

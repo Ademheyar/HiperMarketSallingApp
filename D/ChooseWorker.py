@@ -161,7 +161,10 @@ class WorkerManagementApp(tk.Tk):
         # TODO: user can add sub user depending on its usertype
         self.search()
         
-        self.username_var.trace('w', self.entry_changed)
+        if hasattr(self.username_var, 'trace_add'):
+            self.username_var.trace_add('write', lambda *args: self.entry_changed())
+        else:
+            self.username_var.trace('w', self.entry_changed)
         
         # show the Payment Form window
         self.getvalue_form.transient(self.master)

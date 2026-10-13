@@ -1,6 +1,14 @@
 import tkinter as tk
 from tkinter import ttk, filedialog
-from PIL import Image, ImageTk
+import sys, subprocess
+try:
+    from PIL import Image, ImageTk
+except (ImportError, ModuleNotFoundError):
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
+        from PIL import Image, ImageTk
+    except Exception:
+        Image, ImageTk = None, None
 import sqlite3
 import shutil
 import datetime
@@ -212,7 +220,10 @@ class WorkersForm(tk.Frame):
         self.search_entry.pack(side=tk.LEFT, padx=5, pady=5)
             
         # bind the update_search_results function to the search box
-        self.search_var.trace("w", self.update_search_results)
+        if hasattr(self.search_var, 'trace_add'):
+            self.search_var.trace_add("write", lambda *args: self.update_search_results())
+        else:
+            self.search_var.trace("w", self.update_search_results)
 
         # Create the label and entry for the user ID search
         user_info = fetch_as_dict_list(self.homemaster.Link, 'SELECT * FROM USERS', ())  
@@ -259,7 +270,10 @@ class WorkersForm(tk.Frame):
             self.user_combobox.focus()
             self.user_combobox.icursor(tk.END)
             
-        self.user_name_var.trace('w', lambda name, index, mode: on_keyrelease())
+        if hasattr(self.user_name_var, 'trace_add'):
+            self.user_name_var.trace_add('write', lambda *args: on_keyrelease())
+        else:
+            self.user_name_var.trace('w', lambda name, index, mode: on_keyrelease())
         self.user_combobox.bind('<<ComboboxSelected>>', _on_user_selected)
 
 
@@ -324,7 +338,10 @@ class WorkersForm(tk.Frame):
         self.acsess_var = tk.StringVar()
         self.acsess_entry = tk.Entry(self.details_frame, textvariable=self.acsess_var)
         # bind the update_search_results function to the search box
-        self.acsess_var.trace("w", lambda g1,g2,g3: self.load_worker_access())
+        if hasattr(self.acsess_var, 'trace_add'):
+            self.acsess_var.trace_add("write", lambda *args: self.load_worker_access())
+        else:
+            self.acsess_var.trace("w", lambda g1,g2,g3: self.load_worker_access())
         
         # Create the listbox to display search results
         self.worker_access_list_forme = tk.Frame(self.details_frame, bg=self.bg_dark)

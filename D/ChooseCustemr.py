@@ -40,39 +40,49 @@ class CreateUserDialog(tk.Frame):
                 
         self.parent = parent
         
-        self.name_var = tk.StringVar()
+        self.fname_var = tk.StringVar()
+        self.lname_var = tk.StringVar()
+        self.username_var = tk.StringVar()
         self.id_num_var = tk.StringVar()
         self.phone_num_var = tk.StringVar()
         self.email_var = tk.StringVar()
-        self.type_var = tk.StringVar()
+        self.type_var = tk.StringVar(value="Costumer")
         self.password_var = tk.StringVar()
         self.access_var = tk.StringVar()
 
-        self.type_var.set("Costumer")
-        name_label = tk.Label(self, text="Full Name", bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
-        name_label.grid(row=0, column=0, padx=10, pady=10)
+        fname_label = tk.Label(self, text="First Name", bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
+        fname_label.grid(row=0, column=0, padx=10, pady=10)
 
-        name_entry = tk.Entry(self, textvariable=self.name_var, bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
-        name_entry.grid(row=0, column=1, padx=10, pady=10)
+        fname_entry = tk.Entry(self, textvariable=self.fname_var, bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
+        fname_entry.grid(row=0, column=1, padx=10, pady=10)
+
+        lname_label = tk.Label(self, text="Last Name", bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
+        lname_label.grid(row=1, column=0, padx=10, pady=10)
+
+        lname_entry = tk.Entry(self, textvariable=self.lname_var, bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
+        lname_entry.grid(row=1, column=1, padx=10, pady=10)
 
         username_label = tk.Label(self, text="User Name", bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
-        username_label.grid(row=1, column=0, padx=10, pady=10)
+        username_label.grid(row=2, column=0, padx=10, pady=10)
 
-        username_entry = tk.Entry(self, textvariable=self.name_var, bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
-        username_entry.grid(row=1, column=1, padx=10, pady=10)
+        username_entry = tk.Entry(self, textvariable=self.username_var, bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
+        username_entry.grid(row=2, column=1, padx=10, pady=10)
 
         self.gender_label = tk.Label(self, text='Gender :', bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
-        self.gender_label.grid(row=2, column=0, padx=10, pady=10)
+        self.gender_label.grid(row=3, column=0, padx=10, pady=10)
         self.gendert_var = tk.StringVar()  # gender selecter
         self.gender_Combobox = ttk.Combobox(self, textvariable=self.gendert_var, values=["MALE", "FEMALE", "Prefer Not to Say"], state='readonly')
-        self.gender_Combobox.grid(row=2, column=1, padx=10, pady=10)
+        self.gender_Combobox.grid(row=3, column=1, padx=10, pady=10)
         
         self.cuntry_label = tk.Label(self, text='Country :', bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
         self.cuntry_var = tk.StringVar()  # country selecter
         self.cuntry_Combobox = ttk.Combobox(self, textvariable=self.cuntry_var, values=sorted(self.MainApplication.COUNTRIES_WITH_CITIES.keys()), state='readonly')
-        self.cuntry_var.trace('w', lambda name, index, mode: cuntry_changed())
-        self.cuntry_label.grid(row=3, column=0, padx=10, pady=10)
-        self.cuntry_Combobox.grid(row=3, column=1, padx=10, pady=10)
+        if hasattr(self.cuntry_var, 'trace_add'):
+            self.cuntry_var.trace_add('write', lambda *args: cuntry_changed())
+        else:
+            self.cuntry_var.trace('w', lambda name, index, mode: cuntry_changed())
+        self.cuntry_label.grid(row=4, column=0, padx=10, pady=10)
+        self.cuntry_Combobox.grid(row=4, column=1, padx=10, pady=10)
 
         
         self.city_label = tk.Label(self, text='City :', bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
@@ -81,53 +91,60 @@ class CreateUserDialog(tk.Frame):
         def  cuntry_changed():
             self.city_Combobox['values'] = self.MainApplication.COUNTRIES_WITH_CITIES.get(self.cuntry_var.get(), [])
             self.city_var.set(str(self.MainApplication.COUNTRIES_WITH_CITIES.get(self.cuntry_var.get(), [])[0] if len(self.MainApplication.COUNTRIES_WITH_CITIES.get(self.cuntry_var.get(), [])) else "") )
-        self.city_label.grid(row=4, column=0, padx=10, pady=10)
-        self.city_Combobox.grid(row=4, column=1, padx=10, pady=10)
+        self.city_label.grid(row=5, column=0, padx=10, pady=10)
+        self.city_Combobox.grid(row=5, column=1, padx=10, pady=10)
         
         id_num_label = tk.Label(self, text="ID Number", bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
-        id_num_label.grid(row=5, column=0, padx=10, pady=10)
+        id_num_label.grid(row=6, column=0, padx=10, pady=10)
 
         id_num_entry = tk.Entry(self, textvariable=self.id_num_var, bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
-        id_num_entry.grid(row=5, column=1, padx=10, pady=10)
+        id_num_entry.grid(row=6, column=1, padx=10, pady=10)
 
         phone_num_label = tk.Label(self, text="Phone Number", bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
-        phone_num_label.grid(row=6, column=0, padx=10, pady=10)
+        phone_num_label.grid(row=7, column=0, padx=10, pady=10)
 
         phone_num_entry = tk.Entry(self, textvariable=self.phone_num_var, bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
-        phone_num_entry.grid(row=6, column=1, padx=10, pady=10)
+        phone_num_entry.grid(row=7, column=1, padx=10, pady=10)
 
         email_label = tk.Label(self, text="Email", bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
-        email_label.grid(row=7, column=0, padx=10, pady=10)
+        email_label.grid(row=8, column=0, padx=10, pady=10)
 
         email_entry = tk.Entry(self, textvariable=self.email_var, bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
-        email_entry.grid(row=7, column=1, padx=10, pady=10)
+        email_entry.grid(row=8, column=1, padx=10, pady=10)
 
         password_label = tk.Label(self, text="Password", bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
-        password_label.grid(row=8, column=0, padx=10, pady=10)
+        password_label.grid(row=9, column=0, padx=10, pady=10)
 
         password_entry = tk.Entry(self, textvariable=self.password_var, bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
-        password_entry.grid(row=8, column=1, padx=10, pady=10)
+        password_entry.grid(row=9, column=1, padx=10, pady=10)
 
         access_label = tk.Label(self, text="Access", bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
-        access_label.grid(row=9, column=0, padx=10, pady=10)
+        access_label.grid(row=10, column=0, padx=10, pady=10)
 
         access_entry = tk.Entry(self, textvariable=self.access_var, bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
-        access_entry.grid(row=9, column=1, padx=10, pady=10)
+        access_entry.grid(row=10, column=1, padx=10, pady=10)
 
         create_button = tk.Button(self, text="Create", command=self.create_user, bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
-        create_button.grid(row=10, column=0, padx=10, pady=10)
+        create_button.grid(row=11, column=0, padx=10, pady=10)
         
         cancel_button = tk.Button(self, text="Cancel", command=self.destroy, bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
-        cancel_button.grid(row=10, column=1, padx=10, pady=10)
+        cancel_button.grid(row=11, column=1, padx=10, pady=10)
 
         #self.transient(self.master)
         self.grab_set()
         #self.master.wait_window(self)
 
     def create_user(self):
-        fname = name.split(" ")[0] if len(name.split(" ")) > 0 else name
-        lname = name.split(" ")[1] if len(name.split(" ")) > 0 else ""
-        name = str(fname[0]+lname[0] + " " + fname)
+        fname = self.fname_var.get().strip()
+        lname = self.lname_var.get().strip()
+        username = self.username_var.get().strip()
+        if not username:
+            username = (fname + " " + lname).strip() or "New Customer"
+        if not fname:
+            fname = username.split(" ")[0] if username else "New"
+        if not lname and len(username.split(" ")) > 1:
+            lname = username.split(" ")[1]
+
         address = self.city_var.get()
         User_country = self.cuntry_var.get()
         id_num = self.id_num_var.get()
@@ -137,13 +154,26 @@ class CreateUserDialog(tk.Frame):
         password = self.password_var.get()
         access = self.access_var.get()
 
-        Update_table_database("INSERT INTO Users (User_name, User_fname, User_lname, User_address, User_id_pp_num, User_phone_num, User_email, User_type, User_password, User_access, User_country) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                       (name, fname, lname, address, id_num, phone_num, email, user_type, password, access, User_country))
+        from C.API.Set import Set_User
+        link = getattr(self.homemaster, 'Link', '') or getattr(self.MainApplication, 'Link', '')
+        Set_User(link, [
+            "User_name", "User_fname", "User_lname", "User_address",
+            "User_id_pp_num", "User_phone_num", "User_email", "User_type",
+            "User_password", "User_access", "User_country"
+        ], [
+            username, fname, lname, address,
+            id_num, phone_num, email, user_type,
+            password, access, User_country
+        ])
 
-        #self.fill_user_listbox()
-        #self.master.master.username_entry.insert(0, name)
-        self.master.master.username_var.set(name)
-        self.master.master.search()
+        try:
+            target = getattr(self.master, 'master', self.master)
+            if hasattr(target, 'username_var'):
+                target.username_var.set(username)
+                if hasattr(target, 'search'):
+                    target.search()
+        except Exception:
+            pass
         self.destroy()
         
 class UserManagementApp(tk.Toplevel):
@@ -214,7 +244,10 @@ class UserManagementApp(tk.Toplevel):
         # TODO: user can add sub user depending on its usertype
         self.search()
         
-        self.username_var.trace('w', self.select_button)
+        if hasattr(self.username_var, 'trace_add'):
+            self.username_var.trace_add('write', lambda *args: self.select_button())
+        else:
+            self.username_var.trace('w', self.select_button)
         self.username_entry.bind("<KeyPress>", self.select_button)
         #self.bind("<KeyPress>", self.select_button)
         
@@ -273,30 +306,27 @@ class UserManagementApp(tk.Toplevel):
         self.clear_details_panel()
         if row:
             row = row[0]
-            print("row : "+str(row))
-            Id = row['Id']
-            user_id = row['User_id']
-            username = row['User_name']
-            if row['User_fname'] == None:
-                row['User_fname'] = ""
-            if row['User_Lname'] == None:
-                row['User_Lname'] = ""
-            name  = row['User_fname'] + " " + row['User_Lname']
-            addres  = row['User_address']
-            id_num  = row['User_id_pp_num']
-            phone_num  = row['User_phone_num']
-            email  = row['User_email']
-            utype  = row['User_type']
-            password  = row['User_password']
-            acsess= row['User_access']
+            Id = row.get('Id')
+            user_id = row.get('User_id')
+            username = row.get('User_name', '')
+            fname = row.get('User_fname') or ""
+            lname = row.get('User_lname') or row.get('User_Lname') or ""
+            name = (fname + " " + lname).strip() or username
+            addres = row.get('User_address') or ""
+            id_num = row.get('User_id_pp_num') or ""
+            phone_num = row.get('User_phone_num') or ""
+            email = row.get('User_email') or ""
+            utype = row.get('User_type') or "Costumer"
+            password = row.get('User_password') or ""
+            acsess = row.get('User_access') or ""
 
-            user_id_label = tk.Label(self.details_panel, text="User ID: " + str(user_id), bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
+            user_id_label = tk.Label(self.details_panel, text="User ID: " + str(user_id or Id), bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
             user_id_label.grid(row=0, column=0, sticky="w")
 
-            username_label = tk.Label(self.details_panel, text="Username: " + str(name), bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
+            username_label = tk.Label(self.details_panel, text="Username: " + str(username), bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
             username_label.grid(row=1, column=0, sticky="w")
 
-            first_name_label = tk.Label(self.details_panel, text="Name: " + str(row['User_fname'])+ " "+ str(row['User_Lname']), bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
+            first_name_label = tk.Label(self.details_panel, text="Name: " + str(name), bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))
             first_name_label.grid(row=2, column=0, sticky="w")
 
             last_name_label = tk.Label(self.details_panel, text="phone number: " + str(phone_num), bg=self.bg_dark, fg=self.text_light, font=("Arial", 14))

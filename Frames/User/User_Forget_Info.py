@@ -129,7 +129,10 @@ class User_Forget_Info_Frame(tk.Frame):
             self.city_Combobox['values'] = self.MainApplication.COUNTRIES_WITH_CITIES.get(self.cuntry_var.get(), [])
             self.city_var.set(str(self.MainApplication.COUNTRIES_WITH_CITIES.get(self.cuntry_var.get(), [])[0] if len(self.MainApplication.COUNTRIES_WITH_CITIES.get(self.cuntry_var.get(), [])) else "") )
         
-        self.cuntry_var.trace('w', lambda name, index, mode: cuntry_changed())
+        if hasattr(self.cuntry_var, 'trace_add'):
+            self.cuntry_var.trace_add('write', lambda *args: cuntry_changed())
+        else:
+            self.cuntry_var.trace('w', lambda name, index, mode: cuntry_changed())
         
         self.f_and_lname_label.grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
         self.fname_entry.grid(row=2, column=1, padx=5, pady=5, sticky=tk.W)

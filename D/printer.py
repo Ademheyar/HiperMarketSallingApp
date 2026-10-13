@@ -8,7 +8,15 @@ import sys
 import json
 import ast
 
-import win32print
+try:
+    import win32print
+except (ImportError, ModuleNotFoundError):
+    try:
+        import subprocess
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "pywin32"])
+        import win32print
+    except Exception:
+        win32print = None
 from tkinter import ttk
 from tkinter import simpledialog
 

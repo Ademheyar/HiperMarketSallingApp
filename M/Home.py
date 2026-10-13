@@ -5,8 +5,17 @@ import threading
 import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox as tkmessagebox
-from PIL import Image, ImageTk
+import sys, subprocess
+try:
+    from PIL import Image, ImageTk
+except (ImportError, ModuleNotFoundError):
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
+        from PIL import Image, ImageTk
+    except Exception:
+        Image, ImageTk = None, None
 
+from C.API.API import islinked
 from C.API.Get import fetch_as_dict_list
 from M.Preferences import format_currency, resolve_shop_currency
 from M.UITheme import PROFILE_THEME
@@ -44,6 +53,8 @@ class HomeFeedMixin:
         self.home_feed_request_id = 0
         self.home_feed_results = Queue()
         self.home_shop_currency_map = {}
+        self.home_api_status_results = Queue()
+        self.home_api_status_request_id = 0
 
     @staticmethod
     def normalize_home_product(product, currency=None):
@@ -241,8 +252,52 @@ class HomeFeedMixin:
         link = self.home_link_var.get().strip()
         self.MainApplication.Link = link
         self.home_link_var.set(link)
+        if hasattr(self, 'home_link_selector') and self.home_link_selector.winfo_exists():
+            self.home_link_selector.configure(values=self._get_home_link_options())
+        self._check_api_connection(link)
         self.home_shop_currency_map = {}
-        self._begin_home_feed_search()
+        if self.home_ui_ready:
+            self._begin_home_feed_search()
+
+    def _check_api_connection(self, link=None):
+        link = str(self.Link if link is None else link).strip()
+        self.home_api_status_request_id += 1
+        request_id = self.home_api_status_request_id
+        set_status = getattr(self.main_Notebook, 'set_api_status', None)
+        if set_status:
+            set_status(None, 'Checking API...')
+
+        if not link:
+            if set_status:
+                set_status(False, 'API disconnected')
+            return
+
+        def check_connection():
+            try:
+                connected = bool(islinked(link))
+                error_message = '' if connected else 'API disconnected'
+            except Exception as error:
+                connected = False
+                error_message = f'API error: {error}'
+            self.home_api_status_results.put((request_id, connected, error_message))
+
+        threading.Thread(target=check_connection, daemon=True).start()
+        self.after(25, lambda: self._poll_api_connection(request_id))
+
+    def _poll_api_connection(self, request_id):
+        if request_id != self.home_api_status_request_id:
+            return
+        try:
+            result_id, connected, message = self.home_api_status_results.get_nowait()
+        except Empty:
+            self.after(25, lambda: self._poll_api_connection(request_id))
+            return
+
+        if result_id != self.home_api_status_request_id:
+            self._poll_api_connection(request_id)
+            return
+
+        self.main_Notebook.set_api_status(connected, message)
 
     def load_home_feed(self):
         if self.home_ui_ready:
@@ -259,26 +314,7 @@ class HomeFeedMixin:
         top_bar = tk.Frame(self.Home_frame, bg=PROFILE_THEME['card_bg'],
                            highlightthickness=1, highlightbackground=PROFILE_THEME['card_border'])
         top_bar.pack(fill='x', padx=12, pady=(10, 6))
-        tk.Label(top_bar, text='Connection Link', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'], font=('Segoe UI', 11, 'bold')).pack(anchor='w', padx=12, pady=(10, 6))
-        link_row = tk.Frame(top_bar, bg=PROFILE_THEME['card_bg'])
-        link_row.pack(fill='x', pady=(0, 10))
-        self.home_link_selector = ttk.Combobox(
-            link_row,
-            textvariable=self.home_link_var,
-            values=self._get_home_link_options(),
-            font=('Segoe UI', 10),
-        )
-        self.home_link_selector.pack(side='left', fill='x', expand=True, ipady=4, padx=(12, 0))
-        self.home_link_selector.bind('<<ComboboxSelected>>', self._apply_home_link)
-        self.home_link_selector.bind('<Return>', self._apply_home_link)
-        tk.Button(
-            link_row, text='Apply', command=self._apply_home_link,
-            bg=PROFILE_THEME['accent'], fg=PROFILE_THEME['text'],
-            activebackground=PROFILE_THEME['accent_dark'],
-            activeforeground=PROFILE_THEME['text'], relief='flat', bd=0,
-            font=('Segoe UI', 10, 'bold'), padx=14, pady=7, cursor='hand2',
-        ).pack(side='left', padx=(8, 0))
-        tk.Label(top_bar, text='Search Products', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'], font=('Segoe UI', 11, 'bold')).pack(anchor='w', padx=12, pady=(0, 6))
+        tk.Label(top_bar, text='Search Products', bg=PROFILE_THEME['card_bg'], fg=PROFILE_THEME['text'], font=('Segoe UI', 11, 'bold')).pack(anchor='w', padx=12, pady=(10, 6))
         search_row = tk.Frame(top_bar, bg=PROFILE_THEME['card_bg'])
         search_row.pack(fill='x', padx=12, pady=(0, 12))
         search_entry = tk.Entry(search_row, textvariable=self.home_search_var, font=('Segoe UI', 11),
@@ -334,6 +370,7 @@ class HomeFeedMixin:
             lambda event: self.home_feed_canvas.configure(scrollregion=self.home_feed_canvas.bbox('all')),
         )
         self.home_ui_ready = True
+        self._check_api_connection(self.Link)
         self._begin_home_feed_search()
 
     def _begin_home_feed_search(self):
@@ -370,7 +407,8 @@ class HomeFeedMixin:
         values.extend([self.home_feed_batch_size, self.home_feed_offset])
         request_id = self.home_feed_request_id
         offset = self.home_feed_offset
-        link = getattr(self, 'Link', None)
+        from C.API.API import get_app_api_url, is_local_mode
+        link = "" if is_local_mode() else (getattr(self, 'Link', None) or get_app_api_url())
 
         def fetch_batch():
             try:
@@ -427,19 +465,6 @@ class HomeFeedMixin:
         self.home_feed_loading = False
         self.home_feed_offset += len(results)
         self.home_feed_has_more = len(results) == self.home_feed_batch_size
-        if not results and not self.home_feed_products and not query:
-            shop_name = self.Shops[0]['Shop_brand_name'] if self.Shops else 'Main Store'
-            results = [{
-                'id': 1,
-                'name': 'Classic Essentials',
-                'code': 'CE-01',
-                'barcode': '1001',
-                'at_shop': shop_name,
-                'price': 129.99,
-                'description': 'A ready-to-wear favorite with a premium finish.',
-                'comments': [],
-            }]
-            self.home_feed_has_more = False
 
         first_new_index = len(self.home_feed_products)
         for product in results:

@@ -65,8 +65,11 @@ class GetDateForm(tk.Tk):
         
         self.end_calander.grid(row=3, column=3, columnspan=2, rowspan=5, sticky="nsew", padx=5, pady=5)
         self.strt_calander.grid(row=3, column=0, columnspan=2, rowspan=5, sticky="nsew", padx=5, pady=5)
-        self.end_calander.var.trace('w', lambda *_:self.changed())
-        self.strt_calander.var.trace('w', lambda *_: self.changed())
+        for _v in (self.end_calander.var, self.strt_calander.var):
+            if hasattr(_v, 'trace_add'):
+                _v.trace_add('write', lambda *_: self.changed())
+            else:
+                _v.trace('w', lambda *_: self.changed())
 
         
         self.Today_button = tk.Button(self.getvalue_form, text="Today", command=lambda:self.saved_pariods("Today"), **button_style)

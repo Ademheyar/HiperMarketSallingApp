@@ -101,10 +101,14 @@ THEME_PALETTES = {
 }
 
 
+DEFAULT_API_URL = "https://hipermarket0.xo.je/API/API.php"
+DEFAULT_DATA_MODE = "Cloud API"
+DEFAULT_DB_PATH = "data/my_database.db"
+
 def ensure_preference_columns(connection):
     required_columns = {
         'Shops': ('Shop_currency',),
-        'setting': ('Theme', 'Language'),
+        'setting': ('Theme', 'Language', 'Api_Url', 'Data_Mode', 'Db_Path'),
     }
     for table_name, column_names in required_columns.items():
         existing = {row[1] for row in connection.execute(f'PRAGMA table_info({table_name})')}
@@ -114,6 +118,7 @@ def ensure_preference_columns(connection):
 
 
 def load_saved_theme(connection, user_id=None):
+    ensure_preference_columns(connection)
     if user_id is not None:
         row = connection.execute(
             'SELECT Theme FROM setting WHERE User_id=? ORDER BY Id DESC LIMIT 1',
@@ -161,6 +166,55 @@ def save_app_preferences(connection, theme_name, language, user_id=None):
             connection.execute(
                 'INSERT INTO setting (User_id, Theme, Language) VALUES (?, ?, ?)',
                 (target_user_id, theme_name, language),
+            )
+
+
+def load_api_preferences(connection, user_id=None):
+    ensure_preference_columns(connection)
+    if user_id is not None:
+        row = connection.execute(
+            'SELECT Api_Url, Data_Mode, Db_Path FROM setting WHERE User_id=? ORDER BY Id DESC LIMIT 1',
+            (user_id,),
+        ).fetchone()
+        if row and (row[0] or row[1] or row[2]):
+            return row[0] or DEFAULT_API_URL, row[1] or DEFAULT_DATA_MODE, row[2] or DEFAULT_DB_PATH
+
+    row = connection.execute(
+        'SELECT Api_Url, Data_Mode, Db_Path FROM setting WHERE User_id IS NULL ORDER BY Id DESC LIMIT 1'
+    ).fetchone()
+    if row and (row[0] or row[1] or row[2]):
+        return row[0] or DEFAULT_API_URL, row[1] or DEFAULT_DATA_MODE, row[2] or DEFAULT_DB_PATH
+    return DEFAULT_API_URL, DEFAULT_DATA_MODE, DEFAULT_DB_PATH
+
+
+def save_api_preferences(connection, api_url, data_mode, db_path_val=DEFAULT_DB_PATH, user_id=None):
+    ensure_preference_columns(connection)
+    targets = [None] if user_id is None else [None, user_id]
+    for target_user_id in targets:
+        if target_user_id is None:
+            row = connection.execute(
+                'SELECT Id FROM setting WHERE User_id IS NULL ORDER BY Id DESC LIMIT 1'
+            ).fetchone()
+        else:
+            row = connection.execute(
+                'SELECT Id FROM setting WHERE User_id=? ORDER BY Id DESC LIMIT 1',
+                (target_user_id,),
+            ).fetchone()
+
+        if row:
+            connection.execute(
+                'UPDATE setting SET Api_Url=?, Data_Mode=?, Db_Path=? WHERE Id=?',
+                (api_url, data_mode, db_path_val, row[0]),
+            )
+        elif target_user_id is None:
+            connection.execute(
+                'INSERT INTO setting (Api_Url, Data_Mode, Db_Path) VALUES (?, ?, ?)',
+                (api_url, data_mode, db_path_val),
+            )
+        else:
+            connection.execute(
+                'INSERT INTO setting (User_id, Api_Url, Data_Mode, Db_Path) VALUES (?, ?, ?, ?)',
+                (target_user_id, api_url, data_mode, db_path_val),
             )
 
 

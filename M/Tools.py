@@ -1,5 +1,13 @@
 import tkinter as tk
-from PIL import Image, ImageTk
+import sys, subprocess
+try:
+    from PIL import Image, ImageTk
+except (ImportError, ModuleNotFoundError):
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
+        from PIL import Image, ImageTk
+    except Exception:
+        Image, ImageTk = None, None
 from tkinter import ttk, filedialog
 import os, shutil
 import sqlite3
@@ -71,7 +79,10 @@ class ToolForm(tk.Frame):
             self.search_entry.bind('<KeyRelease>', self.update_search_results)
                 
             # bind the update_search_results function to the search box
-            self.search_var.trace("w", self.update_search_results)
+            if hasattr(self.search_var, 'trace_add'):
+                self.search_var.trace_add("write", lambda *args: self.update_search_results())
+            else:
+                self.search_var.trace("w", self.update_search_results)
 
         # Create the frame for the product details
        

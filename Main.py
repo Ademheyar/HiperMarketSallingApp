@@ -1,10 +1,31 @@
+import sys
+import subprocess
+
+# Auto-ensure essential dependencies in active Python interpreter
+_DEPS = [
+    ("PIL", "Pillow"),
+    ("requests", "requests"),
+    ("barcode", "python-barcode"),
+    ("win32print", "pywin32"),
+    ("PyPDF2", "PyPDF2"),
+    ("fpdf", "fpdf2"),
+    ("Crypto", "pycryptodome"),
+]
+for _mod, _pkg in _DEPS:
+    try:
+        __import__(_mod)
+    except (ImportError, ModuleNotFoundError):
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", _pkg])
+        except Exception:
+            pass
+
 import tkinter as tk
 import sqlite3
 import shutil
 import datetime
 import os
 import atexit
-import sys
 import json
 import ast
 from M.Preferences import apply_app_theme, ensure_preference_columns, load_saved_theme
@@ -206,7 +227,7 @@ cur.execute('''CREATE TABLE IF NOT EXISTS doc_table
 # Connect to the database or create it if it does not exist
 #cur.execute('ALTER TABLE product ADD COLUMN Product_Id INTEGER')
 cur.execute('''CREATE TABLE IF NOT EXISTS product
-             (id INTEGER PRIMARY KEY AUTOINCREMENT,
+             (id INTEGER PRIMARY KEY,
               name TEXT,
               code TEXT,
               type TEXT,
@@ -237,76 +258,6 @@ cur.execute('''CREATE TABLE IF NOT EXISTS product
 #  `Shop_Slip_Settings`, `Shop_Expenses`, `Shop_Actions`
 #cur.execute('ALTER TABLE Shops RENAME COLUMN Shop_SocLinks TO Shop_Items_type')
 #cur.execute('ALTER TABLE Shops ADD COLUMN Shop_SocLinks TEXT')
-cur.execute("PRAGMA table_info(Shops)")
-shops_columns = [row[1] for row in cur.fetchall()]
-if 'Shop_oweners_id' in shops_columns and 'Shop_owners_id' not in shops_columns:
-    try:
-        cur.execute('ALTER TABLE Shops RENAME COLUMN Shop_oweners_id TO Shop_owners_id')
-    except sqlite3.OperationalError:
-        cur.execute('ALTER TABLE Shops RENAME TO Shops_old')
-        cur.execute('''CREATE TABLE IF NOT EXISTS Shops
-                     (Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      Shop_Id INTEGER,
-                      Shop_name TEXT,
-                      Shop_brand_name TEXT,
-                      Shop_owners_id TEXT,
-                      Shop_type TEXT,
-                      Shop_email TEXT,
-                      Shop_link TEXT,
-                      Shop_password TEXT,
-                      Shop_about TEXT,
-                      Shop_country TEXT,
-                      Shop_SocLinks TEXT,
-                      Shop_rules TEXT,
-                      Shop_location TEXT,
-
-                      Shop_profile_img TEXT,
-                      Shop_banner_imgs TEXT,
-
-                      Company_Started_Date TEXT,
-                      Shop_rate TEXT,
-
-                      Shop_Page TEXT,
-
-                      Shop_items TEXT,
-                      Shop_followers TEXT,
-                      Shop_workers TEXT,
-                      Shop_Payment_Tools TEXT,
-                      Shop_Security_Levels TEXT,
-                      Shop_likes TEXT,
-                      Shop_Settings TEXT,
-                      Shop_payment_info TEXT,
-                      Shop_Slip_Settings TEXT,
-                      Shop_Expenses TEXT,
-                      Shop_Actions TEXT,
-
-
-                      Shop_Items_type TEXT,
-                      Shop_payment_r TEXT,
-                      Shop_Access_levels TEXT)''')
-        cur.execute('''INSERT INTO Shops (
-                        Id, Shop_Id, Shop_name, Shop_brand_name, Shop_owners_id,
-                        Shop_type, Shop_email, Shop_link, Shop_password, Shop_about,
-                        Shop_country, Shop_SocLinks, Shop_rules, Shop_location,
-                        Shop_profile_img, Shop_banner_imgs, Company_Started_Date,
-                        Shop_rate, Shop_Page, Shop_items, Shop_followers, Shop_workers,
-                        Shop_Payment_Tools, Shop_Security_Levels, Shop_likes,
-                        Shop_Settings, Shop_payment_info, Shop_Slip_Settings,
-                        Shop_Expenses, Shop_Actions, Shop_Items_type, Shop_payment_r,
-                        Shop_Access_levels)
-                        SELECT
-                        Id, Shop_Id, Shop_name, Shop_brand_name, Shop_oweners_id,
-                        Shop_type, Shop_email, Shop_link, Shop_password, Shop_about,
-                        Shop_country, Shop_SocLinks, Shop_rules, Shop_location,
-                        Shop_profile_img, Shop_banner_imgs, Company_Started_Date,
-                        Shop_rate, Shop_Page, Shop_items, Shop_followers, Shop_workers,
-                        Shop_Payment_Tools, Shop_Security_Levels, Shop_likes,
-                        Shop_Settings, Shop_payment_info, Shop_Slip_Settings,
-                        Shop_Expenses, Shop_Actions, Shop_Items_type, Shop_payment_r,
-                        Shop_Access_levels
-                        FROM Shops_old''')
-        cur.execute('DROP TABLE Shops_old')
-
 cur.execute('''CREATE TABLE IF NOT EXISTS Shops
              (Id INTEGER PRIMARY KEY AUTOINCREMENT,
               Shop_Id INTEGER,
@@ -363,7 +314,7 @@ SAVED_APP_THEME = load_saved_theme(conn)
 #cur.execute("ALTER TABLE Users ADD COLUMN Id INTEGER BEFORE User_id")
 
 cur.execute('''CREATE TABLE IF NOT EXISTS Users
-             (Id INTEGER PRIMARY KEY AUTOINCREMENT,
+             (Id INTEGER PRIMARY KEY,
               User_id INTEGER,
               User_fname TEXT,
               User_Lname TEXT,
@@ -386,36 +337,6 @@ cur.execute('''CREATE TABLE IF NOT EXISTS Users
               User_rate TEXT,
               User_access TEXT,
               User_pimg TEXT)''')
-
-
-cur.execute('SELECT * FROM Users')
-users = cur.fetchall()
-'''
-cur.execute('INSERT INTO Users (User_id, User_fname, User_Lname, User_name, User_gender,
-              User_country,
-              User_phone_num,
-              User_email,
-              User_address,
-              User_id_pp_num,
-              User_home_no,
-              User_type,
-              User_password,
-              User_about,
-              User_shop,
-              User_work_shop,
-              User_likes,
-              User_following_shop,
-              User_favoraite_items,
-              User_rate,
-              User_access,
-              User_pimg) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-(name, addres, id_num, phone_num, email, typ, password, acsess))
-
-'''
-'''
-
-cur.execute('UPDATE USERS SET name=?, address=?, id_num=?, phone_num=?, email=?, type=?, password=?, access=? WHERE id=?', (name, addres, id_num, phone_num, email, typ, password, acsess, item_id))
-'''
 
 
 conn.commit()
@@ -445,7 +366,14 @@ class MainApplication(tk.Tk):
         self.title("Hiper Market")
         self.MainApplication_root = ""
         self.COUNTRIES_WITH_CITIES = COUNTRIES_WITH_CITIES
-        self.Link = ""
+        with sqlite3.connect(db_path) as _conn:
+            from M.Preferences import load_api_preferences
+            _saved_api_url, _saved_mode, _saved_db_path = load_api_preferences(_conn)
+            self.Link = "" if _saved_mode == "Local Database" else _saved_api_url
+            self.Data_Mode = _saved_mode
+            self.Db_Path = _saved_db_path
+        self.link_entry = ttk.Combobox(self)
+        self.link_entry.set(self.Link)
         palette = apply_app_theme(self, SAVED_APP_THEME)
         self.bg_dark = palette['background']
         self.bg_light = palette['surface']

@@ -1,4 +1,4 @@
-2|AH Adem|http://localhost/HiperMarketSit/API/API.php
-3|YA Yussuf|http://localhost/HiperMarketSit/API/API.php
-4|SH Sem|http://localhost/HiperMarketSit/API/API.php
-21|JD John|http://localhost/HiperMarketSit/API/API.php
+2|AH Adem|https://hipermarket0.xo.je
+3|YA Yussuf|https://hipermarket0.xo.je
+4|SH Sem|https://hipermarket0.xo.je
+21|JD John|https://hipermarket0.xo.je

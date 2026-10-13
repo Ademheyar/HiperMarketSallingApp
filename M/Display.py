@@ -1,7 +1,15 @@
 import tkinter as tk
 from tkinter import ttk, filedialog
 import tkinter.messagebox as tkmessagebox
-from PIL import Image, ImageTk
+import sys, subprocess
+try:
+    from PIL import Image, ImageTk
+except (ImportError, ModuleNotFoundError):
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
+        from PIL import Image, ImageTk
+    except Exception:
+        Image, ImageTk = None, None
 import os, shutil
 import sqlite3
 import shutil
@@ -67,14 +75,85 @@ class BottomTabs(tk.Frame):
         self._tabs = [] # {'frame': frame, 'text': text, 'btn': btn}
         self._current = None
         self._on_change = None
+        self._is_phone_layout = None
 
         self.bar = tk.Frame(self, bg=PROFILE_THEME['bg'], padx=8, pady=4)
-        self.bar.pack(side='bottom', fill='x')
-        self.bar.rowconfigure(0, weight=1)
-
+        self.api_status_cell = tk.Frame(self.bar, bg=PROFILE_THEME['bg'])
+        self.api_status_indicator = tk.Canvas(
+            self.api_status_cell,
+            width=16,
+            height=16,
+            bg=PROFILE_THEME['bg'],
+            highlightthickness=0,
+        )
+        self.api_status_indicator.create_oval(
+            3, 3, 13, 13, fill='#f2bc68', outline='#f2bc68',
+        )
+        self.api_status_indicator.pack(side='left', padx=(8, 4))
+        self.api_status_label = tk.Label(
+            self.api_status_cell,
+            text='API status unknown',
+            bg=PROFILE_THEME['bg'],
+            fg=PROFILE_THEME['muted'],
+            font=('Segoe UI', 9),
+            anchor='w',
+        )
+        self.api_status_label.pack(side='left', fill='x', expand=True, padx=(0, 8))
         self.content_area = tk.Frame(self)
-        self.content_area.pack(side='top', fill='both', expand=True)
+
+        self.bind('<Configure>', self._on_resize, add='+')
         self._apply_app_theme_palette()
+
+    def _on_resize(self, event):
+        if event.widget is self and event.width > 1:
+            self._apply_navigation_layout(event.width)
+
+    def _apply_navigation_layout(self, width=None):
+        if not self.winfo_exists():
+            return
+
+        if width is None:
+            width = self.winfo_width()
+            if width <= 1:
+                width = self.master.winfo_width()
+        if width <= 1:
+            return
+
+        is_phone = width < 640
+        if is_phone == self._is_phone_layout:
+            return
+        self._is_phone_layout = is_phone
+
+        self.bar.pack_forget()
+        self.content_area.pack_forget()
+        if is_phone:
+            self.bar.configure(width=0, height=82, padx=4, pady=2)
+            self.bar.pack(side='bottom', fill='x')
+            self.content_area.pack(side='top', fill='both', expand=True)
+            self.api_status_label.pack(side='left', fill='x', expand=True, padx=(0, 8))
+        else:
+            self.bar.configure(width=58, height=0, padx=2, pady=8)
+            self.bar.pack(side='left', fill='y')
+            self.content_area.pack(side='right', fill='both', expand=True)
+            self.api_status_label.pack_forget()
+        self.bar.pack_propagate(is_phone)
+        self._relayout()
+
+    def set_api_status(self, online, message=None):
+        if online is True:
+            color = '#22c55e'
+            text = message or 'API connected'
+        elif online is False:
+            color = '#ef4444'
+            text = message or 'API disconnected'
+        else:
+            color = '#f2bc68'
+            text = message or 'Checking API...'
+
+        self.api_status_indicator.itemconfigure(
+            1, fill=color, outline=color,
+        )
+        self.api_status_label.configure(text=text)
 
     def _apply_app_theme_palette(self, palette=None):
         if palette is None:
@@ -116,10 +195,8 @@ class BottomTabs(tk.Frame):
             'manage': '\u2699',
             'settings': '\u2699',
         }.get(text.strip().lower(), '\u2022')
-        visible_count = sum(1 for item in self._tabs if not item.get('hidden'))
         cell = tk.Frame(self.bar, bg=PROFILE_THEME['row_bg'])
-        self.bar.columnconfigure(visible_count, weight=1)
-        cell.grid(row=0, column=visible_count, sticky='nsew', padx=4, pady=2)
+        cell.grid(sticky='nsew', padx=4, pady=2)
         icon_label = tk.Label(
             cell,
             text=icon,
@@ -138,12 +215,14 @@ class BottomTabs(tk.Frame):
             activeforeground=PROFILE_THEME['text'],
             relief='flat',
             bd=0,
-            padx=8,
-            pady=2,
+            padx=10,
+            pady=7,
             cursor='hand2',
             command=select_this,
         )
-        btn.pack(side='top', fill='x', pady=(0, 3))
+        cell.configure(cursor='hand2')
+        cell.bind('<Button-1>', lambda _event: select_this())
+        icon_label.configure(cursor='hand2')
         icon_label.bind('<Button-1>', lambda _event: select_this())
 
         self._tabs.append({
@@ -159,9 +238,22 @@ class BottomTabs(tk.Frame):
         if hidden:
             cell.grid_remove()
 
+        self._relayout()
         self._apply_app_theme_palette()
         if self._current is None and not hidden and not preserve_panel:
             self.select(frame)
+
+    def _layout_tab_content(self, item):
+        item['icon_label'].pack_forget()
+        item['btn'].pack_forget()
+        if self._is_phone_layout:
+            item['icon_label'].pack(side='top', pady=(3, 0))
+            item['btn'].configure(justify='center', padx=4, pady=2)
+            item['btn'].pack(side='top', fill='x', pady=(0, 3))
+        else:
+            # Compact icon-only left navigation bar
+            item['icon_label'].configure(font=('Segoe UI Symbol', 18))
+            item['icon_label'].pack(side='top', pady=(8, 8), fill='both', expand=True)
 
     def select(self, frame_or_id):
         # if called with no args, return current like ttk does
@@ -224,13 +316,35 @@ class BottomTabs(tk.Frame):
                 return
 
     def _relayout(self):
-        column = 0
+        index = 0
+        for axis in range(max(len(self._tabs), 1)):
+            self.bar.rowconfigure(axis, weight=0)
+            self.bar.columnconfigure(axis, weight=0)
+        self.api_status_cell.grid_forget()
+
         for item in self._tabs:
             if item.get('hidden'):
                 continue
-            self.bar.columnconfigure(column, weight=1)
-            item['cell'].grid_configure(column=column)
-            column += 1
+            self._layout_tab_content(item)
+            if self._is_phone_layout:
+                item['cell'].grid_configure(row=0, column=index, sticky='nsew')
+                self.bar.columnconfigure(index, weight=1)
+            else:
+                item['cell'].grid_configure(row=index, column=0, sticky='ew')
+                self.bar.rowconfigure(index, weight=0)
+            index += 1
+
+        if index:
+            if self._is_phone_layout:
+                self.api_status_cell.grid(
+                    row=1, column=0, columnspan=index, sticky='ew', pady=(0, 2),
+                )
+                self.bar.columnconfigure(0, weight=1)
+            else:
+                self.api_status_cell.grid(
+                    row=index, column=0, sticky='sew', pady=(8, 0),
+                )
+                self.bar.rowconfigure(index, weight=1)
 
     def move_tab(self, frame, position):
         tab = next((item for item in self._tabs if item['frame'] == frame), None)
@@ -272,6 +386,7 @@ class BottomTabs(tk.Frame):
             self._tabs.remove(tab)
             self._tabs.append(tab)
             self._relayout()
+        self._apply_app_theme_palette()
 
     def on_tab_changed(self, callback):
         self._on_change = callback
@@ -405,13 +520,18 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         self.load_home_feed()
             
     def loged(self):
-
+        if hasattr(self, 'main_frame') and self.main_frame.winfo_exists():
+            try:
+                self.main_Notebook.hide(self.main_frame)
+                self.main_frame.destroy()
+            except Exception:
+                pass
         
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
-        self.Shops_Names = [shop['Shop_name'] for shop in self.Shops]
+        self.Shops_Names = [shop['Shop_name'] for shop in self.Shops] if self.Shops else []
         self.select_shop(self.on_Shop)
-        self.Shops_brands = [shop['Shop_brand_name'] for shop in self.Shops]
+        self.Shops_brands = [shop['Shop_brand_name'] for shop in self.Shops] if self.Shops else []
         
         self.main_frame = tk.Frame(self.main_Notebook.content_area, bg=self.bg_dark)
         self.main_Notebook.add(self.main_frame, text='POS Terminal')
@@ -430,15 +550,13 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
             highlightbackground=PROFILE_THEME['card_border'],
         )
         self.top_frame.grid(row=0, column=0, columnspan=3, sticky="nsew")
-        self.top_frame.columnconfigure((0), weight=0)
-        self.top_frame.columnconfigure((2, 3, 4, 5, 6, 7), weight=1, uniform='toolbar')
-        self.top_frame.rowconfigure((0), weight=1)
+        self.top_frame.rowconfigure(0, weight=1)
         self.top_frame.rowconfigure(1, weight=0, minsize=46)
-        self.top_frame.columnconfigure(0, weight=0)
-        self.top_frame.columnconfigure(1, weight=0)
+        self.top_frame.columnconfigure((0, 1, 2, 3, 4, 5), weight=1)
+        self.top_frame.columnconfigure((6, 7), weight=0)
 
         self.DFsearch_entry = search_entry(self.top_frame, self.Shops_info, self.user, self.Shops, font=("Segoe UI", 12))
-        self.DFsearch_entry.grid(row=0, column=2, columnspan=6, sticky="nsew", padx=1, pady=1)
+        self.DFsearch_entry.grid(row=0, column=0, columnspan=6, sticky="nsew", padx=1, pady=1)
 
         self.action_buttons_frame = tk.Frame(
             self.top_frame,
@@ -508,11 +626,11 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         )
 
         self.Calculter_button = tk.Button(self.top_frame, text="Calcu\nF1", command=lambda: GetvalueForm(self, '0', ["Calculater"]), **self.button_style)
-        self.Calculter_button.grid(row=0, column=0, sticky="nsew", padx=2, pady=5)
+        self.Calculter_button.grid(row=0, column=6, sticky="nsew", padx=2, pady=5)
         self._bind_master("<F1>", lambda _: GetvalueForm(self, '0', ["Calculater"]))
         
         self.Add_None_item_button = tk.Button(self.top_frame, text="None\nF2", command=lambda: DocEditForm.Create_Unowen_item(self), **self.button_style)
-        self.Add_None_item_button.grid(row=0, column=1, sticky="nsew", padx=2, pady=5)
+        self.Add_None_item_button.grid(row=0, column=7, sticky="nsew", padx=2, pady=5)
         self._bind_master("<F2>", lambda _: DocEditForm.Create_Unowen_item(self))
         
         self.activets_button = tk.Button(self.action_buttons_frame, text="Activities\nF6", command=self.call_chartForm, **self.button_style)
@@ -605,15 +723,40 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
             self.date_day_Label.after(1000, _update_datetime)
 
         _update_datetime()
+
+        self.pos_shop_frame = tk.Frame(self.date_time_frame, bg=self.bg_light)
+        self.pos_shop_frame.grid(row=1, column=0, columnspan=7, sticky='ew', pady=(6, 0))
+
         self.slip_preview_button = tk.Button(
-            self.date_time_frame,
+            self.pos_shop_frame,
             text="Slip Preview",
             command=lambda: self.open_sale_slip_preview(False),
             **self.button_style,
         )
-        self.slip_preview_button.grid(
-            row=1, column=0, columnspan=5, sticky='w', pady=(6, 0),
+        self.slip_preview_button.pack(side='left', padx=(0, 6))
+
+        tk.Label(
+            self.pos_shop_frame,
+            text="Shop:",
+            font=("Segoe UI", 9, "bold"),
+            bg=self.bg_light,
+            fg=self.text_light,
+        ).pack(side='left', padx=(4, 2))
+
+        shop_names = [shop.get('Shop_name', '') for shop in getattr(self, 'Shops', []) if isinstance(shop, dict)]
+        self.pos_shop_selector = ttk.Combobox(
+            self.pos_shop_frame,
+            values=shop_names,
+            state='readonly',
+            width=14,
         )
+        self.pos_shop_selector.pack(side='left', fill='x', expand=True)
+        selected_shop = getattr(self, 'on_Shop', 0)
+        if shop_names:
+            if not isinstance(selected_shop, int) or not 0 <= selected_shop < len(shop_names):
+                selected_shop = 0
+            self.pos_shop_selector.current(selected_shop)
+        self.pos_shop_selector.bind('<<ComboboxSelected>>', self._on_pos_shop_selected)
         
         self.prevlist_button = tk.Button(self.total_frame, text="<<<\nF4", command=lambda: self.next_prev_chart("prev"), **self.button_style)
         self.prevlist_button.grid(row=1, column=0, sticky="nsew")
@@ -756,7 +899,17 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
 
     def go_to_pos(self):
         """Open the POS (sell) terminal tab."""
-        self.main_Notebook.select(self.main_frame)
+        if not hasattr(self, 'main_frame') or not self.main_frame.winfo_exists():
+            if self.user and self.Shops:
+                self.loged()
+            elif not Security_get_user(self):
+                return
+            else:
+                self.loged()
+        if hasattr(self, 'main_frame') and self.main_frame.winfo_exists():
+            self.main_Notebook.select(self.main_frame)
+            self._pos_layout_is_narrow = None
+            self.after(50, lambda: self._apply_pos_layout(self.winfo_width(), self.winfo_height()))
 
     def _on_pos_layout_configure(self, event):
         if event.widget is self.main_frame:
@@ -951,6 +1104,12 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
             self.main_Notebook.add(self.manage_form, text='MANAGE', hidden=True)
         self.main_Notebook.select(self.manage_form)
 
+    def _on_pos_shop_selected(self, _event=None):
+        if hasattr(self, 'pos_shop_selector'):
+            index = self.pos_shop_selector.current()
+            if index >= 0:
+                self.select_shop(index)
+
     def select_shop(self, index):
         if not isinstance(index, int) or not 0 <= index < len(self.Shops):
             return
@@ -959,6 +1118,11 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
         self.At_Shop_id = shop.get('Shop_Id', -1)
         self.at_shop_name = shop.get('Shop_name', '')
         self.Shop_brand_name = shop.get('Shop_brand_name', '')
+        if hasattr(self, 'pos_shop_selector') and self.pos_shop_selector.winfo_exists():
+            try:
+                self.pos_shop_selector.current(index)
+            except Exception:
+                pass
         if hasattr(self, 'manage_form'):
             self.manage_form.on_Shop = index
         if hasattr(self, 'profile_panel') and self.profile_panel.winfo_exists():
@@ -2148,6 +2312,14 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
             **self.button_style,
         ).grid(row=0, column=3, padx=3)
         dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
+        
+        # Focus & Keyboard Navigation: ESC = Close, Enter / Numpad Enter = Process Sale / Close
+        dialog.transient(self.winfo_toplevel())
+        dialog.focus_set()
+        dialog.bind('<Escape>', lambda _event: dialog.destroy())
+        dialog.bind('<Return>', lambda _event: finish_preview())
+        dialog.bind('<KP_Enter>', lambda _event: finish_preview())
+
         dialog.grab_set()
         self.wait_window(dialog)
         return result["value"]
@@ -3123,11 +3295,9 @@ class DisplayFrame(HomeFeedMixin, tk.Frame):
             givendate = self.date_year_Spinbox.get() + "-"+self.date_month_Spinbox.get() + "-"+self.date_day_Spinbox.get()
 
             if todaydate != givendate:
-                answer = tk.messagebox.askquestion("Question", "Given date "+givendate+" and today date "+todaydate+" Is Not Same Wolde You Like To Fixe It?")
-                if answer == 'yes':
-                    self.date_day_Spinbox.set(str(datetime.datetime.now().strftime('%d')))
-                    self.date_month_Spinbox.set(str(datetime.datetime.now().strftime('%m')))
-                    self.date_year_Spinbox.set(str(datetime.datetime.now().strftime('%Y')))
+                self.date_day_Spinbox.set(str(datetime.datetime.now().strftime('%d')))
+                self.date_month_Spinbox.set(str(datetime.datetime.now().strftime('%m')))
+                self.date_year_Spinbox.set(str(datetime.datetime.now().strftime('%Y')))
             
             self.process_payment()
 

@@ -10,7 +10,15 @@ import os
 import tkinter as tk
 from tkinter import ttk
 
-from PIL import Image, ImageDraw, ImageTk
+import sys, subprocess
+try:
+    from PIL import Image, ImageDraw, ImageTk
+except (ImportError, ModuleNotFoundError):
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
+        from PIL import Image, ImageDraw, ImageTk
+    except Exception:
+        Image, ImageDraw, ImageTk = None, None, None
 
 from C.API.Get import fetch_as_dict_list
 from M.UITheme import PROFILE_THEME, apply_profile_theme
@@ -44,6 +52,7 @@ SECTIONS = (
     ('Messages', 'chat'),
     ('Notif', 'bell'),
     ('History', 'clock'),
+    ('Bissnes', 'briefcase'),
 )
 
 
@@ -211,25 +220,6 @@ class UserProfilePanel(tk.Frame):
         top_row = tk.Frame(details, bg=CARD_BG)
         top_row.pack(fill='x', pady=3)
         self._icon_text(top_row, 'briefcase', 'Role: ' + self.summary['role'])
-        tk.Label(top_row, text=' | ', bg=CARD_BG, fg=CARD_BORDER,
-                 font=('Segoe UI', 11)).pack(side='left')
-        shop_holder = tk.Frame(top_row, bg=CARD_BG)
-        shop_holder.pack(side='left')
-        icon_label(shop_holder, 'store', 16, MUTED, CARD_BG).pack(side='left', padx=(0, 8))
-        shop_names = [shop.get('Shop_name', '') for shop in getattr(self.app, 'Shops', [])]
-        self.shop_selector = ttk.Combobox(
-            shop_holder,
-            values=shop_names,
-            state='readonly',
-            width=18,
-        )
-        self.shop_selector.pack(side='left')
-        selected_shop = getattr(self.app, 'on_Shop', 0)
-        if shop_names:
-            if not isinstance(selected_shop, int) or not 0 <= selected_shop < len(shop_names):
-                selected_shop = 0
-            self.shop_selector.current(selected_shop)
-        self.shop_selector.bind('<<ComboboxSelected>>', self._on_shop_selected)
 
         bottom_row = tk.Frame(details, bg=CARD_BG)
         bottom_row.pack(fill='x', pady=3)
@@ -254,20 +244,15 @@ class UserProfilePanel(tk.Frame):
     def _build_actions(self, card):
         row = tk.Frame(card, bg=CARD_BG)
         row.grid(row=5, column=0, sticky='ew', pady=(20, 0))
-        row.columnconfigure((0, 1, 2), weight=1, uniform='actions')
+        row.columnconfigure((0, 1), weight=1, uniform='actions')
 
-        pos = self._pill_button(row, 'pos', 'POS', ACCENT, ACCENT_DARK, '#ffffff',
+        pos = self._pill_button(row, 'pos', 'POS Terminal', ACCENT, ACCENT_DARK, '#ffffff',
                                 self.app.go_to_pos)
         pos.grid(row=0, column=0, sticky='ew', padx=(0, 10))
 
-        manage = self._pill_button(row, 'shield', 'Manage', ROW_BG, '#2c4262', TEXT,
-                                   self.app.go_to_manager)
-        manage.grid(row=0, column=1, sticky='ew', padx=(0, 10))
-        self.manage_action = manage
-
         edit = self._pill_button(row, 'edit', 'Edit Profile', ROW_BG, '#2c4262', TEXT,
                                  self.open_edit_dialog)
-        edit.grid(row=0, column=2, sticky='ew')
+        edit.grid(row=0, column=1, sticky='ew')
 
     def _on_shop_selected(self, _event=None):
         index = self.shop_selector.current()
@@ -384,6 +369,7 @@ class UserProfilePanel(tk.Frame):
         self.sections['Messages'] = self._build_messages(parent)
         self.sections['Notif'] = self._build_notifications(parent)
         self.sections['History'] = self._build_history(parent)
+        self.sections['Bissnes'] = self._build_business(parent)
         for frame in self.sections.values():
             frame.pack_forget()
 
@@ -790,3 +776,176 @@ class UserProfilePanel(tk.Frame):
         ImageDraw.Draw(mask).ellipse((0, 0, size - 1, size - 1), fill=255)
         portrait.putalpha(mask)
         return ImageTk.PhotoImage(portrait)
+
+    def _build_business(self, parent):
+        frame = tk.Frame(parent, bg=BG)
+        self._section_heading(frame, 'briefcase', 'Business & Shop Management')
+
+        top_bar = tk.Frame(frame, bg=CARD_BG, highlightthickness=1,
+                           highlightbackground=CARD_BORDER, padx=14, pady=12)
+        top_bar.pack(fill='x', pady=(0, 14))
+
+        title_lbl = tk.Label(top_bar, text="Your Working Shops", bg=CARD_BG, fg=TEXT,
+                             font=('Segoe UI', 12, 'bold'))
+        title_lbl.pack(side='left')
+
+        btn_frame = tk.Frame(top_bar, bg=CARD_BG)
+        btn_frame.pack(side='right')
+
+        request_shop_btn = self._pill_button(
+            btn_frame, 'plus', 'Request Shop', ACCENT, ACCENT_DARK, '#ffffff',
+            command=self.open_request_shop_dialog
+        )
+        request_shop_btn.pack(side='left', padx=(0, 8))
+
+        create_shop_btn = self._pill_button(
+            btn_frame, 'plus', 'Create Shop', ROW_BG, '#2c4262', TEXT,
+            command=self.open_create_shop_dialog
+        )
+        create_shop_btn.pack(side='left')
+
+        shops_container = tk.Frame(frame, bg=BG)
+        shops_container.pack(fill='both', expand=True)
+
+        shops_list = getattr(self.app, 'Shops', []) or []
+        if not shops_list:
+            user_work_shops = self.summary.get('user_work_shops') or []
+            if user_work_shops:
+                for uws in user_work_shops:
+                    if isinstance(uws, (list, tuple)) and len(uws) >= 3:
+                        shops_list.append({
+                            'Shop_name': uws[1],
+                            'Shop_brand_name': uws[2],
+                            'Shop_type': 'Working Shop',
+                            'Shop_location': 'Local/Cloud'
+                        })
+
+        if not shops_list:
+            self._empty_state(shops_container, 'No shops found. Click "Request Shop" to add or request a new shop.')
+        else:
+            for idx, shop in enumerate(shops_list):
+                self._render_business_shop_card(shops_container, shop, idx)
+
+        return frame
+
+    def _render_business_shop_card(self, parent, shop, index):
+        card = tk.Frame(parent, bg=CARD_BG, highlightthickness=1,
+                        highlightbackground=CARD_BORDER, padx=16, pady=14)
+        card.pack(fill='x', pady=6)
+
+        icon_box = tk.Frame(card, bg=CARD_BG)
+        icon_box.pack(side='left', padx=(0, 14))
+        icon_label(icon_box, 'store', 24, ACCENT, CARD_BG).pack()
+
+        details = tk.Frame(card, bg=CARD_BG)
+        details.pack(side='left', fill='x', expand=True)
+
+        shop_name = shop.get('Shop_name') or 'Shop #' + str(index + 1)
+        brand_name = shop.get('Shop_brand_name') or ''
+        full_title = f"{shop_name} ({brand_name})" if brand_name else shop_name
+
+        tk.Label(details, text=full_title, bg=CARD_BG, fg=TEXT,
+                 font=('Segoe UI', 12, 'bold')).pack(anchor='w')
+
+        sub_info = f"Type: {shop.get('Shop_type', 'Retail')}  |  Location: {shop.get('Shop_location', 'N/A')}"
+        tk.Label(details, text=sub_info, bg=CARD_BG, fg=MUTED,
+                 font=('Segoe UI', 9)).pack(anchor='w', pady=(2, 0))
+
+        actions_box = tk.Frame(card, bg=CARD_BG)
+        actions_box.pack(side='right', padx=(10, 0))
+
+        manage_btn = self._pill_button(
+            actions_box, 'shield', 'Manage', ACCENT, ACCENT_DARK, '#ffffff',
+            command=lambda idx=index: self.manage_specific_shop(idx)
+        )
+        manage_btn.pack(side='right')
+
+    def manage_specific_shop(self, shop_index):
+        select_shop = getattr(self.app, 'select_shop', None)
+        if callable(select_shop):
+            select_shop(shop_index)
+        else:
+            self.app.on_Shop = shop_index
+        go_to_manager = getattr(self.app, 'go_to_manager', None)
+        if callable(go_to_manager):
+            go_to_manager()
+
+    def open_manage_all_shops(self):
+        go_to_manager = getattr(self.app, 'go_to_manager', None)
+        if callable(go_to_manager):
+            go_to_manager()
+
+    def open_request_shop_dialog(self):
+        dialog = tk.Toplevel(self)
+        dialog.title("Request / Add New Shop")
+        dialog.geometry("450x300")
+        dialog.configure(bg=CARD_BG)
+        dialog.transient(self)
+        dialog.grab_set()
+
+        tk.Label(dialog, text="Request New Shop to Manage", bg=CARD_BG, fg=TEXT,
+                 font=('Segoe UI', 14, 'bold')).pack(pady=(20, 10))
+
+        tk.Label(dialog, text="Shop Name:", bg=CARD_BG, fg=TEXT).pack(pady=(10, 2))
+        name_entry = ttk.Entry(dialog, width=30)
+        name_entry.pack(pady=2)
+
+        tk.Label(dialog, text="Shop Brand Name:", bg=CARD_BG, fg=TEXT).pack(pady=(10, 2))
+        brand_entry = ttk.Entry(dialog, width=30)
+        brand_entry.pack(pady=2)
+
+        def submit():
+            shop_n = name_entry.get().strip()
+            if not shop_n:
+                tk.messagebox.showwarning("Warning", "Please enter a shop name.", parent=dialog)
+                return
+            tk.messagebox.showinfo("Request Sent", f"Request for '{shop_n}' has been submitted for approval.", parent=dialog)
+            dialog.destroy()
+
+        ttk.Button(dialog, text="Submit Request", command=submit).pack(pady=20)
+
+    def open_create_shop_dialog(self):
+        dialog = tk.Toplevel(self)
+        dialog.title("Create New Shop")
+        dialog.geometry("480x360")
+        dialog.configure(bg=CARD_BG)
+        dialog.transient(self)
+        dialog.grab_set()
+
+        tk.Label(dialog, text="Create New Shop", bg=CARD_BG, fg=TEXT,
+                 font=('Segoe UI', 14, 'bold')).pack(pady=(20, 10))
+
+        tk.Label(dialog, text="Shop Name:", bg=CARD_BG, fg=TEXT).pack(pady=(6, 2))
+        name_entry = ttk.Entry(dialog, width=32)
+        name_entry.pack(pady=2)
+
+        tk.Label(dialog, text="Brand Name:", bg=CARD_BG, fg=TEXT).pack(pady=(6, 2))
+        brand_entry = ttk.Entry(dialog, width=32)
+        brand_entry.pack(pady=2)
+
+        tk.Label(dialog, text="Shop Type:", bg=CARD_BG, fg=TEXT).pack(pady=(6, 2))
+        type_entry = ttk.Entry(dialog, width=32)
+        type_entry.insert(0, "Retail Store")
+        type_entry.pack(pady=2)
+
+        def create_submit():
+            s_name = name_entry.get().strip()
+            s_brand = brand_entry.get().strip()
+            s_type = type_entry.get().strip()
+            if not s_name or not s_brand:
+                tk.messagebox.showwarning("Warning", "Shop name and brand name are required.", parent=dialog)
+                return
+            try:
+                user_data = getattr(self.app, 'user', {}) or {}
+                link = getattr(self.app, 'Link', '') or ''
+                from C.API.Set import Add_new_Shop
+                owner_id = user_data.get('User_id') or user_data.get('Id') or '1'
+                Add_new_Shop('', s_name, s_brand, owner_id, s_type, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', link, '', '', '', '', 1, '', '', '', '', '')
+                tk.messagebox.showinfo("Success", f"Shop '{s_name}' created successfully!", parent=dialog)
+                if hasattr(self.app, 'refresh'):
+                    self.app.refresh()
+            except Exception as e:
+                tk.messagebox.showerror("Error", f"Failed to create shop: {e}", parent=dialog)
+            dialog.destroy()
+
+        ttk.Button(dialog, text="Create Shop Now", command=create_submit).pack(pady=18)

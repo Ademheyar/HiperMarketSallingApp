@@ -156,7 +156,10 @@ class ProductFullInfoForm(ttk.Notebook):
         self.total_cost_label.grid(row=3, column=0, sticky="w", pady=5, padx=10)
         self.total_sale_label = ttk.Label(self.details_frame, text="TOTAL AFTER SALE :") # , bg=bg_dark, fg=accent_green, font=("Arial", 11, "bold"))
         self.total_sale_label.grid(row=4, column=0, sticky="w", pady=5, padx=10)
-        self.Show_var.trace("w", lambda *arg: self.update_product_listbox())
+        if hasattr(self.Show_var, 'trace_add'):
+            self.Show_var.trace_add("write", lambda *args: self.update_product_listbox())
+        else:
+            self.Show_var.trace("w", lambda *arg: self.update_product_listbox())
 
 
         self.chart_canvas_Frame = tk.Frame(self.item_List_frame, bg=bg_dark, relief='sunken', bd=2)
