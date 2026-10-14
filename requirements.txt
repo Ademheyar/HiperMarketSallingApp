@@ -1,0 +1,7 @@
+Pillow
+requests
+python-barcode
+pywin32
+PyPDF2
+fpdf2
+pycryptodome
